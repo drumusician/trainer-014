@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#2f5d4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="O14">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>O14 — wedstrijd</title>
+<style>
+  :root {
+    --groen: #2f5d4a;
+    --groen-diep: #24483a;
+    --groen-licht: #e7efeb;
+    --gras: #4b8b5f;
+    --gras-donker: #427c55;
+    --inkt: #16201d;
+    --grijs: #6b7773;
+    --lijn: #dfe5e2;
+    --bank: #f3f5f4;
+    --oranje: #c1541f;
+    --oranje-licht: #fdf1e8;
+    --rood: #a8342a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    color: var(--inkt); background: #fff; font-size: 17px;
+    -webkit-text-size-adjust: 100%;
+    display: flex; flex-direction: column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .app { max-width: 620px; margin: 0 auto; width: 100%; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+  /* ---------- balken ---------- */
+  header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; border-bottom: 1px solid var(--lijn); flex: none;
+  }
+  header h1 { font-size: 16px; margin: 0; flex: 1; font-weight: 700; }
+  header .stand { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 17px; }
+
+  button {
+    font: inherit; font-size: 15px; padding: 9px 13px;
+    border: 1px solid var(--lijn); border-radius: 9px;
+    background: #fff; color: var(--inkt); cursor: pointer;
+  }
+  button:active { background: #eef1f0; }
+  button.prim { background: var(--groen); border-color: var(--groen); color: #fff; }
+  button.prim:active { background: var(--groen-diep); }
+  button.uit { border-color: var(--oranje); color: var(--oranje); }
+  button.klein { font-size: 13px; padding: 6px 9px; }
+  button:disabled { opacity: .4; }
+
+  .klokbalk {
+    display: flex; align-items: center; gap: 8px; flex: none;
+    padding: 8px 12px; background: var(--groen); color: #fff;
+  }
+  .klok { font-variant-numeric: tabular-nums; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+  .helft { font-size: 12px; opacity: .8; flex: 1; }
+  .klokbalk button { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.35); color: #fff; }
+  .klokbalk button:active { background: rgba(255,255,255,.28); }
+
+  main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; }
+  .pad { padding: 12px; }
+
+  /* ---------- veld ---------- */
+  .veld {
+    position: relative; margin: 10px 12px 4px;
+    background: var(--gras); border-radius: 10px; overflow: hidden;
+    aspect-ratio: 4 / 5;
+  }
+  .veld .strepen { position: absolute; inset: 0; }
+  .plek {
+    position: absolute; transform: translate(-50%, -50%);
+    width: 21%; min-width: 62px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    cursor: pointer; user-select: none;
+  }
+  .plek .bol {
+    width: 100%; padding: 5px 2px; border-radius: 8px;
+    background: rgba(255,255,255,.94); border: 2px solid transparent;
+    font-size: 13px; font-weight: 700; line-height: 1.15; text-align: center;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .plek .pos { font-size: 10px; color: rgba(255,255,255,.85); font-weight: 700; letter-spacing: .04em; }
+  .plek.leeg .bol { background: rgba(255,255,255,.3); color: rgba(255,255,255,.9); font-weight: 500; }
+  .plek.gekozen .bol { background: var(--oranje); border-color: #fff; color: #fff; }
+
+  /* ---------- bank ---------- */
+  .bankkop {
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 10px 12px 6px; font-size: 12px; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--groen); font-weight: 700;
+  }
+  .bankkop span { text-transform: none; letter-spacing: 0; color: var(--grijs); font-weight: 400; }
+  .groepkop {
+    display: flex; align-items: baseline; gap: 6px;
+    padding: 2px 12px 5px; font-size: 12px; color: var(--grijs);
+  }
+  .groepkop b { color: var(--inkt); font-size: 12px; font-weight: 700; }
+  .groepkop.past b { color: var(--oranje); }
+  .groepkop.past { color: var(--oranje); }
+  .rij { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 12px 12px; }
+  .chip {
+    display: flex; align-items: baseline; gap: 5px;
+    min-height: 44px; padding: 9px 12px;
+    border: 1px solid var(--lijn); border-radius: 9px; background: var(--bank);
+    font-size: 16px; cursor: pointer; user-select: none;
+  }
+  .chip .min { font-size: 12px; color: var(--grijs); font-variant-numeric: tabular-nums; }
+  .chip.doel { border-color: var(--oranje); background: var(--oranje-licht); }
+  .chip.andere { opacity: .55; }
+
+  .melding {
+    position: sticky; bottom: 0; z-index: 4;
+    background: var(--oranje-licht); border-top: 1px solid var(--oranje);
+    padding: 11px 12px; font-size: 15px; color: #7a3a15;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .melding b { color: var(--oranje); }
+  .melding span { flex: 1; }
+
+  .knoprij { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 12px 12px; }
+  .knoprij.vast { flex: none; border-top: 1px solid var(--lijn); padding-top: 12px; }
+
+  /* ---------- instellen ---------- */
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--groen); margin: 22px 0 8px; }
+  h2:first-child { margin-top: 0; }
+  p.uitleg { color: var(--grijs); font-size: 14px; line-height: 1.5; margin: 0 0 12px; }
+  label.vak { display: block; margin-bottom: 12px; font-size: 14px; color: var(--grijs); }
+  label.vak input, label.vak select, textarea {
+    display: block; width: 100%; margin-top: 4px;
+    font: inherit; font-size: 16px; padding: 10px 12px;
+    border: 1px solid var(--lijn); border-radius: 9px; background: #fff; color: var(--inkt);
+  }
+  textarea { min-height: 120px; line-height: 1.5; }
+  .tweekolom { display: flex; gap: 10px; }
+  .tweekolom > * { flex: 1; }
+
+  .sregel { display: flex; align-items: center; gap: 6px; padding: 7px 0; border-bottom: 1px solid var(--lijn); }
+  .sregel .naam { flex: 1; font-size: 16px; }
+  .keuze { display: flex; gap: 3px; }
+  .keuze button { width: 34px; padding: 7px 0; text-align: center; font-size: 13px; font-weight: 700; color: var(--grijs); }
+  .keuze button.aan { background: var(--groen); border-color: var(--groen); color: #fff; }
+
+  table.uitslag { width: 100%; border-collapse: collapse; }
+  table.uitslag td { padding: 8px 4px; border-bottom: 1px solid var(--lijn); font-size: 15px; }
+  table.uitslag td.m { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+  table.uitslag td.balk { width: 40%; }
+  .staaf { height: 8px; background: var(--groen-licht); border-radius: 4px; overflow: hidden; }
+  .staaf i { display: block; height: 100%; background: var(--groen); }
+  ul.log { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  ul.log li { padding: 6px 0; border-bottom: 1px solid var(--lijn); display: flex; gap: 10px; }
+  ul.log li b { font-variant-numeric: tabular-nums; color: var(--grijs); font-weight: 600; min-width: 46px; }
+
+  .waarschuwing { color: var(--oranje); font-size: 14px; margin: 10px 0 0; }
+  .verborgen { display: none !important; }
+  .wakker { font-size: 11px; opacity: .75; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <h1 id="kop">O14</h1>
+    <span class="stand verborgen" id="stand"></span>
+    <button class="klein" id="menuknop" onclick="naarScherm('instellen')">Instellen</button>
+  </header>
+
+  <div class="klokbalk verborgen" id="klokbalk">
+    <div>
+      <div class="klok" id="klok">00:00</div>
+      <div class="helft" id="helftlabel">1e helft</div>
+    </div>
+    <div style="flex:1"></div>
+    <button id="loopknop" onclick="loopToggle()">Start</button>
+    <button id="rustknop" onclick="rustToggle()">Rust</button>
+  </div>
+
+  <main id="scherm"></main>
+
+</div>
+
+<script>
+'use strict';
+
+/* ==========================================================
+   O14 — wedstrijdapp
+   Alles staat lokaal op dit toestel. Geen namen in de code.
+   ========================================================== */
+
+const SLEUTEL = 'o14-app-v1';
+
+const FORMATIES = {
+  '4-3-3': [
+    ['K',  'K',  50, 92],
+    ['RV', 'RV', 82, 74], ['CVr','CV', 62, 79], ['CVl','CV', 38, 79], ['LV','LV', 18, 74],
+    ['MR', 'M',  72, 55], ['MC', 'M',  50, 60], ['ML','M',  28, 55],
+    ['RB', 'RB', 80, 26], ['SP', 'SP', 50, 18], ['LB','LB', 20, 26],
+  ],
+  '4-4-2': [
+    ['K',  'K',  50, 92],
+    ['RV', 'RV', 82, 76], ['CVr','CV', 62, 80], ['CVl','CV', 38, 80], ['LV','LV', 18, 76],
+    ['MR', 'RM', 82, 52], ['MCr','M',  61, 56], ['MCl','M',  39, 56], ['ML','LM', 18, 52],
+    ['SPr','SP', 62, 22], ['SPl','SP', 38, 22],
+  ],
+  '4-2-3-1': [
+    ['K',  'K',  50, 92],
+    ['RV', 'RV', 82, 76], ['CVr','CV', 62, 80], ['CVl','CV', 38, 80], ['LV','LV', 18, 76],
+    ['VMr','VM', 62, 62], ['VMl','VM', 38, 62],
+    ['RA', 'RA', 80, 38], ['TIEN','10', 50, 42], ['LA','LA', 20, 38],
+    ['SP', 'SP', 50, 18],
+  ],
+};
+
+const LINIES = { K: 'Keeper', V: 'Verdediging', M: 'Middenveld', A: 'Aanval' };
+
+let s = leeg();
+let gekozenPlek = null;      /* plek-id van de speler die eruit gaat */
+let scherm = 'wedstrijd';
+let tikker = null;
+let wakeLock = null;
+
+function leeg() {
+  return {
+    spelers: [],                 /* {id, naam, linie} */
+    formatie: '4-3-3',
+    helftMinuten: 35,
+    wedstrijd: null,             /* zie nieuweWedstrijd() */
+    archief: [],
+  };
+}
+
+/* ---------- opslag ---------- */
+function bewaar() {
+  try { localStorage.setItem(SLEUTEL, JSON.stringify(s)); } catch (e) { /* stil */ }
+}
+function laad() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SLEUTEL));
+    if (d && Array.isArray(d.spelers)) s = Object.assign(leeg(), d);
+  } catch (e) { /* stil */ }
+}
+
+/* ---------- klok ---------- */
+function verstreken() {
+  const w = s.wedstrijd;
+  if (!w) return 0;
+  let t = w.verstreken;
+  if (w.loopt && w.sinds) t += (Date.now() - w.sinds) / 1000;
+  return Math.floor(t);
+}
+function mmss(sec) {
+  const m = Math.floor(sec / 60), r = Math.floor(sec % 60);
+  return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+}
+
+function loopToggle() {
+  const w = s.wedstrijd;
+  if (!w || w.afgelopen) return;
+  if (w.loopt) {
+    w.verstreken += (Date.now() - w.sinds) / 1000;
+    w.loopt = false; w.sinds = null;
+    losWakeLock();
+  } else {
+    if (!w.gebeurtenissen.length) log('start', {});
+    w.loopt = true; w.sinds = Date.now();
+    pakWakeLock();
+  }
+  bewaar(); teken();
+}
+
+function rustToggle() {
+  const w = s.wedstrijd;
+  if (!w || w.afgelopen) return;
+  if (w.helft === 1) {
+    if (w.loopt) loopToggle();
+    log('rust', {});
+    w.helft = 2;
+  } else {
+    if (!w.loopt) loopToggle();
+  }
+  bewaar(); teken();
+}
+
+/* ---------- gebeurtenissen ---------- */
+function log(type, extra) {
+  s.wedstrijd.gebeurtenissen.push(Object.assign({ type, t: verstreken() }, extra));
+}
+
+function nieuweWedstrijd(tegenstander, thuis) {
+  s.wedstrijd = {
+    datum: new Date().toISOString().slice(0, 10),
+    tegenstander: tegenstander || 'Tegenstander',
+    thuis: thuis !== false,
+    formatie: s.formatie,
+    opstelling: {},          /* plekId -> spelerId */
+    bank: [],                /* spelerIds */
+    gebeurtenissen: [],
+    verstreken: 0, sinds: null, loopt: false,
+    helft: 1, afgelopen: false,
+  };
+}
+
+/* ---------- speeltijd berekenen ---------- */
+function speeltijden() {
+  const w = s.wedstrijd;
+  const eind = w.afgelopen ? eindTijd() : verstreken();
+  const inVeldSinds = {};
+  const totaal = {};
+  s.spelers.forEach(p => { totaal[p.id] = 0; });
+
+  Object.values(w.opstelling).forEach(id => { if (id) inVeldSinds[id] = 0; });
+  /* de startopstelling zoals hij aan het begin was, reconstrueren uit de wissels */
+  const startOpstelling = Object.assign({}, w.opstelling);
+  w.gebeurtenissen.filter(g => g.type === 'wissel').slice().reverse().forEach(g => {
+    for (const plek in startOpstelling) {
+      if (startOpstelling[plek] === g.erin) { startOpstelling[plek] = g.eruit; break; }
+    }
+  });
+  Object.keys(inVeldSinds).forEach(k => delete inVeldSinds[k]);
+  Object.values(startOpstelling).forEach(id => { if (id) inVeldSinds[id] = 0; });
+
+  w.gebeurtenissen.filter(g => g.type === 'wissel').forEach(g => {
+    if (inVeldSinds[g.eruit] !== undefined) {
+      totaal[g.eruit] = (totaal[g.eruit] || 0) + (g.t - inVeldSinds[g.eruit]);
+      delete inVeldSinds[g.eruit];
+    }
+    inVeldSinds[g.erin] = g.t;
+  });
+  Object.keys(inVeldSinds).forEach(id => {
+    totaal[id] = (totaal[id] || 0) + (eind - inVeldSinds[id]);
+  });
+  return totaal;
+}
+
+function eindTijd() {
+  const e = s.wedstrijd.gebeurtenissen.filter(g => g.type === 'eind').pop();
+  return e ? e.t : s.wedstrijd.verstreken;
+}
+
+function stand() {
+  const g = s.wedstrijd.gebeurtenissen;
+  return [g.filter(x => x.type === 'goal').length, g.filter(x => x.type === 'tegen').length];
+}
+
+/* ---------- schermen ---------- */
+function naarScherm(naam) { scherm = naam; gekozenPlek = null; teken(); }
+
+function teken() {
+  const doel = document.getElementById('scherm');
+  const w = s.wedstrijd;
+  const klokbalk = document.getElementById('klokbalk');
+  const standEl = document.getElementById('stand');
+  const menuknop = document.getElementById('menuknop');
+
+  const inWedstrijd = scherm === 'wedstrijd' && w && !w.afgelopen && Object.keys(w.opstelling).length > 0;
+  klokbalk.classList.toggle('verborgen', !inWedstrijd);
+  standEl.classList.toggle('verborgen', !inWedstrijd);
+  menuknop.textContent = scherm === 'wedstrijd' ? 'Instellen' : 'Terug';
+  menuknop.onclick = () => naarScherm(scherm === 'wedstrijd' ? 'instellen' : 'wedstrijd');
+
+  if (inWedstrijd) {
+    document.getElementById('klok').textContent = mmss(verstreken());
+    document.getElementById('helftlabel').textContent = w.helft === 1 ? '1e helft' : '2e helft';
+    document.getElementById('loopknop').textContent = w.loopt ? 'Pauze' : 'Start';
+    document.getElementById('rustknop').textContent = w.helft === 1 ? 'Rust' : '2e helft';
+    document.getElementById('rustknop').disabled = w.helft === 2 && w.loopt;
+    const [v, t] = stand();
+    standEl.textContent = v + ' – ' + t;
+    document.getElementById('kop').textContent = (w.thuis ? 'O14 – ' + w.tegenstander : w.tegenstander + ' – O14');
+  } else {
+    document.getElementById('kop').textContent = 'O14';
+  }
+
+  if (scherm === 'instellen') doel.innerHTML = '', doel.appendChild(schermInstellen());
+  else if (scherm === 'afloop') doel.innerHTML = '', doel.appendChild(schermAfloop());
+  else doel.innerHTML = '', doel.appendChild(schermWedstrijd());
+}
+
+/* ---------- wedstrijdscherm ---------- */
+function schermWedstrijd() {
+  const d = document.createElement('div');
+  const w = s.wedstrijd;
+
+  if (!s.spelers.length) {
+    d.innerHTML = '<div class="pad"><h2>Nog geen spelers</h2>' +
+      '<p class="uitleg">Ga naar <b>Instellen</b> en zet je selectie erin. De namen blijven op dit toestel staan.</p>' +
+      '<div class="knoprij" style="padding-left:0"><button class="prim" onclick="naarScherm(\'instellen\')">Instellen</button></div></div>';
+    return d;
+  }
+  if (!w || !Object.keys(w.opstelling).length) {
+    d.innerHTML = '<div class="pad"><h2>Nog geen opstelling</h2>' +
+      '<p class="uitleg">Maak een wedstrijd aan en zet je basiself op het veld.</p>' +
+      '<div class="knoprij" style="padding-left:0"><button class="prim" onclick="naarScherm(\'instellen\')">Wedstrijd opzetten</button></div></div>';
+    return d;
+  }
+  if (w.afgelopen) { return schermAfloop(); }
+
+  d.appendChild(tekenVeld(true));
+
+  const bank = w.bank.map(id => speler(id)).filter(Boolean);
+  const tijden = speeltijden();
+  const uit = gekozenPlek ? speler(w.opstelling[gekozenPlek]) : null;
+
+  const kop = document.createElement('div');
+  kop.className = 'bankkop';
+  kop.innerHTML = 'Bank <span>per linie, bovenaan wie het minst speelde</span>';
+  d.appendChild(kop);
+
+  if (!bank.length) {
+    const leeg = document.createElement('div');
+    leeg.className = 'rij';
+    leeg.innerHTML = '<p class="uitleg">Iedereen staat in het veld.</p>';
+    d.appendChild(leeg);
+  }
+
+  const groepen = [['K', 'Keeper'], ['V', 'Verdediging'], ['M', 'Middenveld'], ['A', 'Aanval'], ['', 'Zonder linie']];
+  groepen.forEach(([code, naam]) => {
+    const groep = bank.filter(p => (p.linie || '') === code)
+                      .sort((a, b) => (tijden[a.id] || 0) - (tijden[b.id] || 0));
+    if (!groep.length) return;
+
+    const past = uit && (uit.linie || '') === code;
+    const gk = document.createElement('div');
+    gk.className = 'groepkop' + (past ? ' past' : '');
+    gk.innerHTML = '<b>' + naam + '</b>' + (past ? '<span>zelfde linie</span>' : '');
+    d.appendChild(gk);
+
+    const rij = document.createElement('div');
+    rij.className = 'rij';
+    groep.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'chip';
+      if (gekozenPlek) el.className += past ? ' doel' : ' doel andere';
+      el.innerHTML = '<span>' + veiligeTekst(p.naam) + '</span><span class="min">' +
+        Math.round((tijden[p.id] || 0) / 60) + '\u2032</span>';
+      el.onclick = () => tikBank(p.id);
+      rij.appendChild(el);
+    });
+    d.appendChild(rij);
+  });
+
+  const knoppen = document.createElement('div');
+  knoppen.className = 'knoprij';
+  knoppen.innerHTML =
+    '<button class="prim" onclick="doelpunt()">Doelpunt</button>' +
+    '<button onclick="tegendoelpunt()">Tegen</button>' +
+    (herstelbaar() ? '<button onclick="herstelLaatste()">\u21b6 ' + veiligeTekst(herstelbaar()) + ' terug</button>' : '') +
+    '<button class="uit" onclick="beeindig()">Wedstrijd afsluiten</button>';
+  d.appendChild(knoppen);
+
+  if (gekozenPlek) {
+    const uit = speler(w.opstelling[gekozenPlek]);
+    const balk = document.createElement('div');
+    balk.className = 'melding';
+    balk.innerHTML = '<span><b>' + veiligeTekst(uit ? uit.naam : 'Leeg') +
+      '</b> gaat eruit. Tik wie erin komt.</span>';
+    const annuleer = document.createElement('button');
+    annuleer.className = 'klein';
+    annuleer.textContent = 'Annuleren';
+    annuleer.onclick = () => { gekozenPlek = null; teken(); };
+    balk.appendChild(annuleer);
+    d.appendChild(balk);
+  }
+
+  return d;
+}
+
+function tekenVeld(klikbaar) {
+  const w = s.wedstrijd;
+  const veld = document.createElement('div');
+  veld.className = 'veld';
+  veld.innerHTML =
+    '<svg class="strepen" viewBox="0 0 300 400" preserveAspectRatio="none">' +
+    '<g fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2">' +
+    '<rect x="8" y="8" width="284" height="384"/>' +
+    '<line x1="8" y1="200" x2="292" y2="200"/>' +
+    '<circle cx="150" cy="200" r="46"/>' +
+    '<rect x="72" y="8" width="156" height="58"/>' +
+    '<rect x="72" y="334" width="156" height="58"/>' +
+    '<rect x="115" y="8" width="70" height="22"/>' +
+    '<rect x="115" y="370" width="70" height="22"/>' +
+    '</g></svg>';
+
+  FORMATIES[w.formatie].forEach(([plekId, label, x, y]) => {
+    const id = w.opstelling[plekId];
+    const p = speler(id);
+    const el = document.createElement('div');
+    el.className = 'plek' + (p ? '' : ' leeg') + (gekozenPlek === plekId ? ' gekozen' : '');
+    el.style.left = x + '%';
+    el.style.top = y + '%';
+    el.innerHTML = '<div class="bol">' + veiligeTekst(p ? p.naam : '+') + '</div>' +
+                   '<div class="pos">' + label + '</div>';
+    if (klikbaar) el.onclick = () => tikPlek(plekId);
+    veld.appendChild(el);
+  });
+  return veld;
+}
+
+function tikPlek(plekId) {
+  const w = s.wedstrijd;
+  if (gekozenPlek === plekId) { gekozenPlek = null; teken(); return; }
+  if (!w.opstelling[plekId]) {                     /* lege plek: iemand van de bank erin */
+    gekozenPlek = plekId; teken(); return;
+  }
+  gekozenPlek = plekId; teken();
+}
+
+function tikBank(spelerId) {
+  const w = s.wedstrijd;
+  if (!gekozenPlek) return;                        /* eerst iemand in het veld aantikken */
+  const eruit = w.opstelling[gekozenPlek];
+  w.opstelling[gekozenPlek] = spelerId;
+  w.bank = w.bank.filter(x => x !== spelerId);
+  if (eruit) {
+    w.bank.push(eruit);
+    log('wissel', { eruit, erin: spelerId, plek: gekozenPlek });
+  }
+  gekozenPlek = null;
+  bewaar(); teken();
+}
+
+function doelpunt() {
+  const w = s.wedstrijd;
+  const inVeld = FORMATIES[w.formatie].map(([p]) => w.opstelling[p]).filter(Boolean);
+  const namen = inVeld.map((id, i) => (i + 1) + '. ' + speler(id).naam).join('\n');
+  const antwoord = prompt('Doelpunt! Wie scoorde?\n\n' + namen + '\n\nTyp het nummer, of laat leeg als je het niet weet.', '');
+  if (antwoord === null) return;
+  const n = parseInt(antwoord, 10);
+  const maker = (n >= 1 && n <= inVeld.length) ? inVeld[n - 1] : null;
+  log('goal', { speler: maker });
+  bewaar(); teken();
+}
+
+function tegendoelpunt() { log('tegen', {}); bewaar(); teken(); }
+
+/* Per ongeluk getikt? De laatste actie kan terug, zolang er niets anders overheen is gegaan. */
+function herstelbaar() {
+  const g = s.wedstrijd ? s.wedstrijd.gebeurtenissen : [];
+  const laatste = g[g.length - 1];
+  if (!laatste) return null;
+  if (laatste.type === 'goal') return 'Doelpunt';
+  if (laatste.type === 'tegen') return 'Tegendoelpunt';
+  if (laatste.type === 'wissel') return 'Wissel';
+  return null;
+}
+
+function herstelLaatste() {
+  const w = s.wedstrijd;
+  const g = w.gebeurtenissen;
+  const laatste = g[g.length - 1];
+  if (!herstelbaar()) return;
+  if (laatste.type === 'wissel') {
+    w.opstelling[laatste.plek] = laatste.eruit;
+    w.bank = w.bank.filter(x => x !== laatste.eruit);
+    if (!w.bank.includes(laatste.erin)) w.bank.push(laatste.erin);
+  }
+  g.pop();
+  gekozenPlek = null;
+  bewaar(); teken();
+}
+
+function beeindig() {
+  const w = s.wedstrijd;
+  if (!confirm('Wedstrijd afsluiten?\n\nDe klok stopt en je krijgt het overzicht met de speeltijden.')) return;
+  if (w.loopt) { w.verstreken += (Date.now() - w.sinds) / 1000; w.loopt = false; w.sinds = null; }
+  log('eind', {});
+  w.afgelopen = true;
+  losWakeLock();
+  bewaar(); naarScherm('afloop');
+}
+
+/* ---------- na afloop ---------- */
+function schermAfloop() {
+  const w = s.wedstrijd;
+  const d = document.createElement('div');
+  d.className = 'pad';
+  if (!w) { d.innerHTML = '<p class="uitleg">Nog geen wedstrijd.</p>'; return d; }
+
+  const [v, t] = stand();
+  const tijden = speeltijden();
+  const eind = eindTijd();
+  const langst = Math.max(1, ...Object.values(tijden));
+
+  let html = '<h2>Uitslag</h2><p style="font-size:22px;font-weight:700;margin:0 0 4px">' +
+    veiligeTekst(w.thuis ? 'O14' : w.tegenstander) + ' ' + v + ' – ' + t + ' ' +
+    veiligeTekst(w.thuis ? w.tegenstander : 'O14') + '</p>' +
+    '<p class="uitleg">' + w.datum + ' · ' + mmss(eind) + ' gespeeld · ' + w.formatie + '</p>';
+
+  html += '<h2>Speeltijd</h2><table class="uitslag">';
+  s.spelers.slice()
+    .filter(p => tijden[p.id] !== undefined)
+    .sort((a, b) => (tijden[b.id] || 0) - (tijden[a.id] || 0))
+    .forEach(p => {
+      const sec = tijden[p.id] || 0;
+      html += '<tr><td>' + veiligeTekst(p.naam) + '</td>' +
+        '<td class="balk"><div class="staaf"><i style="width:' + Math.round(sec / langst * 100) + '%"></i></div></td>' +
+        '<td class="m">' + Math.round(sec / 60) + ' min</td></tr>';
+    });
+  html += '</table>';
+
+  html += '<h2>Verloop</h2><ul class="log">';
+  w.gebeurtenissen.forEach(g => {
+    let tekst = '';
+    if (g.type === 'start') tekst = 'Aftrap';
+    else if (g.type === 'rust') tekst = 'Rust';
+    else if (g.type === 'eind') tekst = 'Einde';
+    else if (g.type === 'tegen') tekst = 'Tegendoelpunt';
+    else if (g.type === 'goal') tekst = 'Doelpunt' + (g.speler ? ' — ' + naamVan(g.speler) : '');
+    else if (g.type === 'wissel') tekst = naamVan(g.erin) + ' voor ' + naamVan(g.eruit);
+    html += '<li><b>' + mmss(g.t) + '</b><span>' + veiligeTekst(tekst) + '</span></li>';
+  });
+  html += '</ul>';
+
+  html += '<div class="knoprij" style="padding-left:0;margin-top:16px">' +
+    '<button class="prim" onclick="bewaarInArchief()">Bewaren in archief</button>' +
+    '<button onclick="naarScherm(\'instellen\')">Nieuwe wedstrijd</button>' +
+    '</div>';
+
+  d.innerHTML = html;
+  return d;
+}
+
+function bewaarInArchief() {
+  const w = s.wedstrijd;
+  const tijden = speeltijden();
+  s.archief.unshift({
+    datum: w.datum, tegenstander: w.tegenstander, thuis: w.thuis,
+    stand: stand(), formatie: w.formatie,
+    duur: eindTijd(),
+    gebeurtenissen: w.gebeurtenissen,
+    speeltijd: s.spelers.filter(p => tijden[p.id] !== undefined)
+      .map(p => ({ naam: p.naam, seconden: Math.round(tijden[p.id]) })),
+  });
+  bewaar();
+  alert('Bewaard. Je vindt hem terug onder Instellen → Archief.');
+  naarScherm('instellen');
+}
+
+/* ---------- instelscherm ---------- */
+function schermInstellen() {
+  const d = document.createElement('div');
+  d.className = 'pad';
+  const w = s.wedstrijd;
+
+  /* --- wedstrijd --- */
+  let html = '<h2>Wedstrijd</h2>';
+  if (w && !w.afgelopen && Object.keys(w.opstelling).length) {
+    html += '<p class="uitleg">Er loopt een wedstrijd tegen <b>' + veiligeTekst(w.tegenstander) + '</b>.</p>' +
+      '<div class="knoprij" style="padding-left:0">' +
+      '<button class="prim" onclick="naarScherm(\'wedstrijd\')">Terug naar de wedstrijd</button></div>';
+  } else {
+    html += '<div class="tweekolom">' +
+      '<label class="vak">Tegenstander<input id="tegenstander" placeholder="bijv. Sparta O14"></label>' +
+      '<label class="vak">Thuis of uit<select id="thuisuit"><option value="thuis">Thuis</option><option value="uit">Uit</option></select></label>' +
+      '</div>' +
+      '<div class="tweekolom">' +
+      '<label class="vak">Formatie<select id="formatie">' +
+      Object.keys(FORMATIES).map(f => '<option' + (f === s.formatie ? ' selected' : '') + '>' + f + '</option>').join('') +
+      '</select></label>' +
+      '<label class="vak">Minuten per helft<input id="helft" type="number" inputmode="numeric" value="' + s.helftMinuten + '"></label>' +
+      '</div>' +
+      '<div class="knoprij" style="padding-left:0"><button class="prim" onclick="startOpzet()">Opstelling maken</button></div>';
+  }
+
+  /* --- selectie --- */
+  html += '<h2>Selectie</h2>';
+  if (!s.spelers.length) {
+    html += '<p class="uitleg">Plak hier de namen, één per regel. Ze blijven op dit toestel en komen nergens anders terecht.</p>' +
+      '<textarea id="namen" placeholder="Casper&#10;Maher&#10;Daan"></textarea>' +
+      '<div class="knoprij" style="padding-left:0;margin-top:10px"><button class="prim" onclick="namenErbij()">Toevoegen</button></div>';
+  } else {
+    html += '<p class="uitleg">Zet per speler de linie: K keeper, V verdediging, M middenveld, A aanval. Tik een naam aan om te wijzigen of te verwijderen.</p><div id="selectie"></div>' +
+      '<div class="knoprij" style="padding-left:0;margin-top:12px">' +
+      '<button onclick="spelerToevoegen()">Speler toevoegen</button></div>';
+  }
+
+  /* --- archief --- */
+  html += '<h2>Archief</h2>';
+  if (!s.archief.length) {
+    html += '<p class="uitleg">Nog geen bewaarde wedstrijden.</p>';
+  } else {
+    html += '<ul class="log">' + s.archief.map((a, i) =>
+      '<li><b>' + a.datum + '</b><span>' + veiligeTekst(a.tegenstander) + ' — ' + a.stand[0] + '–' + a.stand[1] + '</span></li>'
+    ).join('') + '</ul>' +
+    '<div class="knoprij" style="padding-left:0;margin-top:12px"><button onclick="exporteer()">Gegevens exporteren</button></div>';
+  }
+
+  html += '<p class="uitleg wakker" style="margin-top:24px" id="wakkerstatus"></p>';
+
+  d.innerHTML = html;
+
+  if (s.spelers.length) {
+    const lijst = d.querySelector('#selectie');
+    s.spelers.forEach(p => {
+      const regel = document.createElement('div');
+      regel.className = 'sregel';
+      const naam = document.createElement('span');
+      naam.className = 'naam';
+      naam.textContent = p.naam;
+      naam.onclick = () => wijzigSpeler(p);
+      regel.appendChild(naam);
+      const keuze = document.createElement('div');
+      keuze.className = 'keuze';
+      ['K', 'V', 'M', 'A'].forEach(code => {
+        const b = document.createElement('button');
+        b.textContent = code;
+        if (p.linie === code) b.className = 'aan';
+        b.onclick = () => { p.linie = p.linie === code ? '' : code; bewaar(); teken(); };
+        keuze.appendChild(b);
+      });
+      regel.appendChild(keuze);
+      lijst.appendChild(regel);
+    });
+  }
+
+  setTimeout(() => {
+    const el = document.getElementById('wakkerstatus');
+    if (!el) return;
+    if (!('wakeLock' in navigator)) {
+      el.textContent = 'Dit toestel of deze browser kan het scherm niet wakker houden. Op de iPhone lukt dat vanaf iOS 16.4, en in een app op je beginscherm vanaf iOS 18.4.';
+    } else {
+      el.textContent = 'Het scherm blijft vanzelf wakker zolang de klok loopt.';
+    }
+  }, 0);
+
+  return d;
+}
+
+function startOpzet() {
+  const tegen = (document.getElementById('tegenstander') || {}).value || '';
+  const thuis = ((document.getElementById('thuisuit') || {}).value || 'thuis') === 'thuis';
+  s.formatie = (document.getElementById('formatie') || {}).value || s.formatie;
+  s.helftMinuten = parseInt((document.getElementById('helft') || {}).value, 10) || 35;
+  if (!s.spelers.length) { alert('Zet eerst je selectie erin.'); return; }
+  nieuweWedstrijd(tegen, thuis);
+  s.wedstrijd.bank = s.spelers.map(p => p.id);
+  bewaar();
+  naarScherm('opzet');
+  scherm = 'opzet';
+  tekenOpzet();
+}
+
+/* ---------- opstelling maken ---------- */
+function tekenOpzet() {
+  const doel = document.getElementById('scherm');
+  const w = s.wedstrijd;
+  doel.innerHTML = '';
+  document.getElementById('klokbalk').classList.add('verborgen');
+  document.getElementById('stand').classList.add('verborgen');
+  document.getElementById('kop').textContent = 'Opstelling';
+  const menuknop = document.getElementById('menuknop');
+  menuknop.textContent = 'Terug';
+  menuknop.onclick = () => naarScherm('instellen');
+
+  const d = document.createElement('div');
+  d.appendChild(tekenVeld(true));
+
+  const kop = document.createElement('div');
+  kop.className = 'bankkop';
+  kop.innerHTML = 'Selectie <span>tik een plek op het veld, dan een naam</span>';
+  d.appendChild(kop);
+
+  const rij = document.createElement('div');
+  rij.className = 'rij';
+  w.bank.map(id => speler(id)).filter(Boolean)
+    .sort((a, b) => (a.linie || 'Z').localeCompare(b.linie || 'Z') || a.naam.localeCompare(b.naam))
+    .forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'chip' + (gekozenPlek ? ' doel' : '');
+      el.innerHTML = '<span>' + veiligeTekst(p.naam) + '</span>' +
+        (p.linie ? '<span class="min">' + p.linie + '</span>' : '');
+      el.onclick = () => {
+        if (!gekozenPlek) { alert('Tik eerst een plek op het veld aan.'); return; }
+        const oud = w.opstelling[gekozenPlek];
+        w.opstelling[gekozenPlek] = p.id;
+        w.bank = w.bank.filter(x => x !== p.id);
+        if (oud) w.bank.push(oud);
+        gekozenPlek = null;
+        bewaar(); tekenOpzet();
+      };
+      rij.appendChild(el);
+    });
+  d.appendChild(rij);
+
+  const bezet = Object.values(w.opstelling).filter(Boolean).length;
+  const knoppen = document.createElement('div');
+  knoppen.className = 'knoprij';
+  knoppen.innerHTML = '<button class="prim" onclick="opstellingKlaar()">Klaar — naar de wedstrijd</button>' +
+    '<span class="uitleg" style="align-self:center;margin:0">' + bezet + ' van de 11 ingevuld</span>';
+  d.appendChild(knoppen);
+
+  doel.appendChild(d);
+
+  /* plek aantikken werkt hier anders: leeg = kiezen */
+  doel.querySelectorAll('.plek').forEach((el, i) => {
+    const plekId = FORMATIES[w.formatie][i][0];
+    el.onclick = () => {
+      if (gekozenPlek === plekId) gekozenPlek = null;
+      else gekozenPlek = plekId;
+      tekenOpzet();
+    };
+  });
+}
+
+function opstellingKlaar() {
+  const w = s.wedstrijd;
+  const bezet = Object.values(w.opstelling).filter(Boolean).length;
+  if (bezet < 11 && !confirm('Er staan er ' + bezet + ' op het veld in plaats van 11. Toch doorgaan?')) return;
+  gekozenPlek = null;
+  bewaar();
+  naarScherm('wedstrijd');
+}
+
+/* ---------- selectie ---------- */
+function namenErbij() {
+  const vak = document.getElementById('namen');
+  if (!vak) return;
+  vak.value.split('\n').map(x => x.trim()).filter(Boolean).forEach(naam => {
+    s.spelers.push({ id: 'p' + Date.now() + Math.random().toString(36).slice(2, 7), naam, linie: '' });
+  });
+  bewaar(); teken();
+}
+
+function spelerToevoegen() {
+  const naam = prompt('Naam van de speler');
+  if (!naam || !naam.trim()) return;
+  s.spelers.push({ id: 'p' + Date.now() + Math.random().toString(36).slice(2, 7), naam: naam.trim(), linie: '' });
+  bewaar(); teken();
+}
+
+function wijzigSpeler(p) {
+  const naam = prompt('Naam wijzigen. Laat leeg om deze speler te verwijderen.', p.naam);
+  if (naam === null) return;
+  if (!naam.trim()) {
+    if (!confirm(p.naam + ' verwijderen uit de selectie?')) return;
+    s.spelers = s.spelers.filter(x => x !== p);
+  } else {
+    p.naam = naam.trim();
+  }
+  bewaar(); teken();
+}
+
+function exporteer() {
+  const tekst = JSON.stringify({ spelers: s.spelers.map(p => p.naam), archief: s.archief }, null, 2);
+  const vak = document.createElement('textarea');
+  vak.value = tekst;
+  vak.style.cssText = 'width:100%;min-height:240px;margin-top:12px';
+  const doel = document.getElementById('scherm');
+  doel.appendChild(vak);
+  vak.scrollIntoView({ block: 'center' });
+  vak.select();
+  alert('Alles staat als tekst onderin. Kopieer het en bewaar het waar je wilt.');
+}
+
+/* ---------- hulpjes ---------- */
+function speler(id) { return s.spelers.find(p => p.id === id) || null; }
+function naamVan(id) { const p = speler(id); return p ? p.naam : 'onbekend'; }
+function veiligeTekst(t) {
+  return String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+/* ---------- scherm wakker houden ---------- */
+async function pakWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try { wakeLock = await navigator.wakeLock.request('screen'); }
+  catch (e) { wakeLock = null; }
+}
+function losWakeLock() {
+  if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && s.wedstrijd && s.wedstrijd.loopt) pakWakeLock();
+});
+
+/* ---------- start ---------- */
+laad();
+teken();
+tikker = setInterval(() => {
+  const w = s.wedstrijd;
+  if (w && w.loopt && scherm === 'wedstrijd') {
+    const k = document.getElementById('klok');
+    if (k) k.textContent = mmss(verstreken());
+  }
+}, 1000);
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>

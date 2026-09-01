@@ -1,0 +1,55 @@
+<h1 contenteditable data-leeg="Training …">Training 2 — O14</h1>
+<p class="sub" contenteditable data-leeg="dag datum · veld vanaf … · officieel …–…">Vrijdag 28 augustus 2026 · veld vanaf 18:00 · officieel 18:15–19:30</p>
+<div class="doel"><b>Doel vanavond:</b> <span contenteditable data-leeg="wat wil ik deze avond bereiken?">vasthouden wat vorige week werkte — kleine groepen, veel balcontacten — en twee dingen toevoegen die zijn blijven liggen: de keeper-check en het grotere veld. En de rest van de namen leren.</span></div>
+<h2>Tijdlijn</h2>
+<table><thead><tr><th>Tijd</th><th>Wat</th><th>Wie</th></tr></thead><tbody id="tijdlijn">
+<tr><td class="tijd" contenteditable data-leeg="..:..–..:..">18:00–18:15</td><td class="wat"><b contenteditable data-leeg="onderdeel">Inloop + peilen</b><span class="uitleg" contenteditable data-leeg="korte toelichting">Wie er is pakt een bal, vrij trappen. Wij lopen rond en vragen de spelers die vorige week zijn overgeslagen: waar speelde je, waar wil je spelen, keeper ja/nee.</span></td><td class="wie"><span contenteditable data-leeg="wie">samen</span></td></tr>
+<tr><td class="tijd" contenteditable data-leeg="..:..–..:..">18:15–18:20</td><td class="wat"><b contenteditable data-leeg="onderdeel">Kort samenkomen</b><span class="uitleg" contenteditable data-leeg="korte toelichting">Korte terugblik, wat we vanavond doen. Aankondigen dat we op half veld eindigen.</span></td><td class="wie"><span contenteditable data-leeg="wie">Tjaco</span></td></tr>
+<tr><td class="tijd" contenteditable data-leeg="..:..–..:..">18:20–18:28</td><td class="wat"><b contenteditable data-leeg="onderdeel">Warming-up</b><span class="uitleg" contenteditable data-leeg="korte toelichting">Dynamisch en in beweging: looppas, hakken-billen, knieheffen, zijwaarts, uitvalspassen, paar versnellingen. Geen stilstaand rekken.</span></td><td class="wie"><span contenteditable data-leeg="wie">Tjaco</span></td></tr>
+<tr><td class="tijd" contenteditable data-leeg="..:..–..:..">18:28–18:42</td><td class="wat"><b contenteditable data-leeg="onderdeel">4v4 overspelen in een vierkant</b><span class="uitleg" contenteditable data-leeg="korte toelichting">Twee vierkanten naast elkaar, elk 4 tegen 4 plus een joker die met de balbezittende partij meedoet. Zes keer overspelen is een punt. Vervangt het tikkertje.</span></td><td class="wie"><span contenteditable data-leeg="wie">samen</span></td></tr>
+<tr><td class="tijd" contenteditable data-leeg="..:..–..:..">18:42–18:46</td><td class="wat"><b contenteditable data-leeg="onderdeel">Uitleg + splitsen</b><span class="uitleg" contenteditable data-leeg="korte toelichting">Zelfde twee groepen als vorige week, maar de oefeningen omgedraaid.</span></td><td class="wie"><span contenteditable data-leeg="wie">Tjaco</span></td></tr>
+<tr><td class="tijd" contenteditable data-leeg="..:..–..:..">18:46–19:04</td><td class="wat"><b contenteditable data-leeg="onderdeel">Technisch blok — 2 groepen</b><span class="uitleg" contenteditable data-leeg="korte toelichting">Groep A: aannemen &amp; meenemen. Groep B: slalom pass-en-go. Deze week niet halverwege wisselen — iedereen doet één oefening goed.</span></td><td class="wie"><span contenteditable data-leeg="wie">A: Michel<br>B: Tjaco</span></td></tr>
+<tr><td class="tijd" contenteditable data-leeg="..:..–..:..">19:04–19:26</td><td class="wat"><b contenteditable data-leeg="onderdeel">Partij op half veld, met keepers</b><span class="uitleg" contenteditable data-leeg="korte toelichting">Hier zit de keeper-check: vragen wie het wil proberen, twee of drie een deel laten keepen. Verder laten voetballen, posities benoemen. Buitenspel nog niet.</span></td><td class="wie"><span contenteditable data-leeg="wie">samen</span></td></tr>
+<tr><td class="tijd" contenteditable data-leeg="..:..–..:..">19:26–19:30</td><td class="wat"><b contenteditable data-leeg="onderdeel">Afsluiten</b><span class="uitleg" contenteditable data-leeg="korte toelichting">Rondje "wat vond je leuk", één positief punt over de groep, vooruitblik, samen opruimen.</span></td><td class="wie"><span contenteditable data-leeg="wie">Tjaco</span></td></tr>
+</tbody></table>
+<div class="kolommen"><div><h2>Afspraken</h2><ul id="afspraken">
+<li><span contenteditable>Alles in twee groepen — met zestien tegelijk werd het vorige week chaos, in groepen van acht ging het prima.</span></li>
+<li><span contenteditable>De acht namen die we nog niet kennen: deze avond leren.</span></li>
+<li><span contenteditable>Daanish dicht bij je houden bij de uitleg, en hem iets laten voordoen.</span></li>
+<li><span contenteditable>Loopt het uit? Dan korten we het technisch blok in, niet de partij op half veld.</span></li>
+<li><span contenteditable>Enrico eerst vragen voor het keepen, als hij er is.</span></li>
+</ul></div><div><h2>Materiaal</h2><ul id="materiaal">
+<li><span contenteditable>Ballen</span></li>
+<li><span contenteditable>Pionnen in twee kleuren, voor de vierkanten en de poortjes</span></li>
+<li><span contenteditable>Hesjes in drie kleuren (twee partijen plus de joker)</span></li>
+<li><span contenteditable>Keeperhandschoenen, voor wie ze wil</span></li>
+</ul></div></div>
+<div class="paginabreak"></div>
+<h1 class="klein" contenteditable>De oefeningen</h1>
+<p class="sub" contenteditable>Openingsspel 18:28–18:42 · technisch blok 18:46–19:04 · deze week draaien de groepen om</p>
+<div id="oefeningen">
+<div class="oef"><div class="fig"><div class="leeg">tekening nog maken</div></div><div class="txt">
+<h3><span contenteditable data-leeg="naam van de oefening">Opening — 4v4 overspelen</span><span class="wie" contenteditable data-leeg="wie">samen</span></h3>
+<p class="thema" contenteditable data-leeg="thema van de oefening">Twee vierkanten van ongeveer 20 bij 20 meter. Thema: balbezit houden, vrijlopen, aanspeelbaar zijn.</p>
+<p><b>Opstelling.</b> <span contenteditable data-leeg="hoe staat het opgesteld?">Per vierkant 4 tegen 4 in verschillende hesjes, plus één joker met een derde kleur die altijd meedoet met de partij die de bal heeft. Zo komt het oneven aantal er ook uit.</span></p>
+<ol><li><span contenteditable>De partij met de bal speelt over zonder balverlies.</span></li><li><span contenteditable>Zes keer overspelen achter elkaar = 1 punt, daarna gaat het spel gewoon door.</span></li><li><span contenteditable>Bal uit of afgepakt: de andere partij begint bij nul.</span></li><li><span contenteditable>Loopt het lekker, ophogen naar acht. Lukt zes niet, vierkant groter maken of terug naar vier.</span></li></ol>
+<p><b>Coachpunten.</b> <span contenteditable data-leeg="waar let je op?">Bewegen als je géén bal hebt. Breed en diep blijven, niet allemaal naar de bal toe. Kijken vóór je de bal krijgt. Bal laag en hard inspelen.</span></p>
+<p class="letop"><b>Let op:</b> <span contenteditable>Dit vervangt het tikkertje van vorige week. Zelfde losmaak-functie, minder loopwerk, en ze luisteren beter in kleine groepen.</span></p>
+</div></div>
+<div class="oef"><div class="fig"><img src="oefeningen/aannemen-meenemen.png" alt=""></div><div class="txt">
+<h3><span contenteditable data-leeg="naam van de oefening">Groep A — Aannemen &amp; meenemen</span><span class="wie" contenteditable data-leeg="wie">Michel</span></h3>
+<p class="thema" contenteditable data-leeg="thema van de oefening">In tweetallen. Thema: aannemen met richting, de bal niet stilleggen.</p>
+<p><b>Opstelling.</b> <span contenteditable data-leeg="hoe staat het opgesteld?">Per tweetal 4 pionnen: 2 startpionnen (daarachter staan A en B om vanaf in te spelen) en 2 kap-pionnen, in de aanspeellijn en iets verder naar buiten dan de startpion. In het midden een poortje van blauwe pionnen waar de pass doorheen moet.</span></p>
+<ol><li><span contenteditable>A speelt in op B — buitenom de startpion, door het poortje.</span></li><li><span contenteditable>B neemt aan en kapt om zijn kap-pion.</span></li><li><span contenteditable>B speelt terug naar A, die hetzelfde doet. Heen en weer, in een vast ritme.</span></li></ol>
+<p><b>Coachpunten.</b> <span contenteditable data-leeg="waar let je op?">Bal vóór je wegnemen, niet plat aannemen en terugtikken. Actieve aanname, meteen in de looprichting. Gaat het te makkelijk, laat het dan op de andere voet aannemen.</span></p>
+</div></div>
+<div class="oef"><div class="fig"><img src="oefeningen/slalom-pass-en-go.png" alt=""></div><div class="txt">
+<h3><span contenteditable data-leeg="naam van de oefening">Groep B — Slalom pass-en-go</span><span class="wie" contenteditable data-leeg="wie">Tjaco</span></h3>
+<p class="thema" contenteditable data-leeg="thema van de oefening">Thema: balcontrole in de slalom, inspelen, dribbelen met richting.</p>
+<p><b>Opstelling.</b> <span contenteditable data-leeg="hoe staat het opgesteld?">Rij met bal aan één kant, een zigzag-straatje van pionnen om doorheen te slalommen, en twee hoekpionnen ruim opzij voor de terugroute — zo kruisen heen- en terugweg elkaar niet.</span></p>
+<ol><li><span contenteditable>De voorste uit de rij speelt in op speler 1.</span></li><li><span contenteditable>Speler 1 slalomt door het straatje.</span></li><li><span contenteditable>Aan het eind inspelen op de volgende die klaarstaat.</span></li><li><span contenteditable>Zelf om de hoekpionnen terugdribbelen en achteraan aansluiten.</span></li></ol>
+<p><b>Coachpunten.</b> <span contenteditable data-leeg="waar let je op?">Kleine tikjes in de slalom, bal dichtbij houden. Hoofd omhoog vóór de pass aan het eind. Terugdribbelen is extra balcontact, dus niet slenteren.</span></p>
+<p class="letop"><b>Let op:</b> <span contenteditable>Twee kortere rijen met elk een eigen straatje, niet één lange rij.</span></p>
+</div></div>
+</div>
+<p class="voet" contenteditable>Training 2 · O14 · vrijdag 28 augustus 2026</p>

@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blaadje — O14</title>
+<style>
+  :root {
+    --groen: #2f5d4a;
+    --inkt: #1c2321;
+    --grijs: #5a6763;
+    --lijn: #e4e9e7;
+    --oker: #c98a2e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: var(--inkt);
+    background: #eceeed;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ---------- bediening (alleen op het scherm) ---------- */
+  .balk {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    padding: 10px 14px;
+    background: #fff; border-bottom: 1px solid #d5dcd9;
+  }
+  .balk .titel { font-weight: 700; margin-right: 10px; }
+  .balk .rek { flex: 1; }
+  button, select.bediening {
+    font: inherit; font-size: 13px;
+    padding: 6px 11px; border-radius: 6px;
+    border: 1px solid #c9d2ce; background: #fff; color: var(--inkt);
+    cursor: pointer;
+  }
+  button:hover, select.bediening:hover { background: #f2f5f3; border-color: var(--groen); }
+  button.prim { background: var(--groen); border-color: var(--groen); color: #fff; }
+  button.prim:hover { background: #24483a; }
+  button:disabled { opacity: .4; cursor: default; }
+  button:disabled:hover { background: #fff; border-color: #c9d2ce; }
+  .hint { font-size: 12px; color: var(--grijs); padding: 8px 16px 0; max-width: 900px; margin: 0 auto; }
+
+  /* ---------- het vel ---------- */
+  .vel {
+    width: 210mm; min-height: 297mm;
+    margin: 16px auto; padding: 14mm 15mm 12mm;
+    background: #fff;
+    box-shadow: 0 2px 14px rgba(0,0,0,.13);
+  }
+
+  h1 { font-size: 25px; margin: 0 0 3px; letter-spacing: -.01em; }
+  h1.klein { font-size: 22px; }
+  .sub { color: var(--grijs); font-size: 13px; margin: 0 0 14px; }
+  h2 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: .09em;
+    color: var(--groen); margin: 20px 0 7px; padding-bottom: 3px;
+    border-bottom: 1.5px solid var(--groen);
+  }
+  .doel {
+    background: #f2f5f3; border-left: 3px solid var(--groen);
+    padding: 9px 12px; font-size: 13px; line-height: 1.45;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; vertical-align: top; padding: 6px 7px 6px 0; font-size: 13px; }
+  thead th {
+    font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+    color: #6b7773; border-bottom: 1px solid #c9d2ce; font-weight: 600;
+  }
+  tbody tr + tr td { border-top: 1px solid var(--lijn); }
+  td.tijd { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; width: 92px; }
+  td.wie { color: var(--groen); font-weight: 600; width: 96px; }
+  td.wat b { display: block; }
+  td.wat .uitleg { color: var(--grijs); font-size: 12px; line-height: 1.4; display: block; margin-top: 2px; }
+
+  ul { margin: 0; padding-left: 17px; font-size: 13px; }
+  li { margin-bottom: 3px; line-height: 1.45; }
+  .kolommen { display: flex; gap: 30px; }
+  .kolommen > div { flex: 1; }
+
+  .oef { display: flex; gap: 18px; margin-bottom: 22px; page-break-inside: avoid; break-inside: avoid; }
+  .oef .fig { width: 95mm; flex: none; }
+  .oef .fig img { width: 100%; border: 1px solid #d5dcd9; border-radius: 2px; display: block; }
+  .oef .fig .leeg {
+    border: 1px dashed #c9d2ce; border-radius: 2px; min-height: 46mm;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 10px 14px;
+    color: #9aa5a1; font-size: 12px; line-height: 1.5; background: #fafbfb;
+  }
+  .oef .fig .leeg code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; }
+  .oef .txt { flex: 1; }
+  .oef h3 { font-size: 15px; margin: 0 0 2px; }
+  .oef h3 .wie { font-size: 11px; font-weight: 600; color: #fff; background: var(--groen); border-radius: 4px; padding: 2px 6px; vertical-align: 2px; margin-left: 4px; }
+  .oef .thema { color: var(--grijs); font-size: 12px; margin: 0 0 7px; }
+  .oef p { margin: 0 0 5px; font-size: 12.5px; line-height: 1.45; }
+  .oef ol { margin: 0 0 5px; padding-left: 17px; font-size: 12.5px; }
+  .oef ol li { margin-bottom: 2px; line-height: 1.45; }
+  .letop { background: #fdf6ec; border-left: 3px solid var(--oker); padding: 7px 10px; font-size: 12px; line-height: 1.45; }
+
+  .voet { margin-top: 18px; padding-top: 6px; border-top: 1px solid var(--lijn); color: #8a9591; font-size: 10px; }
+  .paginabreak { break-before: page; page-break-before: always; }
+
+  /* ---------- bewerken ---------- */
+  [contenteditable] { outline: none; }
+  [contenteditable]:hover { background: rgba(47,93,74,.05); border-radius: 3px; }
+  [contenteditable]:focus { background: rgba(47,93,74,.09); border-radius: 3px; }
+  [contenteditable]:empty::before { content: attr(data-leeg); color: #b3bcb8; }
+
+  .weg {
+    opacity: 0; transition: opacity .12s;
+    font-size: 11px; line-height: 1; padding: 2px 5px; margin-left: 5px;
+    border: 1px solid #d5dcd9; border-radius: 4px; background: #fff;
+    color: var(--grijs); cursor: pointer; vertical-align: middle;
+  }
+  .weg:hover { border-color: #b04a3a; color: #b04a3a; background: #fff6f4; opacity: 1; }
+  tr:hover .weg, .oef:hover .weg, li:hover .weg { opacity: .65; }
+  select.tekeningkeuze { font: inherit; font-size: 11px; margin-top: 5px; width: 100%; padding: 3px; border: 1px solid #d5dcd9; border-radius: 4px; color: var(--grijs); }
+
+  #jsonvak { display: none; width: 210mm; margin: 0 auto 20px; }
+  #jsonvak textarea { width: 100%; height: 190px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; padding: 10px; border: 1px solid #c9d2ce; border-radius: 6px; }
+
+  /* ---------- printen ---------- */
+  @page { size: A4; margin: 14mm 15mm 12mm; }
+  @media print {
+    body { background: #fff; }
+    .balk, .hint, #jsonvak, .weg, select.tekeningkeuze { display: none !important; }
+    .vel { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
+    [contenteditable]:hover, [contenteditable]:focus { background: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="balk">
+  <span class="titel">Blaadje — O14</span>
+  <select class="bediening" id="onderdeelkeuze" onchange="rijErbij(this.value); this.selectedIndex = 0;">
+    <option value="">+ rij in tijdlijn…</option>
+  </select>
+  <button onclick="oefeningErbij()">+ oefening</button>
+  <button onclick="puntErbij('afspraken')">+ afspraak</button>
+  <button onclick="puntErbij('materiaal')">+ materiaal</button>
+  <button id="ongedaanknop" onclick="ongedaan()" disabled>↶ Ongedaan maken</button>
+  <span class="rek"></span>
+  <button onclick="herstelTijdlijn()">Tijdlijn herstellen</button>
+  <button onclick="nieuweTraining()">Nieuwe training</button>
+  <button onclick="toggleJson()">Opslaan / laden</button>
+  <button class="prim" onclick="window.print()">Printen · PDF</button>
+</div>
+
+<p class="hint">
+  Klik in de tekst en typ. De opmaak ligt vast, dus je kunt niets stukmaken. Wijzigingen worden vanzelf bewaard in deze browser.
+  Zweef over een rij, een oefening of een punt en er verschijnt een × om 'm weg te halen — ging dat mis, dan zet "Ongedaan maken" het terug.
+  Printen geeft hetzelfde A4'tje als altijd — kies in het printvenster "Bewaar als PDF".
+</p>
+
+<div id="jsonvak">
+  <p class="hint" style="padding-left:0">Hier staat het hele blaadje als tekst. Kopieer het om een training te bewaren in je map, of plak een eerder bewaarde training terug en klik op Laden.</p>
+  <textarea id="jsontekst" spellcheck="false"></textarea>
+  <p><button onclick="laadUitVak()">Laden</button> <button onclick="vulVak()">Ophalen</button></p>
+</div>
+
+<!-- ============ HET VEL ============ -->
+<div class="vel" id="vel">
+
+  <h1 contenteditable data-leeg="Training …">Training 1 — O14</h1>
+  <p class="sub" contenteditable data-leeg="dag datum · veld vanaf … · officieel …–…">Vrijdag 21 augustus 2026 · veld vanaf 18:00 · officieel 18:15–19:30</p>
+
+  <div class="doel"><b>Doel vanavond:</b> <span contenteditable data-leeg="wat wil ik deze avond bereiken?">de groep leren kennen en sfeer zetten. Veel bal, veel contacten, weinig stilstaan. Ondertussen kijken wat er in de groep zit: posities, wie wil keepen, wat het niveau is.</span></div>
+
+  <h2>Tijdlijn</h2>
+  <table>
+    <thead><tr><th>Tijd</th><th>Wat</th><th>Wie</th></tr></thead>
+    <tbody id="tijdlijn">
+      <tr>
+        <td class="tijd" contenteditable data-leeg="..:..–..:..">18:00–18:15</td>
+        <td class="wat"><b contenteditable data-leeg="onderdeel">Inloop + peilen</b><span class="uitleg" contenteditable data-leeg="korte toelichting">Wie er is pakt een bal, vrij trappen. Wij lopen rond en vragen per speler: waar speelde je, waar wil je spelen, keeper ja/nee. Zo is het binnendruppelen al gebeurd vóór de officiële start.</span></td>
+        <td class="wie"><span contenteditable data-leeg="wie">samen</span></td>
+      </tr>
+      <tr>
+        <td class="tijd" contenteditable>18:15–18:20</td>
+        <td class="wat"><b contenteditable>Kort samenkomen</b><span class="uitleg" contenteditable>Welkom, voorstellen, in het kort wat we gaan doen.</span></td>
+        <td class="wie"><span contenteditable>Tjaco</span></td>
+      </tr>
+      <tr>
+        <td class="tijd" contenteditable>18:20–18:28</td>
+        <td class="wat"><b contenteditable>Warming-up zonder bal</b><span class="uitleg" contenteditable>Loop- en rekvormen zoals voor een wedstrijd. Voordoen, en erbij zeggen dat we dit later door een speler laten leiden.</span></td>
+        <td class="wie"><span contenteditable>Tjaco</span></td>
+      </tr>
+      <tr>
+        <td class="tijd" contenteditable>18:28–18:40</td>
+        <td class="wat"><b contenteditable>Tikkertje met bal</b><span class="uitleg" contenteditable>Afgebakend vak, 2 tikkers, getikt = wisselen. Hoog tempo, lol, en je ziet meteen wie behendig is.</span></td>
+        <td class="wie"><span contenteditable>samen</span></td>
+      </tr>
+      <tr>
+        <td class="tijd" contenteditable>18:40–18:45</td>
+        <td class="wat"><b contenteditable>Uitleg + splitsen</b><span class="uitleg" contenteditable>Thema kort uitleggen, dan groep A en groep B.</span></td>
+        <td class="wie"><span contenteditable>Tjaco</span></td>
+      </tr>
+      <tr>
+        <td class="tijd" contenteditable>18:45–19:05</td>
+        <td class="wat"><b contenteditable>Technisch blok — 2 groepen</b><span class="uitleg" contenteditable>Halverwege wisselen. Beide oefeningen staan op pagina 2.</span></td>
+        <td class="wie"><span contenteditable>A: Tjaco<br>B: Michel</span></td>
+      </tr>
+      <tr>
+        <td class="tijd" contenteditable>19:05–19:26</td>
+        <td class="wat"><b contenteditable>Partij op kleine veldjes</b><span class="uitleg" contenteditable>4v4 / 5v5 met kleine goaltjes, dus geen keepers nodig. Maximale balcontacten, iedereen in het spel. Posities laten wisselen, licht coachen, vooral laten voetballen.</span></td>
+        <td class="wie"><span contenteditable>samen</span></td>
+      </tr>
+      <tr>
+        <td class="tijd" contenteditable>19:26–19:30</td>
+        <td class="wat"><b contenteditable>Afsluiten</b><span class="uitleg" contenteditable>Kort rondje "wat vond je leuk", één positief punt, vooruitblik, samen opruimen.</span></td>
+        <td class="wie"><span contenteditable>Tjaco</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="kolommen">
+    <div>
+      <h2>Afspraken</h2>
+      <ul id="afspraken">
+        <li><span contenteditable>17 spelers, dus alles in twee groepen. Stilstaan is de vijand.</span></li>
+        <li><span contenteditable>Namen leren is prioriteit één, voor ons allebei.</span></li>
+        <li><span contenteditable>Eerlijke speeltijd, en spelers van positie laten wisselen.</span></li>
+        <li><span contenteditable>Loopt het uit? Dan korten we het technisch blok in, niet de partij.</span></li>
+        <li><span contenteditable>Geen keepers vanavond — de keeper-check doen we volgende training op half veld.</span></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Materiaal</h2>
+      <ul id="materiaal">
+        <li><span contenteditable>16 ballen</span></li>
+        <li><span contenteditable>Pionnen, waarvan een stel in een andere kleur voor de poortjes</span></li>
+        <li><span contenteditable>Hesjes</span></li>
+        <li><span contenteditable>Kleine goaltjes voor de partij</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="paginabreak"></div>
+
+  <h1 class="klein" contenteditable>De twee oefeningen</h1>
+  <p class="sub" contenteditable>Technisch blok, 18:45–19:05 · halverwege wisselen we van groep</p>
+
+  <div id="oefeningen">
+
+    <div class="oef">
+      <div class="fig">
+        <img src="oefeningen/aannemen-meenemen.png" alt="">
+      </div>
+      <div class="txt">
+        <h3><span contenteditable data-leeg="naam van de oefening">Groep A — Aannemen &amp; meenemen</span><span class="wie" contenteditable data-leeg="wie">Tjaco</span></h3>
+        <p class="thema" contenteditable data-leeg="thema van de oefening">In tweetallen. Thema: aannemen met richting, de bal niet stilleggen.</p>
+        <p><b>Opstelling.</b> <span contenteditable data-leeg="hoe staat het opgesteld?">Per tweetal 4 pionnen: 2 startpionnen (daarachter staan A en B om vanaf in te spelen) en 2 kap-pionnen, in de aanspeellijn en iets verder naar buiten dan de startpion. In het midden een poortje van blauwe pionnen waar de pass doorheen moet.</span></p>
+        <ol>
+          <li><span contenteditable>A speelt in op B — buitenom de startpion, door het poortje.</span></li>
+          <li><span contenteditable>B neemt aan en kapt om zijn kap-pion.</span></li>
+          <li><span contenteditable>B speelt terug naar A, die hetzelfde doet. Heen en weer, in een vast ritme.</span></li>
+        </ol>
+        <p><b>Coachpunten.</b> <span contenteditable data-leeg="waar let je op?">Bal vóór je wegnemen, niet plat aannemen en terugtikken. Actieve aanname, meteen in de looprichting. Gaat het te makkelijk, laat het dan op de andere voet aannemen.</span></p>
+      </div>
+    </div>
+
+    <div class="oef">
+      <div class="fig">
+        <img src="oefeningen/slalom-pass-en-go.png" alt="">
+      </div>
+      <div class="txt">
+        <h3><span contenteditable>Groep B — Slalom pass-en-go</span><span class="wie" contenteditable>Michel</span></h3>
+        <p class="thema" contenteditable>Thema: balcontrole in de slalom, inspelen, dribbelen met richting.</p>
+        <p><b>Opstelling.</b> <span contenteditable>Rij met bal aan één kant, een zigzag-straatje van pionnen om doorheen te slalommen, en twee hoekpionnen ruim opzij voor de terugroute — zo kruisen heen- en terugweg elkaar niet.</span></p>
+        <ol>
+          <li><span contenteditable>De voorste uit de rij speelt in op speler 1.</span></li>
+          <li><span contenteditable>Speler 1 slalomt door het straatje.</span></li>
+          <li><span contenteditable>Aan het eind inspelen op de volgende die klaarstaat.</span></li>
+          <li><span contenteditable>Zelf om de hoekpionnen terugdribbelen en achteraan aansluiten.</span></li>
+        </ol>
+        <p><b>Coachpunten.</b> <span contenteditable>Kleine tikjes in de slalom, bal dichtbij houden. Hoofd omhoog vóór de pass aan het eind. Terugdribbelen is extra balcontact, dus niet slenteren.</span></p>
+        <p class="letop"><b>Let op:</b> <span contenteditable>zet twee kortere rijen neer met elk een eigen straatje, niet één lange rij. Met één rij staan er te veel stil en halveer je de balcontacten.</span></p>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="voet" contenteditable>Training 1 · O14 · vrijdag 21 augustus 2026</p>
+</div>
+
+<script>
+'use strict';
+
+/* ==========================================================
+   Wat je hier kunt aanpassen zonder de rest te snappen:
+   - TEKENINGEN: de keuzelijst onder elke oefening.
+   - ONDERDELEN: de standaardrijen in het "+ rij in tijdlijn"-menu.
+   ========================================================== */
+
+const TEKENINGEN = [
+  ['oefeningen/aannemen-meenemen.png', 'aannemen & meenemen'],
+  ['oefeningen/slalom-pass-en-go.png', 'slalom pass-en-go'],
+];
+
+/* Tekeningen die je zelf hebt toegevoegd via "andere tekening kiezen…".
+   Worden onthouden in deze browser. Wil je er een vast in het bestand zetten,
+   zet 'm dan gewoon in TEKENINGEN hierboven. */
+const EXTRA_SLEUTEL = 'o14-tekeningen';
+let extraTekeningen = [];
+try { extraTekeningen = JSON.parse(localStorage.getItem(EXTRA_SLEUTEL)) || []; } catch (e) { extraTekeningen = []; }
+
+function bewaarExtra() {
+  try { localStorage.setItem(EXTRA_SLEUTEL, JSON.stringify(extraTekeningen)); } catch (e) { /* stil */ }
+}
+
+function alleTekeningen() {
+  const uit = TEKENINGEN.slice();
+  extraTekeningen.forEach(([pad, naam]) => {
+    if (!uit.some(([p]) => p === pad)) uit.push([pad, naam]);
+  });
+  uit.push(['', 'geen tekening']);
+  uit.push(['__kies__', 'andere tekening kiezen…']);
+  return uit;
+}
+
+const ONDERDELEN = {
+  leeg:        ['', '', '', ''],
+  inloop:      ['18:00–18:15', 'Inloop + peilen', 'Wie er is pakt een bal, vrij trappen. Wij lopen rond en vragen per speler: waar speelde je, waar wil je spelen, keeper ja/nee. Zo is het binnendruppelen al gebeurd vóór de officiële start.', 'samen'],
+  samenkomen:  ['18:15–18:20', 'Kort samenkomen', 'Welkom, voorstellen, in het kort wat we gaan doen.', 'Tjaco'],
+  warmingup:   ['18:20–18:28', 'Warming-up zonder bal', 'Loop- en rekvormen zoals voor een wedstrijd. Voordoen, en erbij zeggen dat we dit later door een speler laten leiden.', 'Tjaco'],
+  spelvorm:    ['18:28–18:40', 'Tikkertje met bal', 'Afgebakend vak, 2 tikkers, getikt = wisselen. Hoog tempo, lol, en je ziet meteen wie behendig is.', 'samen'],
+  uitleg:      ['18:40–18:45', 'Uitleg + splitsen', 'Thema kort uitleggen, dan groep A en groep B.', 'Tjaco'],
+  technisch:   ['18:45–19:05', 'Technisch blok — 2 groepen', 'Groep A: aannemen &amp; meenemen. Groep B: slalom pass-en-go. Halverwege wisselen. Beide oefeningen staan op pagina 2.', 'A: Tjaco<br>B: Michel'],
+  partij:      ['19:05–19:26', 'Partij op kleine veldjes', '4v4 / 5v5 met kleine goaltjes, dus geen keepers nodig. Maximale balcontacten, iedereen in het spel. Posities laten wisselen, licht coachen, vooral laten voetballen.', 'samen'],
+  afsluiten:   ['19:26–19:30', 'Afsluiten', 'Kort rondje "wat vond je leuk", één positief punt, vooruitblik, samen opruimen.', 'Tjaco'],
+};
+
+const ONDERDEELNAMEN = [
+  ['leeg', 'lege rij'],
+  ['inloop', 'Inloop + peilen'],
+  ['samenkomen', 'Kort samenkomen'],
+  ['warmingup', 'Warming-up'],
+  ['spelvorm', 'Tikkertje met bal'],
+  ['uitleg', 'Uitleg + splitsen'],
+  ['technisch', 'Technisch blok'],
+  ['partij', 'Partij'],
+  ['afsluiten', 'Afsluiten'],
+];
+
+/* de volgorde van de vaste weekopbouw */
+const SKELET = ['inloop', 'samenkomen', 'warmingup', 'spelvorm', 'uitleg', 'technisch', 'partij', 'afsluiten'];
+
+const vel = document.getElementById('vel');
+
+/* ---------- schoonmaken: alles wat de JS zelf toevoegt ---------- */
+function schoon() {
+  const kopie = vel.cloneNode(true);
+  kopie.querySelectorAll('.weg, select.tekeningkeuze').forEach(el => el.remove());
+  return kopie.innerHTML;
+}
+
+/* ---------- knopjes en keuzelijsten (her)plaatsen ---------- */
+function knopje(soort) {
+  const b = document.createElement('button');
+  b.className = 'weg';
+  b.type = 'button';
+  b.contentEditable = 'false';
+  b.dataset.weg = soort;
+  b.title = 'weghalen';
+  b.textContent = '×';
+  return b;
+}
+
+function maakPunt(leeg) {
+  const li = document.createElement('li');
+  const span = document.createElement('span');
+  span.contentEditable = 'true';
+  if (leeg) span.dataset.leeg = leeg;
+  li.appendChild(span);
+  return li;
+}
+
+/* Oudere blaadjes hadden de tekst rechtstreeks in de <li>, waardoor de cursor
+   in het ×-knopje kon belanden. Hier zetten we die tekst alsnog in een <span>. */
+function normaliseerLijsten() {
+  vel.querySelectorAll('#afspraken li, #materiaal li, .oef ol li').forEach(li => {
+    if (li.firstElementChild && li.firstElementChild.matches('span[contenteditable]')) return;
+    const span = document.createElement('span');
+    span.contentEditable = 'true';
+    if (li.dataset.leeg) { span.dataset.leeg = li.dataset.leeg; delete li.dataset.leeg; }
+    [...li.childNodes].forEach(n => {
+      if (n.nodeType === 1 && n.classList && n.classList.contains('weg')) n.remove();
+      else span.appendChild(n);
+    });
+    li.removeAttribute('contenteditable');
+    li.appendChild(span);
+  });
+}
+
+/* Oudere blaadjes stonden in delen/ en verwezen met ../oefeningen/ naar de tekeningen.
+   Zo'n pad kan uit localStorage terugkomen; hier trekken we het weer recht. */
+function repareerPaden() {
+  vel.querySelectorAll('.oef .fig img').forEach(img => {
+    const src = img.getAttribute('src') || '';
+    const m = src.match(/oefeningen\/([^/]+)$/);
+    if (m && src !== 'oefeningen/' + m[1]) img.setAttribute('src', 'oefeningen/' + m[1]);
+  });
+}
+
+function ververs() {
+  repareerPaden();
+  normaliseerLijsten();
+  vel.querySelectorAll('.weg').forEach(el => el.remove());
+  vel.querySelectorAll('#tijdlijn tr').forEach(tr => tr.querySelector('.wie').appendChild(knopje('rij')));
+  vel.querySelectorAll('.oef h3').forEach(h => h.appendChild(knopje('oefening')));
+  vel.querySelectorAll('#afspraken li, #materiaal li, .oef ol li').forEach(li => li.appendChild(knopje('punt')));
+
+  vel.querySelectorAll('.oef .fig').forEach(fig => {
+    let sel = fig.querySelector('select.tekeningkeuze');
+    if (!sel) {
+      sel = document.createElement('select');
+      sel.className = 'tekeningkeuze';
+      fig.appendChild(sel);
+    }
+    const img = fig.querySelector('img');
+    const nu = img ? img.getAttribute('src') : '';
+    const lijst = alleTekeningen();
+    /* een pad dat in het blaadje staat maar nog niet in de lijst: alsnog opnemen */
+    if (nu && !lijst.some(([pad]) => pad === nu)) {
+      const naam = nu.split('/').pop().replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ');
+      extraTekeningen.push([nu, naam]);
+      bewaarExtra();
+      lijst.splice(TEKENINGEN.length, 0, [nu, naam]);
+    }
+    sel.innerHTML = '';
+    lijst.forEach(([pad, naam]) => {
+      const o = document.createElement('option');
+      o.value = pad;
+      o.textContent = pad === '__kies__' ? naam : 'tekening: ' + naam;
+      sel.appendChild(o);
+    });
+    sel.value = lijst.some(([pad]) => pad === nu) ? nu : '';
+    if (img) img.onerror = () => geenTekening(img);
+  });
+
+  controleerTekeningen();
+  setTimeout(controleerTekeningen, 300);
+}
+
+function geenTekening(img) {
+  /* Een mislukte laadpoging kan zijn error-event nog afvuren nadat we het pad al
+     hebben rechtgetrokken. Alleen opgeven als hij écht klaar is en niets heeft. */
+  if (!img.isConnected || !img.complete || img.naturalWidth > 0) return;
+  const leeg = document.createElement('div');
+  leeg.className = 'leeg';
+  leeg.innerHTML = '<span>Tekening niet gevonden. Er is gezocht op:<br>' +
+    '<code>' + img.src.replace(/[<&]/g, c => c === '<' ? '&lt;' : '&amp;') + '</code><br>' +
+    'Staat <code>blaadje.html</code> wel in de projectmap, naast <code>oefeningen/</code>?</span>';
+  img.replaceWith(leeg);
+}
+
+/* Een plaatje kan al mislukt zijn vóórdat we de onerror konden koppelen —
+   bijvoorbeeld meteen na het laden van een bewaarde training. Daarom nog een veegronde. */
+function controleerTekeningen() {
+  vel.querySelectorAll('.oef .fig img').forEach(img => {
+    if (img.complete && img.naturalWidth === 0) geenTekening(img);
+  });
+}
+
+/* ---------- weghalen (via één handler voor alle × knopjes) ---------- */
+document.addEventListener('click', e => {
+  const knop = e.target.closest('.weg');
+  if (!knop) return;
+  onthoud();
+  const soort = knop.dataset.weg;
+  if (soort === 'rij') knop.closest('tr').remove();
+  else if (soort === 'oefening') knop.closest('.oef').remove();
+  else knop.closest('li').remove();
+  bewaar();
+});
+
+/* ---------- toevoegen ---------- */
+let laatsteRij = null;
+document.addEventListener('focusin', e => {
+  const tr = e.target.closest('#tijdlijn tr');
+  if (tr) laatsteRij = tr;
+});
+
+function maakRij(soort) {
+  const [tijd, wat, uitleg, wie] = ONDERDELEN[soort] || ONDERDELEN.leeg;
+  const tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td class="tijd" contenteditable data-leeg="..:..–..:..">' + tijd + '</td>' +
+    '<td class="wat"><b contenteditable data-leeg="onderdeel">' + wat + '</b>' +
+    '<span class="uitleg" contenteditable data-leeg="korte toelichting">' + uitleg + '</span></td>' +
+    '<td class="wie"><span contenteditable data-leeg="wie">' + wie + '</span></td>';
+  return tr;
+}
+
+function rijErbij(soort) {
+  if (!soort) return;
+  onthoud();
+  const tr = maakRij(soort);
+  const tb = document.getElementById('tijdlijn');
+  if (laatsteRij && laatsteRij.parentElement === tb) laatsteRij.after(tr);
+  else tb.appendChild(tr);
+  ververs();
+  tr.querySelector('[contenteditable]').focus();
+  bewaar();
+}
+
+/* de hele tijdlijn terug naar de vaste weekopbouw */
+function herstelTijdlijn() {
+  if (!confirm('De tijdlijn terugzetten naar de vaste weekopbouw?\n\nJe eigen tijden en toelichtingen in de tijdlijn gaan dan weg. De rest van het blaadje blijft staan, en Ongedaan maken zet het terug.')) return;
+  onthoud();
+  const tb = document.getElementById('tijdlijn');
+  tb.innerHTML = '';
+  SKELET.forEach(soort => tb.appendChild(maakRij(soort)));
+  ververs();
+  bewaar();
+}
+
+function oefeningErbij() {
+  onthoud();
+  const d = document.createElement('div');
+  d.className = 'oef';
+  d.innerHTML =
+    '<div class="fig"><div class="leeg">geen tekening</div></div>' +
+    '<div class="txt">' +
+    '<h3><span contenteditable data-leeg="naam van de oefening"></span>' +
+    '<span class="wie" contenteditable data-leeg="wie"></span></h3>' +
+    '<p class="thema" contenteditable data-leeg="thema van de oefening"></p>' +
+    '<p><b>Opstelling.</b> <span contenteditable data-leeg="hoe staat het opgesteld?"></span></p>' +
+    '<ol><li><span contenteditable></span></li><li><span contenteditable></span></li>' +
+    '<li><span contenteditable></span></li></ol>' +
+    '<p><b>Coachpunten.</b> <span contenteditable data-leeg="waar let je op?"></span></p>' +
+    '</div>';
+  document.getElementById('oefeningen').appendChild(d);
+  ververs();
+  d.querySelector('[contenteditable]').focus();
+  bewaar();
+}
+
+function puntErbij(id) {
+  onthoud();
+  const ul = document.getElementById(id);
+  const li = maakPunt('nieuw punt');
+  ul.appendChild(li);
+  ververs();
+  li.querySelector('span').focus();
+  bewaar();
+}
+
+/* ---------- toetsen in lijstjes ---------- */
+document.addEventListener('keydown', e => {
+  const span = e.target.closest('#afspraken li > span, #materiaal li > span, .oef ol li > span');
+  if (!span) return;
+  const li = span.parentElement;
+
+  /* Enter = nieuw punt; Enter op een lege regel = punt weg */
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (!span.textContent.trim()) { onthoud(); haalLiWeg(li); return; }
+    onthoud();
+    const n = maakPunt('…');
+    li.after(n);
+    ververs();
+    n.querySelector('span').focus();
+    bewaar();
+    return;
+  }
+
+  /* Backspace aan het begin van een lege regel = punt weg */
+  if (e.key === 'Backspace' && !span.textContent.trim()) {
+    e.preventDefault();
+    onthoud();
+    haalLiWeg(li);
+  }
+});
+
+function haalLiWeg(li) {
+  const vorige = li.previousElementSibling;
+  li.remove();
+  const doel = vorige ? vorige.querySelector('span[contenteditable]') : null;
+  if (doel) {
+    doel.focus();
+    const r = document.createRange();
+    r.selectNodeContents(doel);
+    r.collapse(false);
+    const s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+  }
+  bewaar();
+}
+
+/* ---------- tekening wisselen ---------- */
+document.addEventListener('change', e => {
+  const sel = e.target.closest('select.tekeningkeuze');
+  if (!sel) return;
+
+  if (sel.value === '__kies__') {
+    kiesAndereTekening(sel);
+    return;
+  }
+
+  onthoud();
+  const fig = sel.parentElement;
+  const oud = fig.querySelector('img, .leeg');
+  if (!sel.value) {
+    const leeg = document.createElement('div');
+    leeg.className = 'leeg';
+    leeg.textContent = 'geen tekening';
+    fig.replaceChild(leeg, oud);
+  } else {
+    const img = document.createElement('img');
+    img.src = sel.value;
+    img.alt = '';
+    img.onerror = () => geenTekening(img);
+    fig.replaceChild(img, oud);
+  }
+  bewaar();
+});
+
+/* Een tekening kiezen die nog niet in de lijst staat. De browser mag vanaf een
+   lokaal bestand geen map uitlezen, dus we vragen het bestand op en gebruiken
+   alleen de naam — het bestand zelf hoort in de map oefeningen/ te staan. */
+function kiesAndereTekening(sel) {
+  const kiezer = document.createElement('input');
+  kiezer.type = 'file';
+  kiezer.accept = 'image/*';
+  kiezer.style.display = 'none';
+  document.body.appendChild(kiezer);
+
+  kiezer.addEventListener('change', () => {
+    const bestand = kiezer.files && kiezer.files[0];
+    kiezer.remove();
+    if (!bestand) { ververs(); return; }
+
+    const pad = 'oefeningen/' + bestand.name;
+    const naam = bestand.name.replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ');
+    if (!extraTekeningen.some(([p]) => p === pad) && !TEKENINGEN.some(([p]) => p === pad)) {
+      extraTekeningen.push([pad, naam]);
+      bewaarExtra();
+    }
+
+    onthoud();
+    const fig = sel.parentElement;
+    const oud = fig.querySelector('img, .leeg');
+    const img = document.createElement('img');
+    img.src = pad;
+    img.alt = '';
+    img.onerror = () => geenTekening(img);
+    fig.replaceChild(img, oud);
+    ververs();
+    bewaar();
+  });
+
+  kiezer.addEventListener('cancel', () => { kiezer.remove(); ververs(); });
+  kiezer.click();
+}
+
+/* ---------- plakken zonder meegesleepte opmaak ---------- */
+document.addEventListener('paste', e => {
+  if (!e.target.closest('[contenteditable]')) return;
+  e.preventDefault();
+  const tekst = (e.clipboardData || window.clipboardData).getData('text/plain');
+  document.execCommand('insertText', false, tekst);
+});
+
+/* ---------- ongedaan maken ---------- */
+const geschiedenis = [];
+
+function onthoud() {
+  geschiedenis.push(schoon());
+  if (geschiedenis.length > 40) geschiedenis.shift();
+  document.getElementById('ongedaanknop').disabled = false;
+}
+
+function ongedaan() {
+  if (!geschiedenis.length) return;
+  vel.innerHTML = geschiedenis.pop();
+  ververs();
+  document.getElementById('ongedaanknop').disabled = geschiedenis.length === 0;
+  bewaar();
+}
+
+/* ---------- bewaren ---------- */
+const SLEUTEL = 'o14-blaadje';
+let timer = null;
+
+function bewaarNu() {
+  try { localStorage.setItem(SLEUTEL, schoon()); } catch (e) { /* geen opslag — printen werkt gewoon */ }
+}
+
+function bewaar() {
+  clearTimeout(timer);
+  timer = setTimeout(bewaarNu, 300);
+}
+
+function herstel() {
+  try {
+    const opgeslagen = localStorage.getItem(SLEUTEL);
+    if (opgeslagen) vel.innerHTML = opgeslagen;
+  } catch (e) { /* stil */ }
+}
+
+document.addEventListener('input', bewaar);
+window.addEventListener('beforeunload', bewaarNu);
+document.addEventListener('visibilitychange', () => { if (document.hidden) bewaarNu(); });
+
+function nieuweTraining() {
+  if (!confirm('Alles leeghalen en met een schoon blaadje beginnen?\n\nDe tijdlijn en de vaste onderdelen blijven staan, alleen de ingevulde tekst gaat weg.')) return;
+  onthoud();
+  vel.querySelectorAll('[contenteditable]').forEach(el => {
+    if (!el.closest('.voet')) el.innerHTML = '';
+  });
+  vel.querySelector('h1').textContent = 'Training … — O14';
+  ververs();
+  bewaar();
+}
+
+/* ---------- opslaan / laden als tekst ---------- */
+function toggleJson() {
+  const vak = document.getElementById('jsonvak');
+  const zichtbaar = vak.style.display === 'block';
+  vak.style.display = zichtbaar ? 'none' : 'block';
+  if (!zichtbaar) vulVak();
+}
+
+function vulVak() {
+  document.getElementById('jsontekst').value = schoon();
+}
+
+function laadUitVak() {
+  const t = document.getElementById('jsontekst').value.trim();
+  if (!t) return;
+  onthoud();
+  vel.innerHTML = t;
+  ververs();
+  bewaar();
+}
+
+/* ---------- start ---------- */
+(function start() {
+  const keuze = document.getElementById('onderdeelkeuze');
+  ONDERDEELNAMEN.forEach(([sleutel, naam]) => {
+    const o = document.createElement('option');
+    o.value = sleutel;
+    o.textContent = '+ ' + naam;
+    keuze.appendChild(o);
+  });
+  herstel();
+  ververs();
+  window.addEventListener('load', controleerTekeningen);
+})();
+</script>
+
+</body>
+</html>
