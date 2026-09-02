@@ -58,6 +58,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>{kop.titel === 'Blaadje' ? 'Blaadje' : kop.titel + ' · Blaadje'}</title>
+</svelte:head>
+
 <div class="app">
 	<header>
 		<h1>{kop.titel}</h1>
