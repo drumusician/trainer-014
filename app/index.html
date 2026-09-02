@@ -384,35 +384,63 @@ function nieuweWedstrijd(tegenstander, thuis) {
 }
 
 /* ---------- speeltijd berekenen ---------- */
-function speeltijden() {
-  const w = s.wedstrijd;
+/* Wie stond wanneer op welke plek. Alles wat met tijd te maken heeft komt
+   hieruit: totale speeltijd, en apart de minuten in het doel. Want een helft
+   keepen is geen halve wedstrijd voetballen. */
+function veldIntervallen(w) {
+  if (!w) return [];
   const eind = w.afgelopen ? eindTijd() : verstreken();
-  const inVeldSinds = {};
+  const wissels = w.gebeurtenissen.filter(g => g.type === 'wissel');
+
+  /* de opstelling zoals hij bij de aftrap was, terugrekenen vanaf nu */
+  const start = Object.assign({}, w.opstelling);
+  wissels.slice().reverse().forEach(g => {
+    if (g.plek && start[g.plek] === g.erin) { start[g.plek] = g.eruit; return; }
+    for (const plek in start) {
+      if (start[plek] === g.erin) { start[plek] = g.eruit; return; }
+    }
+  });
+
+  const bezet = {};
+  Object.keys(start).forEach(plek => {
+    if (start[plek]) bezet[plek] = { speler: start[plek], sinds: 0 };
+  });
+
+  const uit = [];
+  wissels.forEach(g => {
+    let plek = g.plek;
+    if (!plek || !bezet[plek] || bezet[plek].speler !== g.eruit) {
+      plek = Object.keys(bezet).filter(k => bezet[k].speler === g.eruit)[0] || plek;
+    }
+    if (plek && bezet[plek]) {
+      uit.push({ speler: bezet[plek].speler, plek: plek, van: bezet[plek].sinds, tot: g.t });
+    }
+    if (plek) bezet[plek] = { speler: g.erin, sinds: g.t };
+  });
+
+  Object.keys(bezet).forEach(plek => {
+    uit.push({ speler: bezet[plek].speler, plek: plek, van: bezet[plek].sinds, tot: eind });
+  });
+  return uit;
+}
+
+function speeltijden() {
   const totaal = {};
   s.spelers.forEach(p => { totaal[p.id] = 0; });
-
-  Object.values(w.opstelling).forEach(id => { if (id) inVeldSinds[id] = 0; });
-  /* de startopstelling zoals hij aan het begin was, reconstrueren uit de wissels */
-  const startOpstelling = Object.assign({}, w.opstelling);
-  w.gebeurtenissen.filter(g => g.type === 'wissel').slice().reverse().forEach(g => {
-    for (const plek in startOpstelling) {
-      if (startOpstelling[plek] === g.erin) { startOpstelling[plek] = g.eruit; break; }
-    }
-  });
-  Object.keys(inVeldSinds).forEach(k => delete inVeldSinds[k]);
-  Object.values(startOpstelling).forEach(id => { if (id) inVeldSinds[id] = 0; });
-
-  w.gebeurtenissen.filter(g => g.type === 'wissel').forEach(g => {
-    if (inVeldSinds[g.eruit] !== undefined) {
-      totaal[g.eruit] = (totaal[g.eruit] || 0) + (g.t - inVeldSinds[g.eruit]);
-      delete inVeldSinds[g.eruit];
-    }
-    inVeldSinds[g.erin] = g.t;
-  });
-  Object.keys(inVeldSinds).forEach(id => {
-    totaal[id] = (totaal[id] || 0) + (eind - inVeldSinds[id]);
+  veldIntervallen(s.wedstrijd).forEach(i => {
+    totaal[i.speler] = (totaal[i.speler] || 0) + (i.tot - i.van);
   });
   return totaal;
+}
+
+/* Minuten in het doel, apart geteld. */
+function keepertijden() {
+  const w = s.wedstrijd;
+  const uit = {};
+  veldIntervallen(w).forEach(i => {
+    if (plekLinie(i.plek, w.formatie) === 'K') uit[i.speler] = (uit[i.speler] || 0) + (i.tot - i.van);
+  });
+  return uit;
 }
 
 function eindTijd() {
@@ -513,10 +541,14 @@ function schermWedstrijd() {
   if (gekozenPlek) {
     const uit = speler(w.opstelling[gekozenPlek]);
     const linie = LINIES[plekLinie(gekozenPlek, w.formatie)] || 'Onbekend';
+    const keep = uit ? (keepertijden()[uit.id] || 0) : 0;
     const balk = document.createElement('div');
     balk.className = 'melding';
     balk.innerHTML = '<span><b>' + veiligeTekst(uit ? uit.naam : 'Lege plek') +
-      '</b> \u00b7 ' + veiligeTekst(linie.toLowerCase()) + '. Tik wie erin komt.</span>';
+      '</b> \u00b7 ' + veiligeTekst(linie.toLowerCase()) + '. Tik wie erin komt.' +
+      (keep > 0 && plekLinie(gekozenPlek, w.formatie) !== 'K'
+        ? ' Hij keepte deze wedstrijd al ' + Math.round(keep / 60) + ' minuten.'
+        : '') + '</span>';
     const annuleer = document.createElement('button');
     annuleer.className = 'klein';
     annuleer.textContent = 'Annuleren';
@@ -847,6 +879,7 @@ function bewaarInArchief() {
   const w = s.wedstrijd;
   if (w.bewaard) return;
   const tijden = speeltijden();
+  const keepers = keepertijden();
   const namen = {};
   s.spelers.forEach(p => { namen[p.id] = p.naam; });
   s.archief.unshift({
@@ -856,7 +889,8 @@ function bewaarInArchief() {
     gebeurtenissen: w.gebeurtenissen,
     namen: namen,                    /* de namen van toen, voor het geval de selectie verandert */
     speeltijd: s.spelers.filter(p => tijden[p.id] !== undefined)
-      .map(p => ({ id: p.id, naam: p.naam, seconden: Math.round(tijden[p.id]) })),
+      .map(p => ({ id: p.id, naam: p.naam, seconden: Math.round(tijden[p.id]),
+                   keeper: Math.round(keepers[p.id] || 0) })),
   });
   w.bewaard = true;
   bewaar();
@@ -1056,7 +1090,7 @@ function schermTraining() {
 function seizoenTotalen() {
   const per = {};
   const pak = (sleutel, naam) => {
-    if (!per[sleutel]) per[sleutel] = { naam: naam, seconden: 0, wedstrijden: 0, doelpunten: 0 };
+    if (!per[sleutel]) per[sleutel] = { naam: naam, seconden: 0, keeper: 0, wedstrijden: 0, doelpunten: 0 };
     per[sleutel].naam = naam;
     return per[sleutel];
   };
@@ -1065,6 +1099,7 @@ function seizoenTotalen() {
       const p = r.id ? speler(r.id) : null;
       const x = pak(p ? 'id:' + p.id : 'naam:' + r.naam, p ? p.naam : r.naam);
       x.seconden += r.seconden || 0;
+      x.keeper += r.keeper || 0;
       if ((r.seconden || 0) > 0) x.wedstrijden++;
     });
     (a.gebeurtenissen || []).filter(g => g.type === 'goal' && g.speler).forEach(g => {
@@ -1146,7 +1181,8 @@ function schermSeizoen() {
     naam: r.naam,
     seconden: r.seconden,
     sub: r.wedstrijden + (r.wedstrijden === 1 ? ' wedstrijd' : ' wedstrijden') +
-      ' \u00b7 gem. ' + Math.round(r.seconden / 60 / Math.max(1, r.wedstrijden)) + ' min',
+      ' \u00b7 gem. ' + Math.round(r.seconden / 60 / Math.max(1, r.wedstrijden)) + ' min' +
+      (r.keeper ? ' \u00b7 ' + Math.round(r.keeper / 60) + ' min in het doel' : ''),
   })));
 
   html += '<p class="uitleg" style="margin-top:12px">Opgeteld over alles wat in het archief staat. ' +
