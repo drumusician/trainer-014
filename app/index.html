@@ -74,7 +74,7 @@
     background: var(--gras); border-radius: 10px; overflow: hidden;
     aspect-ratio: 4 / 5;
   }
-  .veld .strepen { position: absolute; inset: 0; }
+  .veld .strepen { position: absolute; inset: 0; width: 100%; height: 100%; }
   .plek {
     position: absolute; transform: translate(-50%, -50%);
     width: 21%; min-width: 62px;
@@ -108,11 +108,19 @@
   .rij { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 12px 12px; }
 
   /* bank naast het veld, in dezelfde volgorde als de linies op het veld staan */
-  .veldrij { display: flex; gap: 8px; align-items: flex-start; margin: 10px 8px 4px; }
+  /* Het veld pakt de hoogte die er over is; de SVG rekt vanzelf mee. Zo staat er
+     op een lange telefoon geen halve pagina wit onder de knoppen. */
+  .veldscherm { display: flex; flex-direction: column; min-height: 100%; }
+  .veldscherm .veldrij { flex: 0 0 auto; }
+  .veldscherm .knoprij { margin-top: auto; }
+  .veldscherm .veldrij .veld { aspect-ratio: 5 / 8; align-self: flex-start; }
+  .veldscherm .banknaast { max-height: 60vh; overflow-y: auto; }
+  .veldrij { display: flex; gap: 6px; align-items: stretch; margin: 10px 6px 4px; }
   .veldrij .veld { margin: 0; flex: 1 1 auto; min-width: 0; }
-  .banknaast { flex: 0 0 92px; }
+  .banknaast { flex: 0 0 84px; }
   .banknaast .bankkop { padding: 0 0 4px; }
-  .banknaast .groepkop { padding: 5px 0 4px; font-size: 11px; }
+  .banknaast .groepkop { padding: 5px 0 4px; font-size: 11px; justify-content: space-between; }
+  .banknaast .groepkop span { font-variant-numeric: tabular-nums; }
   .banknaast .groepkop b { font-size: 11px; }
   .banknaast .rij { flex-direction: column; flex-wrap: nowrap; gap: 5px; padding: 0; }
   .banknaast .chip {
@@ -122,8 +130,8 @@
   .banknaast .chip > span:first-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .banknaast p.uitleg { margin: 0; font-size: 13px; }
   /* kleiner veld naast de bank: de namen moeten wel leesbaar blijven */
-  .veldrij .plek { width: 24%; min-width: 50px; }
-  .veldrij .plek .bol { font-size: 12px; padding: 4px 2px; }
+  .veldrij .plek { width: 19%; min-width: 58px; }
+  .veldrij .plek .bol { font-size: 11px; padding: 4px 3px; letter-spacing: -.01em; }
   .veldrij .plek .pos { font-size: 9px; }
   .chip {
     display: flex; align-items: baseline; gap: 5px;
@@ -486,10 +494,11 @@ function schermWedstrijd() {
   if (w.afgelopen) { return schermAfloop(); }
 
   const tijden = speeltijden();
+  d.className = 'veldscherm';
   const veldrij = document.createElement('div');
   veldrij.className = 'veldrij';
   veldrij.appendChild(tekenVeld(true, w));
-  veldrij.appendChild(bankKolom(tijden));
+  veldrij.appendChild(bankKolom(w, { tijden: tijden }));
   d.appendChild(veldrij);
 
   const knoppen = document.createElement('div');
@@ -519,22 +528,24 @@ function schermWedstrijd() {
   return d;
 }
 
-/* De bank naast het veld: aanval boven, keeper onder, net als de plekken links. */
-function bankKolom(tijden) {
-  const w = s.wedstrijd;
+/* De bank naast het veld: aanval boven, keeper onder, net als de plekken links.
+   Dezelfde kolom in de wedstrijd (met minuten) en bij het opstellen (met linie). */
+function bankKolom(w, opties) {
+  opties = opties || {};
+  const tijden = opties.tijden || null;
   const kolom = document.createElement('div');
   kolom.className = 'banknaast';
 
   const kop = document.createElement('div');
   kop.className = 'bankkop';
-  kop.textContent = 'Bank';
+  kop.textContent = opties.kop || 'Bank';
   kolom.appendChild(kop);
 
   const bank = w.bank.map(id => speler(id)).filter(Boolean);
   if (!bank.length) {
     const leeg = document.createElement('p');
     leeg.className = 'uitleg';
-    leeg.textContent = 'Iedereen speelt.';
+    leeg.textContent = opties.leegtekst || 'Iedereen speelt.';
     kolom.appendChild(leeg);
     return kolom;
   }
@@ -543,25 +554,28 @@ function bankKolom(tijden) {
   const pastBij = p => doelLinie === 'K' ? kanKeepen(p) : (p.linie || '') === doelLinie;
 
   LINIEVOLGORDE.forEach(code => {
-    const groep = bank.filter(p => groepVan(p) === code)
-                      .sort((a, b) => (tijden[a.id] || 0) - (tijden[b.id] || 0));
+    const groep = bank.filter(p => groepVan(p) === code).sort((a, b) =>
+      tijden ? (tijden[a.id] || 0) - (tijden[b.id] || 0) : a.naam.localeCompare(b.naam));
     if (!groep.length) return;
 
     const raak = gekozenPlek && groep.some(pastBij);
     const gk = document.createElement('div');
     gk.className = 'groepkop' + (raak ? ' past' : '');
-    gk.innerHTML = '<b>' + veiligeTekst(LINIES[code]) + '</b>';
+    gk.innerHTML = '<b>' + veiligeTekst(LINIES[code]) + '</b><span>' + groep.length + '</span>';
     kolom.appendChild(gk);
 
     const rij = document.createElement('div');
     rij.className = 'rij';
     groep.forEach(p => {
+      const recent = presentie(p.id, 4);
       const el = document.createElement('div');
       el.className = 'chip';
       if (gekozenPlek) el.className += pastBij(p) ? ' doel' : ' doel andere';
-      el.innerHTML = '<span>' + veiligeTekst(p.naam) + '</span><span class="min">' +
-        Math.round((tijden[p.id] || 0) / 60) + '\u2032</span>';
-      el.onclick = () => tikBank(p.id);
+      el.innerHTML = '<span>' + veiligeTekst(p.naam) + '</span>' +
+        (tijden
+          ? '<span class="min">' + Math.round((tijden[p.id] || 0) / 60) + '\u2032</span>'
+          : (mager(recent) ? '<span class="min mager">' + recent.er + '/' + recent.totaal + '</span>' : ''));
+      el.onclick = () => (opties.tik || tikBank)(p.id);
       rij.appendChild(el);
     });
     kolom.appendChild(rij);
@@ -1351,13 +1365,18 @@ function tekenOpzet() {
   menuknop.onclick = () => { opzetVoor = 'wedstrijd'; naarScherm('instellen'); };
 
   const d = document.createElement('div');
-  d.appendChild(tekenVeld(true, w));
+  d.className = 'veldscherm';
+  const veldrij = document.createElement('div');
+  veldrij.className = 'veldrij';
+  veldrij.appendChild(tekenVeld(true, w));
+  veldrij.appendChild(bankKolom(w, {
+    kop: 'Bank',
+    leegtekst: 'Niemand over.',
+    tik: id => zetInOpstelling(w, id),
+  }));
+  d.appendChild(veldrij);
 
-  const kop = document.createElement('div');
-  kop.className = 'bankkop';
-  kop.innerHTML = (standaard ? 'Selectie <span>zo begint elke wedstrijd</span>'
-                             : 'Selectie <span>tik een plek op het veld, dan een naam</span>');
-  d.appendChild(kop);
+  d.appendChild(balansRegel(w));
 
   /* wie weinig traint, ook als hij al in de opstelling staat */
   const mageren = s.spelers.filter(p => mager(presentie(p.id, 4)));
@@ -1372,30 +1391,6 @@ function tekenOpzet() {
     d.appendChild(let_op);
   }
 
-  const rij = document.createElement('div');
-  rij.className = 'rij';
-  w.bank.map(id => speler(id)).filter(Boolean)
-    .sort((a, b) => LINIEVOLGORDE.indexOf(groepVan(a)) - LINIEVOLGORDE.indexOf(groepVan(b)) ||
-                    a.naam.localeCompare(b.naam))
-    .forEach(p => {
-      const el = document.createElement('div');
-      const recent = presentie(p.id, 4);
-      el.className = 'chip' + (gekozenPlek ? ' doel' : '');
-      el.innerHTML = '<span>' + veiligeTekst(p.naam) + '</span>' +
-        '<span class="min">' + veiligeTekst([p.keept ? 'K' : '', p.linie || ''].filter(Boolean).join('\u00b7')) + '</span>' +
-        (mager(recent) ? '<span class="min mager">' + recent.er + '/' + recent.totaal + '</span>' : '');
-      el.onclick = () => {
-        if (!gekozenPlek) { alert('Tik eerst een plek op het veld aan.'); return; }
-        const oud = w.opstelling[gekozenPlek];
-        w.opstelling[gekozenPlek] = p.id;
-        w.bank = w.bank.filter(x => x !== p.id);
-        if (oud) w.bank.push(oud);
-        gekozenPlek = null;
-        bewaar(); tekenOpzet();
-      };
-      rij.appendChild(el);
-    });
-  d.appendChild(rij);
 
   const bezet = Object.values(w.opstelling).filter(Boolean).length;
   const knoppen = document.createElement('div');
@@ -1418,6 +1413,31 @@ function tekenOpzet() {
       tekenOpzet();
     };
   });
+}
+
+function zetInOpstelling(w, spelerId) {
+  if (!gekozenPlek) { alert('Tik eerst een plek op het veld aan.'); return; }
+  const oud = w.opstelling[gekozenPlek];
+  w.opstelling[gekozenPlek] = spelerId;
+  w.bank = w.bank.filter(x => x !== spelerId);
+  if (oud) w.bank.push(oud);
+  gekozenPlek = null;
+  bewaar(); tekenOpzet();
+}
+
+/* Hoeveel wissels heb je per linie? Nul is bijna altijd een verrassing achteraf. */
+function balansRegel(w) {
+  const el = document.createElement('p');
+  el.className = 'uitleg';
+  el.style.padding = '0 12px';
+  const bank = w.bank.map(id => speler(id)).filter(Boolean);
+  const stukjes = ['A', 'M', 'V', 'K'].map(code => {
+    const n = bank.filter(p => groepVan(p) === code).length;
+    const label = LINIES[code] + ' ' + n;
+    return n ? veiligeTekst(label) : '<b class="mager">' + veiligeTekst(label) + '</b>';
+  });
+  el.innerHTML = 'Wissels: ' + stukjes.join(' \u00b7 ');
+  return el;
 }
 
 function opstellingKlaar() {
