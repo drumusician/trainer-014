@@ -34,7 +34,7 @@
     display: flex; flex-direction: column;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
-  .app { max-width: 620px; margin: 0 auto; width: 100%; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .app { max-width: 900px; margin: 0 auto; width: 100%; flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
   /* ---------- balken ---------- */
   header {
@@ -66,7 +66,7 @@
   .klokbalk button:active { background: rgba(255,255,255,.28); }
 
   main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; }
-  .pad { padding: 12px; }
+  .pad { padding: 12px; max-width: 620px; margin: 0 auto; }
 
   /* ---------- veld ---------- */
   .veld {
@@ -107,18 +107,35 @@
   .groepkop.past { color: var(--oranje); }
   .rij { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 12px 12px; }
 
-  /* bank naast het veld, in dezelfde volgorde als de linies op het veld staan */
-  /* Het veld pakt de hoogte die er over is; de SVG rekt vanzelf mee. Zo staat er
-     op een lange telefoon geen halve pagina wit onder de knoppen. */
-  .veldscherm { display: flex; flex-direction: column; min-height: 100%; }
-  .veldscherm .veldrij { flex: 0 0 auto; }
+  /* ---------- veld met de bank ernaast ----------
+     Het veld schaalt op HOOGTE, niet op breedte: het pakt de ruimte tussen de
+     klok en de knoppen, en nooit meer dan dat. Daardoor hoef je tijdens een
+     wedstrijd nergens te scrollen, op geen enkel scherm.
+     --chroom is alles wat er buiten het veld staat: balken, knoppen, marges. */
+  .veldscherm { display: flex; flex-direction: column; height: 100%; --chroom: 200px; }
+  .veldscherm.zonderklok { --chroom: 150px; }
   .veldscherm .knoprij { margin-top: auto; }
-  .veldscherm .veldrij .veld { aspect-ratio: 5 / 8; align-self: flex-start; }
-  .veldscherm .banknaast { max-height: 60vh; overflow-y: auto; }
-  .veldrij { display: flex; gap: 6px; align-items: stretch; margin: 10px 6px 4px; }
-  .veldrij .veld { margin: 0; flex: 1 1 auto; min-width: 0; }
-  .banknaast { flex: 0 0 84px; }
+
+  .veldrij { display: flex; gap: 10px; align-items: flex-start; justify-content: center;
+             margin: 8px 10px 4px; min-height: 0; }
+  .veldrij .veld {
+    margin: 0; flex: 0 0 auto; aspect-ratio: 5 / 8;
+    width: min(calc(100% - 106px), 470px);
+    width: min(calc(100% - 106px), calc((100dvh - var(--chroom)) * 0.625), 470px);
+    container-type: inline-size;
+  }
+  /* De namen schalen mee met het veld. cqw is een procent van de veldbreedte,
+     dus op een telefoon net passend en op een laptop gewoon groot. */
+  .veldrij .plek { width: 22%; min-width: 0; }
+  .veldrij .plek .bol { font-size: 11px; padding: 4px 3px; letter-spacing: -.01em; }
+  .veldrij .plek .bol { font-size: clamp(10px, 4.3cqw, 16px); padding: .35em .25em; }
+  .veldrij .plek .pos { font-size: 9px; }
+  .veldrij .plek .pos { font-size: clamp(8px, 2.9cqw, 11px); }
+
+  .banknaast { flex: 1 1 96px; min-width: 92px; max-width: 190px; align-self: stretch;
+               display: flex; flex-direction: column; min-height: 0; }
   .banknaast .bankkop { padding: 0 0 4px; }
+  .banknaast .groepen { overflow-y: auto; min-height: 0; }
   .banknaast .groepkop { padding: 5px 0 4px; font-size: 11px; justify-content: space-between; }
   .banknaast .groepkop span { font-variant-numeric: tabular-nums; }
   .banknaast .groepkop b { font-size: 11px; }
@@ -129,10 +146,6 @@
   }
   .banknaast .chip > span:first-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .banknaast p.uitleg { margin: 0; font-size: 13px; }
-  /* kleiner veld naast de bank: de namen moeten wel leesbaar blijven */
-  .veldrij .plek { width: 19%; min-width: 58px; }
-  .veldrij .plek .bol { font-size: 11px; padding: 4px 3px; letter-spacing: -.01em; }
-  .veldrij .plek .pos { font-size: 9px; }
   .chip {
     display: flex; align-items: baseline; gap: 5px;
     min-height: 44px; padding: 9px 12px;
@@ -247,21 +260,21 @@ const SUPABASE = {
 const FORMATIES = {
   '4-3-3': [
     ['K',  'K',  50, 92, 'K'],
-    ['RV', 'RV', 82, 74, 'V'], ['CVr','CV', 62, 79, 'V'], ['CVl','CV', 38, 79, 'V'], ['LV','LV', 18, 74, 'V'],
-    ['MR', 'M',  72, 55, 'M'], ['MC', 'M',  50, 60, 'M'], ['ML','M',  28, 55, 'M'],
+    ['RV', 'RV', 88, 73, 'V'], ['CVr','CV', 64, 79, 'V'], ['CVl','CV', 36, 79, 'V'], ['LV','LV', 12, 73, 'V'],
+    ['MR', 'M',  75, 55, 'M'], ['MC', 'M',  50, 61, 'M'], ['ML','M',  25, 55, 'M'],
     ['RB', 'RB', 80, 26, 'A'], ['SP', 'SP', 50, 18, 'A'], ['LB','LB', 20, 26, 'A'],
   ],
   '4-4-2': [
     ['K',  'K',  50, 92, 'K'],
-    ['RV', 'RV', 82, 76, 'V'], ['CVr','CV', 62, 80, 'V'], ['CVl','CV', 38, 80, 'V'], ['LV','LV', 18, 76, 'V'],
-    ['MR', 'RM', 82, 52, 'M'], ['MCr','M',  61, 56, 'M'], ['MCl','M',  39, 56, 'M'], ['ML','LM', 18, 52, 'M'],
+    ['RV', 'RV', 88, 75, 'V'], ['CVr','CV', 64, 80, 'V'], ['CVl','CV', 36, 80, 'V'], ['LV','LV', 12, 75, 'V'],
+    ['MR', 'RM', 88, 51, 'M'], ['MCr','M',  63, 57, 'M'], ['MCl','M',  37, 57, 'M'], ['ML','LM', 12, 51, 'M'],
     ['SPr','SP', 62, 22, 'A'], ['SPl','SP', 38, 22, 'A'],
   ],
   '4-2-3-1': [
     ['K',  'K',  50, 92, 'K'],
-    ['RV', 'RV', 82, 76, 'V'], ['CVr','CV', 62, 80, 'V'], ['CVl','CV', 38, 80, 'V'], ['LV','LV', 18, 76, 'V'],
-    ['VMr','VM', 62, 62, 'M'], ['VMl','VM', 38, 62, 'M'],
-    ['RA', 'RA', 80, 38, 'A'], ['TIEN','10', 50, 42, 'A'], ['LA','LA', 20, 38, 'A'],
+    ['RV', 'RV', 88, 75, 'V'], ['CVr','CV', 64, 80, 'V'], ['CVl','CV', 36, 80, 'V'], ['LV','LV', 12, 75, 'V'],
+    ['VMr','VM', 64, 62, 'M'], ['VMl','VM', 36, 62, 'M'],
+    ['RA', 'RA', 84, 38, 'A'], ['TIEN','10', 50, 43, 'A'], ['LA','LA', 16, 38, 'A'],
     ['SP', 'SP', 50, 18, 'A'],
   ],
 };
@@ -573,12 +586,16 @@ function bankKolom(w, opties) {
   kop.textContent = opties.kop || 'Bank';
   kolom.appendChild(kop);
 
+  const groepen = document.createElement('div');
+  groepen.className = 'groepen';
+  kolom.appendChild(groepen);
+
   const bank = w.bank.map(id => speler(id)).filter(Boolean);
   if (!bank.length) {
     const leeg = document.createElement('p');
     leeg.className = 'uitleg';
     leeg.textContent = opties.leegtekst || 'Iedereen speelt.';
-    kolom.appendChild(leeg);
+    groepen.appendChild(leeg);
     return kolom;
   }
 
@@ -594,7 +611,7 @@ function bankKolom(w, opties) {
     const gk = document.createElement('div');
     gk.className = 'groepkop' + (raak ? ' past' : '');
     gk.innerHTML = '<b>' + veiligeTekst(LINIES[code]) + '</b><span>' + groep.length + '</span>';
-    kolom.appendChild(gk);
+    groepen.appendChild(gk);
 
     const rij = document.createElement('div');
     rij.className = 'rij';
@@ -610,7 +627,7 @@ function bankKolom(w, opties) {
       el.onclick = () => (opties.tik || tikBank)(p.id);
       rij.appendChild(el);
     });
-    kolom.appendChild(rij);
+    groepen.appendChild(rij);
   });
   return kolom;
 }
@@ -1401,7 +1418,7 @@ function tekenOpzet() {
   menuknop.onclick = () => { opzetVoor = 'wedstrijd'; naarScherm('instellen'); };
 
   const d = document.createElement('div');
-  d.className = 'veldscherm';
+  d.className = 'veldscherm zonderklok';
   const veldrij = document.createElement('div');
   veldrij.className = 'veldrij';
   veldrij.appendChild(tekenVeld(true, w));
@@ -1461,18 +1478,18 @@ function zetInOpstelling(w, spelerId) {
   bewaar(); tekenOpzet();
 }
 
-/* Hoeveel wissels heb je per linie? Nul is bijna altijd een verrassing achteraf. */
+/* De aantallen per linie staan al in de bank. Hier alleen nog wat er ontbreekt,
+   want een linie zonder wissel is een verrassing die je liever nu hebt. */
 function balansRegel(w) {
   const el = document.createElement('p');
   el.className = 'uitleg';
-  el.style.padding = '0 12px';
+  el.style.cssText = 'padding: 0 12px; margin: 0 0 8px';
   const bank = w.bank.map(id => speler(id)).filter(Boolean);
-  const stukjes = ['A', 'M', 'V', 'K'].map(code => {
-    const n = bank.filter(p => groepVan(p) === code).length;
-    const label = LINIES[code] + ' ' + n;
-    return n ? veiligeTekst(label) : '<b class="mager">' + veiligeTekst(label) + '</b>';
-  });
-  el.innerHTML = 'Wissels: ' + stukjes.join(' \u00b7 ');
+  const leeg = ['A', 'M', 'V', 'K']
+    .filter(code => !bank.filter(p => groepVan(p) === code).length)
+    .map(code => LINIES[code].toLowerCase());
+  if (!leeg.length) return el;
+  el.innerHTML = '<b class="mager">Geen wissel voor ' + veiligeTekst(leeg.join(', ')) + '.</b>';
   return el;
 }
 
