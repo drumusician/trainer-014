@@ -1,0 +1,10 @@
+# De app staat in app/. Verder valt er niets te bouwen: het is gewoon HTML.
+[build]
+  publish = "app"
+  command = ""
+
+# Alles wat niet bestaat naar de app zelf, zodat een verdwaalde URL geen 404 geeft.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
