@@ -1,18 +1,33 @@
 [tools]
 node = "latest"
 
-# Er valt niets te bouwen: het is gewoon HTML. Dit zet er alleen een webserver
-# voor, want wake lock en service workers werken niet vanaf een file://-adres.
-# Poort 8788 staat ook in de Redirect URLs van Supabase, dus het inloggen via
-# de link komt hier netjes terug.
-[tasks.dev]
-description = "Blaadje lokaal draaien op http://localhost:8788"
-run = "python3 -m http.server 8788 --directory app"
+# Blaadje staat in web/ (SvelteKit). Alles draait vanaf de repo-root.
 
-# Snelle syntaxcontrole van het script in index.html, zonder browser.
+[tasks.dev]
+description = "Blaadje lokaal draaien op http://localhost:5173"
+dir = "web"
+run = "npm run dev"
+
+[tasks.build]
+description = "Blaadje bouwen naar web/build"
+dir = "web"
+run = "npm run build"
+
+[tasks.preview]
+description = "De gebouwde versie draaien op http://localhost:4173"
+dir = "web"
+run = "npm run preview -- --port 4173"
+
+[tasks.test]
+description = "De rekenkern testen: speeltijd, seizoen, verslag, overzetten"
+dir = "web"
+run = "npm run test"
+
 [tasks.check]
-description = "JavaScript in app/index.html nakijken"
-run = """
-python3 -c "import io,re,sys; src=io.open('app/index.html',encoding='utf-8').read(); sys.stdout.write(re.search(r'<script>\\n(.*)</script>', src, re.S).group(1))" > /tmp/blaadje-check.js
-node --check /tmp/blaadje-check.js && echo 'JavaScript in orde'
-"""
+description = "Types en Svelte-code nakijken"
+dir = "web"
+run = "npm run check"
+
+[tasks.oud]
+description = "De oude versie van één HTML-bestand op http://localhost:8788"
+run = "python3 -m http.server 8788 --directory app"

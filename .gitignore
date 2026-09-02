@@ -4,3 +4,8 @@ node_modules/
 # Local Netlify folder
 .netlify
 .gstack/
+
+# SvelteKit
+web/node_modules/
+web/.svelte-kit/
+web/build/

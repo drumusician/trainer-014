@@ -1,7 +1,13 @@
-# De app staat in app/. Verder valt er niets te bouwen: het is gewoon HTML.
+# Blaadje is een SvelteKit-app in web/, gebouwd naar statische bestanden.
+# De oude versie van één HTML-bestand staat nog in app/; die publiceren is
+# één regel terugdraaien (publish = "app", command leeg, base weg).
 [build]
-  publish = "app"
-  command = ""
+  base = "web"
+  command = "npm run build"
+  publish = "build"
+
+[build.environment]
+  NODE_VERSION = "22"
 
 # Alles wat niet bestaat naar de app zelf, zodat een verdwaalde URL geen 404 geeft.
 [[redirects]]

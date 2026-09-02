@@ -1,0 +1,168 @@
+/* Blaadje — één stijlblad. Kleuren en maten komen uit de eerste versie. */
+:root {
+	--groen: #2f5d4a;
+	--groen-diep: #24483a;
+	--groen-licht: #e7efeb;
+	--gras: #4b8b5f;
+	--inkt: #16201d;
+	--grijs: #6b7773;
+	--lijn: #dfe5e2;
+	--bank: #f3f5f4;
+	--oranje: #c1541f;
+	--oranje-licht: #fdf1e8;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; }
+body {
+	font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+	color: var(--inkt); background: #fff; font-size: 17px;
+	-webkit-text-size-adjust: 100%;
+	display: flex; flex-direction: column;
+	padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.app { max-width: 900px; margin: 0 auto; width: 100%; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+header {
+	display: flex; align-items: center; gap: 8px;
+	padding: 10px 12px; border-bottom: 1px solid var(--lijn); flex: none;
+}
+header h1 { font-size: 16px; margin: 0; flex: 1; font-weight: 700; }
+header .stand { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 17px; }
+
+button, .knop {
+	font: inherit; font-size: 15px; padding: 9px 13px;
+	border: 1px solid var(--lijn); border-radius: 9px;
+	background: #fff; color: var(--inkt); cursor: pointer;
+	text-decoration: none; display: inline-block;
+}
+button:active, .knop:active { background: #eef1f0; }
+button.prim, .knop.prim { background: var(--groen); border-color: var(--groen); color: #fff; }
+button.prim:active, .knop.prim:active { background: var(--groen-diep); }
+button.uit, .knop.uit { border-color: var(--oranje); color: var(--oranje); }
+button.klein, .knop.klein { font-size: 13px; padding: 6px 9px; }
+button:disabled { opacity: 0.4; }
+
+.klokbalk { display: flex; align-items: center; gap: 8px; flex: none; padding: 8px 12px; background: var(--groen); color: #fff; }
+.klok { font-variant-numeric: tabular-nums; font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.helft { font-size: 12px; opacity: 0.8; }
+.klokbalk button { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
+.klokbalk button:active { background: rgba(255, 255, 255, 0.28); }
+
+main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; }
+.pad { padding: 12px; max-width: 620px; margin: 0 auto; }
+
+/* ---------- veld met de bank ernaast ----------
+   Het veld schaalt op HOOGTE, niet op breedte: het pakt de ruimte tussen de
+   klok en de knoppen, en nooit meer dan dat. Daardoor hoef je tijdens een
+   wedstrijd nergens te scrollen, op geen enkel scherm. */
+.veldscherm { display: flex; flex-direction: column; height: 100%; --chroom: 200px; }
+.veldscherm.zonderklok { --chroom: 150px; }
+.veldscherm .knoprij { margin-top: auto; }
+
+.veldrij { display: flex; gap: 10px; align-items: flex-start; justify-content: center; margin: 8px 10px 4px; min-height: 0; }
+
+.veld {
+	position: relative; background: var(--gras); border-radius: 10px; overflow: hidden;
+	margin: 0; flex: 0 0 auto; aspect-ratio: 5 / 8;
+	width: min(calc(100% - 106px), 470px);
+	width: min(calc(100% - 106px), calc((100dvh - var(--chroom)) * 0.625), 470px);
+	container-type: inline-size;
+}
+.veld .strepen { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.plek {
+	position: absolute; transform: translate(-50%, -50%);
+	width: 22%;
+	display: flex; flex-direction: column; align-items: center; gap: 2px;
+	cursor: pointer; user-select: none;
+}
+.plek .bol {
+	width: 100%; border-radius: 8px;
+	background: rgba(255, 255, 255, 0.94); border: 2px solid transparent;
+	font-weight: 700; line-height: 1.15; text-align: center;
+	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	font-size: 11px; padding: 4px 3px;
+	font-size: clamp(10px, 4.3cqw, 16px); padding: 0.35em 0.25em;
+}
+.plek .pos { color: rgba(255, 255, 255, 0.85); font-weight: 700; letter-spacing: 0.04em; font-size: 9px; }
+.plek .pos { font-size: clamp(8px, 2.9cqw, 11px); }
+.plek.leeg .bol { background: rgba(255, 255, 255, 0.3); color: rgba(255, 255, 255, 0.9); font-weight: 500; }
+.plek.gekozen .bol { background: var(--oranje); border-color: #fff; color: #fff; }
+
+.banknaast {
+	flex: 1 1 96px; min-width: 92px; max-width: 190px; align-self: stretch;
+	display: flex; flex-direction: column; min-height: 0;
+}
+.bankkop { padding: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--groen); font-weight: 700; }
+.banknaast .groepen { overflow-y: auto; min-height: 0; }
+.groepkop { display: flex; align-items: baseline; gap: 6px; color: var(--grijs); padding: 5px 0 4px; font-size: 11px; justify-content: space-between; }
+.groepkop b { color: var(--inkt); font-size: 11px; font-weight: 700; }
+.groepkop.past, .groepkop.past b { color: var(--oranje); }
+.groepkop span { font-variant-numeric: tabular-nums; }
+.rij { display: flex; flex-direction: column; gap: 5px; }
+
+.chip {
+	display: flex; min-height: 44px; padding: 6px 8px; font-size: 14px;
+	flex-direction: column; align-items: flex-start; justify-content: center;
+	border: 1px solid var(--lijn); border-radius: 9px; background: var(--bank);
+	cursor: pointer; user-select: none; width: 100%;
+}
+.chip > span:first-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip .min { font-size: 12px; color: var(--grijs); font-variant-numeric: tabular-nums; }
+.chip.doel { border-color: var(--oranje); background: var(--oranje-licht); }
+.chip.andere { opacity: 0.55; }
+
+.melding {
+	position: sticky; bottom: 0; z-index: 4;
+	background: var(--oranje-licht); border-top: 1px solid var(--oranje);
+	padding: 11px 12px; font-size: 15px; color: #7a3a15;
+	display: flex; align-items: center; gap: 10px;
+}
+.melding span { flex: 1; }
+.melding b { color: var(--oranje); }
+
+.knoprij { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 12px 12px; }
+
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--groen); margin: 22px 0 8px; }
+h2:first-child { margin-top: 0; }
+p.uitleg { color: var(--grijs); font-size: 14px; line-height: 1.5; margin: 0 0 12px; }
+label.vak { display: block; margin-bottom: 12px; font-size: 14px; color: var(--grijs); }
+label.vak input, label.vak select, textarea {
+	display: block; width: 100%; margin-top: 4px;
+	font: inherit; font-size: 16px; padding: 10px 12px;
+	border: 1px solid var(--lijn); border-radius: 9px; background: #fff; color: var(--inkt);
+}
+textarea { min-height: 120px; line-height: 1.5; }
+.tweekolom { display: flex; gap: 10px; }
+.tweekolom > * { flex: 1; }
+
+.sregel { display: flex; align-items: center; gap: 6px; padding: 7px 0; border-bottom: 1px solid var(--lijn); }
+.sregel .naam { flex: 1; font-size: 16px; cursor: pointer; }
+.keuze { display: flex; gap: 3px; }
+.keuze button { width: 34px; padding: 7px 0; text-align: center; font-size: 13px; font-weight: 700; color: var(--grijs); }
+.keuze button.aan { background: var(--groen); border-color: var(--groen); color: #fff; }
+
+.presknop { width: 128px; text-align: center; font-size: 14px; }
+.presknop.ja { background: var(--groen); border-color: var(--groen); color: #fff; }
+.presknop.af { background: var(--bank); color: var(--grijs); }
+.presknop.nee { background: var(--oranje-licht); border-color: var(--oranje); color: var(--oranje); }
+.telling { display: flex; gap: 12px; font-size: 13px; color: var(--grijs); margin: 0 0 12px; }
+.mager { color: var(--oranje); font-weight: 700; }
+
+table.uitslag { width: 100%; border-collapse: collapse; }
+table.uitslag td { padding: 8px 4px; border-bottom: 1px solid var(--lijn); font-size: 15px; }
+table.uitslag td.m { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+table.uitslag td.balk { width: 40%; }
+table.uitslag td span.sub { display: block; font-size: 12px; color: var(--grijs); margin-top: 2px; }
+.staaf { height: 8px; background: var(--groen-licht); border-radius: 4px; overflow: hidden; }
+.staaf i { display: block; height: 100%; background: var(--groen); }
+
+ul.log { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+ul.log li { padding: 6px 0; border-bottom: 1px solid var(--lijn); display: flex; gap: 10px; }
+ul.log li b { font-variant-numeric: tabular-nums; color: var(--grijs); font-weight: 600; min-width: 46px; }
+ul.log li span { flex: 1; }
+ul.log li a { color: inherit; text-decoration: none; display: flex; gap: 10px; width: 100%; align-items: center; padding: 6px 0; }
+ul.log li.klikbaar { padding: 0; }
+ul.log li em { font-style: normal; color: var(--grijs); font-size: 18px; line-height: 1; }
