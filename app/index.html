@@ -1608,6 +1608,46 @@ async function zorgVoorToken() {
   }
 }
 
+/* ---------- terugkomen uit de mail ---------- */
+/* Een magic link stuurt je terug met de sleutels in het adres, achter een #.
+   Die halen we eruit, zetten we weg en poetsen we meteen uit de adresbalk. */
+function schoonAdres() {
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* stil */ }
+}
+
+async function pakInlogUitLink() {
+  const h = location.hash || '';
+  if (h.indexOf('access_token=') === -1) {
+    if (h.indexOf('error') !== -1) {
+      const f = new URLSearchParams(h.replace(/^#/, ''));
+      syncMelding = 'Inloggen via de link lukte niet: ' +
+        (f.get('error_description') || f.get('error') || 'onbekende fout');
+      schoonAdres();
+      scherm = 'instellen';
+    }
+    return;
+  }
+  const f = new URLSearchParams(h.replace(/^#/, ''));
+  const oud = sessie || {};
+  sessie = {
+    access_token: f.get('access_token'),
+    refresh_token: f.get('refresh_token'),
+    verloopt: Date.now() + ((parseInt(f.get('expires_in'), 10) || 3600) * 1000),
+    user_id: oud.user_id || null, email: oud.email || null,
+    teamId: oud.teamId || null, versie: oud.versie || 0, laatst: oud.laatst || null,
+  };
+  schoonAdres();
+  try {
+    const u = await sb('/auth/v1/user');       /* wie ben je, zodat het team op naam kan */
+    sessie.user_id = u.id;
+    sessie.email = u.email;
+  } catch (e) { /* dan vult zorgVoorTeam het later aan */ }
+  bewaarSessie();
+  syncMelding = 'Ingelogd via de link.';
+  scherm = 'instellen';
+  teken();
+}
+
 /* ---------- inloggen met een code uit de mail ---------- */
 async function stuurInlogcode() {
   const veld = document.getElementById('sync-email');
@@ -1615,13 +1655,14 @@ async function stuurInlogcode() {
   if (!email) { meldSync('Vul je e-mailadres in.'); return; }
   meldSync('Bezig met versturen\u2026');
   try {
-    await sb('/auth/v1/otp', {
+    const terug = location.origin + location.pathname;
+    await sb('/auth/v1/otp?redirect_to=' + encodeURIComponent(terug), {
       method: 'POST', metToken: false,
       body: JSON.stringify({ email: email, create_user: true }),
     });
     inlogEmail = email;
     inlogFase = 'code';
-    syncMelding = 'Code verstuurd naar ' + email + '. Kijk ook in je spam.';
+    syncMelding = 'Mail verstuurd naar ' + email + '. Kijk ook in je spam.';
     teken();
   } catch (e) {
     meldSync('Versturen lukte niet: ' + e.message);
@@ -1767,7 +1808,9 @@ function syncHtml() {
         'autocomplete="email" placeholder="jij@voorbeeld.nl" value="' + veiligeTekst(inlogEmail) + '"></label>' +
         '<div class="knoprij" style="padding-left:0"><button class="prim" onclick="stuurInlogcode()">Stuur code</button></div>';
     } else {
-      html += '<label class="vak">Code uit de mail<input id="sync-code" type="text" inputmode="numeric" ' +
+      html += '<p class="uitleg">Staat er een <b>link</b> in de mail? Klik die op dit toestel, dan ben je binnen. ' +
+        'Staat er een <b>code</b> in, vul hem hieronder in.</p>' +
+        '<label class="vak">Code uit de mail<input id="sync-code" type="text" inputmode="numeric" ' +
         'autocomplete="one-time-code" placeholder="123456"></label>' +
         '<div class="knoprij" style="padding-left:0">' +
         '<button class="prim" onclick="controleerInlogcode()">Inloggen</button>' +
@@ -1824,6 +1867,9 @@ document.addEventListener('visibilitychange', () => {
 laad();
 laadSessie();
 teken();
+pakInlogUitLink();
+/* Stond de app al open toen je de link aantikte? Dan verandert alleen het adres. */
+window.addEventListener('hashchange', () => pakInlogUitLink());
 tikker = setInterval(() => {
   const w = s.wedstrijd;
   if (w && w.loopt && scherm === 'wedstrijd') {

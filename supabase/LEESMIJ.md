@@ -21,7 +21,9 @@ Het versienummer lost het enige echte probleem op: je zet zaterdagochtend een op
 3. Authentication → Sign In / Providers → **Email** aanzetten.
 4. Authentication → **Emails** → template **Magic Link**: zet `{{ .Token }}` in de tekst. Zonder die regel stuurt Supabase alleen een link, en de app vraagt om een code van zes cijfers.
 
-   Waarom een code en geen magic link: een app op je iPhone-beginscherm heeft eigen opslag, los van Safari. Een link uit de mail opent Safari, en dan logt de verkeerde omgeving in. Een code typ je in de app zelf, dus dat probleem bestaat niet.
+   Zonder die regel werkt de **link** in de mail: de app vangt hem op als je terugkomt. Dan moet wel Authentication → **URL Configuration** kloppen: Site URL op je Netlify-adres, en bij Redirect URLs ook je lokale testadres (`http://localhost:8788` of welke poort je gebruikt).
+
+   Waarom uiteindelijk toch een code en geen magic link: een app op je iPhone-beginscherm heeft eigen opslag, los van Safari. Een link uit de mail opent Safari, en dan logt de verkeerde omgeving in. Een code typ je in de app zelf, dus dat probleem bestaat niet.
 5. Project Settings → API Keys → tabje **Publishable and secret API keys** → de `sb_publishable_...` sleutel. Die staat samen met de project-URL boven in `app/index.html`. Allebei openbaar bedoeld; RLS doet het echte werk.
 
 De ingebouwde mail van Supabase heeft een lage limiet (een paar per uur) en is bedoeld om te testen. Voor jezelf is dat genoeg. Zodra er meer trainers op zitten: Authentication → SMTP Settings met een eigen afzender, anders komen de codes niet aan.
