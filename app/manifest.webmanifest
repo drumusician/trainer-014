@@ -1,6 +1,6 @@
 {
-  "name": "O14 — wedstrijd",
-  "short_name": "O14",
+  "name": "Blaadje — wedstrijdapp",
+  "short_name": "Blaadje",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

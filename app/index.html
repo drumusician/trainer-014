@@ -6,10 +6,10 @@
 <meta name="theme-color" content="#2f5d4a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="O14">
+<meta name="apple-mobile-web-app-title" content="Blaadje">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>O14 — wedstrijd</title>
+<title>Blaadje — wedstrijdapp</title>
 <style>
   :root {
     --groen: #2f5d4a;
@@ -106,6 +106,25 @@
   .groepkop.past b { color: var(--oranje); }
   .groepkop.past { color: var(--oranje); }
   .rij { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 12px 12px; }
+
+  /* bank naast het veld, in dezelfde volgorde als de linies op het veld staan */
+  .veldrij { display: flex; gap: 8px; align-items: flex-start; margin: 10px 8px 4px; }
+  .veldrij .veld { margin: 0; flex: 1 1 auto; min-width: 0; }
+  .banknaast { flex: 0 0 92px; }
+  .banknaast .bankkop { padding: 0 0 4px; }
+  .banknaast .groepkop { padding: 5px 0 4px; font-size: 11px; }
+  .banknaast .groepkop b { font-size: 11px; }
+  .banknaast .rij { flex-direction: column; flex-wrap: nowrap; gap: 5px; padding: 0; }
+  .banknaast .chip {
+    width: 100%; padding: 6px 8px; min-height: 44px; font-size: 14px;
+    flex-direction: column; align-items: flex-start; gap: 0; justify-content: center;
+  }
+  .banknaast .chip > span:first-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .banknaast p.uitleg { margin: 0; font-size: 13px; }
+  /* kleiner veld naast de bank: de namen moeten wel leesbaar blijven */
+  .veldrij .plek { width: 24%; min-width: 50px; }
+  .veldrij .plek .bol { font-size: 12px; padding: 4px 2px; }
+  .veldrij .plek .pos { font-size: 9px; }
   .chip {
     display: flex; align-items: baseline; gap: 5px;
     min-height: 44px; padding: 9px 12px;
@@ -148,6 +167,13 @@
   .keuze button { width: 34px; padding: 7px 0; text-align: center; font-size: 13px; font-weight: 700; color: var(--grijs); }
   .keuze button.aan { background: var(--groen); border-color: var(--groen); color: #fff; }
 
+  .presknop { width: 128px; text-align: center; font-size: 14px; }
+  .presknop.ja { background: var(--groen); border-color: var(--groen); color: #fff; }
+  .presknop.af { background: var(--bank); color: var(--grijs); }
+  .presknop.nee { background: var(--oranje-licht); border-color: var(--oranje); color: var(--oranje); }
+  .telling { display: flex; gap: 12px; font-size: 13px; color: var(--grijs); margin: 0 0 12px; }
+  .mager { color: var(--oranje); font-weight: 700; }
+
   table.uitslag { width: 100%; border-collapse: collapse; }
   table.uitslag td { padding: 8px 4px; border-bottom: 1px solid var(--lijn); font-size: 15px; }
   table.uitslag td.m { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
@@ -157,6 +183,11 @@
   ul.log { list-style: none; margin: 0; padding: 0; font-size: 14px; }
   ul.log li { padding: 6px 0; border-bottom: 1px solid var(--lijn); display: flex; gap: 10px; }
   ul.log li b { font-variant-numeric: tabular-nums; color: var(--grijs); font-weight: 600; min-width: 46px; }
+  ul.log li span { flex: 1; }
+  ul.log li.klikbaar { cursor: pointer; align-items: center; padding: 12px 0; }
+  ul.log li.klikbaar:active { background: #f3f5f4; }
+  ul.log li em { font-style: normal; color: var(--grijs); font-size: 18px; line-height: 1; }
+  table.uitslag td span.sub { display: block; font-size: 12px; color: var(--grijs); margin-top: 2px; }
 
   .waarschuwing { color: var(--oranje); font-size: 14px; margin: 10px 0 0; }
   .verborgen { display: none !important; }
@@ -195,33 +226,64 @@
    ========================================================== */
 
 const SLEUTEL = 'o14-app-v1';
+const SESSIESLEUTEL = 'o14-sessie-v1';
+
+/* Supabase. Deze twee mogen openbaar zijn: de publishable key geeft uit zichzelf
+   nergens toegang toe. Row Level Security bepaalt wat een ingelogde trainer mag,
+   en dat is alleen zijn eigen team. */
+const SUPABASE = {
+  url: 'https://gdsqdsxflueawfipjqbw.supabase.co',
+  sleutel: 'sb_publishable_Qrjs4tqjHTAGs-p7zsvNHw_CV5WHNtP',
+};
 
 const FORMATIES = {
   '4-3-3': [
-    ['K',  'K',  50, 92],
-    ['RV', 'RV', 82, 74], ['CVr','CV', 62, 79], ['CVl','CV', 38, 79], ['LV','LV', 18, 74],
-    ['MR', 'M',  72, 55], ['MC', 'M',  50, 60], ['ML','M',  28, 55],
-    ['RB', 'RB', 80, 26], ['SP', 'SP', 50, 18], ['LB','LB', 20, 26],
+    ['K',  'K',  50, 92, 'K'],
+    ['RV', 'RV', 82, 74, 'V'], ['CVr','CV', 62, 79, 'V'], ['CVl','CV', 38, 79, 'V'], ['LV','LV', 18, 74, 'V'],
+    ['MR', 'M',  72, 55, 'M'], ['MC', 'M',  50, 60, 'M'], ['ML','M',  28, 55, 'M'],
+    ['RB', 'RB', 80, 26, 'A'], ['SP', 'SP', 50, 18, 'A'], ['LB','LB', 20, 26, 'A'],
   ],
   '4-4-2': [
-    ['K',  'K',  50, 92],
-    ['RV', 'RV', 82, 76], ['CVr','CV', 62, 80], ['CVl','CV', 38, 80], ['LV','LV', 18, 76],
-    ['MR', 'RM', 82, 52], ['MCr','M',  61, 56], ['MCl','M',  39, 56], ['ML','LM', 18, 52],
-    ['SPr','SP', 62, 22], ['SPl','SP', 38, 22],
+    ['K',  'K',  50, 92, 'K'],
+    ['RV', 'RV', 82, 76, 'V'], ['CVr','CV', 62, 80, 'V'], ['CVl','CV', 38, 80, 'V'], ['LV','LV', 18, 76, 'V'],
+    ['MR', 'RM', 82, 52, 'M'], ['MCr','M',  61, 56, 'M'], ['MCl','M',  39, 56, 'M'], ['ML','LM', 18, 52, 'M'],
+    ['SPr','SP', 62, 22, 'A'], ['SPl','SP', 38, 22, 'A'],
   ],
   '4-2-3-1': [
-    ['K',  'K',  50, 92],
-    ['RV', 'RV', 82, 76], ['CVr','CV', 62, 80], ['CVl','CV', 38, 80], ['LV','LV', 18, 76],
-    ['VMr','VM', 62, 62], ['VMl','VM', 38, 62],
-    ['RA', 'RA', 80, 38], ['TIEN','10', 50, 42], ['LA','LA', 20, 38],
-    ['SP', 'SP', 50, 18],
+    ['K',  'K',  50, 92, 'K'],
+    ['RV', 'RV', 82, 76, 'V'], ['CVr','CV', 62, 80, 'V'], ['CVl','CV', 38, 80, 'V'], ['LV','LV', 18, 76, 'V'],
+    ['VMr','VM', 62, 62, 'M'], ['VMl','VM', 38, 62, 'M'],
+    ['RA', 'RA', 80, 38, 'A'], ['TIEN','10', 50, 42, 'A'], ['LA','LA', 20, 38, 'A'],
+    ['SP', 'SP', 50, 18, 'A'],
   ],
 };
 
-const LINIES = { K: 'Keeper', V: 'Verdediging', M: 'Middenveld', A: 'Aanval' };
+const LINIES = { A: 'Aanval', M: 'Middenveld', V: 'Verdediging', K: 'Keeper', '': 'Zonder linie' };
+/* Van boven naar beneden, net als op het veld: de aanval staat bovenaan. */
+const LINIEVOLGORDE = ['A', 'M', 'V', 'K', ''];
+
+/* Bij welke linie hoort een plek in de opstelling? */
+function plekLinie(plekId, formatie) {
+  const rij = (FORMATIES[formatie] || []).filter(r => r[0] === plekId)[0];
+  return rij ? rij[4] : '';
+}
+/* Wie kan er keepen. Vroeger was 'K' een linie; nu staat het los, zodat een
+   verdediger die ook keept in beide lijstjes kan staan. */
+function kanKeepen(p) { return !!p.keept; }
+function groepVan(p) {
+  if (p.linie === 'V' || p.linie === 'M' || p.linie === 'A') return p.linie;
+  return p.keept ? 'K' : '';
+}
 
 let s = leeg();
 let gekozenPlek = null;      /* plek-id van de speler die eruit gaat */
+let archiefIndex = -1;       /* welke bewaarde wedstrijd open staat */
+let opzetVoor = 'wedstrijd'; /* 'wedstrijd' of 'standaard' */
+let trainingIndex = -1;      /* welke training open staat */
+let sessie = null;           /* inlog op dit toestel, los van de teamgegevens */
+let inlogFase = 'email';     /* 'email' of 'code' */
+let inlogEmail = '';
+let syncMelding = '';
 let scherm = 'wedstrijd';
 let tikker = null;
 let wakeLock = null;
@@ -232,6 +294,9 @@ function leeg() {
     formatie: '4-3-3',
     helftMinuten: 35,
     wedstrijd: null,             /* zie nieuweWedstrijd() */
+    standaard: null,             /* {formatie, opstelling, bank} — startpunt voor elke wedstrijd */
+    verslagWissels: false,       /* wissels mee in het verslag dat je deelt */
+    trainingen: [],              /* [{datum, status: {spelerId: 'ja'|'af'|'nee'}}] */
     archief: [],
   };
 }
@@ -244,6 +309,9 @@ function laad() {
   try {
     const d = JSON.parse(localStorage.getItem(SLEUTEL));
     if (d && Array.isArray(d.spelers)) s = Object.assign(leeg(), d);
+    s.spelers.forEach(p => {           /* van vroeger: linie 'K' */
+      if (p.linie === 'K') { p.linie = ''; p.keept = true; }
+    });
   } catch (e) { /* stil */ }
 }
 
@@ -362,8 +430,10 @@ function teken() {
   const inWedstrijd = scherm === 'wedstrijd' && w && !w.afgelopen && Object.keys(w.opstelling).length > 0;
   klokbalk.classList.toggle('verborgen', !inWedstrijd);
   standEl.classList.toggle('verborgen', !inWedstrijd);
+  const terug = { seizoen: 'instellen', archief: 'instellen',
+                  trainingen: 'instellen', training: 'trainingen' }[scherm];
   menuknop.textContent = scherm === 'wedstrijd' ? 'Instellen' : 'Terug';
-  menuknop.onclick = () => naarScherm(scherm === 'wedstrijd' ? 'instellen' : 'wedstrijd');
+  menuknop.onclick = () => naarScherm(terug || (scherm === 'wedstrijd' ? 'instellen' : 'wedstrijd'));
 
   if (inWedstrijd) {
     document.getElementById('klok').textContent = mmss(verstreken());
@@ -374,12 +444,25 @@ function teken() {
     const [v, t] = stand();
     standEl.textContent = v + ' – ' + t;
     document.getElementById('kop').textContent = (w.thuis ? 'O14 – ' + w.tegenstander : w.tegenstander + ' – O14');
+  } else if (scherm === 'seizoen') {
+    document.getElementById('kop').textContent = 'Seizoen';
+  } else if (scherm === 'trainingen') {
+    document.getElementById('kop').textContent = 'Trainingen';
+  } else if (scherm === 'training' && s.trainingen[trainingIndex]) {
+    document.getElementById('kop').textContent = 'Training ' + datumKort(s.trainingen[trainingIndex].datum);
+  } else if (scherm === 'archief' && s.archief[archiefIndex]) {
+    const a = s.archief[archiefIndex];
+    document.getElementById('kop').textContent = a.datum + ' \u00b7 ' + a.tegenstander;
   } else {
     document.getElementById('kop').textContent = 'O14';
   }
 
   if (scherm === 'instellen') doel.innerHTML = '', doel.appendChild(schermInstellen());
   else if (scherm === 'afloop') doel.innerHTML = '', doel.appendChild(schermAfloop());
+  else if (scherm === 'seizoen') doel.innerHTML = '', doel.appendChild(schermSeizoen());
+  else if (scherm === 'archief') doel.innerHTML = '', doel.appendChild(schermArchiefwedstrijd());
+  else if (scherm === 'trainingen') doel.innerHTML = '', doel.appendChild(schermTrainingen());
+  else if (scherm === 'training') doel.innerHTML = '', doel.appendChild(schermTraining());
   else doel.innerHTML = '', doel.appendChild(schermWedstrijd());
 }
 
@@ -402,49 +485,12 @@ function schermWedstrijd() {
   }
   if (w.afgelopen) { return schermAfloop(); }
 
-  d.appendChild(tekenVeld(true));
-
-  const bank = w.bank.map(id => speler(id)).filter(Boolean);
   const tijden = speeltijden();
-  const uit = gekozenPlek ? speler(w.opstelling[gekozenPlek]) : null;
-
-  const kop = document.createElement('div');
-  kop.className = 'bankkop';
-  kop.innerHTML = 'Bank <span>per linie, bovenaan wie het minst speelde</span>';
-  d.appendChild(kop);
-
-  if (!bank.length) {
-    const leeg = document.createElement('div');
-    leeg.className = 'rij';
-    leeg.innerHTML = '<p class="uitleg">Iedereen staat in het veld.</p>';
-    d.appendChild(leeg);
-  }
-
-  const groepen = [['K', 'Keeper'], ['V', 'Verdediging'], ['M', 'Middenveld'], ['A', 'Aanval'], ['', 'Zonder linie']];
-  groepen.forEach(([code, naam]) => {
-    const groep = bank.filter(p => (p.linie || '') === code)
-                      .sort((a, b) => (tijden[a.id] || 0) - (tijden[b.id] || 0));
-    if (!groep.length) return;
-
-    const past = uit && (uit.linie || '') === code;
-    const gk = document.createElement('div');
-    gk.className = 'groepkop' + (past ? ' past' : '');
-    gk.innerHTML = '<b>' + naam + '</b>' + (past ? '<span>zelfde linie</span>' : '');
-    d.appendChild(gk);
-
-    const rij = document.createElement('div');
-    rij.className = 'rij';
-    groep.forEach(p => {
-      const el = document.createElement('div');
-      el.className = 'chip';
-      if (gekozenPlek) el.className += past ? ' doel' : ' doel andere';
-      el.innerHTML = '<span>' + veiligeTekst(p.naam) + '</span><span class="min">' +
-        Math.round((tijden[p.id] || 0) / 60) + '\u2032</span>';
-      el.onclick = () => tikBank(p.id);
-      rij.appendChild(el);
-    });
-    d.appendChild(rij);
-  });
+  const veldrij = document.createElement('div');
+  veldrij.className = 'veldrij';
+  veldrij.appendChild(tekenVeld(true, w));
+  veldrij.appendChild(bankKolom(tijden));
+  d.appendChild(veldrij);
 
   const knoppen = document.createElement('div');
   knoppen.className = 'knoprij';
@@ -457,10 +503,11 @@ function schermWedstrijd() {
 
   if (gekozenPlek) {
     const uit = speler(w.opstelling[gekozenPlek]);
+    const linie = LINIES[plekLinie(gekozenPlek, w.formatie)] || 'Onbekend';
     const balk = document.createElement('div');
     balk.className = 'melding';
-    balk.innerHTML = '<span><b>' + veiligeTekst(uit ? uit.naam : 'Leeg') +
-      '</b> gaat eruit. Tik wie erin komt.</span>';
+    balk.innerHTML = '<span><b>' + veiligeTekst(uit ? uit.naam : 'Lege plek') +
+      '</b> \u00b7 ' + veiligeTekst(linie.toLowerCase()) + '. Tik wie erin komt.</span>';
     const annuleer = document.createElement('button');
     annuleer.className = 'klein';
     annuleer.textContent = 'Annuleren';
@@ -472,8 +519,58 @@ function schermWedstrijd() {
   return d;
 }
 
-function tekenVeld(klikbaar) {
+/* De bank naast het veld: aanval boven, keeper onder, net als de plekken links. */
+function bankKolom(tijden) {
   const w = s.wedstrijd;
+  const kolom = document.createElement('div');
+  kolom.className = 'banknaast';
+
+  const kop = document.createElement('div');
+  kop.className = 'bankkop';
+  kop.textContent = 'Bank';
+  kolom.appendChild(kop);
+
+  const bank = w.bank.map(id => speler(id)).filter(Boolean);
+  if (!bank.length) {
+    const leeg = document.createElement('p');
+    leeg.className = 'uitleg';
+    leeg.textContent = 'Iedereen speelt.';
+    kolom.appendChild(leeg);
+    return kolom;
+  }
+
+  const doelLinie = gekozenPlek ? plekLinie(gekozenPlek, w.formatie) : null;
+  const pastBij = p => doelLinie === 'K' ? kanKeepen(p) : (p.linie || '') === doelLinie;
+
+  LINIEVOLGORDE.forEach(code => {
+    const groep = bank.filter(p => groepVan(p) === code)
+                      .sort((a, b) => (tijden[a.id] || 0) - (tijden[b.id] || 0));
+    if (!groep.length) return;
+
+    const raak = gekozenPlek && groep.some(pastBij);
+    const gk = document.createElement('div');
+    gk.className = 'groepkop' + (raak ? ' past' : '');
+    gk.innerHTML = '<b>' + veiligeTekst(LINIES[code]) + '</b>';
+    kolom.appendChild(gk);
+
+    const rij = document.createElement('div');
+    rij.className = 'rij';
+    groep.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'chip';
+      if (gekozenPlek) el.className += pastBij(p) ? ' doel' : ' doel andere';
+      el.innerHTML = '<span>' + veiligeTekst(p.naam) + '</span><span class="min">' +
+        Math.round((tijden[p.id] || 0) / 60) + '\u2032</span>';
+      el.onclick = () => tikBank(p.id);
+      rij.appendChild(el);
+    });
+    kolom.appendChild(rij);
+  });
+  return kolom;
+}
+
+function tekenVeld(klikbaar, doelW) {
+  const w = doelW || s.wedstrijd;
   const veld = document.createElement('div');
   veld.className = 'veld';
   veld.innerHTML =
@@ -576,6 +673,125 @@ function beeindig() {
   bewaar(); naarScherm('afloop');
 }
 
+/* ---------- gedeelde stukjes: speeltijdtabel en verloop ---------- */
+/* rijen: [{naam, seconden, sub?}] — gebruikt na afloop, in het archief en bij het seizoen */
+function speeltijdHtml(rijen) {
+  const langst = Math.max(1, ...rijen.map(r => r.seconden || 0));
+  return '<table class="uitslag">' + rijen.slice()
+    .sort((a, b) => (b.seconden || 0) - (a.seconden || 0))
+    .map(r =>
+      '<tr><td>' + veiligeTekst(r.naam) +
+        (r.sub ? '<span class="sub">' + veiligeTekst(r.sub) + '</span>' : '') + '</td>' +
+      '<td class="balk"><div class="staaf"><i style="width:' +
+        Math.round((r.seconden || 0) / langst * 100) + '%"></i></div></td>' +
+      '<td class="m">' + Math.round((r.seconden || 0) / 60) + ' min</td></tr>')
+    .join('') + '</table>';
+}
+
+/* `namen` is de naamlijst zoals hij bij het bewaren was; zonder dat pakken we de selectie van nu. */
+function gebeurtenisTekst(g, namen) {
+  const naam = id => {
+    const p = speler(id);
+    return p ? p.naam : ((namen && namen[id]) || 'onbekend');
+  };
+  if (g.type === 'start') return 'Aftrap';
+  if (g.type === 'rust') return 'Rust';
+  if (g.type === 'eind') return 'Einde';
+  if (g.type === 'tegen') return 'Tegendoelpunt';
+  if (g.type === 'goal') return 'Doelpunt' + (g.speler ? ' — ' + naam(g.speler) : '');
+  if (g.type === 'wissel') return naam(g.erin) + ' voor ' + naam(g.eruit);
+  return g.type;
+}
+
+function verloopHtml(gebeurtenissen, namen) {
+  return '<ul class="log">' + (gebeurtenissen || []).map(g =>
+    '<li><b>' + mmss(g.t) + '</b><span>' + veiligeTekst(gebeurtenisTekst(g, namen)) + '</span></li>'
+  ).join('') + '</ul>';
+}
+
+/* ---------- verslag om te delen ---------- */
+/* bron: een bewaarde wedstrijd, of {datum, tegenstander, thuis, stand, formatie, gebeurtenissen}.
+   Wissels blijven er standaard uit: de uitslag is voor iedereen, de opstelling is van de trainer. */
+function verslagTekst(bron, metWissels) {
+  const st = bron.stand || [0, 0];
+  const thuis = bron.thuis !== false;
+  const regels = [];
+  regels.push((thuis ? 'O14 \u2013 ' + bron.tegenstander : bron.tegenstander + ' \u2013 O14') + ' ' +
+    (thuis ? st[0] + '\u2013' + st[1] : st[1] + '\u2013' + st[0]));
+  regels.push(datumTekst(bron.datum));
+  regels.push('');
+
+  let voor = 0, tegen = 0;
+  (bron.gebeurtenissen || []).slice().sort((a, b) => (a.t || 0) - (b.t || 0)).forEach(g => {
+    const min = Math.floor((g.t || 0) / 60) + '\u2032';
+    if (g.type === 'goal') {
+      voor++;
+      const p = g.speler ? speler(g.speler) : null;
+      const naam = p ? p.naam : (bron.namen && bron.namen[g.speler]);
+      regels.push(min + '  ' + voor + '\u2013' + tegen + '  ' + (naam || 'doelpunt'));
+    } else if (g.type === 'tegen') {
+      tegen++;
+      regels.push(min + '  ' + voor + '\u2013' + tegen + '  tegendoelpunt');
+    } else if (g.type === 'wissel' && metWissels) {
+      const n = id => { const q = speler(id); return q ? q.naam : ((bron.namen && bron.namen[id]) || 'onbekend'); };
+      regels.push(min + '       ' + n(g.erin) + ' voor ' + n(g.eruit));
+    }
+  });
+  if (voor + tegen === 0) regels.push('Geen doelpunten.');
+  return regels.join('\n');
+}
+
+function datumTekst(datum) {
+  try {
+    const d = new Date(datum + 'T12:00:00');
+    return d.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
+  } catch (e) { return datum; }
+}
+
+/* Het verslag van het scherm waar je nu staat. */
+function verslagBron() {
+  if (scherm === 'archief') return s.archief[archiefIndex] || null;
+  const w = s.wedstrijd;
+  if (!w) return null;
+  return { datum: w.datum, tegenstander: w.tegenstander, thuis: w.thuis,
+           stand: stand(), formatie: w.formatie, gebeurtenissen: w.gebeurtenissen };
+}
+
+function kopieerVerslag() {
+  const bron = verslagBron();
+  if (!bron) return;
+  const tekst = verslagTekst(bron, s.verslagWissels);
+  try { navigator.clipboard.writeText(tekst); } catch (e) { /* dan met de hand */ }
+  const vak = document.getElementById('verslagvak');
+  if (!vak) return;
+  vak.innerHTML = '<p class="uitleg" style="margin-top:12px">Gekopieerd. Staat er ook hieronder, ' +
+    'voor als plakken niet lukt.</p>';
+  const t = document.createElement('textarea');
+  t.value = tekst;
+  t.style.minHeight = '160px';
+  vak.appendChild(t);
+  t.focus(); t.select();
+  vak.scrollIntoView({ block: 'center' });
+}
+
+function wisselsInVerslag() {
+  s.verslagWissels = !s.verslagWissels;
+  bewaar(); teken();
+}
+
+function verslagKnoppen() {
+  return '<div class="knoprij" style="padding-left:0;margin-top:16px">' +
+    '<button class="prim" onclick="kopieerVerslag()">Verslag kopi\u00ebren</button>' +
+    '<button onclick="wisselsInVerslag()">Wissels: ' + (s.verslagWissels ? 'wel' : 'niet') + ' mee</button>' +
+    '</div><div id="verslagvak"></div>';
+}
+
+/* De naam van nu, ook als iemand na de wedstrijd hernoemd is. */
+function naamNu(r) {
+  const p = r.id ? speler(r.id) : null;
+  return p ? p.naam : r.naam;
+}
+
 /* ---------- na afloop ---------- */
 function schermAfloop() {
   const w = s.wedstrijd;
@@ -586,40 +802,26 @@ function schermAfloop() {
   const [v, t] = stand();
   const tijden = speeltijden();
   const eind = eindTijd();
-  const langst = Math.max(1, ...Object.values(tijden));
 
   let html = '<h2>Uitslag</h2><p style="font-size:22px;font-weight:700;margin:0 0 4px">' +
     veiligeTekst(w.thuis ? 'O14' : w.tegenstander) + ' ' + v + ' – ' + t + ' ' +
     veiligeTekst(w.thuis ? w.tegenstander : 'O14') + '</p>' +
     '<p class="uitleg">' + w.datum + ' · ' + mmss(eind) + ' gespeeld · ' + w.formatie + '</p>';
 
-  html += '<h2>Speeltijd</h2><table class="uitslag">';
-  s.spelers.slice()
-    .filter(p => tijden[p.id] !== undefined)
-    .sort((a, b) => (tijden[b.id] || 0) - (tijden[a.id] || 0))
-    .forEach(p => {
-      const sec = tijden[p.id] || 0;
-      html += '<tr><td>' + veiligeTekst(p.naam) + '</td>' +
-        '<td class="balk"><div class="staaf"><i style="width:' + Math.round(sec / langst * 100) + '%"></i></div></td>' +
-        '<td class="m">' + Math.round(sec / 60) + ' min</td></tr>';
-    });
-  html += '</table>';
+  html += '<h2>Speeltijd</h2>' + speeltijdHtml(
+    s.spelers.filter(p => tijden[p.id] !== undefined)
+      .map(p => ({ naam: p.naam, seconden: tijden[p.id] || 0 })));
 
-  html += '<h2>Verloop</h2><ul class="log">';
-  w.gebeurtenissen.forEach(g => {
-    let tekst = '';
-    if (g.type === 'start') tekst = 'Aftrap';
-    else if (g.type === 'rust') tekst = 'Rust';
-    else if (g.type === 'eind') tekst = 'Einde';
-    else if (g.type === 'tegen') tekst = 'Tegendoelpunt';
-    else if (g.type === 'goal') tekst = 'Doelpunt' + (g.speler ? ' — ' + naamVan(g.speler) : '');
-    else if (g.type === 'wissel') tekst = naamVan(g.erin) + ' voor ' + naamVan(g.eruit);
-    html += '<li><b>' + mmss(g.t) + '</b><span>' + veiligeTekst(tekst) + '</span></li>';
-  });
-  html += '</ul>';
+  html += '<h2>Verloop</h2>' + verloopHtml(w.gebeurtenissen, null);
+
+  html += '<h2>Delen</h2>' +
+    '<p class="uitleg">Voor de groepsapp. De wissels laat ik er standaard uit.</p>' +
+    verslagKnoppen();
 
   html += '<div class="knoprij" style="padding-left:0;margin-top:16px">' +
-    '<button class="prim" onclick="bewaarInArchief()">Bewaren in archief</button>' +
+    (w.bewaard
+      ? '<button disabled>Bewaard in archief</button>'
+      : '<button class="prim" onclick="bewaarInArchief()">Bewaren in archief</button>') +
     '<button onclick="naarScherm(\'instellen\')">Nieuwe wedstrijd</button>' +
     '</div>';
 
@@ -629,18 +831,317 @@ function schermAfloop() {
 
 function bewaarInArchief() {
   const w = s.wedstrijd;
+  if (w.bewaard) return;
   const tijden = speeltijden();
+  const namen = {};
+  s.spelers.forEach(p => { namen[p.id] = p.naam; });
   s.archief.unshift({
     datum: w.datum, tegenstander: w.tegenstander, thuis: w.thuis,
     stand: stand(), formatie: w.formatie,
     duur: eindTijd(),
     gebeurtenissen: w.gebeurtenissen,
+    namen: namen,                    /* de namen van toen, voor het geval de selectie verandert */
     speeltijd: s.spelers.filter(p => tijden[p.id] !== undefined)
-      .map(p => ({ naam: p.naam, seconden: Math.round(tijden[p.id]) })),
+      .map(p => ({ id: p.id, naam: p.naam, seconden: Math.round(tijden[p.id]) })),
   });
+  w.bewaard = true;
   bewaar();
-  alert('Bewaard. Je vindt hem terug onder Instellen → Archief.');
+  alert('Bewaard. Je vindt hem terug onder Instellen \u2192 Archief.');
   naarScherm('instellen');
+}
+
+/* ---------- bewaarde wedstrijd terugkijken ---------- */
+function openArchief(i) { archiefIndex = i; naarScherm('archief'); }
+
+function schermArchiefwedstrijd() {
+  const d = document.createElement('div');
+  d.className = 'pad';
+  const a = s.archief[archiefIndex];
+  const terug = '<div class="knoprij" style="padding-left:0;margin-top:16px">' +
+    '<button class="prim" onclick="naarScherm(\'instellen\')">Terug</button>';
+  if (!a) {
+    d.innerHTML = '<p class="uitleg">Deze wedstrijd staat er niet meer.</p>' + terug + '</div>';
+    return d;
+  }
+
+  const st = a.stand || [0, 0];
+  const thuis = a.thuis !== false;
+  let html = '<h2>Uitslag</h2><p style="font-size:22px;font-weight:700;margin:0 0 4px">' +
+    veiligeTekst(thuis ? 'O14' : a.tegenstander) + ' ' + st[0] + ' \u2013 ' + st[1] + ' ' +
+    veiligeTekst(thuis ? a.tegenstander : 'O14') + '</p>' +
+    '<p class="uitleg">' + veiligeTekst(a.datum) + ' \u00b7 ' + mmss(a.duur || 0) + ' gespeeld \u00b7 ' +
+    veiligeTekst(a.formatie || '') + '</p>';
+
+  html += '<h2>Speeltijd</h2>' + speeltijdHtml(
+    (a.speeltijd || []).map(r => ({ naam: naamNu(r), seconden: r.seconden || 0 })));
+
+  html += '<h2>Verloop</h2>' + verloopHtml(a.gebeurtenissen, a.namen);
+
+  html += '<h2>Delen</h2>' + verslagKnoppen();
+
+  html += terug + '<button class="uit" onclick="verwijderArchief()">Verwijderen</button></div>';
+  d.innerHTML = html;
+  return d;
+}
+
+function verwijderArchief() {
+  const a = s.archief[archiefIndex];
+  if (!a) return;
+  if (!confirm('De wedstrijd tegen ' + a.tegenstander + ' van ' + a.datum + ' uit het archief verwijderen?')) return;
+  s.archief.splice(archiefIndex, 1);
+  archiefIndex = -1;
+  bewaar();
+  naarScherm('instellen');
+}
+
+/* ---------- trainingen ---------- */
+/* Een training is een datum met per speler een stand: er, afgemeld, of niet gekomen.
+   Nieuw = iedereen present; je tikt alleen wie er niet is. Dat is het snelst langs de lijn. */
+const PRESENTIE = { ja: 'Aanwezig', af: 'Afgemeld', nee: 'Niet gekomen' };
+const PRESENTIEVOLGORDE = ['ja', 'af', 'nee'];
+
+function vandaag() { return new Date().toISOString().slice(0, 10); }
+function datumKort(d) {
+  try {
+    return new Date(d + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+  } catch (e) { return d; }
+}
+
+function sorteerTrainingen() {
+  s.trainingen.sort((a, b) => (b.datum || '').localeCompare(a.datum || ''));
+}
+
+function nieuweTraining() {
+  if (!s.spelers.length) { alert('Zet eerst je selectie erin.'); return; }
+  const status = {};
+  s.spelers.forEach(p => { status[p.id] = 'ja'; });
+  const t = { datum: vandaag(), status: status };
+  s.trainingen.unshift(t);
+  sorteerTrainingen();
+  trainingIndex = s.trainingen.indexOf(t);
+  bewaar();
+  naarScherm('training');
+}
+
+function openTraining(i) { trainingIndex = i; naarScherm('training'); }
+
+function tikPresentie(spelerId) {
+  const t = s.trainingen[trainingIndex];
+  if (!t) return;
+  const nu = t.status[spelerId] || 'ja';
+  t.status[spelerId] = PRESENTIEVOLGORDE[(PRESENTIEVOLGORDE.indexOf(nu) + 1) % PRESENTIEVOLGORDE.length];
+  bewaar(); teken();
+}
+
+function trainingDatum(waarde) {
+  const t = s.trainingen[trainingIndex];
+  if (!t || !waarde) return;
+  const open = t;
+  t.datum = waarde;
+  sorteerTrainingen();
+  trainingIndex = s.trainingen.indexOf(open);
+  bewaar(); teken();
+}
+
+function verwijderTraining() {
+  const t = s.trainingen[trainingIndex];
+  if (!t) return;
+  if (!confirm('De training van ' + datumKort(t.datum) + ' verwijderen?')) return;
+  s.trainingen.splice(trainingIndex, 1);
+  trainingIndex = -1;
+  bewaar();
+  naarScherm('trainingen');
+}
+
+function telling(t) {
+  const w = { ja: 0, af: 0, nee: 0 };
+  s.spelers.forEach(p => { const st = t.status[p.id]; if (st) w[st]++; });
+  return w;
+}
+
+/* Presentie over de laatste n trainingen waar deze speler in stond. */
+function presentie(spelerId, n) {
+  let er = 0, totaal = 0;
+  for (let i = 0; i < s.trainingen.length && (!n || totaal < n); i++) {
+    const st = s.trainingen[i].status[spelerId];
+    if (!st) continue;
+    totaal++;
+    if (st === 'ja') er++;
+  }
+  return { er: er, totaal: totaal };
+}
+
+function schermTrainingen() {
+  const d = document.createElement('div');
+  d.className = 'pad';
+  let html = '<h2>Trainingen</h2>';
+  if (!s.trainingen.length) {
+    html += '<p class="uitleg">Nog geen trainingen. Maak er een aan; iedereen staat dan op aanwezig ' +
+      'en je tikt alleen wie er niet is.</p>';
+  } else {
+    html += '<p class="uitleg">Tik een training aan om hem bij te werken. De datum kun je daar aanpassen, ' +
+      'dus een gemiste week vul je later gewoon in.</p><ul class="log">' +
+      s.trainingen.map((t, i) => {
+        const w = telling(t);
+        return '<li class="klikbaar" onclick="openTraining(' + i + ')"><b>' + veiligeTekst(datumKort(t.datum)) +
+          '</b><span>' + w.ja + ' er' + (w.af ? ', ' + w.af + ' afgemeld' : '') +
+          (w.nee ? ', ' + w.nee + ' niet gekomen' : '') + '</span><em>\u203a</em></li>';
+      }).join('') + '</ul>';
+  }
+  html += '<div class="knoprij" style="padding-left:0;margin-top:12px">' +
+    '<button class="prim" onclick="nieuweTraining()">Nieuwe training</button>' +
+    '<button onclick="naarScherm(\'instellen\')">Terug</button></div>';
+  d.innerHTML = html;
+  return d;
+}
+
+function schermTraining() {
+  const d = document.createElement('div');
+  d.className = 'pad';
+  const t = s.trainingen[trainingIndex];
+  if (!t) {
+    d.innerHTML = '<p class="uitleg">Deze training staat er niet meer.</p>' +
+      '<div class="knoprij" style="padding-left:0"><button class="prim" onclick="naarScherm(\'trainingen\')">Terug</button></div>';
+    return d;
+  }
+  const w = telling(t);
+  d.innerHTML = '<h2>Training</h2>' +
+    '<label class="vak">Datum<input id="trainingdatum" type="date" value="' + veiligeTekst(t.datum) + '"></label>' +
+    '<p class="telling"><span>' + w.ja + ' aanwezig</span><span>' + w.af + ' afgemeld</span><span>' +
+    w.nee + ' niet gekomen</span></p>' +
+    '<p class="uitleg">Tik op de knop achter een naam om hem langs aanwezig, afgemeld en niet gekomen te zetten.</p>' +
+    '<div id="preslijst"></div>' +
+    '<div class="knoprij" style="padding-left:0;margin-top:16px">' +
+    '<button class="prim" onclick="naarScherm(\'trainingen\')">Klaar</button>' +
+    '<button class="uit" onclick="verwijderTraining()">Verwijderen</button></div>';
+
+  const lijst = d.querySelector('#preslijst');
+  s.spelers.forEach(p => {
+    const regel = document.createElement('div');
+    regel.className = 'sregel';
+    const naam = document.createElement('span');
+    naam.className = 'naam';
+    naam.textContent = p.naam;
+    regel.appendChild(naam);
+    const st = t.status[p.id] || 'ja';
+    const b = document.createElement('button');
+    b.className = 'presknop ' + st;
+    b.textContent = PRESENTIE[st];
+    b.onclick = () => tikPresentie(p.id);
+    regel.appendChild(b);
+    lijst.appendChild(regel);
+  });
+
+  const datumveld = d.querySelector('#trainingdatum');
+  datumveld.onchange = () => trainingDatum(datumveld.value);
+  return d;
+}
+
+/* ---------- seizoen ---------- */
+/* Alles uit het archief bij elkaar. Op id waar dat kan, zodat hernoemen niets splitst. */
+function seizoenTotalen() {
+  const per = {};
+  const pak = (sleutel, naam) => {
+    if (!per[sleutel]) per[sleutel] = { naam: naam, seconden: 0, wedstrijden: 0, doelpunten: 0 };
+    per[sleutel].naam = naam;
+    return per[sleutel];
+  };
+  s.archief.forEach(a => {
+    (a.speeltijd || []).forEach(r => {
+      const p = r.id ? speler(r.id) : null;
+      const x = pak(p ? 'id:' + p.id : 'naam:' + r.naam, p ? p.naam : r.naam);
+      x.seconden += r.seconden || 0;
+      if ((r.seconden || 0) > 0) x.wedstrijden++;
+    });
+    (a.gebeurtenissen || []).filter(g => g.type === 'goal' && g.speler).forEach(g => {
+      const p = speler(g.speler);
+      const naam = p ? p.naam : (a.namen && a.namen[g.speler]);
+      if (!naam) return;                       /* maker onbekend: telt alleen mee in de stand */
+      pak(p ? 'id:' + p.id : 'naam:' + naam, naam).doelpunten++;
+    });
+  });
+  return Object.keys(per).map(k => per[k]).sort((a, b) => b.seconden - a.seconden);
+}
+
+/* Presentie per speler: het hele seizoen, en de laatste vier apart.
+   Die laatste vier zijn wat telt als je zaterdag een basisopstelling maakt. */
+function presentieHtml() {
+  if (!s.trainingen.length) return '';
+  const rijen = s.spelers.map(p => {
+    const alles = presentie(p.id, 0);
+    const recent = presentie(p.id, 4);
+    return { naam: p.naam, alles: alles, recent: recent };
+  }).filter(r => r.alles.totaal > 0)
+    .sort((a, b) => (a.recent.er / Math.max(1, a.recent.totaal)) - (b.recent.er / Math.max(1, b.recent.totaal)) ||
+                    a.naam.localeCompare(b.naam));
+  if (!rijen.length) return '';
+
+  return '<h2>Presentie training</h2>' +
+    '<p class="uitleg">Bovenaan wie de laatste vier keer het minst kwam. Rechts staat die laatste vier.</p>' +
+    '<table class="uitslag">' + rijen.map(r =>
+      '<tr><td>' + veiligeTekst(r.naam) +
+      '<span class="sub">' + r.alles.er + ' van de ' + r.alles.totaal + ' dit seizoen</span></td>' +
+      '<td class="m' + (mager(r.recent) ? ' mager' : '') + '">' + r.recent.er + '/' + r.recent.totaal + '</td></tr>'
+    ).join('') + '</table>';
+}
+
+/* Minder dan de helft van de laatste vier: dat is het gesprek waard. */
+function mager(recent) { return recent.totaal >= 2 && recent.er * 2 < recent.totaal; }
+
+function schermSeizoen() {
+  const d = document.createElement('div');
+  d.className = 'pad';
+  const terug = '<div class="knoprij" style="padding-left:0;margin-top:16px">' +
+    '<button class="prim" onclick="naarScherm(\'instellen\')">Terug</button></div>';
+
+  if (!s.archief.length && !s.trainingen.length) {
+    d.innerHTML = '<h2>Seizoen</h2><p class="uitleg">Nog geen bewaarde wedstrijden en geen trainingen. ' +
+      'Sluit een wedstrijd af en bewaar hem, dan telt hij hier mee.</p>' + terug;
+    return d;
+  }
+  if (!s.archief.length) {
+    d.innerHTML = '<h2>Seizoen</h2><p class="uitleg">Nog geen bewaarde wedstrijden.</p>' +
+      presentieHtml() + terug;
+    return d;
+  }
+
+  let gew = 0, gel = 0, ver = 0, voor = 0, tegen = 0, seconden = 0;
+  s.archief.forEach(a => {
+    const st = a.stand || [0, 0];
+    voor += st[0]; tegen += st[1];
+    if (st[0] > st[1]) gew++; else if (st[0] === st[1]) gel++; else ver++;
+    seconden += a.duur || 0;
+  });
+
+  const rijen = seizoenTotalen();
+  let html = '<h2>Seizoen</h2>' +
+    '<p style="font-size:22px;font-weight:700;margin:0 0 4px">' +
+      s.archief.length + (s.archief.length === 1 ? ' wedstrijd' : ' wedstrijden') +
+      ' \u00b7 ' + gew + 'W ' + gel + 'G ' + ver + 'V</p>' +
+    '<p class="uitleg">' + voor + ' voor, ' + tegen + ' tegen \u00b7 ' +
+      Math.round(seconden / 60) + ' minuten voetbal</p>';
+
+  const makers = rijen.filter(r => r.doelpunten > 0)
+    .sort((a, b) => b.doelpunten - a.doelpunten || b.seconden - a.seconden);
+  if (makers.length) {
+    html += '<h2>Topscorers</h2><ul class="log">' + makers.map(r =>
+      '<li><b>' + r.doelpunten + '\u00d7</b><span>' + veiligeTekst(r.naam) + '</span></li>').join('') + '</ul>';
+  }
+
+  html += '<h2>Speeltijd totaal</h2>' + speeltijdHtml(rijen.map(r => ({
+    naam: r.naam,
+    seconden: r.seconden,
+    sub: r.wedstrijden + (r.wedstrijden === 1 ? ' wedstrijd' : ' wedstrijden') +
+      ' \u00b7 gem. ' + Math.round(r.seconden / 60 / Math.max(1, r.wedstrijden)) + ' min',
+  })));
+
+  html += '<p class="uitleg" style="margin-top:12px">Opgeteld over alles wat in het archief staat. ' +
+    'Een wedstrijd waarin iemand niet in het veld kwam, telt bij hem niet als wedstrijd mee.</p>';
+
+  html += presentieHtml() + terug;
+
+  d.innerHTML = html;
+  return d;
 }
 
 /* ---------- instelscherm ---------- */
@@ -655,6 +1156,7 @@ function schermInstellen() {
     html += '<p class="uitleg">Er loopt een wedstrijd tegen <b>' + veiligeTekst(w.tegenstander) + '</b>.</p>' +
       '<div class="knoprij" style="padding-left:0">' +
       '<button class="prim" onclick="naarScherm(\'wedstrijd\')">Terug naar de wedstrijd</button></div>';
+    html += '<div class="knoprij" style="padding-left:0"><button onclick="standaardOpzetten()">Standaardopstelling</button></div>';
   } else {
     html += '<div class="tweekolom">' +
       '<label class="vak">Tegenstander<input id="tegenstander" placeholder="bijv. Sparta O14"></label>' +
@@ -666,7 +1168,12 @@ function schermInstellen() {
       '</select></label>' +
       '<label class="vak">Minuten per helft<input id="helft" type="number" inputmode="numeric" value="' + s.helftMinuten + '"></label>' +
       '</div>' +
-      '<div class="knoprij" style="padding-left:0"><button class="prim" onclick="startOpzet()">Opstelling maken</button></div>';
+      '<div class="knoprij" style="padding-left:0">' +
+      '<button class="prim" onclick="startOpzet()">Opstelling maken</button>' +
+      '<button onclick="standaardOpzetten()">Standaardopstelling</button></div>' +
+      '<p class="uitleg">' + (s.standaard
+        ? 'Elke nieuwe wedstrijd begint met je standaardopstelling.'
+        : 'Nog geen standaardopstelling. Maak er een, dan hoef je langs de lijn alleen nog te wisselen.') + '</p>';
   }
 
   /* --- selectie --- */
@@ -676,21 +1183,52 @@ function schermInstellen() {
       '<textarea id="namen" placeholder="Casper&#10;Maher&#10;Daan"></textarea>' +
       '<div class="knoprij" style="padding-left:0;margin-top:10px"><button class="prim" onclick="namenErbij()">Toevoegen</button></div>';
   } else {
-    html += '<p class="uitleg">Zet per speler de linie: K keeper, V verdediging, M middenveld, A aanval. Tik een naam aan om te wijzigen of te verwijderen.</p><div id="selectie"></div>' +
+    html += '<p class="uitleg">Zet per speler de linie: V verdediging, M middenveld, A aanval. ' +
+      '<b>K</b> staat los: dat is iedereen die kan keepen, ook als hij verder in het veld speelt. ' +
+      'Tik een naam aan om te wijzigen of te verwijderen.</p><div id="selectie"></div>' +
       '<div class="knoprij" style="padding-left:0;margin-top:12px">' +
       '<button onclick="spelerToevoegen()">Speler toevoegen</button></div>';
   }
+
+  /* --- trainingen --- */
+  html += '<h2>Trainingen</h2>';
+  if (!s.trainingen.length) {
+    html += '<p class="uitleg">Nog niets bijgehouden. Wie vaak niet komt trainen zie je hier straks meteen.</p>';
+  } else {
+    const laatste = s.trainingen[0];
+    const w = telling(laatste);
+    html += '<p class="uitleg">Laatste training ' + veiligeTekst(datumKort(laatste.datum)) + ': ' +
+      w.ja + ' aanwezig, ' + (w.af + w.nee) + ' niet. In totaal ' + s.trainingen.length +
+      (s.trainingen.length === 1 ? ' training' : ' trainingen') + ' bijgehouden.</p>';
+  }
+  html += '<div class="knoprij" style="padding-left:0;margin-top:12px">' +
+    '<button class="prim" onclick="naarScherm(\'trainingen\')">Presentie bijhouden</button></div>';
 
   /* --- archief --- */
   html += '<h2>Archief</h2>';
   if (!s.archief.length) {
     html += '<p class="uitleg">Nog geen bewaarde wedstrijden.</p>';
   } else {
-    html += '<ul class="log">' + s.archief.map((a, i) =>
-      '<li><b>' + a.datum + '</b><span>' + veiligeTekst(a.tegenstander) + ' — ' + a.stand[0] + '–' + a.stand[1] + '</span></li>'
+    html += '<p class="uitleg">Tik een wedstrijd aan om hem terug te kijken.</p>' +
+      '<ul class="log">' + s.archief.map((a, i) =>
+      '<li class="klikbaar" onclick="openArchief(' + i + ')"><b>' + a.datum + '</b><span>' +
+      veiligeTekst(a.tegenstander) + ' \u2014 ' + (a.stand || [0, 0])[0] + '\u2013' + (a.stand || [0, 0])[1] +
+      '</span><em>\u203a</em></li>'
     ).join('') + '</ul>' +
-    '<div class="knoprij" style="padding-left:0;margin-top:12px"><button onclick="exporteer()">Gegevens exporteren</button></div>';
+    '<div class="knoprij" style="padding-left:0;margin-top:12px">' +
+    '<button class="prim" onclick="naarScherm(\'seizoen\')">Seizoenstotaal</button>' +
+    '<button onclick="exporteer()">Gegevens exporteren</button></div>';
   }
+
+  html += syncHtml();
+
+  html += '<h2>Overzetten zonder account</h2>' +
+    '<p class="uitleg">Kan ook zonder inloggen: maak op het ene toestel een code, voer hem op het andere in. ' +
+    'Alleen de selectie en de standaardopstelling gaan mee.</p>' +
+    '<div class="knoprij" style="padding-left:0">' +
+    '<button onclick="codeMaken()">Code maken</button>' +
+    '<button onclick="codeInvoeren()">Code invoeren</button></div>' +
+    '<div id="overzetvak"></div>';
 
   html += '<p class="uitleg wakker" style="margin-top:24px" id="wakkerstatus"></p>';
 
@@ -708,7 +1246,12 @@ function schermInstellen() {
       regel.appendChild(naam);
       const keuze = document.createElement('div');
       keuze.className = 'keuze';
-      ['K', 'V', 'M', 'A'].forEach(code => {
+      const kb = document.createElement('button');
+      kb.textContent = 'K';
+      if (p.keept) kb.className = 'aan';
+      kb.onclick = () => { p.keept = !p.keept; bewaar(); teken(); };
+      keuze.appendChild(kb);
+      ['V', 'M', 'A'].forEach(code => {
         const b = document.createElement('button');
         b.textContent = code;
         if (p.linie === code) b.className = 'aan';
@@ -740,42 +1283,107 @@ function startOpzet() {
   s.helftMinuten = parseInt((document.getElementById('helft') || {}).value, 10) || 35;
   if (!s.spelers.length) { alert('Zet eerst je selectie erin.'); return; }
   nieuweWedstrijd(tegen, thuis);
-  s.wedstrijd.bank = s.spelers.map(p => p.id);
+  vulUitStandaard(s.wedstrijd);
+  opzetVoor = 'wedstrijd';
   bewaar();
   naarScherm('opzet');
   scherm = 'opzet';
   tekenOpzet();
 }
 
+/* De wedstrijd begint met de standaardopstelling, voor zover die nog klopt. */
+function vulUitStandaard(w) {
+  const st = s.standaard;
+  if (st && st.formatie === w.formatie) {
+    Object.keys(st.opstelling).forEach(plek => {
+      const id = st.opstelling[plek];
+      if (id && speler(id)) w.opstelling[plek] = id;
+    });
+  }
+  const inVeld = Object.keys(w.opstelling).map(k => w.opstelling[k]).filter(Boolean);
+  w.bank = s.spelers.map(p => p.id).filter(id => inVeld.indexOf(id) === -1);
+}
+
+/* ---------- standaardopstelling ---------- */
+function standaardOpzetten() {
+  if (!s.spelers.length) { alert('Zet eerst je selectie erin.'); return; }
+  if (!s.standaard) s.standaard = { formatie: s.formatie, opstelling: {}, bank: [] };
+  const st = s.standaard;
+  if (!FORMATIES[st.formatie]) st.formatie = s.formatie;
+  const ids = s.spelers.map(p => p.id);
+  Object.keys(st.opstelling).forEach(plek => {          /* vertrokken spelers eruit */
+    if (ids.indexOf(st.opstelling[plek]) === -1) delete st.opstelling[plek];
+  });
+  const inVeld = Object.keys(st.opstelling).map(k => st.opstelling[k]).filter(Boolean);
+  st.bank = ids.filter(id => inVeld.indexOf(id) === -1);   /* nieuwe spelers erbij */
+  opzetVoor = 'standaard';
+  gekozenPlek = null;
+  scherm = 'opzet';
+  tekenOpzet();
+}
+
+function standaardKlaar() {
+  gekozenPlek = null;
+  opzetVoor = 'wedstrijd';
+  bewaar();
+  naarScherm('instellen');
+}
+
+function standaardWissen() {
+  if (!confirm('De standaardopstelling weggooien?')) return;
+  s.standaard = null;
+  opzetVoor = 'wedstrijd';
+  bewaar();
+  naarScherm('instellen');
+}
+
 /* ---------- opstelling maken ---------- */
 function tekenOpzet() {
   const doel = document.getElementById('scherm');
-  const w = s.wedstrijd;
+  const standaard = opzetVoor === 'standaard';
+  const w = standaard ? s.standaard : s.wedstrijd;
   doel.innerHTML = '';
   document.getElementById('klokbalk').classList.add('verborgen');
   document.getElementById('stand').classList.add('verborgen');
-  document.getElementById('kop').textContent = 'Opstelling';
+  document.getElementById('kop').textContent = standaard ? 'Standaardopstelling' : 'Opstelling';
   const menuknop = document.getElementById('menuknop');
   menuknop.textContent = 'Terug';
-  menuknop.onclick = () => naarScherm('instellen');
+  menuknop.onclick = () => { opzetVoor = 'wedstrijd'; naarScherm('instellen'); };
 
   const d = document.createElement('div');
-  d.appendChild(tekenVeld(true));
+  d.appendChild(tekenVeld(true, w));
 
   const kop = document.createElement('div');
   kop.className = 'bankkop';
-  kop.innerHTML = 'Selectie <span>tik een plek op het veld, dan een naam</span>';
+  kop.innerHTML = (standaard ? 'Selectie <span>zo begint elke wedstrijd</span>'
+                             : 'Selectie <span>tik een plek op het veld, dan een naam</span>');
   d.appendChild(kop);
+
+  /* wie weinig traint, ook als hij al in de opstelling staat */
+  const mageren = s.spelers.filter(p => mager(presentie(p.id, 4)));
+  if (mageren.length) {
+    const let_op = document.createElement('p');
+    let_op.className = 'uitleg';
+    let_op.style.padding = '0 12px';
+    let_op.innerHTML = 'Weinig getraind: ' + mageren.map(p => {
+      const r = presentie(p.id, 4);
+      return '<b class="mager">' + veiligeTekst(p.naam) + ' ' + r.er + '/' + r.totaal + '</b>';
+    }).join(', ');
+    d.appendChild(let_op);
+  }
 
   const rij = document.createElement('div');
   rij.className = 'rij';
   w.bank.map(id => speler(id)).filter(Boolean)
-    .sort((a, b) => (a.linie || 'Z').localeCompare(b.linie || 'Z') || a.naam.localeCompare(b.naam))
+    .sort((a, b) => LINIEVOLGORDE.indexOf(groepVan(a)) - LINIEVOLGORDE.indexOf(groepVan(b)) ||
+                    a.naam.localeCompare(b.naam))
     .forEach(p => {
       const el = document.createElement('div');
+      const recent = presentie(p.id, 4);
       el.className = 'chip' + (gekozenPlek ? ' doel' : '');
       el.innerHTML = '<span>' + veiligeTekst(p.naam) + '</span>' +
-        (p.linie ? '<span class="min">' + p.linie + '</span>' : '');
+        '<span class="min">' + veiligeTekst([p.keept ? 'K' : '', p.linie || ''].filter(Boolean).join('\u00b7')) + '</span>' +
+        (mager(recent) ? '<span class="min mager">' + recent.er + '/' + recent.totaal + '</span>' : '');
       el.onclick = () => {
         if (!gekozenPlek) { alert('Tik eerst een plek op het veld aan.'); return; }
         const oud = w.opstelling[gekozenPlek];
@@ -792,7 +1400,10 @@ function tekenOpzet() {
   const bezet = Object.values(w.opstelling).filter(Boolean).length;
   const knoppen = document.createElement('div');
   knoppen.className = 'knoprij';
-  knoppen.innerHTML = '<button class="prim" onclick="opstellingKlaar()">Klaar — naar de wedstrijd</button>' +
+  knoppen.innerHTML = (standaard
+      ? '<button class="prim" onclick="standaardKlaar()">Bewaren</button>' +
+        '<button class="uit" onclick="standaardWissen()">Wissen</button>'
+      : '<button class="prim" onclick="opstellingKlaar()">Klaar \u2014 naar de wedstrijd</button>') +
     '<span class="uitleg" style="align-self:center;margin:0">' + bezet + ' van de 11 ingevuld</span>';
   d.appendChild(knoppen);
 
@@ -847,6 +1458,70 @@ function wijzigSpeler(p) {
   bewaar(); teken();
 }
 
+/* ---------- overzetten tussen toestellen ---------- */
+/* Alleen de voorbereiding: selectie, formatie en standaardopstelling.
+   Bewaarde wedstrijden gaan niet mee, die horen bij het toestel waar ze gespeeld zijn. */
+function opzetPakket() {
+  return { v: 1, spelers: s.spelers, formatie: s.formatie, helftMinuten: s.helftMinuten, standaard: s.standaard };
+}
+
+function codeMaken() {
+  const vak = overzetVak();
+  const code = btoa(unescape(encodeURIComponent(JSON.stringify(opzetPakket()))));
+  vak.innerHTML = '<p class="uitleg" style="margin-top:12px">Kopieer deze code en stuur hem naar je andere toestel. ' +
+    'Daar op <b>Code invoeren</b> tikken en plakken.</p>';
+  const tekstvak = document.createElement('textarea');
+  tekstvak.value = code;
+  tekstvak.readOnly = true;
+  vak.appendChild(tekstvak);
+  tekstvak.focus(); tekstvak.select();
+  try { navigator.clipboard.writeText(code); } catch (e) { /* dan met de hand */ }
+  vak.scrollIntoView({ block: 'center' });
+}
+
+function codeInvoeren() {
+  const vak = overzetVak();
+  vak.innerHTML = '<p class="uitleg" style="margin-top:12px">Plak hier de code van je andere toestel.</p>';
+  const tekstvak = document.createElement('textarea');
+  tekstvak.id = 'overzetcode';
+  tekstvak.placeholder = 'Plak de code';
+  vak.appendChild(tekstvak);
+  const knoppen = document.createElement('div');
+  knoppen.className = 'knoprij';
+  knoppen.style.padding = '10px 0 0';
+  knoppen.innerHTML = '<button class="prim" onclick="codeOvernemen()">Overnemen</button>';
+  vak.appendChild(knoppen);
+  tekstvak.focus();
+  vak.scrollIntoView({ block: 'center' });
+}
+
+function overzetVak() {
+  const vak = document.getElementById('overzetvak');
+  vak.innerHTML = '';
+  return vak;
+}
+
+function codeOvernemen() {
+  const vak = document.getElementById('overzetcode');
+  const rauw = (vak ? vak.value : '').trim();
+  if (!rauw) return;
+  let pakket;
+  try { pakket = JSON.parse(decodeURIComponent(escape(atob(rauw)))); }
+  catch (e) { alert('Deze code kon ik niet lezen. Is hij helemaal meegekomen?'); return; }
+  if (!pakket || !Array.isArray(pakket.spelers) || !pakket.spelers.length) {
+    alert('In deze code zit geen selectie.'); return;
+  }
+  if (!confirm('De selectie op dit toestel vervangen door ' + pakket.spelers.length + ' spelers uit de code?\n\n' +
+               'Je bewaarde wedstrijden blijven staan.')) return;
+  s.spelers = pakket.spelers;
+  if (FORMATIES[pakket.formatie]) s.formatie = pakket.formatie;
+  if (pakket.helftMinuten) s.helftMinuten = pakket.helftMinuten;
+  s.standaard = pakket.standaard || null;
+  bewaar();
+  alert('Overgenomen.');
+  naarScherm('instellen');
+}
+
 function exporteer() {
   const tekst = JSON.stringify({ spelers: s.spelers.map(p => p.naam), archief: s.archief }, null, 2);
   const vak = document.createElement('textarea');
@@ -857,6 +1532,272 @@ function exporteer() {
   vak.scrollIntoView({ block: 'center' });
   vak.select();
   alert('Alles staat als tekst onderin. Kopieer het en bewaar het waar je wilt.');
+}
+
+/* ==========================================================
+   Synchroniseren met Supabase
+   Alleen de voorbereiding en de geschiedenis gaan mee: selectie, standaard-
+   opstelling, trainingen en archief. Een lopende wedstrijd blijft op het toestel
+   waar hij gespeeld wordt; die wil je niet kwijtraken door een druk op de knop
+   op je laptop.
+   ========================================================== */
+
+function laadSessie() {
+  try { sessie = JSON.parse(localStorage.getItem(SESSIESLEUTEL)); }
+  catch (e) { sessie = null; }
+}
+function bewaarSessie() {
+  try { localStorage.setItem(SESSIESLEUTEL, JSON.stringify(sessie)); } catch (e) { /* stil */ }
+}
+function vergeetSessie() {
+  sessie = null;
+  try { localStorage.removeItem(SESSIESLEUTEL); } catch (e) { /* stil */ }
+}
+
+function zetSessie(d) {
+  const oud = sessie || {};
+  sessie = {
+    access_token: d.access_token,
+    refresh_token: d.refresh_token,
+    verloopt: Date.now() + ((d.expires_in || 3600) * 1000),
+    user_id: d.user ? d.user.id : oud.user_id,
+    email: d.user ? d.user.email : oud.email,
+    teamId: oud.teamId || null,
+    versie: oud.versie || 0,
+    laatst: oud.laatst || null,
+  };
+  bewaarSessie();
+}
+
+async function sb(pad, opties) {
+  opties = opties || {};
+  const kop = { 'apikey': SUPABASE.sleutel, 'Content-Type': 'application/json' };
+  Object.keys(opties.headers || {}).forEach(k => { kop[k] = opties.headers[k]; });
+  if (opties.metToken !== false && sessie && sessie.access_token) {
+    kop['Authorization'] = 'Bearer ' + sessie.access_token;
+  }
+  const r = await fetch(SUPABASE.url + pad, {
+    method: opties.method || 'GET', headers: kop, body: opties.body,
+  });
+  const tekst = await r.text();
+  let data = null;
+  try { data = tekst ? JSON.parse(tekst) : null; } catch (e) { data = tekst; }
+  if (!r.ok) {
+    const fout = new Error((data && (data.message || data.msg || data.error_description)) || ('fout ' + r.status));
+    fout.status = r.status;
+    fout.data = data;
+    throw fout;
+  }
+  return data;
+}
+
+/* Het token is een uur geldig; op tijd vernieuwen scheelt opnieuw inloggen. */
+async function zorgVoorToken() {
+  if (!sessie || !sessie.refresh_token) return false;
+  if (sessie.verloopt && Date.now() < sessie.verloopt - 60000) return true;
+  try {
+    const d = await sb('/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST', metToken: false,
+      body: JSON.stringify({ refresh_token: sessie.refresh_token }),
+    });
+    zetSessie(d);
+    return true;
+  } catch (e) {
+    vergeetSessie();
+    return false;
+  }
+}
+
+/* ---------- inloggen met een code uit de mail ---------- */
+async function stuurInlogcode() {
+  const veld = document.getElementById('sync-email');
+  const email = veld ? veld.value.trim() : '';
+  if (!email) { meldSync('Vul je e-mailadres in.'); return; }
+  meldSync('Bezig met versturen\u2026');
+  try {
+    await sb('/auth/v1/otp', {
+      method: 'POST', metToken: false,
+      body: JSON.stringify({ email: email, create_user: true }),
+    });
+    inlogEmail = email;
+    inlogFase = 'code';
+    syncMelding = 'Code verstuurd naar ' + email + '. Kijk ook in je spam.';
+    teken();
+  } catch (e) {
+    meldSync('Versturen lukte niet: ' + e.message);
+  }
+}
+
+async function controleerInlogcode() {
+  const veld = document.getElementById('sync-code');
+  const code = veld ? veld.value.trim() : '';
+  if (!code) { meldSync('Vul de code uit de mail in.'); return; }
+  meldSync('Bezig met inloggen\u2026');
+  try {
+    const d = await sb('/auth/v1/verify', {
+      method: 'POST', metToken: false,
+      body: JSON.stringify({ email: inlogEmail, token: code, type: 'email' }),
+    });
+    zetSessie(d);
+    inlogFase = 'email';
+    syncMelding = 'Ingelogd.';
+    teken();
+  } catch (e) {
+    meldSync('Deze code klopt niet of is verlopen: ' + e.message);
+  }
+}
+
+function uitloggen() {
+  if (!confirm('Uitloggen op dit toestel?\n\nJe gegevens blijven gewoon staan.')) return;
+  vergeetSessie();
+  syncMelding = '';
+  teken();
+}
+
+/* ---------- team ---------- */
+async function zorgVoorTeam() {
+  if (sessie.teamId) return sessie.teamId;
+  const rijen = await sb('/rest/v1/teams?select=id&order=gemaakt.asc&limit=1');
+  if (rijen && rijen.length) {
+    sessie.teamId = rijen[0].id;
+  } else {
+    const nieuw = await sb('/rest/v1/teams', {
+      method: 'POST', headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify({ naam: 'O14', eigenaar: sessie.user_id }),
+    });
+    sessie.teamId = nieuw[0].id;
+  }
+  bewaarSessie();
+  return sessie.teamId;
+}
+
+/* ---------- wat er over de lijn gaat ---------- */
+function syncPakket() {
+  return {
+    spelers: s.spelers, formatie: s.formatie, helftMinuten: s.helftMinuten,
+    standaard: s.standaard, trainingen: s.trainingen, archief: s.archief,
+    verslagWissels: s.verslagWissels,
+  };
+}
+
+function neemPakketOver(d) {
+  if (!d || !Array.isArray(d.spelers)) return false;
+  s.spelers = d.spelers;
+  if (FORMATIES[d.formatie]) s.formatie = d.formatie;
+  if (d.helftMinuten) s.helftMinuten = d.helftMinuten;
+  s.standaard = d.standaard || null;
+  s.trainingen = Array.isArray(d.trainingen) ? d.trainingen : [];
+  s.archief = Array.isArray(d.archief) ? d.archief : [];
+  s.verslagWissels = !!d.verslagWissels;
+  bewaar();
+  return true;
+}
+
+function isVersieBotsing(e) {
+  const c = e.data && e.data.code;
+  return c === '40001' || /versie loopt niet gelijk/.test(e.message || '');
+}
+
+async function opsturen(overschrijven) {
+  if (!sessie) return;
+  meldSync('Bezig met opsturen\u2026');
+  try {
+    if (!(await zorgVoorToken())) { syncMelding = 'Je bent uitgelogd, log opnieuw in.'; teken(); return; }
+    const team = await zorgVoorTeam();
+    let verwacht = sessie.versie || null;
+    if (overschrijven) {                       /* eerst kijken wat er staat, dan er overheen */
+      const nu = await sb('/rest/v1/team_toestand?select=versie&team_id=eq.' + team);
+      verwacht = nu && nu.length ? nu[0].versie : null;
+    }
+    const r = await sb('/rest/v1/rpc/toestand_opslaan', {
+      method: 'POST',
+      body: JSON.stringify({ p_team_id: team, p_data: syncPakket(), p_verwachte_versie: verwacht }),
+    });
+    sessie.versie = r ? r.versie : (sessie.versie || 0) + 1;
+    sessie.laatst = new Date().toISOString();
+    bewaarSessie();
+    syncMelding = 'Opgestuurd.';
+    teken();
+  } catch (e) {
+    if (isVersieBotsing(e)) {
+      syncMelding = 'Op de server staat iets nieuwers, van een ander toestel. ' +
+        'Haal het eerst op, of stuur dit toestel er met opzet overheen.';
+    } else {
+      syncMelding = 'Opsturen lukte niet: ' + e.message;
+    }
+    teken();
+  }
+}
+
+async function ophalen() {
+  if (!sessie) return;
+  if (!confirm('De selectie, standaardopstelling, trainingen en het archief op dit toestel ' +
+               'vervangen door wat er op de server staat?')) return;
+  meldSync('Bezig met ophalen\u2026');
+  try {
+    if (!(await zorgVoorToken())) { syncMelding = 'Je bent uitgelogd, log opnieuw in.'; teken(); return; }
+    const team = await zorgVoorTeam();
+    const rijen = await sb('/rest/v1/team_toestand?select=data,versie&team_id=eq.' + team);
+    if (!rijen || !rijen.length) { syncMelding = 'Er staat nog niets op de server.'; teken(); return; }
+    if (!neemPakketOver(rijen[0].data)) { syncMelding = 'Wat er staat kon ik niet lezen.'; teken(); return; }
+    sessie.versie = rijen[0].versie;
+    sessie.laatst = new Date().toISOString();
+    bewaarSessie();
+    syncMelding = 'Opgehaald.';
+    teken();
+  } catch (e) {
+    syncMelding = 'Ophalen lukte niet: ' + e.message;
+    teken();
+  }
+}
+
+function meldSync(tekst) {
+  syncMelding = tekst;
+  const el = document.getElementById('syncstatus');
+  if (el) el.textContent = tekst; else teken();
+}
+
+function syncHtml() {
+  let html = '<h2>Synchroniseren</h2>';
+  if (!sessie) {
+    html += '<p class="uitleg">Log in met je e-mailadres, dan staan je laptop en je telefoon gelijk. ' +
+      'Je krijgt een code in de mail; geen wachtwoord om te onthouden.</p>';
+    if (inlogFase === 'email') {
+      html += '<label class="vak">E-mailadres<input id="sync-email" type="email" inputmode="email" ' +
+        'autocomplete="email" placeholder="jij@voorbeeld.nl" value="' + veiligeTekst(inlogEmail) + '"></label>' +
+        '<div class="knoprij" style="padding-left:0"><button class="prim" onclick="stuurInlogcode()">Stuur code</button></div>';
+    } else {
+      html += '<label class="vak">Code uit de mail<input id="sync-code" type="text" inputmode="numeric" ' +
+        'autocomplete="one-time-code" placeholder="123456"></label>' +
+        '<div class="knoprij" style="padding-left:0">' +
+        '<button class="prim" onclick="controleerInlogcode()">Inloggen</button>' +
+        '<button onclick="opnieuwInloggen()">Ander adres</button></div>';
+    }
+  } else {
+    html += '<p class="uitleg">Ingelogd als <b>' + veiligeTekst(sessie.email || '') + '</b>.' +
+      (sessie.laatst ? ' Laatst gelijkgezet ' + veiligeTekst(datumTijdKort(sessie.laatst)) + '.' : '') +
+      ' Een lopende wedstrijd gaat nooit mee; die blijft op dit toestel.</p>' +
+      '<div class="knoprij" style="padding-left:0">' +
+      '<button class="prim" onclick="opsturen(false)">Opsturen</button>' +
+      '<button onclick="ophalen()">Ophalen</button>' +
+      '<button onclick="uitloggen()">Uitloggen</button></div>';
+    if (/nieuwers/.test(syncMelding)) {
+      html += '<div class="knoprij" style="padding-left:0"><button class="uit" onclick="opsturen(true)">' +
+        'Toch dit toestel opsturen</button></div>';
+    }
+  }
+  html += '<p class="uitleg" id="syncstatus" style="margin-top:8px">' + veiligeTekst(syncMelding) + '</p>';
+  return html;
+}
+
+function opnieuwInloggen() { inlogFase = 'email'; syncMelding = ''; teken(); }
+
+function datumTijdKort(iso) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }) + ' om ' +
+           d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+  } catch (e) { return iso; }
 }
 
 /* ---------- hulpjes ---------- */
@@ -881,6 +1822,7 @@ document.addEventListener('visibilitychange', () => {
 
 /* ---------- start ---------- */
 laad();
+laadSessie();
 teken();
 tikker = setInterval(() => {
   const w = s.wedstrijd;

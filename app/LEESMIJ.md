@@ -1,4 +1,4 @@
-# O14 — wedstrijdapp
+# Blaadje — wedstrijdapp
 
 Eén map, geen build, geen dependencies. Open `index.html` in een browser en het werkt.
 
@@ -9,6 +9,16 @@ Eén map, geen build, geen dependencies. Open `index.html` in een browser en het
 - Wissels in twee tikken: speler in het veld aantikken, dan wie erin komt. Tijdstip wordt vastgelegd.
 - Doelpunten voor en tegen, met wie scoorde.
 - Na afloop: gespeelde minuten per speler, berekend uit de wissels. Nooit ingevoerd.
+- Wedstrijd bewaren in het archief, en later weer openen: uitslag, speeltijden en het hele verloop.
+- Verslag kopiëren voor de groepsapp, met of zonder de wissels erin.
+- Bank staat naast het veld, in dezelfde volgorde als de linies: aanval boven, keeper onder.
+- K staat los van de veldlinie, dus een verdediger die ook keept staat in beide lijstjes.
+- Standaardopstelling: maak hem één keer, elke nieuwe wedstrijd begint ermee.
+- Overzetten: op je laptop een code maken, op je telefoon invoeren. Selectie en standaardopstelling gaan mee, bewaarde wedstrijden niet.
+- Synchroniseren met Supabase: inloggen met een code uit de mail, daarna opsturen en ophalen. Zie `../supabase/LEESMIJ.md`.
+- Trainingen: los aan te maken, datum achteraf aan te passen. Per speler aanwezig, afgemeld of niet gekomen.
+- Presentie telt mee bij het opstellen: wie de laatste vier keer minder dan de helft kwam, staat oranje bij de opstelling.
+- Seizoenstotaal over alles wat je bewaard hebt: W-G-V, topscorers en de opgetelde speeltijd per speler.
 
 De namen staan **niet in de broncode**. Je zet ze bij het eerste gebruik zelf in de app; ze blijven in de opslag van je eigen browser.
 

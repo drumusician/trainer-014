@@ -1,5 +1,5 @@
 /* Kleine service worker: de app blijft werken zonder bereik langs de lijn. */
-const CACHE = 'o14-v1';
+const CACHE = 'o14-v5';
 const BESTANDEN = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -14,6 +14,8 @@ self.addEventListener('activate', e => {
 /* Netwerk eerst, cache als achtervang — zo krijg je updates én werkt hij offline. */
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  /* Alleen onze eigen bestanden. Wat naar Supabase gaat mag nooit uit de cache komen. */
+  if (new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(
     fetch(e.request)
       .then(r => { const kopie = r.clone(); caches.open(CACHE).then(c => c.put(e.request, kopie)); return r; })
