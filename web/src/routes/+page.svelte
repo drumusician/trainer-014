@@ -14,6 +14,8 @@
 
 	/* Wie scoorde? Dan wordt het veld even een keuzelijst. */
 	let doelpuntKiezen = $state(false);
+	/* De klok bijstellen hoeft bijna nooit, dus staat het weg tot je erop tikt. */
+	let klokBijstellen = $state(false);
 
 	$effect(() => {
 		if (w && klaar) {
@@ -72,11 +74,20 @@
 	</main>
 {:else}
 	<div class="klokbalk">
-		<div>
+		<div
+			role="button"
+			tabindex="0"
+			onclick={() => (klokBijstellen = !klokBijstellen)}
+			onkeydown={(e) => e.key === 'Enter' && (klokBijstellen = !klokBijstellen)}
+		>
 			<div class="klok">{mmss(verstreken(w, app.nu))}</div>
-			<div class="helft">{w.helft === 1 ? '1e helft' : '2e helft'}</div>
+			<div class="helft">{w.helft === 1 ? '1e helft' : '2e helft'} · tik om bij te stellen</div>
 		</div>
 		<div style="flex: 1"></div>
+		{#if klokBijstellen}
+			<button onclick={() => app.verschuifKlok(-60)}>−1′</button>
+			<button onclick={() => app.verschuifKlok(60)}>+1′</button>
+		{/if}
 		<button onclick={() => app.loopToggle()}>{w.loopt ? 'Pauze' : 'Start'}</button>
 		<button onclick={() => app.rustToggle()} disabled={w.helft === 2 && w.loopt}>
 			{w.helft === 1 ? 'Rust' : '2e helft'}
@@ -90,6 +101,7 @@
 					formatie={w.formatie}
 					opstelling={w.opstelling}
 					gekozen={app.gekozenPlek}
+					{tijden}
 					onplek={tikPlek}
 				/>
 				<BankKolom

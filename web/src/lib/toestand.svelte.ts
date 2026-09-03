@@ -106,7 +106,8 @@ class App {
 			sinds: null,
 			loopt: false,
 			helft: 1,
-			afgelopen: false
+			afgelopen: false,
+			afwezig: []
 		};
 		this.vulUitStandaard();
 		this.bewaar();
@@ -123,8 +124,51 @@ class App {
 				if (id && this.spelerVan(id)) w.opstelling[plek] = id;
 			}
 		}
+		this.herzetBank();
+	}
+
+	/** De bank is iedereen die er is en niet in het veld staat. */
+	herzetBank() {
+		const t = this.toestand;
+		const w = t.wedstrijd;
+		if (!w) return;
 		const inVeld = Object.values(w.opstelling).filter(Boolean) as string[];
-		w.bank = t.spelers.map((p) => p.id).filter((id) => !inVeld.includes(id));
+		const afwezig = w.afwezig ?? [];
+		w.bank = t.spelers.map((p) => p.id).filter((id) => !inVeld.includes(id) && !afwezig.includes(id));
+	}
+
+	/** Wie er vandaag niet is. Uit het veld halen mag ook: dan valt de plek leeg. */
+	zetAfwezig(spelerId: string, afwezig: boolean) {
+		const w = this.toestand.wedstrijd;
+		if (!w) return;
+		const lijst = new Set(w.afwezig ?? []);
+		if (afwezig) {
+			lijst.add(spelerId);
+			for (const plek of Object.keys(w.opstelling)) {
+				if (w.opstelling[plek] === spelerId) w.opstelling[plek] = null;
+			}
+		} else {
+			lijst.delete(spelerId);
+		}
+		w.afwezig = [...lijst];
+		this.herzetBank();
+		this.bewaar();
+	}
+
+	/** De klok bijstellen als de scheidsrechter er anders over denkt. */
+	verschuifKlok(seconden: number) {
+		const w = this.toestand.wedstrijd;
+		if (!w || w.afgelopen) return;
+		w.verstreken = Math.max(0, w.verstreken + seconden);
+		this.nu = Date.now();
+		this.bewaar();
+	}
+
+	/** Een proefwedstrijd of een misser weggooien. */
+	gooiWedstrijdWeg() {
+		this.toestand.wedstrijd = null;
+		this.gekozenPlek = null;
+		this.bewaar();
 	}
 
 	log(type: GebeurtenisType, extra: Partial<Gebeurtenis> = {}) {
@@ -318,6 +362,19 @@ class App {
 	}
 
 	/* ---------- overzetten ---------- */
+	/** Een back-up terugzetten: alles behalve de wedstrijd die nu loopt. */
+	zetBackupTerug(d: Omit<import('./domein/types').Toestand, 'wedstrijd'>) {
+		const t = this.toestand;
+		t.spelers = d.spelers;
+		t.formatie = d.formatie;
+		t.helftMinuten = d.helftMinuten;
+		t.standaard = d.standaard;
+		t.archief = d.archief;
+		t.trainingen = d.trainingen;
+		t.verslagWissels = d.verslagWissels;
+		this.bewaar();
+	}
+
 	neemOver(pakket: { spelers: Speler[]; formatie?: string; helftMinuten?: number; standaard: Toestand['standaard'] }) {
 		const t = this.toestand;
 		t.spelers = pakket.spelers;

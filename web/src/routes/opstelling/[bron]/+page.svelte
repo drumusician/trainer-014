@@ -5,6 +5,7 @@
 	import BankKolom from '$lib/componenten/BankKolom.svelte';
 	import { groepVan, LINIES } from '$lib/domein/formaties';
 	import { mager, presentie } from '$lib/domein/presentie';
+	import { opstellingTekst } from '$lib/domein/opstelling';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 	import type { Linie } from '$lib/domein/types';
@@ -30,6 +31,18 @@
 	const mageren = $derived(
 		app.toestand.spelers.filter((p) => mager(presentie(app.toestand.trainingen, p.id, 4)))
 	);
+
+	let gedeeld = $state('');
+
+	async function kopieer() {
+		if (!doel) return;
+		gedeeld = opstellingTekst(doel.formatie, doel.opstelling, doel.bank, app.toestand.spelers);
+		try {
+			await navigator.clipboard.writeText(gedeeld);
+		} catch {
+			/* dan uit het vak hieronder */
+		}
+	}
 
 	function klaar() {
 		if (bron === 'standaard') {
@@ -94,11 +107,21 @@
 				<button class="prim" onclick={klaar}>
 					{bron === 'standaard' ? 'Bewaren' : 'Klaar — naar de wedstrijd'}
 				</button>
+				{#if bron === 'wedstrijd'}
+					<a class="knop" href="/aanwezig">Wie is er?</a>
+				{/if}
+				<button onclick={kopieer}>Kopiëren</button>
 				{#if bron === 'standaard'}
 					<button class="uit" onclick={wissen}>Wissen</button>
 				{/if}
 				<span class="uitleg" style="align-self: center; margin: 0">{bezet} van de 11 ingevuld</span>
 			</div>
+			{#if gedeeld}
+				<div style="padding: 0 12px 12px">
+					<p class="uitleg" style="margin: 0 0 6px">Gekopieerd. Plakken kan ook uit dit vak.</p>
+					<textarea readonly value={gedeeld} style="min-height: 120px"></textarea>
+				</div>
+			{/if}
 		</div>
 	</main>
 {/if}

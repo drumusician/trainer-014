@@ -7,11 +7,14 @@
 		formatie,
 		opstelling,
 		gekozen = null,
+		tijden = null,
 		onplek
 	}: {
 		formatie: string;
 		opstelling: Opstelling;
 		gekozen?: string | null;
+		/** speelminuten per speler; tijdens een wedstrijd staan die onder de naam */
+		tijden?: Record<string, number> | null;
 		onplek?: (plekId: string) => void;
 	} = $props();
 </script>
@@ -42,7 +45,9 @@
 			onkeydown={(e) => e.key === 'Enter' && onplek?.(plekId)}
 		>
 			<div class="bol">{p ? p.naam : '+'}</div>
-			<div class="pos">{label}</div>
+			<div class="pos">
+				{label}{#if p && tijden}<span class="min">{Math.round((tijden[p.id] ?? 0) / 60)}′</span>{/if}
+			</div>
 		</div>
 	{/each}
 </div>

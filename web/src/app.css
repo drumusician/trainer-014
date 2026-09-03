@@ -88,6 +88,7 @@ main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height:
 }
 .plek .pos { color: rgba(255, 255, 255, 0.85); font-weight: 700; letter-spacing: 0.04em; font-size: 9px; }
 .plek .pos { font-size: clamp(8px, 2.9cqw, 11px); }
+.plek .pos .min { color: #fff; font-variant-numeric: tabular-nums; margin-left: 4px; opacity: .85; }
 .plek.leeg .bol { background: rgba(255, 255, 255, 0.3); color: rgba(255, 255, 255, 0.9); font-weight: 500; }
 .plek.gekozen .bol { background: var(--oranje); border-color: #fff; color: #fff; }
 

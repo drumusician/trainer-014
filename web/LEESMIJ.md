@@ -31,6 +31,15 @@ De schermen zijn routes, dus de terugknop van je telefoon werkt en je kunt een
 scherm bookmarken. Wat er in de balk bovenaan staat, zet elk scherm zelf via
 `zetKop()`.
 
+## Voor de aftrap
+
+Bij een nieuwe wedstrijd komt eerst **Wie is er?**. Wie je wegtikt staat niet op
+de bank en telt niet mee, zodat je hem er langs de lijn niet per ongeluk in
+brengt. Iemand die al opgesteld stond laat zijn plek leeg.
+
+Tik op de klok om hem bij te stellen: min of plus een minuut. De scheidsrechter
+is leidend, niet je telefoon.
+
 ## Opslag
 
 Alles staat in `localStorage` onder `o14-app-v1`, in precies dezelfde vorm als de

@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { FORMATIES } from '$lib/domein/formaties';
 	import { leesCode, maakCode } from '$lib/domein/overzetten';
+	import { backupNaam, leesBackup, maakBackup } from '$lib/domein/backup';
 	import { app } from '$lib/toestand.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
 	import { zetKop } from '$lib/kop.svelte';
@@ -19,6 +20,8 @@
 	let overzet = $state<'geen' | 'maken' | 'invoeren'>('geen');
 	let code = $state('');
 	let inlogcode = $state('');
+	let backup = $state<'geen' | 'maken' | 'terugzetten'>('geen');
+	let backuptekst = $state('');
 
 	function opstellingMaken() {
 		if (!t.spelers.length) {
@@ -26,7 +29,7 @@
 			return;
 		}
 		app.nieuweWedstrijd(tegenstander, thuis === 'thuis');
-		goto('/opstelling/wedstrijd');
+		goto('/aanwezig');
 	}
 
 	function standaard() {
@@ -37,6 +40,12 @@
 		app.zorgVoorStandaard();
 		app.gekozenPlek = null;
 		goto('/opstelling/standaard');
+	}
+
+	function weggooien() {
+		if (!confirm('Deze wedstrijd tegen ' + w!.tegenstander + ' weggooien?\n\nAlles van deze wedstrijd is dan weg. Wat je in het archief bewaarde blijft staan.'))
+			return;
+		app.gooiWedstrijdWeg();
 	}
 
 	function wijzig(p: Speler) {
@@ -73,6 +82,48 @@
 		}
 	}
 
+	async function backupMaken() {
+		const gemaakt = new Date().toISOString();
+		backuptekst = maakBackup(t, gemaakt);
+		backup = 'maken';
+		try {
+			await navigator.clipboard.writeText(backuptekst);
+		} catch {
+			/* dan met de hand, of via het bestand */
+		}
+		/* en meteen als bestand, dan heb je hem ook als je vergeet te plakken */
+		const blob = new Blob([backuptekst], { type: 'application/json' });
+		const a = document.createElement('a');
+		a.href = URL.createObjectURL(blob);
+		a.download = backupNaam(gemaakt);
+		a.click();
+		URL.revokeObjectURL(a.href);
+	}
+
+	function backupTerugzetten() {
+		try {
+			const d = leesBackup(backuptekst);
+			if (
+				!confirm(
+					'Alles op dit toestel vervangen door de back-up?\n\n' +
+						d.spelers.length +
+						' spelers, ' +
+						d.archief.length +
+						' bewaarde wedstrijden, ' +
+						d.trainingen.length +
+						' trainingen.'
+				)
+			)
+				return;
+			app.zetBackupTerug(d);
+			backup = 'geen';
+			backuptekst = '';
+			alert('Teruggezet.');
+		} catch (e) {
+			alert('Deze back-up kon ik niet lezen: ' + (e as Error).message);
+		}
+	}
+
 	const LINIEKNOPPEN: Veldlinie[] = ['V', 'M', 'A'];
 </script>
 
@@ -83,9 +134,11 @@
 			<p class="uitleg">Er loopt een wedstrijd tegen <b>{w!.tegenstander}</b>.</p>
 			<div class="knoprij" style="padding-left: 0">
 				<a class="knop prim" href="/">Terug naar de wedstrijd</a>
+				<a class="knop" href="/aanwezig">Wie is er?</a>
 			</div>
 			<div class="knoprij" style="padding-left: 0">
 				<button onclick={standaard}>Standaardopstelling</button>
+				<button class="uit" onclick={weggooien}>Wedstrijd weggooien</button>
 			</div>
 		{:else}
 			<div class="tweekolom">
@@ -235,6 +288,28 @@
 			{/if}
 		{/if}
 		{#if sync.melding}<p class="uitleg" style="margin-top: 8px">{sync.melding}</p>{/if}
+
+		<h2>Back-up</h2>
+		<p class="uitleg">
+			Alles wat de app onthoudt als tekst: selectie, standaardopstelling, trainingen en het hele archief. Je krijgt hem
+			als bestand én op je klembord. Een wedstrijd die nu loopt gaat niet mee.
+		</p>
+		<div class="knoprij" style="padding-left: 0">
+			<button onclick={backupMaken}>Back-up maken</button>
+			<button onclick={() => { backup = 'terugzetten'; backuptekst = ''; }}>Back-up terugzetten</button>
+		</div>
+		{#if backup === 'maken'}
+			<p class="uitleg" style="margin-top: 12px">
+				Bewaard als bestand, en gekopieerd. Zet hem ergens waar je hem terugvindt.
+			</p>
+			<textarea readonly value={backuptekst} style="min-height: 120px"></textarea>
+		{:else if backup === 'terugzetten'}
+			<p class="uitleg" style="margin-top: 12px">Plak hier de inhoud van een back-up.</p>
+			<textarea bind:value={backuptekst} placeholder="Plak de back-up" style="min-height: 120px"></textarea>
+			<div class="knoprij" style="padding-left: 0; margin-top: 10px">
+				<button class="prim" onclick={backupTerugzetten}>Terugzetten</button>
+			</div>
+		{/if}
 
 		<h2>Overzetten zonder account</h2>
 		<p class="uitleg">

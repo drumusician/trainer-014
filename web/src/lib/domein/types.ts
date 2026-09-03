@@ -45,6 +45,8 @@ export interface Wedstrijd {
 	helft: 1 | 2;
 	afgelopen: boolean;
 	bewaard?: boolean;
+	/** wie er vandaag niet is; die staan niet op de bank en tellen niet mee */
+	afwezig?: string[];
 }
 
 export interface Standaard {
