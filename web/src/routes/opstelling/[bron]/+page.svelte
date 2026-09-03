@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import Veld from '$lib/componenten/Veld.svelte';
 	import BankKolom from '$lib/componenten/BankKolom.svelte';
-	import { groepVan, LINIES } from '$lib/domein/formaties';
+	import { groepVan, LINIES, plekLinie } from '$lib/domein/formaties';
 	import { mager, presentie } from '$lib/domein/presentie';
 	import { opstellingTekst } from '$lib/domein/opstelling';
 	import { app } from '$lib/toestand.svelte';
@@ -17,7 +17,30 @@
 		zetKop(bron === 'standaard' ? 'Standaardopstelling' : 'Opstelling', '/', 'Terug');
 	});
 
+	/* Is de wedstrijd al begonnen, dan hoort schuiven hier niet meer: de speeltijd
+	   wordt teruggerekend uit de wissels, en ongemerkt ruilen zet die op scherp. */
+	$effect(() => {
+		if (bron === 'wedstrijd' && app.wedstrijd?.gebeurtenissen.length) goto('/wedstrijd');
+	});
+
 	const bezet = $derived(doel ? Object.values(doel.opstelling).filter(Boolean).length : 0);
+	const gekozenSpeler = $derived(
+		doel && app.gekozenPlek ? app.spelerVan(doel.opstelling[app.gekozenPlek]) : undefined
+	);
+
+	/* Eerste tik kiest een plek. Tweede tik op een andere plek ruilt ze om; staat
+	   daar niemand, dan verhuist hij ernaartoe. */
+	function tikPlek(plekId: string) {
+		if (!app.gekozenPlek) {
+			app.gekozenPlek = plekId;
+			return;
+		}
+		if (app.gekozenPlek === plekId) {
+			app.gekozenPlek = null;
+			return;
+		}
+		app.ruilPlekken(bron, app.gekozenPlek, plekId);
+	}
 
 	/* Linies zonder wissel: dat is een verrassing die je liever nu hebt. */
 	const zonderWissel = $derived.by(() => {
@@ -79,12 +102,7 @@
 	<main>
 		<div class="veldscherm zonderklok">
 			<div class="veldrij">
-				<Veld
-					formatie={doel.formatie}
-					opstelling={doel.opstelling}
-					gekozen={app.gekozenPlek}
-					onplek={(plekId) => (app.gekozenPlek = app.gekozenPlek === plekId ? null : plekId)}
-				/>
+				<Veld formatie={doel.formatie} opstelling={doel.opstelling} gekozen={app.gekozenPlek} onplek={tikPlek} />
 				<BankKolom
 					bank={doel.bank}
 					formatie={doel.formatie}
@@ -94,12 +112,30 @@
 				/>
 			</div>
 
-			{#if zonderWissel.length}
+			{#if app.gekozenPlek}
+				<div class="melding">
+					<span>
+						{#if gekozenSpeler}
+							<b>{gekozenSpeler.naam}</b> · {LINIES[plekLinie(app.gekozenPlek, doel.formatie)].toLowerCase()}.
+							Tik een andere plek om te ruilen, of iemand van de bank.
+						{:else}
+							<b>Lege plek</b> · {LINIES[plekLinie(app.gekozenPlek, doel.formatie)].toLowerCase()}. Tik wie hier komt te
+							staan.
+						{/if}
+					</span>
+					{#if gekozenSpeler}
+						<button class="klein" onclick={() => app.haalVanVeld(bron, app.gekozenPlek!)}>Naar de bank</button>
+					{/if}
+					<button class="klein" onclick={() => (app.gekozenPlek = null)}>Annuleren</button>
+				</div>
+			{/if}
+
+			{#if !app.gekozenPlek && zonderWissel.length}
 				<p class="uitleg" style="padding: 0 12px; margin: 0 0 8px">
 					<b class="mager">Geen wissel voor {zonderWissel.join(', ')}.</b>
 				</p>
 			{/if}
-			{#if mageren.length}
+			{#if !app.gekozenPlek && mageren.length}
 				<p class="uitleg" style="padding: 0 12px">
 					Weinig getraind:
 					{#each mageren as p, i (p.id)}

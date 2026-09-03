@@ -366,6 +366,30 @@ class App {
 		return st;
 	}
 
+	/** Twee plekken omwisselen. Is er een leeg, dan verhuist die ene ernaartoe. */
+	ruilPlekken(bron: 'wedstrijd' | 'standaard', plekA: string, plekB: string) {
+		const doel = bron === 'standaard' ? this.toestand.standaard : this.toestand.wedstrijd;
+		if (!doel || plekA === plekB) return;
+		const a = doel.opstelling[plekA] ?? null;
+		const b = doel.opstelling[plekB] ?? null;
+		if (!a && !b) return;
+		doel.opstelling[plekA] = b;
+		doel.opstelling[plekB] = a;
+		this.gekozenPlek = null;
+		this.bewaar();
+	}
+
+	/** Iemand van het veld halen zonder dat er meteen een ander in komt. */
+	haalVanVeld(bron: 'wedstrijd' | 'standaard', plek: string) {
+		const doel = bron === 'standaard' ? this.toestand.standaard : this.toestand.wedstrijd;
+		const id = doel?.opstelling[plek];
+		if (!doel || !id) return;
+		doel.opstelling[plek] = null;
+		if (!doel.bank.includes(id)) doel.bank.push(id);
+		this.gekozenPlek = null;
+		this.bewaar();
+	}
+
 	/** Opstellen vóór de aftrap: gewoon ruilen, dit is geen wissel. */
 	zetInOpzet(bron: 'wedstrijd' | 'standaard', spelerId: string) {
 		const doel = bron === 'standaard' ? this.toestand.standaard : this.toestand.wedstrijd;

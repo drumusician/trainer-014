@@ -135,3 +135,42 @@ describe('een bewaarde wedstrijd bijwerken', () => {
 		expect(app.toestand.archief[0].stand).toEqual([2, 2]);
 	});
 });
+
+describe('schuiven in de opstelling', () => {
+	beforeEach(() => {
+		app.toestand.standaard = {
+			formatie: '4-3-3',
+			opstelling: { K: 'p2', SP: 'p1', LV: null },
+			bank: []
+		};
+	});
+
+	it('wisselt twee spelers van plek', () => {
+		app.ruilPlekken('standaard', 'K', 'SP');
+		expect(app.toestand.standaard!.opstelling).toMatchObject({ K: 'p1', SP: 'p2' });
+	});
+
+	it('verhuist iemand naar een lege plek', () => {
+		app.ruilPlekken('standaard', 'SP', 'LV');
+		expect(app.toestand.standaard!.opstelling.SP).toBeNull();
+		expect(app.toestand.standaard!.opstelling.LV).toBe('p1');
+	});
+
+	it('doet niets als je twee lege plekken ruilt', () => {
+		app.toestand.standaard!.opstelling = { LV: null, RV: null };
+		app.ruilPlekken('standaard', 'LV', 'RV');
+		expect(app.toestand.standaard!.opstelling).toMatchObject({ LV: null, RV: null });
+	});
+
+	it('haalt iemand van het veld naar de bank en laat de plek leeg', () => {
+		app.haalVanVeld('standaard', 'SP');
+		expect(app.toestand.standaard!.opstelling.SP).toBeNull();
+		expect(app.toestand.standaard!.bank).toContain('p1');
+	});
+
+	it('zet niemand dubbel op de bank', () => {
+		app.toestand.standaard!.bank = ['p1'];
+		app.haalVanVeld('standaard', 'SP');
+		expect(app.toestand.standaard!.bank.filter((id) => id === 'p1')).toHaveLength(1);
+	});
+});
