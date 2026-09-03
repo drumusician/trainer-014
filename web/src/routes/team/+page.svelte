@@ -23,6 +23,12 @@
 
 <main>
 	<div class="pad">
+		<h2>Spelers</h2>
+		<p class="uitleg">Wie hoeveel speelde en hoe vaak hij op de training stond, alles op één rij.</p>
+		<div class="knoprij" style="padding-left: 0">
+			<a class="knop prim" href="/team/spelers">Spelersoverzicht</a>
+		</div>
+
 		<h2>Selectie</h2>
 		{#if !t.spelers.length}
 			<p class="uitleg">Plak hier de namen, één per regel. Ze blijven op dit toestel en komen nergens anders terecht.</p>

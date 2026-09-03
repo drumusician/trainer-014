@@ -186,3 +186,29 @@ describe('ruilen tijdens de wedstrijd', () => {
 		expect(w.gebeurtenissen.at(-1)).toMatchObject({ type: 'ruil', plekA: 'K', plekB: 'SP' });
 	});
 });
+
+describe('klaarstaan of bezig', () => {
+	it('is pas begonnen als de klok gelopen heeft', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
+		expect(app.gestart).toBe(false);
+		app.loopToggle();
+		expect(app.gestart).toBe(true);
+	});
+
+	it('legt een ruil voor de aftrap niet vast als gebeurtenis', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
+		app.ruilInWedstrijd('K', 'SP');
+		expect(app.toestand.wedstrijd!.gebeurtenissen).toHaveLength(0);
+		expect(app.toestand.wedstrijd!.opstelling).toMatchObject({ K: 'p1', SP: 'p2' });
+	});
+
+	it('legt een ruil ná de aftrap wel vast', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
+		app.loopToggle();
+		app.ruilInWedstrijd('K', 'SP');
+		expect(app.toestand.wedstrijd!.gebeurtenissen.at(-1)).toMatchObject({ type: 'ruil' });
+	});
+});

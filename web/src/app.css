@@ -160,6 +160,9 @@ table.uitslag td { padding: 8px 4px; border-bottom: 1px solid var(--lijn); font-
 table.uitslag td.m { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
 table.uitslag td.balk { width: 40%; }
 table.uitslag td span.sub { display: block; font-size: 12px; color: var(--grijs); margin-top: 2px; }
+table.uitslag.spelers td.m { font-size: 15px; }
+table.uitslag.spelers td.m span.sub { font-weight: 600; }
+table.uitslag.spelers td.balk { width: 22%; }
 .staaf { height: 8px; background: var(--groen-licht); border-radius: 4px; overflow: hidden; }
 .staaf i { display: block; height: 100%; background: var(--groen); }
 

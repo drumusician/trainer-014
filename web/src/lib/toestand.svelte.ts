@@ -102,6 +102,11 @@ class App {
 		return this.toestand.wedstrijd;
 	}
 
+	/** Is er afgetrapt? Pas dan ligt de opstelling vast en gaat de klok tellen. */
+	get gestart(): boolean {
+		return !!this.toestand.wedstrijd?.gebeurtenissen.some((g) => g.type === 'start');
+	}
+
 	nieuweWedstrijd(tegenstander: string, thuis: boolean) {
 		const t = this.toestand;
 		t.wedstrijd = {
@@ -242,7 +247,8 @@ class App {
 		if (!a && !b) return;
 		w.opstelling[plekA] = b;
 		w.opstelling[plekB] = a;
-		this.log('ruil', { plekA, plekB });
+		/* Voor de aftrap is dit gewoon je opstelling maken, geen gebeurtenis. */
+		if (this.gestart) this.log('ruil', { plekA, plekB });
 		this.gekozenPlek = null;
 		this.bewaar();
 	}

@@ -17,10 +17,11 @@
 		zetKop(bron === 'standaard' ? 'Standaardopstelling' : 'Opstelling', '/', 'Terug');
 	});
 
-	/* Is de wedstrijd al begonnen, dan hoort schuiven hier niet meer: de speeltijd
-	   wordt teruggerekend uit de wissels, en ongemerkt ruilen zet die op scherp. */
+	/* Pas ná de aftrap hoort schuiven hier niet meer: vanaf dan wordt de speeltijd
+	   teruggerekend uit de wissels, en ongemerkt ruilen zet die op scherp.
+	   Zolang de klok nog niet gelopen heeft mag je alles nog verzetten. */
 	$effect(() => {
-		if (bron === 'wedstrijd' && app.wedstrijd?.gebeurtenissen.length) goto('/wedstrijd');
+		if (bron === 'wedstrijd' && app.gestart) goto('/wedstrijd');
 	});
 
 	const bezet = $derived(doel ? Object.values(doel.opstelling).filter(Boolean).length : 0);

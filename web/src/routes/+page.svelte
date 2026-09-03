@@ -9,8 +9,9 @@
 
 	const t = $derived(app.toestand);
 	const w = $derived(app.wedstrijd);
-	const loopt = $derived(!!w && !w.afgelopen && Object.keys(w.opstelling).length > 0);
-	const opgezet = $derived(!!w && !w.afgelopen && !Object.keys(w.opstelling).length);
+	const staatKlaar = $derived(!!w && !w.afgelopen && Object.values(w.opstelling).some(Boolean));
+	const bezig = $derived(staatKlaar && app.gestart);
+	const opgezet = $derived(!!w && !w.afgelopen && !Object.values(w.opstelling).some(Boolean));
 
 	let tegenstander = $state('');
 	let thuis = $state('thuis');
@@ -43,22 +44,31 @@
 
 <main>
 	<div class="pad">
-		{#if loopt || opgezet}
-			<h2>Bezig</h2>
+		{#if staatKlaar || opgezet}
+			<h2>{bezig ? 'Bezig' : 'Klaarstaan'}</h2>
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
 				{w!.thuis ? 'O14 – ' + w!.tegenstander : w!.tegenstander + ' – O14'}
 			</p>
 			<p class="uitleg">
-				{#if loopt}
-					{mmss(verstreken(w, app.nu))} · {w!.helft === 1 ? '1e helft' : '2e helft'} · {w!.loopt ? 'klok loopt' : 'klok staat stil'}
+				{#if bezig}
+					{mmss(verstreken(w, app.nu))} · {w!.helft === 1 ? '1e helft' : '2e helft'} · {w!.loopt
+						? 'klok loopt'
+						: 'klok staat stil'}
+				{:else if staatKlaar}
+					De opstelling staat. De klok begint pas als je op Start drukt.
 				{:else}
 					De opstelling staat nog niet.
 				{/if}
 			</p>
 			<div class="knoprij" style="padding-left: 0">
-				<a class="knop prim" href={loopt ? '/wedstrijd' : '/opstelling/wedstrijd'}>
-					{loopt ? 'Verder met de wedstrijd' : 'Opstelling maken'}
-				</a>
+				{#if opgezet}
+					<a class="knop prim" href="/opstelling/wedstrijd">Opstelling maken</a>
+				{:else}
+					<a class="knop prim" href="/wedstrijd">{bezig ? 'Verder met de wedstrijd' : 'Naar de wedstrijd'}</a>
+					{#if !bezig}
+						<a class="knop" href="/opstelling/wedstrijd">Opstelling wijzigen</a>
+					{/if}
+				{/if}
 				<a class="knop" href="/aanwezig">Wie is er?</a>
 				<button class="uit" onclick={weggooien}>Weggooien</button>
 			</div>
