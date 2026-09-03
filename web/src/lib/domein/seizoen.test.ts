@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { seizoenStand, seizoenTotalen, topscorers } from './seizoen';
+import { makers, seizoenStand, seizoenTotalen, topscorers } from './seizoen';
 import type { ArchiefWedstrijd, Speler } from './types';
 
 const spelers: Speler[] = [
@@ -47,6 +47,14 @@ describe('seizoen', () => {
 		const rijen = seizoenTotalen(archief, hernoemd);
 		expect(rijen.filter((r) => r.naam.startsWith('Aad'))).toHaveLength(1);
 		expect(rijen.find((r) => r.naam === 'Aad de Jong')!.seconden).toBe(4200);
+	});
+
+	it('vertelt bij elke maker in welke wedstrijden hij scoorde', () => {
+		const rijen = makers(archief, spelers);
+		expect(rijen.map((r) => r.naam)).toEqual(['Aad', 'Bram']);
+		expect(rijen[0].wedstrijden).toEqual([{ datum: '2026-09-05', tegenstander: 'Ajax', aantal: 1 }]);
+		/* het doelpunt zonder maker telt wel in de stand, niet in deze lijst */
+		expect(rijen.reduce((a, r) => a + r.doelpunten, 0)).toBe(2);
 	});
 
 	it('zet de topscorer bovenaan en laat onbekende makers weg', () => {

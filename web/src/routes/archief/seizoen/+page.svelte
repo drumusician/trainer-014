@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { seizoenStand, seizoenTotalen, topscorers } from '$lib/domein/seizoen';
+	import { makers, seizoenStand } from '$lib/domein/seizoen';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 
@@ -7,8 +7,15 @@
 
 	const t = $derived(app.toestand);
 	const st = $derived(seizoenStand(t.archief));
-	const rijen = $derived(seizoenTotalen(t.archief, t.spelers));
-	const makers = $derived(topscorers(rijen));
+	const scorers = $derived(makers(t.archief, t.spelers));
+
+	function datumKort(d: string) {
+		try {
+			return new Date(d + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+		} catch {
+			return d;
+		}
+	}
 
 </script>
 
@@ -28,13 +35,24 @@
 				{st.voor} voor, {st.tegen} tegen · {Math.round(st.seconden / 60)} minuten voetbal
 			</p>
 
-			{#if makers.length}
+			{#if scorers.length}
 				<h2>Topscorers</h2>
 				<ul class="log">
-					{#each makers as r (r.naam)}
-						<li><b>{r.doelpunten}×</b><span>{r.naam}</span></li>
+					{#each scorers as r (r.naam)}
+						<li>
+							<b>{r.doelpunten}×</b>
+							<span>
+								{r.naam}
+								<span class="sub">
+									{r.wedstrijden.map((w) => datumKort(w.datum) + (w.aantal > 1 ? ' ' + w.aantal + '×' : '')).join(' · ')}
+								</span>
+							</span>
+						</li>
 					{/each}
 				</ul>
+				<p class="uitleg">
+					Alleen doelpunten waarvan je de maker aantikte. De rest telt gewoon mee in de uitslag.
+				</p>
 			{/if}
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">

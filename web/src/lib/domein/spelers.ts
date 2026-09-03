@@ -18,7 +18,7 @@ export interface SpelerRegel {
 	recent: Presentie;
 }
 
-export type Sortering = 'naam' | 'minuten' | 'presentie';
+export type Sortering = 'naam' | 'minuten' | 'presentie' | 'doelpunten';
 
 /** Alles wat je van een speler weet, op één regel. */
 export function spelersOverzicht(
@@ -49,6 +49,7 @@ export function sorteer(rijen: SpelerRegel[], hoe: Sortering): SpelerRegel[] {
 	const deel = (p: Presentie) => (p.totaal ? p.er / p.totaal : 2);
 	return [...rijen].sort((a, b) => {
 		if (hoe === 'minuten') return b.seconden - a.seconden || a.naam.localeCompare(b.naam);
+		if (hoe === 'doelpunten') return b.doelpunten - a.doelpunten || b.seconden - a.seconden || a.naam.localeCompare(b.naam);
 		if (hoe === 'presentie') return deel(a.presentie) - deel(b.presentie) || a.naam.localeCompare(b.naam);
 		return a.naam.localeCompare(b.naam);
 	});

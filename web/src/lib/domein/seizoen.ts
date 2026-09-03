@@ -69,6 +69,38 @@ export function seizoenTotalen(archief: ArchiefWedstrijd[], spelers: Speler[]): 
 	return Object.values(per).sort((a, b) => b.seconden - a.seconden);
 }
 
+export interface MakerRegel {
+	naam: string;
+	doelpunten: number;
+	/** in welke wedstrijden, nieuwste eerst */
+	wedstrijden: { datum: string; tegenstander: string; aantal: number }[];
+}
+
+/**
+ * Wie scoorde er, en wanneer. De stand telt alle doelpunten; deze lijst alleen
+ * die met een maker erbij, want soms weet je het gewoon niet.
+ */
+export function makers(archief: ArchiefWedstrijd[], spelers: Speler[]): MakerRegel[] {
+	const per: Record<string, MakerRegel> = {};
+	archief.forEach((a) => {
+		(a.gebeurtenissen ?? [])
+			.filter((g) => g.type === 'goal' && g.speler)
+			.forEach((g) => {
+				const p = spelers.find((s) => s.id === g.speler);
+				const naam = p ? p.naam : a.namen?.[g.speler as string];
+				if (!naam) return;
+				const rij = (per[naam] ??= { naam, doelpunten: 0, wedstrijden: [] });
+				rij.doelpunten++;
+				const laatste = rij.wedstrijden.find((w) => w.datum === a.datum && w.tegenstander === a.tegenstander);
+				if (laatste) laatste.aantal++;
+				else rij.wedstrijden.push({ datum: a.datum, tegenstander: a.tegenstander, aantal: 1 });
+			});
+	});
+	return Object.values(per)
+		.map((r) => ({ ...r, wedstrijden: [...r.wedstrijden].sort((x, y) => y.datum.localeCompare(x.datum)) }))
+		.sort((a, b) => b.doelpunten - a.doelpunten || a.naam.localeCompare(b.naam));
+}
+
 export function topscorers(rijen: SeizoenRegel[]): SeizoenRegel[] {
 	return rijen
 		.filter((r) => r.doelpunten > 0)

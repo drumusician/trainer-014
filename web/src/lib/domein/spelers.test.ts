@@ -42,6 +42,11 @@ describe('spelersoverzicht', () => {
 		expect(percentage(nieuw.presentie)).toBeNull();
 	});
 
+	it('zet de makers bovenaan als je op doelpunten sorteert', () => {
+		const rijen = spelersOverzicht(spelers, archief, trainingen);
+		expect(sorteer(rijen, 'doelpunten').map((r) => r.naam)).toEqual(['Daanish', 'Gijs', 'Nieuw']);
+	});
+
 	it('sorteert op naam, minuten of presentie', () => {
 		const rijen = spelersOverzicht(spelers, archief, trainingen);
 		expect(sorteer(rijen, 'naam').map((r) => r.naam)).toEqual(['Daanish', 'Gijs', 'Nieuw']);
