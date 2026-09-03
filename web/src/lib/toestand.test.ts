@@ -1,0 +1,137 @@
+import { beforeEach, describe, expect, it } from 'vitest';
+import { app } from './toestand.svelte';
+import { legeToestand } from './domein/types';
+
+beforeEach(() => {
+	localStorage.clear();
+	app.toestand = legeToestand();
+	app.toestand.spelers = [
+		{ id: 'p1', naam: 'Daanish', linie: 'M' },
+		{ id: 'p2', naam: 'Gijs', linie: '', keept: true }
+	];
+});
+
+describe('trainingen', () => {
+	/* Deze ging mis: de winkel gaf het kale object terug, maar in de toestand
+	   staat een proxy. indexOf() vond hem dus niet en je landde op een leeg
+	   scherm. Sindsdien zoeken we op id. */
+	it('geeft een nieuwe training terug die je meteen kunt opzoeken', () => {
+		const t = app.nieuweTraining();
+		expect(t.id).toBeTruthy();
+		expect(app.trainingMetId(t.id)).toBeDefined();
+		expect(app.trainingMetId(t.id)!.datum).toBe(t.datum);
+	});
+
+	it('zet iedereen op aanwezig en laat je langs de standen tikken', () => {
+		const t = app.trainingMetId(app.nieuweTraining().id)!;
+		expect(t.status.p1).toBe('ja');
+		app.tikPresentie(t, 'p1');
+		expect(app.trainingMetId(t.id)!.status.p1).toBe('af');
+		app.tikPresentie(t, 'p1');
+		expect(app.trainingMetId(t.id)!.status.p1).toBe('nee');
+		app.tikPresentie(t, 'p1');
+		expect(app.trainingMetId(t.id)!.status.p1).toBe('ja');
+	});
+
+	it('houdt het adres kloppend als een datum de volgorde omgooit', () => {
+		const eerste = app.nieuweTraining();
+		const tweede = app.nieuweTraining();
+		app.zetTrainingDatum(app.trainingMetId(tweede.id)!, '2020-01-01');
+		expect(app.toestand.trainingen[1].id).toBe(tweede.id); /* naar achteren gesorteerd */
+		expect(app.trainingMetId(eerste.id)).toBeDefined();
+		expect(app.trainingMetId(tweede.id)!.datum).toBe('2020-01-01');
+	});
+
+	it('verwijdert alleen de training die je aanwijst', () => {
+		const eerste = app.nieuweTraining();
+		const tweede = app.nieuweTraining();
+		app.verwijderTraining(app.trainingMetId(eerste.id)!);
+		expect(app.trainingMetId(eerste.id)).toBeUndefined();
+		expect(app.trainingMetId(tweede.id)).toBeDefined();
+	});
+
+	it('geeft oude trainingen zonder id er alsnog een bij het laden', () => {
+		localStorage.setItem(
+			'o14-app-v1',
+			JSON.stringify({ ...legeToestand(), spelers: app.toestand.spelers, trainingen: [{ datum: '2026-09-02', status: {} }] })
+		);
+		app.laad();
+		expect(app.toestand.trainingen[0].id).toBeTruthy();
+	});
+});
+
+describe('wie is er vandaag', () => {
+	it('haalt een afwezige uit veld en bank, en zet hem daarna op de bank', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
+		app.herzetBank();
+		expect(app.toestand.wedstrijd!.bank).toEqual([]);
+
+		app.zetAfwezig('p2', true);
+		expect(app.toestand.wedstrijd!.opstelling.K).toBeNull();
+		expect(app.toestand.wedstrijd!.bank).not.toContain('p2');
+
+		app.zetAfwezig('p2', false);
+		expect(app.toestand.wedstrijd!.bank).toContain('p2');
+	});
+});
+
+describe('de klok', () => {
+	it('schuift met minuten maar nooit onder nul', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.verstreken = 100;
+		app.verschuifKlok(60);
+		expect(app.toestand.wedstrijd!.verstreken).toBe(160);
+		app.verschuifKlok(-600);
+		expect(app.toestand.wedstrijd!.verstreken).toBe(0);
+	});
+});
+
+describe('een bewaarde wedstrijd bijwerken', () => {
+	function metArchief() {
+		app.toestand.archief = [
+			{
+				datum: '2026-08-30', tegenstander: 'Ajx', thuis: true, stand: [1, 1], formatie: '4-3-3', duur: 4200,
+				namen: { p1: 'Daanish', p2: 'Gijs' },
+				gebeurtenissen: [
+					{ type: 'start', t: 0 },
+					{ type: 'goal', t: 900, speler: 'p1' },
+					{ type: 'wissel', t: 1200, eruit: 'p1', erin: 'p2', plek: 'SP' },
+					{ type: 'tegen', t: 1800 },
+					{ type: 'eind', t: 4200 }
+				],
+				speeltijd: [{ id: 'p1', naam: 'Daanish', seconden: 1200, keeper: 0 }]
+			}
+		];
+	}
+
+	it('verbetert de naam van de tegenstander', () => {
+		metArchief();
+		app.wijzigArchief(0, { tegenstander: 'Ajax', thuis: false });
+		expect(app.toestand.archief[0].tegenstander).toBe('Ajax');
+		expect(app.toestand.archief[0].thuis).toBe(false);
+	});
+
+	it('haalt een doelpunt weg en telt de stand opnieuw', () => {
+		metArchief();
+		app.verwijderDoelpunt(0, 1);
+		expect(app.toestand.archief[0].stand).toEqual([0, 1]);
+		expect(app.toestand.archief[0].gebeurtenissen).toHaveLength(4);
+	});
+
+	it('laat wissels met rust, want daar hangt de speeltijd aan', () => {
+		metArchief();
+		app.verwijderDoelpunt(0, 2); /* de wissel */
+		expect(app.toestand.archief[0].gebeurtenissen).toHaveLength(5);
+	});
+
+	it('zet een vergeten doelpunt op de goede plek in het verloop', () => {
+		metArchief();
+		app.voegDoelpuntToe(0, 20, 'p2');
+		const g = app.toestand.archief[0].gebeurtenissen;
+		expect(g.map((x) => x.t)).toEqual([0, 900, 1200, 1200, 1800, 4200]);
+		expect(app.toestand.archief[0].stand).toEqual([2, 1]);
+		app.voegDoelpuntToe(0, 55, null, true);
+		expect(app.toestand.archief[0].stand).toEqual([2, 2]);
+	});
+});

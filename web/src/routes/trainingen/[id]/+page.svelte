@@ -7,18 +7,24 @@
 
 	const WOORD: Record<Aanwezigheid, string> = { ja: 'Aanwezig', af: 'Afgemeld', nee: 'Niet gekomen' };
 
-	const i = $derived(Number(page.params.i));
-	const t = $derived(app.toestand.trainingen[i]);
+	const t = $derived(app.trainingMetId(page.params.id));
 
 	$effect(() => zetKop(t ? 'Training ' + t.datum : 'Training', '/trainingen', 'Terug'));
 
 	const telling = $derived.by(() => {
 		const w = { ja: 0, af: 0, nee: 0 };
-		if (t) app.toestand.spelers.forEach((p) => { const st = t.status[p.id]; if (st) w[st]++; });
+		const training = t;
+		if (training) {
+			app.toestand.spelers.forEach((p) => {
+				const st = training.status[p.id];
+				if (st) w[st]++;
+			});
+		}
 		return w;
 	});
 
 	function verwijder() {
+		if (!t) return;
 		if (!confirm('De training van ' + t.datum + ' verwijderen?')) return;
 		app.verwijderTraining(t);
 		goto('/trainingen');
@@ -34,14 +40,7 @@
 			<h2>Training</h2>
 			<label class="vak">
 				Datum
-				<input
-					type="date"
-					value={t.datum}
-					onchange={(e) => {
-						app.zetTrainingDatum(t, e.currentTarget.value);
-						goto('/trainingen');
-					}}
-				/>
+				<input type="date" value={t.datum} onchange={(e) => app.zetTrainingDatum(t, e.currentTarget.value)} />
 			</label>
 			<p class="telling">
 				<span>{telling.ja} aanwezig</span><span>{telling.af} afgemeld</span><span>{telling.nee} niet gekomen</span>

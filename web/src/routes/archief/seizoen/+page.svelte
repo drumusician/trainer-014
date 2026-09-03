@@ -5,7 +5,7 @@
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 
-	$effect(() => zetKop('Seizoen', '/instellen', 'Terug'));
+	$effect(() => zetKop('Seizoen', '/archief', 'Terug'));
 
 	const t = $derived(app.toestand);
 	const st = $derived(seizoenStand(t.archief));
@@ -91,7 +91,7 @@
 		{/if}
 
 		<div class="knoprij" style="padding-left: 0; margin-top: 16px">
-			<a class="knop prim" href="/instellen">Terug</a>
+			<a class="knop prim" href="/archief">Terug naar de wedstrijden</a>
 		</div>
 	</div>
 </main>

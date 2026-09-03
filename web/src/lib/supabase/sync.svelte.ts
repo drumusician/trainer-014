@@ -1,8 +1,9 @@
-import { browser } from '$app/environment';
 import { app } from '$lib/toestand.svelte';
 import { SUPABASE_SLEUTEL, SUPABASE_URL } from './config';
 
 const SESSIESLEUTEL = 'o14-sessie-v1';
+
+const opslag = () => (typeof localStorage === 'undefined' ? null : localStorage);
 
 interface Sessie {
 	access_token: string;
@@ -56,18 +57,20 @@ class Sync {
 	email = $state('');
 
 	laad() {
-		if (!browser) return;
+		const bak = opslag();
+		if (!bak) return;
 		try {
-			this.sessie = JSON.parse(localStorage.getItem(SESSIESLEUTEL) ?? 'null');
+			this.sessie = JSON.parse(bak.getItem(SESSIESLEUTEL) ?? 'null');
 		} catch {
 			this.sessie = null;
 		}
 	}
 
 	private bewaar() {
-		if (!browser) return;
+		const bak = opslag();
+		if (!bak) return;
 		try {
-			localStorage.setItem(SESSIESLEUTEL, JSON.stringify(this.sessie));
+			bak.setItem(SESSIESLEUTEL, JSON.stringify(this.sessie));
 		} catch {
 			/* stil */
 		}
@@ -91,7 +94,7 @@ class Sync {
 	uitloggen() {
 		this.sessie = null;
 		this.melding = '';
-		if (browser) localStorage.removeItem(SESSIESLEUTEL);
+		opslag()?.removeItem(SESSIESLEUTEL);
 	}
 
 	/** Het token is een uur geldig; op tijd vernieuwen scheelt opnieuw inloggen. */
@@ -163,7 +166,7 @@ class Sync {
 
 	/** Terug uit de mail: de sleutels staan achter een # in het adres. */
 	async pakInlogUitLink() {
-		if (!browser) return;
+		if (typeof location === 'undefined') return;
 		const h = location.hash ?? '';
 		const schoon = () => history.replaceState(null, '', location.pathname + location.search);
 		if (!h.includes('access_token=')) {

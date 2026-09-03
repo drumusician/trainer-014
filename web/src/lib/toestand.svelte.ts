@@ -1,4 +1,3 @@
-import { browser } from '$app/environment';
 import { plekken } from './domein/formaties';
 import { eindTijd, keepertijden, speeltijden, stand, verstreken } from './domein/tijd';
 import { sorteerTrainingen } from './domein/presentie';
@@ -10,8 +9,11 @@ import { legeToestand } from './domein/types';
 
 const SLEUTEL = 'o14-app-v1';
 
-function nieuwId(): string {
-	return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+/** Draaien we ergens met opslag? Op de server niet, in een test wel. */
+const opslag = () => (typeof localStorage === 'undefined' ? null : localStorage);
+
+function nieuwId(voorvoegsel = 'p'): string {
+	return voorvoegsel + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
 /** Oude opslag: 'K' was een linie. Nu staat keepen daarnaast. */
@@ -23,6 +25,9 @@ function migreer(t: Toestand): Toestand {
 		}
 	});
 	if (!Array.isArray(t.trainingen)) t.trainingen = [];
+	t.trainingen.forEach((tr, i) => {
+		if (!tr.id) tr.id = 't' + (tr.datum ?? 'onbekend') + '-' + i; /* van voor de id's */
+	});
 	if (!Array.isArray(t.archief)) t.archief = [];
 	return t;
 }
@@ -35,21 +40,26 @@ class App {
 	gekozenPlek = $state<string | null>(null);
 
 	laad() {
-		if (!browser) return;
+		const bak = opslag();
+		if (!bak) return;
 		try {
-			const ruw = localStorage.getItem(SLEUTEL);
+			const ruw = bak.getItem(SLEUTEL);
 			if (!ruw) return;
 			const d = JSON.parse(ruw);
-			if (d && Array.isArray(d.spelers)) this.toestand = migreer({ ...legeToestand(), ...d });
+			if (d && Array.isArray(d.spelers)) {
+				this.toestand = migreer({ ...legeToestand(), ...d });
+				this.bewaar(); /* wat de migratie erbij zette, meteen vastleggen */
+			}
 		} catch {
 			/* liever een lege app dan een stukke */
 		}
 	}
 
 	bewaar() {
-		if (!browser) return;
+		const bak = opslag();
+		if (!bak) return;
 		try {
-			localStorage.setItem(SLEUTEL, JSON.stringify(this.toestand));
+			bak.setItem(SLEUTEL, JSON.stringify(this.toestand));
 		} catch {
 			/* stil: vol geheugen mag de wedstrijd niet stoppen */
 		}
@@ -297,6 +307,48 @@ class App {
 		this.bewaar();
 	}
 
+	/* ---------- een bewaarde wedstrijd bijwerken ---------- */
+	/** Datum, tegenstander, thuis of uit. De cijfers blijven zoals ze waren. */
+	wijzigArchief(i: number, velden: Partial<Pick<ArchiefWedstrijd, 'datum' | 'tegenstander' | 'thuis'>>) {
+		const a = this.toestand.archief[i];
+		if (!a) return;
+		Object.assign(a, velden);
+		this.bewaar();
+	}
+
+	/** De stand volgt uit de doelpunten, dus na elke wijziging opnieuw tellen. */
+	private telStand(a: ArchiefWedstrijd) {
+		a.stand = [
+			a.gebeurtenissen.filter((g) => g.type === 'goal').length,
+			a.gebeurtenissen.filter((g) => g.type === 'tegen').length
+		];
+	}
+
+	/**
+	 * Een doelpunt weghalen dat er niet was. Wissels blijven staan: daar hangt de
+	 * speeltijd aan, en die is bij het bewaren uitgerekend.
+	 */
+	verwijderDoelpunt(i: number, index: number) {
+		const a = this.toestand.archief[i];
+		const g = a?.gebeurtenissen[index];
+		if (!a || !g || (g.type !== 'goal' && g.type !== 'tegen')) return;
+		a.gebeurtenissen.splice(index, 1);
+		this.telStand(a);
+		this.bewaar();
+	}
+
+	/** Een doelpunt dat je miste, op de goede minuut ertussen. */
+	voegDoelpuntToe(i: number, minuut: number, spelerId: string | null, tegen = false) {
+		const a = this.toestand.archief[i];
+		if (!a) return;
+		const gebeurtenis: Gebeurtenis = tegen
+			? { type: 'tegen', t: Math.max(0, Math.round(minuut * 60)) }
+			: { type: 'goal', t: Math.max(0, Math.round(minuut * 60)), speler: spelerId };
+		a.gebeurtenissen = [...a.gebeurtenissen, gebeurtenis].sort((x, y) => (x.t ?? 0) - (y.t ?? 0));
+		this.telStand(a);
+		this.bewaar();
+	}
+
 	/* ---------- standaardopstelling ---------- */
 	/** Zorgt dat er een standaard is die klopt met de huidige selectie. */
 	zorgVoorStandaard() {
@@ -336,10 +388,14 @@ class App {
 		const t = this.toestand;
 		const status: Record<string, Aanwezigheid> = {};
 		t.spelers.forEach((p) => (status[p.id] = 'ja'));
-		const training: Training = { datum: new Date().toISOString().slice(0, 10), status };
+		const training: Training = { id: nieuwId('t'), datum: new Date().toISOString().slice(0, 10), status };
 		t.trainingen = sorteerTrainingen([training, ...t.trainingen]);
 		this.bewaar();
 		return training;
+	}
+
+	trainingMetId(id: string | undefined): Training | undefined {
+		return this.toestand.trainingen.find((t) => t.id === id);
 	}
 
 	tikPresentie(training: Training, spelerId: string) {
@@ -357,7 +413,7 @@ class App {
 	}
 
 	verwijderTraining(training: Training) {
-		this.toestand.trainingen = this.toestand.trainingen.filter((t) => t !== training);
+		this.toestand.trainingen = this.toestand.trainingen.filter((t) => t.id !== training.id);
 		this.bewaar();
 	}
 

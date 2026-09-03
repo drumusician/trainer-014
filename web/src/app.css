@@ -170,3 +170,23 @@ ul.log li span { flex: 1; }
 ul.log li a { color: inherit; text-decoration: none; display: flex; gap: 10px; width: 100%; align-items: center; padding: 6px 0; }
 ul.log li.klikbaar { padding: 0; }
 ul.log li em { font-style: normal; color: var(--grijs); font-size: 18px; line-height: 1; }
+
+/* ---------- de balk onderaan ---------- */
+.tabs {
+	flex: none;
+	display: flex;
+	border-top: 1px solid var(--lijn);
+	background: #fff;
+	padding-bottom: env(safe-area-inset-bottom);
+}
+.tabs a {
+	flex: 1;
+	display: flex; flex-direction: column; align-items: center; gap: 2px;
+	padding: 7px 4px 6px;
+	text-decoration: none; color: var(--grijs);
+	font-size: 11px; font-weight: 600; letter-spacing: 0.01em;
+}
+.tabs a svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.tabs a.aan { color: var(--groen); }
+.tabs a.aan svg { stroke-width: 2; }
+.tabs a:active { background: var(--groen-licht); }

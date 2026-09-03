@@ -79,6 +79,8 @@ export interface ArchiefWedstrijd {
 export type Aanwezigheid = 'ja' | 'af' | 'nee';
 
 export interface Training {
+	/** eigen id, zodat een adres blijft kloppen als de volgorde verandert */
+	id: string;
 	datum: string;
 	status: Record<string, Aanwezigheid>;
 }

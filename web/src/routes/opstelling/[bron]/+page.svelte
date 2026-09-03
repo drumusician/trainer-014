@@ -14,7 +14,7 @@
 	const doel = $derived(bron === 'standaard' ? app.toestand.standaard : app.wedstrijd);
 
 	$effect(() => {
-		zetKop(bron === 'standaard' ? 'Standaardopstelling' : 'Opstelling', '/instellen', 'Terug');
+		zetKop(bron === 'standaard' ? 'Standaardopstelling' : 'Opstelling', '/', 'Terug');
 	});
 
 	const bezet = $derived(doel ? Object.values(doel.opstelling).filter(Boolean).length : 0);
@@ -53,18 +53,18 @@
 	function klaar() {
 		if (bron === 'standaard') {
 			app.bewaar();
-			goto('/instellen');
+			goto('/');
 			return;
 		}
 		if (bezet < 11 && !confirm('Er staan er ' + bezet + ' op het veld in plaats van 11. Toch doorgaan?')) return;
 		app.gekozenPlek = null;
-		goto('/');
+		goto('/wedstrijd');
 	}
 
 	function wissen() {
 		if (!confirm('De standaardopstelling weggooien?')) return;
 		app.wisStandaard();
-		goto('/instellen');
+		goto('/');
 	}
 </script>
 
@@ -72,7 +72,7 @@
 	<main>
 		<div class="pad">
 			<p class="uitleg">Er is niets om op te stellen.</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/instellen">Terug</a></div>
+			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/">Terug</a></div>
 		</div>
 	</main>
 {:else}

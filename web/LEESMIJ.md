@@ -14,6 +14,24 @@ mise run build    # naar web/build
 mise run preview  # de gebouwde versie op http://localhost:4173
 ```
 
+## Waar wat staat
+
+Vier plekken onderin, en daaronder taken die het scherm helemaal pakken.
+
+- **Wedstrijd** (`/`) — nieuwe wedstrijd beginnen of verder met de wedstrijd die
+  loopt, plus de standaardopstelling.
+- **Team** (`/team`) — selectie en linies, en de ingang naar de trainingen.
+- **Archief** (`/archief`) — bewaarde wedstrijden, en daarachter het
+  seizoensoverzicht met speeltijd, topscorers en presentie.
+- **Meer** (`/meer`) — synchroniseren, back-up, overzetten.
+
+De balk verdwijnt op `/wedstrijd`, `/opstelling/*`, `/aanwezig` en `/afloop`.
+Daar ben je met één ding bezig en telt elke pixel.
+
+Een bewaarde wedstrijd kun je bijwerken: datum, tegenstander, thuis of uit, en
+doelpunten erbij of eraf. Wissels blijven staan, want de speeltijd is bij het
+bewaren uitgerekend en die zou dan niet meer kloppen.
+
 ## Hoe het in elkaar zit
 
 ```

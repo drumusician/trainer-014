@@ -5,7 +5,7 @@ import { legeToestand } from './types';
 function volleToestand() {
 	const t = legeToestand();
 	t.spelers = [{ id: 'p1', naam: 'Daanish', linie: 'M' }, { id: 'p2', naam: 'Gijs', linie: '', keept: true }];
-	t.trainingen = [{ datum: '2026-09-02', status: { p1: 'ja', p2: 'nee' } }];
+	t.trainingen = [{ id: 't1', datum: '2026-09-02', status: { p1: 'ja', p2: 'nee' } }];
 	t.archief = [{
 		datum: '2026-08-30', tegenstander: 'Ajax', thuis: true, stand: [2, 1], formatie: '4-3-3',
 		duur: 4200, gebeurtenissen: [], speeltijd: [{ id: 'p1', naam: 'Daanish', seconden: 4200, keeper: 0 }]

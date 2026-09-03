@@ -1,9 +1,15 @@
 <script lang="ts">
 	import '../app.css';
 	import { onMount } from 'svelte';
+	import { page } from '$app/state';
 	import { app } from '$lib/toestand.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
 	import { kop } from '$lib/kop.svelte';
+	import Tabs from '$lib/componenten/Tabs.svelte';
+
+	/* Schermen waar je met één ding bezig bent: daar gaat de balk weg. */
+	const VOLLEDIG = ['/wedstrijd', '/opstelling', '/aanwezig', '/afloop'];
+	const inTaak = $derived(VOLLEDIG.some((p) => page.url.pathname.startsWith(p)));
 
 	let { children } = $props();
 
@@ -66,7 +72,8 @@
 	<header>
 		<h1>{kop.titel}</h1>
 		{#if kop.stand}<span class="stand">{kop.stand}</span>{/if}
-		<a class="knop klein" href={kop.terug}>{kop.terugTekst}</a>
+		{#if kop.terug}<a class="knop klein" href={kop.terug}>{kop.terugTekst}</a>{/if}
 	</header>
 	{@render children()}
+	{#if !inTaak}<Tabs />{/if}
 </div>

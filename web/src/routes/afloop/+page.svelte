@@ -11,10 +11,10 @@
 	const w = $derived(app.wedstrijd);
 	const tijden = $derived(speeltijden(w, app.toestand.spelers, app.nu));
 
-	$effect(() => zetKop('Uitslag', '/instellen', 'Instellen'));
+	$effect(() => zetKop('Uitslag', '/', 'Menu'));
 
 	function bewaren() {
-		if (app.bewaarInArchief()) goto('/instellen');
+		if (app.bewaarInArchief()) goto('/archief');
 	}
 </script>
 
@@ -50,7 +50,7 @@
 				{:else}
 					<button class="prim" onclick={bewaren}>Bewaren in archief</button>
 				{/if}
-				<a class="knop" href="/instellen">Nieuwe wedstrijd</a>
+				<a class="knop" href="/">Nieuwe wedstrijd</a>
 			</div>
 		{/if}
 	</div>

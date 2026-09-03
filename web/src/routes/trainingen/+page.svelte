@@ -4,7 +4,7 @@
 	import { zetKop } from '$lib/kop.svelte';
 	import type { Training } from '$lib/domein/types';
 
-	$effect(() => zetKop('Trainingen', '/instellen', 'Terug'));
+	$effect(() => zetKop('Trainingen', '/team', 'Terug'));
 
 	const trainingen = $derived(app.toestand.trainingen);
 
@@ -30,8 +30,7 @@
 			alert('Zet eerst je selectie erin.');
 			return;
 		}
-		const t = app.nieuweTraining();
-		goto('/trainingen/' + app.toestand.trainingen.indexOf(t));
+		goto('/trainingen/' + app.nieuweTraining().id);
 	}
 </script>
 
@@ -48,10 +47,10 @@
 				gewoon in.
 			</p>
 			<ul class="log">
-				{#each trainingen as t, i (t)}
+				{#each trainingen as t (t.id)}
 					{@const w = telling(t)}
 					<li class="klikbaar">
-						<a href="/trainingen/{i}">
+						<a href="/trainingen/{t.id}">
 							<b>{datumKort(t.datum)}</b>
 							<span>
 								{w.ja} er{w.af ? ', ' + w.af + ' afgemeld' : ''}{w.nee ? ', ' + w.nee + ' niet gekomen' : ''}
@@ -64,7 +63,7 @@
 		{/if}
 		<div class="knoprij" style="padding-left: 0; margin-top: 12px">
 			<button class="prim" onclick={nieuw}>Nieuwe training</button>
-			<a class="knop" href="/instellen">Terug</a>
+			<a class="knop" href="/team">Terug</a>
 		</div>
 	</div>
 </main>
