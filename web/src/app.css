@@ -58,7 +58,10 @@ main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height:
    klok en de knoppen, en nooit meer dan dat. Daardoor hoef je tijdens een
    wedstrijd nergens te scrollen, op geen enkel scherm. */
 .veldscherm { display: flex; flex-direction: column; height: 100%; --chroom: 200px; }
-.veldscherm.zonderklok { --chroom: 150px; }
+.veldscherm.zonderklok { --chroom: 190px; }
+/* Niet laten krimpen: het veld houdt zijn verhouding, dus een krimpende rij
+   betekent dat het veld over de knoppen eronder heen valt. Liever scrollen. */
+.veldscherm .veldrij { flex: 0 0 auto; }
 .veldscherm .knoprij { margin-top: auto; }
 
 .veldrij { display: flex; gap: 10px; align-items: flex-start; justify-content: center; margin: 8px 10px 4px; min-height: 0; }

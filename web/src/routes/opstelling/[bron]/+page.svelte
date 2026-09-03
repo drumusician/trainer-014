@@ -33,14 +33,20 @@
 	);
 
 	let gedeeld = $state('');
+	let gekopieerd = $state(false);
+	let toonTekst = $state(false);
 
 	async function kopieer() {
 		if (!doel) return;
 		gedeeld = opstellingTekst(doel.formatie, doel.opstelling, doel.bank, app.toestand.spelers);
 		try {
 			await navigator.clipboard.writeText(gedeeld);
+			gekopieerd = true;
+			toonTekst = false;
 		} catch {
-			/* dan uit het vak hieronder */
+			/* geen klembord: dan maar met de hand uit het vak */
+			gekopieerd = false;
+			toonTekst = true;
 		}
 	}
 
@@ -117,10 +123,17 @@
 				<span class="uitleg" style="align-self: center; margin: 0">{bezet} van de 11 ingevuld</span>
 			</div>
 			{#if gedeeld}
-				<div style="padding: 0 12px 12px">
-					<p class="uitleg" style="margin: 0 0 6px">Gekopieerd. Plakken kan ook uit dit vak.</p>
-					<textarea readonly value={gedeeld} style="min-height: 120px"></textarea>
-				</div>
+				<p class="uitleg" style="padding: 0 12px; margin: 0 0 8px">
+					{#if gekopieerd}Gekopieerd.{:else}Kopiëren lukte niet, pak hem uit het vak.{/if}
+					<button class="klein" style="margin-left: 6px" onclick={() => (toonTekst = !toonTekst)}>
+						{toonTekst ? 'Tekst verbergen' : 'Tekst tonen'}
+					</button>
+				</p>
+				{#if toonTekst}
+					<div style="padding: 0 12px 12px">
+						<textarea readonly value={gedeeld} style="min-height: 120px"></textarea>
+					</div>
+				{/if}
 			{/if}
 		</div>
 	</main>
