@@ -55,3 +55,17 @@ describe('spelersoverzicht', () => {
 		expect(sorteer(rijen, 'presentie').map((r) => r.naam)).toEqual(['Gijs', 'Daanish', 'Nieuw']);
 	});
 });
+
+describe('assists', () => {
+	it('telt ze mee per speler', () => {
+		const metAssist: ArchiefWedstrijd[] = [
+			{
+				...archief[0],
+				gebeurtenissen: [{ type: 'goal', t: 900, speler: 'p1', assist: 'p2' }]
+			}
+		];
+		const rijen = spelersOverzicht(spelers, metAssist, trainingen);
+		expect(rijen.find((r) => r.naam === 'Gijs')!.assists).toBe(1);
+		expect(rijen.find((r) => r.naam === 'Daanish')!.assists).toBe(0);
+	});
+});

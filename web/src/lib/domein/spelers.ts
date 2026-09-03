@@ -7,6 +7,7 @@ export interface SpelerRegel {
 	naam: string;
 	linie: string;
 	keept: boolean;
+	assists: number;
 	/** speeltijd over alle bewaarde wedstrijden */
 	seconden: number;
 	/** waarvan in het doel */
@@ -27,6 +28,12 @@ export function spelersOverzicht(
 	trainingen: Training[]
 ): SpelerRegel[] {
 	const totalen = seizoenTotalen(archief, spelers);
+	const assists: Record<string, number> = {};
+	archief.forEach((a) =>
+		(a.gebeurtenissen ?? []).forEach((g) => {
+			if (g.type === 'goal' && g.assist) assists[g.assist] = (assists[g.assist] ?? 0) + 1;
+		})
+	);
 	return spelers.map((p) => {
 		const rij = totalen.find((r) => r.naam === p.naam);
 		return {
@@ -38,6 +45,7 @@ export function spelersOverzicht(
 			keeper: rij?.keeper ?? 0,
 			wedstrijden: rij?.wedstrijden ?? 0,
 			doelpunten: rij?.doelpunten ?? 0,
+			assists: assists[p.id] ?? 0,
 			presentie: presentie(trainingen, p.id, 0),
 			recent: presentie(trainingen, p.id, 4)
 		};
@@ -49,7 +57,8 @@ export function sorteer(rijen: SpelerRegel[], hoe: Sortering): SpelerRegel[] {
 	const deel = (p: Presentie) => (p.totaal ? p.er / p.totaal : 2);
 	return [...rijen].sort((a, b) => {
 		if (hoe === 'minuten') return b.seconden - a.seconden || a.naam.localeCompare(b.naam);
-		if (hoe === 'doelpunten') return b.doelpunten - a.doelpunten || b.seconden - a.seconden || a.naam.localeCompare(b.naam);
+		if (hoe === 'doelpunten')
+			return b.doelpunten - a.doelpunten || b.assists - a.assists || b.seconden - a.seconden || a.naam.localeCompare(b.naam);
 		if (hoe === 'presentie') return deel(a.presentie) - deel(b.presentie) || a.naam.localeCompare(b.naam);
 		return a.naam.localeCompare(b.naam);
 	});

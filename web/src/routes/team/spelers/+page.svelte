@@ -56,6 +56,7 @@
 									{/if}
 									{#if r.keeper}· {Math.round(r.keeper / 60)} min in het doel{/if}
 									{#if r.doelpunten}· <b>{r.doelpunten}× gescoord</b>{/if}
+									{#if r.assists}· <b>{r.assists} {r.assists === 1 ? 'assist' : 'assists'}</b>{/if}
 								</span>
 							</td>
 							<td class="balk">

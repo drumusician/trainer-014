@@ -258,6 +258,19 @@ class App {
 		this.bewaar();
 	}
 
+	/** De assist bij het laatste doelpunt. Mag ook later, mag ook niet. */
+	zetAssist(spelerId: string | null) {
+		const w = this.toestand.wedstrijd;
+		if (!w) return;
+		for (let i = w.gebeurtenissen.length - 1; i >= 0; i--) {
+			if (w.gebeurtenissen[i].type === 'goal') {
+				w.gebeurtenissen[i].assist = spelerId;
+				this.bewaar();
+				return;
+			}
+		}
+	}
+
 	tegendoelpunt() {
 		this.log('tegen');
 		this.bewaar();

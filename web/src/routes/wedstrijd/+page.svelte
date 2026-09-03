@@ -16,6 +16,9 @@
 	let doelpuntKiezen = $state(false);
 	/* De klok bijstellen hoeft bijna nooit, dus staat het weg tot je erop tikt. */
 	let klokBijstellen = $state(false);
+	/* Na een doelpunt: wie legde hem klaar? Overslaan mag, het spel gaat door. */
+	let assistVragen = $state(false);
+	let maker = $state<string | null>(null);
 
 	$effect(() => {
 		if (w && klaar) {
@@ -32,7 +35,17 @@
 			const id = w.opstelling[plekId];
 			if (id) {
 				app.doelpunt(id);
+				maker = id;
 				doelpuntKiezen = false;
+				assistVragen = true;
+			}
+			return;
+		}
+		if (assistVragen) {
+			const id = w.opstelling[plekId];
+			if (id && id !== maker) {
+				app.zetAssist(id);
+				assistVragen = false;
 			}
 			return;
 		}
@@ -124,8 +137,8 @@
 			</div>
 
 			<div class="knoprij">
-				<button class="prim" onclick={() => (doelpuntKiezen = !doelpuntKiezen)}>Doelpunt</button>
-				<button onclick={() => app.tegendoelpunt()}>Tegen</button>
+				<button class="prim" onclick={() => { assistVragen = false; doelpuntKiezen = !doelpuntKiezen; }}>Doelpunt</button>
+				<button onclick={() => { assistVragen = false; app.tegendoelpunt(); }}>Tegen</button>
 				{#if app.herstelbaar()}
 					<button onclick={() => app.herstelLaatste()}>↶ {app.herstelbaar()} terug</button>
 				{/if}
@@ -137,6 +150,14 @@
 					<span><b>Doelpunt.</b> Tik op het veld wie hem maakte.</span>
 					<button class="klein" onclick={() => { app.doelpunt(null); doelpuntKiezen = false; }}>Weet ik niet</button>
 					<button class="klein" onclick={() => (doelpuntKiezen = false)}>Annuleren</button>
+				</div>
+			{:else if assistVragen}
+				<div class="melding">
+					<span>
+						<b>{app.spelerVan(maker)?.naam ?? 'Doelpunt'}</b> scoorde. Wie legde hem klaar? Tik hem aan, of sla dit
+						over.
+					</span>
+					<button class="klein" onclick={() => (assistVragen = false)}>Geen assist</button>
 				</div>
 			{:else if app.gekozenPlek}
 				<div class="melding">

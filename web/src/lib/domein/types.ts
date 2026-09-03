@@ -21,6 +21,8 @@ export interface Gebeurtenis {
 	t: number;
 	/** bij een doelpunt: wie hem maakte, of null als je het niet weet */
 	speler?: string | null;
+	/** bij een doelpunt: wie hem klaarlegde. Overslaan mag. */
+	assist?: string | null;
 	eruit?: string;
 	erin?: string;
 	plek?: string;

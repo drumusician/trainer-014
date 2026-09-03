@@ -42,7 +42,12 @@ export function gebeurtenisTekst(g: Gebeurtenis, spelers: Speler[], namen?: Reco
 		case 'rust': return 'Rust';
 		case 'eind': return 'Einde';
 		case 'tegen': return 'Tegendoelpunt';
-		case 'goal': return 'Doelpunt' + (g.speler ? ' — ' + naam(g.speler) : '');
+		case 'goal':
+			return (
+				'Doelpunt' +
+				(g.speler ? ' — ' + naam(g.speler) : '') +
+				(g.assist ? ' (assist ' + naam(g.assist) + ')' : '')
+			);
 		case 'wissel': return naam(g.erin) + ' voor ' + naam(g.eruit);
 		case 'ruil': return 'van plek gewisseld';
 		default: return g.type;
@@ -83,7 +88,11 @@ export function verslagTekst(bron: Verslagbron, spelers: Speler[], metWissels = 
 			if (g.type === 'goal') {
 				voor++;
 				const naam = g.speler ? naamVan(g.speler, spelers, bron.namen) : null;
-				regels.push(`${min}  ${voor}–${tegen}  ${naam && naam !== 'onbekend' ? naam : 'doelpunt'}`);
+				const assist = g.assist ? naamVan(g.assist, spelers, bron.namen) : null;
+				regels.push(
+					`${min}  ${voor}–${tegen}  ${naam && naam !== 'onbekend' ? naam : 'doelpunt'}` +
+						(assist && assist !== 'onbekend' ? ` (assist ${assist})` : '')
+				);
 			} else if (g.type === 'tegen') {
 				tegen++;
 				regels.push(`${min}  ${voor}–${tegen}  tegendoelpunt`);
