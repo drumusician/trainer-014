@@ -174,3 +174,15 @@ describe('schuiven in de opstelling', () => {
 		expect(app.toestand.standaard!.bank.filter((id) => id === 'p1')).toHaveLength(1);
 	});
 });
+
+describe('ruilen tijdens de wedstrijd', () => {
+	it('legt de ruil vast in het verloop', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
+		app.toestand.wedstrijd!.gebeurtenissen = [{ type: 'start', t: 0 }];
+		app.ruilInWedstrijd('K', 'SP');
+		const w = app.toestand.wedstrijd!;
+		expect(w.opstelling).toMatchObject({ K: 'p1', SP: 'p2' });
+		expect(w.gebeurtenissen.at(-1)).toMatchObject({ type: 'ruil', plekA: 'K', plekB: 'SP' });
+	});
+});

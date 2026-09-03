@@ -36,7 +36,17 @@
 			}
 			return;
 		}
-		app.gekozenPlek = app.gekozenPlek === plekId ? null : plekId;
+		if (!app.gekozenPlek) {
+			app.gekozenPlek = plekId;
+			return;
+		}
+		if (app.gekozenPlek === plekId) {
+			app.gekozenPlek = null;
+			return;
+		}
+		/* Twee plekken achter elkaar: dan ruilen ze. Dat is geen wissel, er komt
+		   niemand van de bank; denk aan de keeper die na rust het veld in gaat. */
+		app.ruilInWedstrijd(app.gekozenPlek, plekId);
 	}
 
 	function afsluiten() {
@@ -132,7 +142,8 @@
 				<div class="melding">
 					<span>
 						<b>{uit ? uit.naam : 'Lege plek'}</b> ·
-						{LINIES[plekLinie(app.gekozenPlek, w.formatie)].toLowerCase()}. Tik wie erin komt.
+						{LINIES[plekLinie(app.gekozenPlek, w.formatie)].toLowerCase()}. Tik wie erin komt, of een andere plek om
+						te ruilen.
 						{#if keeperMin > 0 && plekLinie(app.gekozenPlek, w.formatie) !== 'K'}
 							Hij keepte deze wedstrijd al {keeperMin} minuten.
 						{/if}

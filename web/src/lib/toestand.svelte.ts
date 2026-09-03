@@ -232,6 +232,21 @@ class App {
 		this.bewaar();
 	}
 
+	/** Twee spelers op het veld wisselen van plek. Wordt vastgelegd, want anders
+	    klopt straks de speeltijd per plek niet meer. */
+	ruilInWedstrijd(plekA: string, plekB: string) {
+		const w = this.toestand.wedstrijd;
+		if (!w || plekA === plekB) return;
+		const a = w.opstelling[plekA] ?? null;
+		const b = w.opstelling[plekB] ?? null;
+		if (!a && !b) return;
+		w.opstelling[plekA] = b;
+		w.opstelling[plekB] = a;
+		this.log('ruil', { plekA, plekB });
+		this.gekozenPlek = null;
+		this.bewaar();
+	}
+
 	doelpunt(spelerId: string | null) {
 		this.log('goal', { speler: spelerId });
 		this.bewaar();

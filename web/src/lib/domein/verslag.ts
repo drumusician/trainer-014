@@ -44,6 +44,7 @@ export function gebeurtenisTekst(g: Gebeurtenis, spelers: Speler[], namen?: Reco
 		case 'tegen': return 'Tegendoelpunt';
 		case 'goal': return 'Doelpunt' + (g.speler ? ' — ' + naam(g.speler) : '');
 		case 'wissel': return naam(g.erin) + ' voor ' + naam(g.eruit);
+		case 'ruil': return 'van plek gewisseld';
 		default: return g.type;
 	}
 }

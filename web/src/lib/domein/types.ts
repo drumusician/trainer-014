@@ -13,7 +13,7 @@ export interface Speler {
 	keept?: boolean;
 }
 
-export type GebeurtenisType = 'start' | 'rust' | 'eind' | 'goal' | 'tegen' | 'wissel';
+export type GebeurtenisType = 'start' | 'rust' | 'eind' | 'goal' | 'tegen' | 'wissel' | 'ruil';
 
 export interface Gebeurtenis {
 	type: GebeurtenisType;
@@ -24,6 +24,9 @@ export interface Gebeurtenis {
 	eruit?: string;
 	erin?: string;
 	plek?: string;
+	/** bij een ruil: de twee plekken die van speler wisselen */
+	plekA?: string;
+	plekB?: string;
 }
 
 /** Een opstelling: plek-id uit de formatie -> speler-id. */

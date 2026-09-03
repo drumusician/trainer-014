@@ -73,3 +73,45 @@ describe('speeltijd', () => {
 		expect(Object.values(speeltijden(w, spelers)).reduce((a, b) => a + b, 0)).toBe(11 * 4200);
 	});
 });
+
+describe('van plek ruilen tijdens de wedstrijd', () => {
+	/* Jouw regel: wie een helft keept, speelt de andere helft in het veld. Vaak
+	   ruil je bij rust met iemand die al op het veld staat. */
+	it('houdt de totale tijd gelijk en telt alleen het doel apart', () => {
+		const w = wedstrijd();
+		/* Gijs keepte de eerste helft; bij rust ruilt hij met Kasper (middenveld) */
+		w.opstelling['K'] = 'pKasper';
+		w.opstelling['MC'] = 'pGijs';
+		w.gebeurtenissen.push(
+			{ type: 'rust', t: 2100 },
+			{ type: 'ruil', t: 2100, plekA: 'K', plekB: 'MC' },
+			{ type: 'eind', t: 4200 }
+		);
+		const t = speeltijden(w, spelers);
+		const k = keepertijden(w);
+		expect(t['pGijs']).toBe(4200);
+		expect(t['pKasper']).toBe(4200);
+		expect(k['pGijs']).toBe(2100);
+		expect(k['pKasper']).toBe(2100);
+		expect(Object.values(t).reduce((a, b) => a + b, 0)).toBe(11 * 4200);
+	});
+
+	it('werkt ook als er daarna nog gewisseld wordt', () => {
+		const w = wedstrijd();
+		w.opstelling['K'] = 'pKasper';
+		w.opstelling['MC'] = 'pAmir';
+		w.bank = ['pGijs'];
+		w.gebeurtenissen.push(
+			{ type: 'ruil', t: 2100, plekA: 'K', plekB: 'MC' },
+			{ type: 'wissel', t: 3000, eruit: 'pGijs', erin: 'pAmir', plek: 'MC' },
+			{ type: 'eind', t: 4200 }
+		);
+		const t = speeltijden(w, spelers);
+		const k = keepertijden(w);
+		expect(k['pGijs']).toBe(2100); /* eerste helft in het doel */
+		expect(t['pGijs']).toBe(3000); /* daarna middenveld tot minuut 50 */
+		expect(t['pAmir']).toBe(1200);
+		expect(k['pKasper']).toBe(2100);
+		expect(Object.values(t).reduce((a, b) => a + b, 0)).toBe(11 * 4200);
+	});
+});

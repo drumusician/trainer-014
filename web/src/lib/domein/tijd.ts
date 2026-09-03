@@ -37,10 +37,18 @@ export interface Interval {
 export function veldIntervallen(w: Wedstrijd | null, nu = Date.now()): Interval[] {
 	if (!w) return [];
 	const eind = w.afgelopen ? eindTijd(w) : verstreken(w, nu);
-	const wissels = w.gebeurtenissen.filter((g) => g.type === 'wissel');
+	/* Wissels en ruilen samen: allebei veranderen ze wie waar staat. */
+	const beurten = w.gebeurtenissen.filter((g) => g.type === 'wissel' || g.type === 'ruil');
 
 	const start: Record<string, string | null> = { ...w.opstelling };
-	[...wissels].reverse().forEach((g) => {
+	[...beurten].reverse().forEach((g) => {
+		if (g.type === 'ruil') {
+			if (!g.plekA || !g.plekB) return;
+			const a = start[g.plekA] ?? null;
+			start[g.plekA] = start[g.plekB] ?? null;
+			start[g.plekB] = a;
+			return;
+		}
 		if (g.plek && start[g.plek] === g.erin) {
 			start[g.plek] = g.eruit ?? null;
 			return;
@@ -60,7 +68,19 @@ export function veldIntervallen(w: Wedstrijd | null, nu = Date.now()): Interval[
 	}
 
 	const uit: Interval[] = [];
-	wissels.forEach((g) => {
+	beurten.forEach((g) => {
+		if (g.type === 'ruil') {
+			/* Allebei de plekken sluiten en meteen weer openen, met de ander erop. */
+			const a = g.plekA && bezet[g.plekA];
+			const b = g.plekB && bezet[g.plekB];
+			if (a) uit.push({ speler: a.speler, plek: g.plekA!, van: a.sinds, tot: g.t });
+			if (b) uit.push({ speler: b.speler, plek: g.plekB!, van: b.sinds, tot: g.t });
+			if (a && g.plekB) bezet[g.plekB] = { speler: a.speler, sinds: g.t };
+			else if (g.plekB) delete bezet[g.plekB];
+			if (b && g.plekA) bezet[g.plekA] = { speler: b.speler, sinds: g.t };
+			else if (g.plekA) delete bezet[g.plekA];
+			return;
+		}
 		let plek = g.plek;
 		if (!plek || bezet[plek]?.speler !== g.eruit) {
 			plek = Object.keys(bezet).find((k) => bezet[k].speler === g.eruit) ?? plek;
