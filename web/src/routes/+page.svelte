@@ -94,7 +94,7 @@
 			<div class="tweekolom">
 				<label class="vak">
 					Formatie
-					<select bind:value={t.formatie} onchange={() => app.bewaar()}>
+					<select value={t.formatie} onchange={(e) => app.kiesFormatie(e.currentTarget.value)}>
 						{#each SPEELVORMEN as vorm (vorm.naam)}
 							<optgroup label={vorm.naam + (vorm.uitleg ? ' · ' + vorm.uitleg : '')}>
 								{#each vorm.formaties as f (f.sleutel)}
@@ -131,7 +131,7 @@
 		<p class="uitleg">
 			{#if t.standaard && t.standaard.formatie !== t.formatie}
 				<b class="mager">Je standaardopstelling staat in {t.standaard.formatie}, je speelt nu {t.formatie}.</b>
-				Daardoor begint een nieuwe wedstrijd met een leeg veld. Maak hem opnieuw in de formatie die je speelt.
+				Open hem, dan zet ik hem om: wie past blijft staan, de rest gaat naar de bank.
 			{:else if t.standaard}
 				Elke nieuwe wedstrijd begint hiermee. Langs de lijn hoef je dan alleen nog te wisselen.
 			{:else}

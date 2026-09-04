@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import Veld from '$lib/componenten/Veld.svelte';
 	import BankKolom from '$lib/componenten/BankKolom.svelte';
-	import { aantalPlekken, groepVan, liniesIn, LINIES, plekLinie } from '$lib/domein/formaties';
+	import { aantalPlekken, groepVan, liniesIn, LINIES, plekLinie, SPEELVORMEN } from '$lib/domein/formaties';
 	import { mager, presentie } from '$lib/domein/presentie';
 	import { opstellingTekst } from '$lib/domein/opstelling';
 	import { app } from '$lib/toestand.svelte';
@@ -148,6 +148,20 @@
 			{/if}
 
 			<div class="knoprij">
+				{#if bron === 'standaard'}
+					<label class="formatiekeuze">
+						Formatie
+						<select value={doel.formatie} onchange={(e) => app.kiesFormatie(e.currentTarget.value)}>
+							{#each SPEELVORMEN as vorm (vorm.naam)}
+								<optgroup label={vorm.naam + (vorm.uitleg ? ' · ' + vorm.uitleg : '')}>
+									{#each vorm.formaties as f (f.sleutel)}
+										<option value={f.sleutel}>{f.sleutel}{f.uitleg ? ' · ' + f.uitleg : ''}</option>
+									{/each}
+								</optgroup>
+							{/each}
+						</select>
+					</label>
+				{/if}
 				<button class="prim" onclick={klaar}>
 					{bron === 'standaard' ? 'Bewaren' : 'Klaar — naar de wedstrijd'}
 				</button>

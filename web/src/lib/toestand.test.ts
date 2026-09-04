@@ -307,3 +307,79 @@ describe('kwarten spelen', () => {
 		expect(app.toestand.wedstrijd).toMatchObject({ delen: 2, deel: 2, pauze: false });
 	});
 });
+
+describe('van formatie wisselen met een standaardopstelling', () => {
+	beforeEach(() => {
+		app.toestand.spelers = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'].map((n, i) => ({
+			id: 'p' + n,
+			naam: n.toUpperCase(),
+			linie: i === 0 ? '' : i <= 4 ? 'V' : i <= 7 ? 'M' : 'A',
+			keept: i === 0
+		}));
+		app.toestand.formatie = '4-3-3';
+		app.toestand.standaard = {
+			formatie: '4-3-3',
+			opstelling: {
+				K: 'pa', RV: 'pb', CVr: 'pc', CVl: 'pd', LV: 'pe',
+				MR: 'pf', MC: 'pg', ML: 'ph', RB: 'pi', SP: 'pj', LB: 'pk'
+			},
+			bank: ['pl']
+		};
+	});
+
+	it('neemt de opstelling mee naar de nieuwe formatie', () => {
+		app.zetStandaardInFormatie('4-4-2');
+		const st = app.toestand.standaard!;
+		expect(st.formatie).toBe('4-4-2');
+		expect(st.opstelling.K).toBe('pa');
+		expect(st.opstelling.CVr).toBe('pc');
+		expect(Object.values(st.opstelling).filter(Boolean)).toHaveLength(10);
+		expect(st.bank).toHaveLength(2); /* de bankzitter plus de aanvaller die niet past */
+	});
+
+	it('raakt niemand kwijt', () => {
+		app.zetStandaardInFormatie('1-3-3-1');
+		const st = app.toestand.standaard!;
+		const inVeld = Object.values(st.opstelling).filter(Boolean) as string[];
+		expect(new Set([...inVeld, ...st.bank]).size).toBe(12);
+	});
+
+	it('doet niets als de formatie al klopt', () => {
+		const voor = JSON.stringify(app.toestand.standaard);
+		app.zetStandaardInFormatie('4-3-3');
+		expect(JSON.stringify(app.toestand.standaard)).toBe(voor);
+	});
+
+	it('zet hem ook om als je het standaardscherm opent', () => {
+		app.toestand.formatie = '4-4-2 ruit';
+		app.zorgVoorStandaard();
+		expect(app.toestand.standaard!.formatie).toBe('4-4-2 ruit');
+	});
+});
+
+describe('één formatie voor het team', () => {
+	it('zet de formatie én de standaardopstelling om, waar je hem ook kiest', () => {
+		app.toestand.formatie = '4-3-3';
+		app.toestand.standaard = {
+			formatie: '4-3-3',
+			opstelling: { K: 'p1', SP: 'p2' },
+			bank: []
+		};
+		app.kiesFormatie('4-4-2 ruit');
+		expect(app.toestand.formatie).toBe('4-4-2 ruit');
+		expect(app.toestand.standaard!.formatie).toBe('4-4-2 ruit');
+		expect(app.toestand.standaard!.opstelling.K).toBe('p1');
+	});
+
+	it('negeert een formatie die niet bestaat', () => {
+		app.toestand.formatie = '4-3-3';
+		app.kiesFormatie('bestaat-niet');
+		expect(app.toestand.formatie).toBe('4-3-3');
+	});
+
+	it('werkt ook zonder standaardopstelling', () => {
+		app.toestand.standaard = null;
+		app.kiesFormatie('1-2-2-1');
+		expect(app.toestand.formatie).toBe('1-2-2-1');
+	});
+});

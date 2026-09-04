@@ -26,6 +26,16 @@ export const FORMATIES: Record<string, Plek[]> = {
 		['MR', 'RM', 88, 51, 'M'], ['MCr', 'M', 63, 57, 'M'], ['MCl', 'M', 37, 57, 'M'], ['ML', 'LM', 12, 51, 'M'],
 		['SPr', 'SP', 62, 22, 'A'], ['SPl', 'SP', 38, 22, 'A']
 	],
+	/* De ruit: één controlerende middenvelder, twee op de flank, één erachter de
+	   spitsen. Precies het middenveld waarin de een dieper staat dan de ander. */
+	'4-4-2 ruit': [
+		['K', 'K', 50, 92, 'K'],
+		['RV', 'RV', 88, 75, 'V'], ['CVr', 'CV', 64, 80, 'V'], ['CVl', 'CV', 36, 80, 'V'], ['LV', 'LV', 12, 75, 'V'],
+		['VM', 'VM', 50, 64, 'M'],
+		['MR', 'RM', 84, 50, 'M'], ['ML', 'LM', 16, 50, 'M'],
+		['TIEN', '10', 50, 38, 'M'],
+		['SPr', 'SP', 62, 20, 'A'], ['SPl', 'SP', 38, 20, 'A']
+	],
 	'4-2-3-1': [
 		['K', 'K', 50, 92, 'K'],
 		['RV', 'RV', 88, 75, 'V'], ['CVr', 'CV', 64, 80, 'V'], ['CVl', 'CV', 36, 80, 'V'], ['LV', 'LV', 12, 75, 'V'],
@@ -96,7 +106,12 @@ export const FORMATIES: Record<string, Plek[]> = {
 export const SPEELVORMEN: { naam: string; uitleg?: string; formaties: { sleutel: string; uitleg?: string }[] }[] = [
 	{
 		naam: '11 tegen 11',
-		formaties: [{ sleutel: '4-3-3' }, { sleutel: '4-4-2' }, { sleutel: '4-2-3-1' }]
+		formaties: [
+			{ sleutel: '4-3-3' },
+			{ sleutel: '4-4-2', uitleg: 'vlak middenveld' },
+			{ sleutel: '4-4-2 ruit', uitleg: 'één diep, één hoog' },
+			{ sleutel: '4-2-3-1' }
+		]
 	},
 	{
 		naam: '8 tegen 8',

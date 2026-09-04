@@ -59,8 +59,13 @@ regel in dat bestand, verder niets.
 De notatie volgt wat trainers zeggen: bij 11 tegen 11 zonder keeper (4-3-3), in
 de jeugd met keeper (1-3-3-1). Verwarrend, maar het is hoe het op het veld gaat.
 
-Wissel je van speelvorm, dan past je standaardopstelling niet meer. Dat zegt de
-app; hij vult dan niets in in plaats van iets verkeerds.
+Er is één formatie voor het team. Je kiest hem op het standaardopstellingscherm
+of bij een nieuwe wedstrijd; allebei doen hetzelfde. Wissel je van formatie, dan
+verhuist je standaardopstelling mee: wie op een plek staat die ook in de nieuwe
+formatie bestaat blijft staan, de rest schuift door binnen zijn eigen linie, en
+wat niet past gaat naar de bank. Plekken die overblijven laten we leeg — die vult
+de trainer zelf, want er stilletjes een aanvaller op het middenveld zetten is een
+keuze die niet van de app is.
 
 ## Voor de aftrap
 

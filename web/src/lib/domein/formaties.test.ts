@@ -49,6 +49,7 @@ describe('formaties', () => {
 	});
 
 	it('weet bij welke speelvorm een formatie hoort', () => {
+		expect(speelvormVan('4-4-2 ruit')).toBe('11 tegen 11');
 		expect(speelvormVan('1-3-3-1')).toBe('8 tegen 8');
 		expect(speelvormVan('1-2-2-1')).toBe('6 tegen 6');
 		expect(speelvormVan('4-3-3')).toBe('11 tegen 11');

@@ -131,6 +131,13 @@ main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height:
 .melding b { color: var(--oranje); }
 
 .knoprij { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 12px 12px; }
+/* De formatie hoort bij de opstelling die je maakt, dus staat hij hier en niet
+   op een ander scherm. */
+.formatiekeuze { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--grijs); }
+.formatiekeuze select {
+	font: inherit; font-size: 15px; padding: 8px 10px;
+	border: 1px solid var(--lijn); border-radius: 9px; background: #fff; color: var(--inkt);
+}
 
 h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--groen); margin: 22px 0 8px; }
 h2:first-child { margin-top: 0; }

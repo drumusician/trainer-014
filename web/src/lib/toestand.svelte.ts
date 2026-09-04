@@ -1,4 +1,5 @@
-import { plekken } from './domein/formaties';
+import { FORMATIES, plekken } from './domein/formaties';
+import { zetOpstellingOm } from './domein/opstelling';
 import { eindTijd, keepertijden, positietijden, speeltijden, stand, verstreken } from './domein/tijd';
 import { sorteerTrainingen } from './domein/presentie';
 import type {
@@ -437,12 +438,13 @@ class App {
 	}
 
 	/* ---------- standaardopstelling ---------- */
-	/** Zorgt dat er een standaard is die klopt met de huidige selectie. */
+	/** Zorgt dat er een standaard is die klopt met de huidige selectie en formatie. */
 	zorgVoorStandaard() {
 		const t = this.toestand;
 		if (!t.standaard) t.standaard = { formatie: t.formatie, opstelling: {}, bank: [] };
 		const st = t.standaard;
-		if (!plekken(st.formatie)) st.formatie = t.formatie;
+		if (!FORMATIES[st.formatie]) st.formatie = t.formatie;
+		this.zetStandaardInFormatie(t.formatie);
 		const ids = t.spelers.map((p) => p.id);
 		for (const plek of Object.keys(st.opstelling)) {
 			if (!ids.includes(st.opstelling[plek] as string)) delete st.opstelling[plek];
@@ -478,6 +480,34 @@ class App {
 	}
 
 	/** Opstellen vóór de aftrap: gewoon ruilen, dit is geen wissel. */
+	/**
+	 * De standaardopstelling meenemen naar een andere formatie. Wie op een plek
+	 * staat die ook in de nieuwe formatie bestaat blijft staan; de rest schuift
+	 * door binnen zijn eigen linie. Wat niet past gaat naar de bank, en plekken
+	 * die overblijven laten we leeg: die vult de trainer zelf.
+	 */
+	zetStandaardInFormatie(formatie: string) {
+		const st = this.toestand.standaard;
+		if (!st || st.formatie === formatie || !FORMATIES[formatie]) return;
+		const uit = zetOpstellingOm(st.opstelling, st.formatie, formatie, st.bank);
+		st.formatie = formatie;
+		st.opstelling = uit.opstelling;
+		st.bank = uit.bank;
+		this.bewaar();
+	}
+
+	/**
+	 * De formatie van het team. Er is er maar één: je standaardopstelling staat
+	 * erin en je volgende wedstrijd begint ermee. Waar je hem ook omzet, hij
+	 * verhuist overal mee.
+	 */
+	kiesFormatie(formatie: string) {
+		if (!FORMATIES[formatie]) return;
+		this.toestand.formatie = formatie;
+		this.zetStandaardInFormatie(formatie);
+		this.bewaar();
+	}
+
 	zetInOpzet(bron: 'wedstrijd' | 'standaard', spelerId: string) {
 		const doel = bron === 'standaard' ? this.toestand.standaard : this.toestand.wedstrijd;
 		if (!doel || !this.gekozenPlek) return;
