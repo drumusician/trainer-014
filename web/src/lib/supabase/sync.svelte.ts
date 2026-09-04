@@ -267,7 +267,7 @@ class Sync {
 			}
 			const nieuw = (await sb(
 				'/rest/v1/teams',
-				{ method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ naam: 'O14', eigenaar: s.user_id }) },
+				{ method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ naam: app.toestand.teamnaam, eigenaar: s.user_id }) },
 				token
 			)) as { id: string }[];
 			s.teamId = nieuw[0].id;

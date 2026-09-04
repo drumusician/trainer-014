@@ -10,6 +10,7 @@
 
 	const t = $derived(app.toestand);
 	const verdeling = $derived(bezetting(t.spelers, t.formatie));
+	const ingevuld = $derived(t.teamnaam !== 'Ons team');
 	let namenVak = $state('');
 	const LINIEKNOPPEN: Veldlinie[] = ['V', 'M', 'A'];
 
@@ -26,6 +27,20 @@
 
 <main>
 	<div class="pad">
+		<h2>Naam van je team</h2>
+		<p class="uitleg">
+			Staat boven de wedstrijd en in het verslag dat je deelt.
+			{#if !ingevuld}<b class="mager">Vul hem in, anders staat er straks "Ons team" in je verslag.</b>{/if}
+		</p>
+		<label class="vak">
+			Teamnaam
+			<input
+				value={t.teamnaam}
+				placeholder="bijv. JO11-2"
+				onchange={(e) => app.zetTeamnaam(e.currentTarget.value)}
+			/>
+		</label>
+
 		<h2>Spelers</h2>
 		<p class="uitleg">Wie hoeveel speelde en hoe vaak hij op de training stond, alles op één rij.</p>
 		<div class="knoprij" style="padding-left: 0">

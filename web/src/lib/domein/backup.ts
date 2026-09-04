@@ -25,6 +25,7 @@ export function leesBackup(tekst: string): Omit<Toestand, 'wedstrijd'> {
 	}
 	const leeg = legeToestand();
 	return {
+		teamnaam: typeof t.teamnaam === 'string' && t.teamnaam.trim() ? t.teamnaam : leeg.teamnaam,
 		spelers: t.spelers,
 		formatie: typeof t.formatie === 'string' ? t.formatie : leeg.formatie,
 		helftMinuten: Number(t.helftMinuten) || leeg.helftMinuten,

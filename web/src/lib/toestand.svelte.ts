@@ -27,6 +27,7 @@ function migreer(t: Toestand): Toestand {
 	});
 	if (!Array.isArray(t.trainingen)) t.trainingen = [];
 	if (t.delen !== 4) t.delen = 2;
+	if (!t.teamnaam?.trim()) t.teamnaam = 'Ons team';
 	const w = t.wedstrijd as (Wedstrijd & { helft?: number }) | null;
 	if (w && w.deel === undefined) {
 		/* van vroeger: toen waren het altijd twee helften */
@@ -247,6 +248,11 @@ class App {
 		return !!w && !w.afgelopen && (w.pauze || w.deel < w.delen);
 	}
 
+	zetTeamnaam(naam: string) {
+		this.toestand.teamnaam = naam.trim() || 'Ons team';
+		this.bewaar();
+	}
+
 	zetNotitie(tekst: string) {
 		const w = this.toestand.wedstrijd;
 		if (!w) return;
@@ -366,7 +372,7 @@ class App {
 		const regel: ArchiefWedstrijd = {
 			datum: w.datum, tegenstander: w.tegenstander, thuis: w.thuis,
 			stand: stand(w), formatie: w.formatie, duur: eindTijd(w),
-			delen: w.delen, notitie: w.notitie,
+			delen: w.delen, notitie: w.notitie, teamnaam: t.teamnaam,
 			gebeurtenissen: w.gebeurtenissen, namen,
 			afwezig: [...(w.afwezig ?? [])],
 			speeltijd: t.spelers
@@ -566,6 +572,7 @@ class App {
 	 */
 	neemOver(pakket: Partial<Omit<Toestand, 'wedstrijd'>>) {
 		const t = this.toestand;
+		if (pakket.teamnaam?.trim()) t.teamnaam = pakket.teamnaam;
 		if (Array.isArray(pakket.spelers)) t.spelers = pakket.spelers;
 		if (pakket.formatie && plekken(pakket.formatie)) t.formatie = pakket.formatie;
 		if (pakket.helftMinuten) t.helftMinuten = pakket.helftMinuten;
@@ -581,7 +588,7 @@ class App {
 	syncPakket() {
 		const t = this.toestand;
 		return {
-			spelers: t.spelers, formatie: t.formatie, helftMinuten: t.helftMinuten, delen: t.delen,
+			teamnaam: t.teamnaam, spelers: t.spelers, formatie: t.formatie, helftMinuten: t.helftMinuten, delen: t.delen,
 			standaard: t.standaard, trainingen: t.trainingen, archief: t.archief,
 			verslagWissels: t.verslagWissels
 		};
@@ -591,6 +598,7 @@ class App {
 		if (!d || !Array.isArray(d.spelers)) return false;
 		const t = this.toestand;
 		t.spelers = d.spelers;
+		if (d.teamnaam?.trim()) t.teamnaam = d.teamnaam;
 		if (d.formatie && plekken(d.formatie)) t.formatie = d.formatie;
 		if (d.helftMinuten) t.helftMinuten = d.helftMinuten;
 		if (d.delen === 2 || d.delen === 4) t.delen = d.delen;

@@ -59,9 +59,10 @@
 			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app/archief">Terug</a></div>
 		{:else}
 			{@const thuis = a.thuis !== false}
+			{@const ons = a.teamnaam?.trim() || app.toestand.teamnaam}
 			<h2>Uitslag</h2>
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
-				{thuis ? 'O14' : a.tegenstander} {a.stand[0]} – {a.stand[1]} {thuis ? a.tegenstander : 'O14'}
+				{thuis ? ons : a.tegenstander} {a.stand[0]} – {a.stand[1]} {thuis ? a.tegenstander : ons}
 			</p>
 			<p class="uitleg">{datumMetJaar(a.datum)} · {mmss(a.duur ?? 0)} gespeeld · {a.formatie}</p>
 			<div class="knoprij" style="padding-left: 0">
@@ -128,7 +129,7 @@
 					<label class="vak">
 						Voor of tegen
 						<select bind:value={nieuwTegen}>
-							<option value={false}>Voor O14</option>
+							<option value={false}>Voor {ons}</option>
 							<option value={true}>Tegen</option>
 						</select>
 					</label>

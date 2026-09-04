@@ -23,10 +23,15 @@
 
 	$effect(() => {
 		if (w && klaar) {
-			zetKop(w.thuis ? 'O14 – ' + w.tegenstander : w.tegenstander + ' – O14', '/', 'Menu',
-				uitslag[0] + ' – ' + uitslag[1]);
+			const ons = app.toestand.teamnaam;
+			zetKop(
+				w.thuis ? ons + ' – ' + w.tegenstander : w.tegenstander + ' – ' + ons,
+				'/app',
+				'Menu',
+				uitslag[0] + ' – ' + uitslag[1]
+			);
 		} else {
-			zetKop('Blaadje', '/', 'Menu');
+			zetKop('Blaadje', '/app', 'Menu');
 		}
 	});
 

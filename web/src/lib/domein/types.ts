@@ -88,6 +88,8 @@ export interface ArchiefWedstrijd {
 	stand: [number, number];
 	formatie: string;
 	duur: number;
+	/** hoe je team heette toen je bewaarde */
+	teamnaam?: string;
 	delen?: 2 | 4;
 	notitie?: string;
 	gebeurtenissen: Gebeurtenis[];
@@ -109,6 +111,8 @@ export interface Training {
 }
 
 export interface Toestand {
+	/** hoe jouw team heet; staat in de kop en in het verslag */
+	teamnaam: string;
 	spelers: Speler[];
 	formatie: string;
 	/** minuten per deel; heet nog helftMinuten omdat het zo is opgeslagen */
@@ -123,6 +127,7 @@ export interface Toestand {
 
 export function legeToestand(): Toestand {
 	return {
+		teamnaam: 'Ons team',
 		spelers: [],
 		formatie: '4-3-3',
 		helftMinuten: 35,

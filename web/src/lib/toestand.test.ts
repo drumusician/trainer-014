@@ -383,3 +383,34 @@ describe('één formatie voor het team', () => {
 		expect(app.toestand.formatie).toBe('1-2-2-1');
 	});
 });
+
+describe('de naam van je team', () => {
+	it('begint neutraal en niet met het team van de maker', () => {
+		expect(legeToestand().teamnaam).toBe('Ons team');
+	});
+
+	it('onthoudt wat je invult, en weigert leeg', () => {
+		app.zetTeamnaam('JO11-2');
+		expect(app.toestand.teamnaam).toBe('JO11-2');
+		app.zetTeamnaam('   ');
+		expect(app.toestand.teamnaam).toBe('Ons team');
+	});
+
+	it('bewaart de naam bij de wedstrijd, zodat een hernoeming het archief niet omschrijft', () => {
+		app.zetTeamnaam('JO11-2');
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p1' };
+		app.beeindig();
+		app.bewaarInArchief();
+		app.zetTeamnaam('JO12-1');
+		expect(app.toestand.archief[0].teamnaam).toBe('JO11-2');
+	});
+
+	it('geeft oude opslag zonder teamnaam er alsnog een', () => {
+		const oud = { ...legeToestand(), spelers: app.toestand.spelers } as Record<string, unknown>;
+		delete oud.teamnaam;
+		localStorage.setItem('o14-app-v1', JSON.stringify(oud));
+		app.laad();
+		expect(app.toestand.teamnaam).toBe('Ons team');
+	});
+});

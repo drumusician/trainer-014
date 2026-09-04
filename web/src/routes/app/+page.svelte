@@ -48,7 +48,7 @@
 		{#if staatKlaar || opgezet}
 			<h2>{bezig ? 'Bezig' : 'Klaarstaan'}</h2>
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
-				{w!.thuis ? 'O14 – ' + w!.tegenstander : w!.tegenstander + ' – O14'}
+				{w!.thuis ? t.teamnaam + ' – ' + w!.tegenstander : w!.tegenstander + ' – ' + t.teamnaam}
 			</p>
 			<p class="uitleg">
 				{#if bezig}
@@ -81,10 +81,16 @@
 			</div>
 		{:else}
 			<h2>Nieuwe wedstrijd</h2>
+			{#if t.teamnaam === 'Ons team' && t.spelers.length}
+				<p class="uitleg">
+					<b class="mager">Je team heet nog "Ons team".</b> Zet bij
+					<a href="/app/team">Team</a> even je eigen naam erin, dan staat die goed in je verslag.
+				</p>
+			{/if}
 			<div class="tweekolom">
 				<label class="vak">
 					Tegenstander
-					<input bind:value={tegenstander} placeholder="bijv. Sparta O14" />
+					<input bind:value={tegenstander} placeholder="bijv. Sparta JO11-2" />
 				</label>
 				<label class="vak">
 					Thuis of uit

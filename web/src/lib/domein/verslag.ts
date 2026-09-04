@@ -14,13 +14,14 @@ export interface Verslagbron {
 	namen?: Record<string, string>;
 	delen?: 2 | 4;
 	notitie?: string;
+	teamnaam?: string;
 }
 
-export function bronVanWedstrijd(w: Wedstrijd): Verslagbron {
+export function bronVanWedstrijd(w: Wedstrijd, teamnaam: string): Verslagbron {
 	return {
 		datum: w.datum, tegenstander: w.tegenstander, thuis: w.thuis,
 		stand: stand(w), formatie: w.formatie, duur: eindTijd(w),
-		gebeurtenissen: w.gebeurtenissen, delen: w.delen, notitie: w.notitie
+		gebeurtenissen: w.gebeurtenissen, delen: w.delen, notitie: w.notitie, teamnaam
 	};
 }
 
@@ -29,7 +30,7 @@ export function bronVanArchief(a: ArchiefWedstrijd): Verslagbron {
 		datum: a.datum, tegenstander: a.tegenstander, thuis: a.thuis !== false,
 		stand: a.stand ?? [0, 0], formatie: a.formatie, duur: a.duur ?? 0,
 		gebeurtenissen: a.gebeurtenissen ?? [], namen: a.namen,
-		delen: a.delen, notitie: a.notitie
+		delen: a.delen, notitie: a.notitie, teamnaam: a.teamnaam
 	};
 }
 
@@ -85,9 +86,10 @@ export function datumTekst(datum: string): string {
 export function verslagTekst(bron: Verslagbron, spelers: Speler[], metWissels = false): string {
 	const [v, t] = bron.stand;
 	const thuis = bron.thuis !== false;
+	const ons = bron.teamnaam?.trim() || 'Ons team';
 	const regels: string[] = [];
 	regels.push(
-		(thuis ? 'O14 – ' + bron.tegenstander : bron.tegenstander + ' – O14') + ' ' +
+		(thuis ? ons + ' – ' + bron.tegenstander : bron.tegenstander + ' – ' + ons) + ' ' +
 		(thuis ? v + '–' + t : t + '–' + v)
 	);
 	regels.push(datumTekst(bron.datum));

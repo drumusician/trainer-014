@@ -28,7 +28,8 @@
 			{@const [v, t] = stand(w)}
 			<h2>Uitslag</h2>
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
-				{w.thuis ? 'O14' : w.tegenstander} {v} – {t} {w.thuis ? w.tegenstander : 'O14'}
+				{w.thuis ? app.toestand.teamnaam : w.tegenstander} {v} – {t}
+				{w.thuis ? w.tegenstander : app.toestand.teamnaam}
 			</p>
 			<p class="uitleg">{datumMetJaar(w.datum)} · {mmss(eindTijd(w))} gespeeld · {w.formatie}</p>
 
@@ -56,7 +57,7 @@
 
 			<h2>Delen</h2>
 			<p class="uitleg">Voor de groepsapp. De wissels laat ik er standaard uit.</p>
-			<Verslag bron={bronVanWedstrijd(w)} />
+			<Verslag bron={bronVanWedstrijd(w, app.toestand.teamnaam)} />
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
 				{#if w.bewaard}

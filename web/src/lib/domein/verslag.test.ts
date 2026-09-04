@@ -4,7 +4,7 @@ import type { Speler } from './types';
 
 const spelers: Speler[] = [{ id: 'p1', naam: 'Aad', linie: 'A' }, { id: 'p2', naam: 'Bram', linie: 'M' }];
 const bron = {
-	datum: '2026-09-06', tegenstander: 'Ajax', thuis: true, stand: [2, 1] as [number, number],
+	datum: '2026-09-06', tegenstander: 'Ajax', thuis: true, teamnaam: 'JO11-2', stand: [2, 1] as [number, number],
 	formatie: '4-3-3', duur: 4200,
 	gebeurtenissen: [
 		{ type: 'wissel' as const, t: 1200, eruit: 'p1', erin: 'p2', plek: 'SP' },
@@ -17,7 +17,7 @@ const bron = {
 describe('verslag', () => {
 	it('laat de wissels weg en zet de stand op volgorde van de klok', () => {
 		const tekst = verslagTekst(bron, spelers);
-		expect(tekst).toContain('O14 – Ajax 2–1');
+		expect(tekst).toContain('JO11-2 – Ajax 2–1');
 		expect(tekst).not.toContain('voor');
 		expect(tekst.split('\n').slice(3)).toEqual([
 			"15′  1–0  Aad",
@@ -33,7 +33,12 @@ describe('verslag', () => {
 	});
 
 	it('draait de stand om bij een uitwedstrijd', () => {
-		expect(verslagTekst({ ...bron, thuis: false }, spelers)).toContain('Ajax – O14 1–2');
+		expect(verslagTekst({ ...bron, thuis: false }, spelers)).toContain('Ajax – JO11-2 1–2');
+	});
+
+	it('valt terug op een neutrale naam als er geen teamnaam is', () => {
+		expect(verslagTekst({ ...bron, teamnaam: undefined }, spelers)).toContain('Ons team – Ajax');
+		expect(verslagTekst({ ...bron, teamnaam: '  ' }, spelers)).toContain('Ons team – Ajax');
 	});
 });
 
