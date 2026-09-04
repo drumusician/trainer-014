@@ -2,11 +2,13 @@
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 	import { mager, presentie } from '$lib/domein/presentie';
+	import { bezetting, gedrang, tekort } from '$lib/domein/bezetting';
 	import type { Speler, Veldlinie } from '$lib/domein/types';
 
 	$effect(() => zetKop('Team'));
 
 	const t = $derived(app.toestand);
+	const verdeling = $derived(bezetting(t.spelers, t.formatie));
 	let namenVak = $state('');
 	const LINIEKNOPPEN: Veldlinie[] = ['V', 'M', 'A'];
 
@@ -63,6 +65,31 @@
 					}}>Speler toevoegen</button
 				>
 			</div>
+
+			<h2>Verdeling in {t.formatie}</h2>
+			<table class="uitslag">
+				<tbody>
+					{#each verdeling as b (b.linie)}
+						<tr>
+							<td>{b.naam}</td>
+							<td class="m" class:mager={tekort(b) || gedrang(b)}>
+								{b.spelers} voor {b.plekken}
+								{b.plekken === 1 ? 'plek' : 'plekken'}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+			<p class="uitleg" style="margin-top: 8px">
+				{#if verdeling.some(tekort)}
+					Een linie is niet vol te krijgen met de spelers die je zo gemarkeerd hebt.
+				{:else if verdeling.some(gedrang)}
+					Waar meer dan twee keer zoveel spelers als plekken staan, zit er elke wedstrijd iemand op de bank die
+					zichzelf daar ziet. Een andere formatie kan schelen.
+				{:else}
+					De letters zijn een hint bij het wisselen, geen regel: je kunt altijd iedereen kiezen.
+				{/if}
+			</p>
 		{/if}
 
 		<h2>Trainingen</h2>
