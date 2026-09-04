@@ -78,7 +78,7 @@
 	<title>{kop.titel === 'Blaadje' ? 'Blaadje' : kop.titel + ' · Blaadje'}</title>
 </svelte:head>
 
-<div class="app">
+<div class="app" class:zonderbalk={inTaak}>
 	{#if sync.botsing}
 		<div class="waarschuwing">
 			<span>Op de server staat iets nieuwers, van een ander toestel.</span>

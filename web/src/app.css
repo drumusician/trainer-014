@@ -19,10 +19,14 @@ body {
 	color: var(--inkt); background: #fff; font-size: 17px;
 	-webkit-text-size-adjust: 100%;
 	display: flex; flex-direction: column;
-	padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+	/* Onderin geen marge: die hoort bij de balk die daar staat, anders zweeft
+	   hij boven een witte strook. De tabbalk en de knoprij regelen het zelf. */
+	padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
 }
 
 .app { max-width: 900px; margin: 0 auto; width: 100%; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+/* Schermen zonder tabbalk moeten zelf onder de home-indicator uit blijven. */
+.app.zonderbalk { padding-bottom: env(safe-area-inset-bottom); }
 
 header {
 	display: flex; align-items: center; gap: 8px;
@@ -58,6 +62,10 @@ main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height:
    klok en de knoppen, en nooit meer dan dat. Daardoor hoef je tijdens een
    wedstrijd nergens te scrollen, op geen enkel scherm. */
 .veldscherm { display: flex; flex-direction: column; height: 100%; --chroom: 200px; }
+@supports (padding: env(safe-area-inset-bottom)) {
+	.veldscherm { --chroom: calc(200px + env(safe-area-inset-bottom)); }
+	.veldscherm.zonderklok { --chroom: calc(215px + env(safe-area-inset-bottom)); }
+}
 .veldscherm.zonderklok { --chroom: 215px; }
 /* Niet laten krimpen: het veld houdt zijn verhouding, dus een krimpende rij
    betekent dat het veld over de knoppen eronder heen valt. Liever scrollen. */
