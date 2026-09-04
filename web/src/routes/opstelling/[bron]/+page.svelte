@@ -3,12 +3,11 @@
 	import { page } from '$app/state';
 	import Veld from '$lib/componenten/Veld.svelte';
 	import BankKolom from '$lib/componenten/BankKolom.svelte';
-	import { groepVan, LINIES, plekLinie } from '$lib/domein/formaties';
+	import { aantalPlekken, groepVan, liniesIn, LINIES, plekLinie } from '$lib/domein/formaties';
 	import { mager, presentie } from '$lib/domein/presentie';
 	import { opstellingTekst } from '$lib/domein/opstelling';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
-	import type { Linie } from '$lib/domein/types';
 
 	const bron = $derived(page.params.bron === 'standaard' ? 'standaard' : 'wedstrijd');
 	const doel = $derived(bron === 'standaard' ? app.toestand.standaard : app.wedstrijd);
@@ -25,6 +24,7 @@
 	});
 
 	const bezet = $derived(doel ? Object.values(doel.opstelling).filter(Boolean).length : 0);
+	const nodig = $derived(doel ? aantalPlekken(doel.formatie) : 0);
 	const gekozenSpeler = $derived(
 		doel && app.gekozenPlek ? app.spelerVan(doel.opstelling[app.gekozenPlek]) : undefined
 	);
@@ -47,7 +47,8 @@
 	const zonderWissel = $derived.by(() => {
 		if (!doel) return [];
 		const bank = doel.bank.map((id) => app.spelerVan(id)).filter(Boolean);
-		return (['A', 'M', 'V', 'K'] as Linie[])
+		/* alleen de linies die in deze formatie voorkomen: bij 4 tegen 4 geen keeper */
+		return liniesIn(doel.formatie)
 			.filter((code) => !bank.some((p) => p && groepVan(p) === code))
 			.map((code) => LINIES[code].toLowerCase());
 	});
@@ -80,7 +81,7 @@
 			goto('/');
 			return;
 		}
-		if (bezet < 11 && !confirm('Er staan er ' + bezet + ' op het veld in plaats van 11. Toch doorgaan?')) return;
+		if (bezet < nodig && !confirm('Er staan er ' + bezet + ' op het veld in plaats van ' + nodig + '. Toch doorgaan?')) return;
 		app.gekozenPlek = null;
 		goto('/wedstrijd');
 	}
@@ -157,7 +158,7 @@
 				{#if bron === 'standaard'}
 					<button class="uit" onclick={wissen}>Wissen</button>
 				{/if}
-				<span class="uitleg" style="align-self: center; margin: 0">{bezet} van de 11 ingevuld</span>
+				<span class="uitleg" style="align-self: center; margin: 0">{bezet} van de {nodig} ingevuld</span>
 			</div>
 			{#if gedeeld}
 				<p class="uitleg" style="padding: 0 12px; margin: 0 0 8px">

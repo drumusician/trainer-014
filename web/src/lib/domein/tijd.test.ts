@@ -115,3 +115,42 @@ describe('van plek ruilen tijdens de wedstrijd', () => {
 		expect(Object.values(t).reduce((a, b) => a + b, 0)).toBe(11 * 4200);
 	});
 });
+
+describe('kleinere speelvormen', () => {
+	/* De rekenkern telt nergens tot elf: hij volgt de plekken uit de formatie. */
+	it('rekent 8 tegen 8 net zo goed door', () => {
+		const kort: Speler[] = NAMEN.slice(0, 10).map((naam) => ({ id: 'p' + naam, naam, linie: '' }));
+		const opstelling: Record<string, string | null> = {};
+		FORMATIES['1-3-3-1'].forEach((p, i) => (opstelling[p[0]] = kort[i].id));
+		const w: Wedstrijd = {
+			datum: '2026-09-06', tegenstander: 'Test', thuis: true, formatie: '1-3-3-1',
+			opstelling, bank: [kort[8].id, kort[9].id],
+			gebeurtenissen: [
+				{ type: 'start', t: 0 },
+				{ type: 'wissel', t: 1200, eruit: kort[7].id, erin: kort[8].id, plek: 'SP' },
+				{ type: 'ruil', t: 1800, plekA: 'K', plekB: 'MC' },
+				{ type: 'eind', t: 3600 }
+			],
+			verstreken: 3600, sinds: null, loopt: false, helft: 2, afgelopen: true
+		};
+		const t = speeltijden(w, kort);
+		const k = keepertijden(w);
+		expect(Object.values(t).reduce((a, b) => a + b, 0)).toBe(8 * 3600);
+		expect(t['p' + NAMEN[7]]).toBe(1200);
+		expect(k['p' + NAMEN[0]]).toBe(1800); /* keepte tot de ruil */
+	});
+
+	it('werkt ook zonder keeper, bij 4 tegen 4', () => {
+		const kort: Speler[] = NAMEN.slice(0, 5).map((naam) => ({ id: 'p' + naam, naam, linie: '' }));
+		const opstelling: Record<string, string | null> = {};
+		FORMATIES['2-2'].forEach((p, i) => (opstelling[p[0]] = kort[i].id));
+		const w: Wedstrijd = {
+			datum: '2026-09-06', tegenstander: 'Test', thuis: true, formatie: '2-2',
+			opstelling, bank: [kort[4].id],
+			gebeurtenissen: [{ type: 'start', t: 0 }, { type: 'eind', t: 1800 }],
+			verstreken: 1800, sinds: null, loopt: false, helft: 2, afgelopen: true
+		};
+		expect(Object.values(speeltijden(w, kort)).reduce((a, b) => a + b, 0)).toBe(4 * 1800);
+		expect(keepertijden(w)).toEqual({});
+	});
+});

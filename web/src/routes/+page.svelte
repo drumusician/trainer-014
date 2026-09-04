@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { FORMATIES } from '$lib/domein/formaties';
+	import { aantalPlekken, speelvormVan, SPEELVORMEN } from '$lib/domein/formaties';
 	import { mmss, verstreken } from '$lib/domein/tijd';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
@@ -94,7 +94,13 @@
 				<label class="vak">
 					Formatie
 					<select bind:value={t.formatie} onchange={() => app.bewaar()}>
-						{#each Object.keys(FORMATIES) as f (f)}<option>{f}</option>{/each}
+						{#each SPEELVORMEN as vorm (vorm.naam)}
+							<optgroup label={vorm.naam + (vorm.uitleg ? ' · ' + vorm.uitleg : '')}>
+								{#each vorm.formaties as f (f.sleutel)}
+									<option value={f.sleutel}>{f.sleutel}{f.uitleg ? ' · ' + f.uitleg : ''}</option>
+								{/each}
+							</optgroup>
+						{/each}
 					</select>
 				</label>
 				<label class="vak">
@@ -109,9 +115,14 @@
 
 		<h2>Standaardopstelling</h2>
 		<p class="uitleg">
-			{t.standaard
-				? 'Elke nieuwe wedstrijd begint hiermee. Langs de lijn hoef je dan alleen nog te wisselen.'
-				: 'Nog geen standaardopstelling. Maak er een, dan begint elke wedstrijd met je vaste elftal.'}
+			{#if t.standaard && t.standaard.formatie !== t.formatie}
+				<b class="mager">Je standaardopstelling staat in {t.standaard.formatie}, je speelt nu {t.formatie}.</b>
+				Daardoor begint een nieuwe wedstrijd met een leeg veld. Maak hem opnieuw in de formatie die je speelt.
+			{:else if t.standaard}
+				Elke nieuwe wedstrijd begint hiermee. Langs de lijn hoef je dan alleen nog te wisselen.
+			{:else}
+				Nog geen standaardopstelling. Maak er een, dan begint elke wedstrijd met je vaste team.
+			{/if}
 		</p>
 		<div class="knoprij" style="padding-left: 0">
 			<button onclick={standaard}>{t.standaard ? 'Standaardopstelling wijzigen' : 'Standaardopstelling maken'}</button>

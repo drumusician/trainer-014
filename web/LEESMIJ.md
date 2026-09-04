@@ -49,6 +49,19 @@ De schermen zijn routes, dus de terugknop van je telefoon werkt en je kunt een
 scherm bookmarken. Wat er in de balk bovenaan staat, zet elk scherm zelf via
 `zetKop()`.
 
+## Speelvormen
+
+11 tegen 11, 8 tegen 8, 6 tegen 6 en 4 tegen 4 (zonder keeper). De app rekent
+nergens met een vast aantal spelers: hoeveel er op het veld staan volgt uit de
+lijst plekken in `domein/formaties.ts`. Een nieuwe formatie toevoegen is dus een
+regel in dat bestand, verder niets.
+
+De notatie volgt wat trainers zeggen: bij 11 tegen 11 zonder keeper (4-3-3), in
+de jeugd met keeper (1-3-3-1). Verwarrend, maar het is hoe het op het veld gaat.
+
+Wissel je van speelvorm, dan past je standaardopstelling niet meer. Dat zegt de
+app; hij vult dan niets in in plaats van iets verkeerds.
+
 ## Voor de aftrap
 
 Bij een nieuwe wedstrijd komt eerst **Wie is er?**. Wie je wegtikt staat niet op

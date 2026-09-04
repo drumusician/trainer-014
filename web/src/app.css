@@ -58,7 +58,7 @@ main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height:
    klok en de knoppen, en nooit meer dan dat. Daardoor hoef je tijdens een
    wedstrijd nergens te scrollen, op geen enkel scherm. */
 .veldscherm { display: flex; flex-direction: column; height: 100%; --chroom: 200px; }
-.veldscherm.zonderklok { --chroom: 190px; }
+.veldscherm.zonderklok { --chroom: 215px; }
 /* Niet laten krimpen: het veld houdt zijn verhouding, dus een krimpende rij
    betekent dat het veld over de knoppen eronder heen valt. Liever scrollen. */
 .veldscherm .veldrij { flex: 0 0 auto; }
@@ -99,6 +99,9 @@ main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height:
 	flex: 1 1 96px; min-width: 92px; max-width: 190px; align-self: stretch;
 	display: flex; flex-direction: column; min-height: 0;
 }
+/* Bij 8 of 6 tegen 8 staan er meer op de bank dan op het veld. De kolom mag de
+   pagina dan niet uit beeld duwen: hij scrollt zelf. */
+.veldscherm .banknaast { max-height: calc(100dvh - var(--chroom)); }
 .bankkop { padding: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--groen); font-weight: 700; }
 .banknaast .groepen { overflow-y: auto; min-height: 0; }
 .groepkop { display: flex; align-items: baseline; gap: 6px; color: var(--grijs); padding: 5px 0 4px; font-size: 11px; justify-content: space-between; }
