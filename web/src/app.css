@@ -177,6 +177,15 @@ ul.log li.klikbaar { padding: 0; }
 ul.log li em { font-style: normal; color: var(--grijs); font-size: 18px; line-height: 1; }
 
 /* ---------- de balk onderaan ---------- */
+.waarschuwing {
+	flex: none;
+	display: flex; align-items: center; gap: 8px;
+	padding: 9px 12px;
+	background: var(--oranje-licht); border-bottom: 1px solid var(--oranje);
+	color: #7a3a15; font-size: 14px;
+}
+.waarschuwing span { flex: 1; }
+
 .tabs {
 	flex: none;
 	display: flex;

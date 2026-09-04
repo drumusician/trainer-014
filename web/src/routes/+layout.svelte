@@ -15,6 +15,8 @@
 
 	app.laad();
 	sync.laad();
+	/* Lokaal is leidend; de server krijgt het zodra er bereik is. */
+	app.naBewaren = () => sync.merkVies();
 
 	let wakeLock: WakeLockSentinel | null = null;
 
@@ -39,6 +41,9 @@
 	onMount(() => {
 		sync.pakInlogUitLink();
 		window.addEventListener('hashchange', () => sync.pakInlogUitLink());
+		sync.kijkEven();
+		const weerOnline = () => sync.duwAlsNodig();
+		window.addEventListener('online', weerOnline);
 
 		/* Eén klok voor de hele app: schermen die tijd tonen werken vanzelf bij. */
 		const tik = setInterval(() => {
@@ -47,13 +52,16 @@
 
 		/* Het scherm mag niet uitvallen terwijl de klok loopt. */
 		const terug = () => {
-			if (document.visibilityState === 'visible' && app.wedstrijd?.loopt) pakWakeLock();
+			if (document.visibilityState !== 'visible') return;
+			if (app.wedstrijd?.loopt) pakWakeLock();
+			sync.kijkEven();
 		};
 		document.addEventListener('visibilitychange', terug);
 
 		return () => {
 			clearInterval(tik);
 			document.removeEventListener('visibilitychange', terug);
+			window.removeEventListener('online', weerOnline);
 			losWakeLock();
 		};
 	});
@@ -69,6 +77,13 @@
 </svelte:head>
 
 <div class="app">
+	{#if sync.botsing}
+		<div class="waarschuwing">
+			<span>Op de server staat iets nieuwers, van een ander toestel.</span>
+			<button class="klein" onclick={() => sync.ophalen()}>Ophalen</button>
+			<button class="klein" onclick={() => sync.opsturen(true)}>Dit toestel</button>
+		</div>
+	{/if}
 	<header>
 		<h1>{kop.titel}</h1>
 		{#if kop.stand}<span class="stand">{kop.stand}</span>{/if}

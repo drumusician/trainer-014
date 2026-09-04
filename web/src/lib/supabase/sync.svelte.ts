@@ -5,6 +5,14 @@ const SESSIESLEUTEL = 'o14-sessie-v1';
 
 const opslag = () => (typeof localStorage === 'undefined' ? null : localStorage);
 
+/** Goedkoop vingerafdrukje, om te zien of er echt iets veranderd is. */
+function vingerafdruk(waarde: unknown): string {
+	const tekst = JSON.stringify(waarde);
+	let h = 5381;
+	for (let i = 0; i < tekst.length; i++) h = ((h << 5) + h + tekst.charCodeAt(i)) | 0;
+	return tekst.length + ':' + (h >>> 0).toString(36);
+}
+
 interface Sessie {
 	access_token: string;
 	refresh_token: string;
@@ -15,6 +23,8 @@ interface Sessie {
 	teamId?: string | null;
 	versie?: number;
 	laatst?: string | null;
+	/** vingerafdruk van wat er als laatste goed is aangekomen */
+	afdruk?: string | null;
 }
 
 interface Fout extends Error {
@@ -55,6 +65,16 @@ class Sync {
 	/** 'email' of 'code' */
 	fase = $state<'email' | 'code'>('email');
 	email = $state('');
+
+	/* ---------- vanzelf bijwerken ---------- */
+	/** er staan wijzigingen klaar die de server nog niet heeft */
+	vies = $state(false);
+	/** de server heeft iets nieuwers; dan beslist de trainer, niet de app */
+	botsing = $state(false);
+	/** laatste poging mislukt (meestal: geen bereik) */
+	hapert = $state(false);
+	private wachter: ReturnType<typeof setTimeout> | null = null;
+	private bezigMetDuwen = false;
 
 	laad() {
 		const bak = opslag();
@@ -219,14 +239,14 @@ class Sync {
 		return s.teamId!;
 	}
 
-	private botsing(e: Fout): boolean {
+	private isBotsing(e: Fout): boolean {
 		return e.data?.code === '40001' || /versie loopt niet gelijk/.test(e.message ?? '');
 	}
 
-	async opsturen(overschrijven = false) {
+	async opsturen(overschrijven = false, stil = false) {
 		if (!this.sessie) return;
-		this.bezig = true;
-		this.melding = 'Bezig met opsturen…';
+		this.bezig = !stil;
+		if (!stil) this.melding = 'Bezig met opsturen…';
 		try {
 			const token = await this.token();
 			if (!token) {
@@ -239,30 +259,40 @@ class Sync {
 				const nu = (await sb('/rest/v1/team_toestand?select=versie&team_id=eq.' + team, {}, token)) as { versie: number }[];
 				verwacht = nu?.length ? nu[0].versie : null;
 			}
+			const pakket = app.syncPakket();
 			const r = (await sb(
 				'/rest/v1/rpc/toestand_opslaan',
-				{ method: 'POST', body: JSON.stringify({ p_team_id: team, p_data: app.syncPakket(), p_verwachte_versie: verwacht }) },
+				{ method: 'POST', body: JSON.stringify({ p_team_id: team, p_data: pakket, p_verwachte_versie: verwacht }) },
 				token
 			)) as { versie: number } | null;
 			this.sessie.versie = r?.versie ?? (this.sessie.versie ?? 0) + 1;
 			this.sessie.laatst = new Date().toISOString();
+			this.sessie.afdruk = vingerafdruk(pakket);
 			this.bewaar();
+			this.vies = false;
+			this.botsing = false;
+			this.hapert = false;
 			this.melding = 'Opgestuurd.';
 		} catch (e) {
-			this.melding = this.botsing(e as Fout)
-				? 'Op de server staat iets nieuwers, van een ander toestel. Haal het eerst op, of stuur dit toestel er met opzet overheen.'
-				: 'Opsturen lukte niet: ' + (e as Error).message;
+			if (this.isBotsing(e as Fout)) {
+				this.botsing = true;
+				this.melding = 'Op de server staat iets nieuwers, van een ander toestel. Haal het eerst op, of stuur dit toestel er met opzet overheen.';
+			} else {
+				this.hapert = true;
+				this.melding = 'Opsturen lukte niet: ' + (e as Error).message;
+			}
 		} finally {
 			this.bezig = false;
 		}
 	}
 
-	async ophalen() {
+	async ophalen(stil = false) {
 		if (!this.sessie) return;
-		if (!confirm('De selectie, standaardopstelling, trainingen en het archief op dit toestel vervangen door wat er op de server staat?'))
+		if (!stil && !confirm('De selectie, standaardopstelling, trainingen en het archief op dit toestel vervangen door wat er op de server staat?'))
 			return;
-		this.bezig = true;
-		this.melding = 'Bezig met ophalen…';
+		if (stil && this.vies) return; /* nooit over eigen werk heen */
+		this.bezig = !stil;
+		if (!stil) this.melding = 'Bezig met ophalen…';
 		try {
 			const token = await this.token();
 			if (!token) {
@@ -274,26 +304,89 @@ class Sync {
 				| { data: ReturnType<typeof app.syncPakket>; versie: number }[]
 				| null;
 			if (!rijen?.length) {
-				this.melding = 'Er staat nog niets op de server.';
+				/* nog niets op de server: dan is wat hier staat het begin */
+				if (stil) {
+					this.vies = true;
+					await this.duwAlsNodig();
+				} else {
+					this.melding = 'Er staat nog niets op de server.';
+				}
 				return;
 			}
+			if (stil && this.sessie.versie === rijen[0].versie) return; /* al gelijk */
 			if (!app.neemSyncOver(rijen[0].data)) {
 				this.melding = 'Wat er staat kon ik niet lezen.';
 				return;
 			}
 			this.sessie.versie = rijen[0].versie;
 			this.sessie.laatst = new Date().toISOString();
+			this.sessie.afdruk = vingerafdruk(app.syncPakket());
 			this.bewaar();
-			this.melding = 'Opgehaald.';
+			this.vies = false;
+			this.botsing = false;
+			this.hapert = false;
+			this.melding = stil ? '' : 'Opgehaald.';
 		} catch (e) {
-			this.melding = 'Ophalen lukte niet: ' + (e as Error).message;
+			this.hapert = true;
+			if (!stil) this.melding = 'Ophalen lukte niet: ' + (e as Error).message;
 		} finally {
 			this.bezig = false;
 		}
 	}
 
 	get botsingOpen(): boolean {
-		return /nieuwers/.test(this.melding);
+		return this.botsing;
+	}
+
+	/* ==========================================================
+	   Vanzelf bijwerken
+	   Het toestel schrijft, de server bewaart. We sturen op zodra er iets
+	   veranderd is en er bereik is; we halen alleen op als er hier niets
+	   klaarstaat, anders zouden we je eigen werk overschrijven.
+	   ========================================================== */
+
+	/** Wordt na elke opslag geroepen. */
+	merkVies() {
+		if (!this.sessie) return;
+		const nu = vingerafdruk(app.syncPakket());
+		if (nu === this.sessie.afdruk) return; /* alleen de lopende wedstrijd veranderde */
+		this.vies = true;
+		this.plan();
+	}
+
+	/** Even wachten tot het rustig is; anders sturen we tijdens een wedstrijd
+	    bij elke tik iets op. */
+	private plan(na = 4000) {
+		if (this.wachter) clearTimeout(this.wachter);
+		this.wachter = setTimeout(() => this.duwAlsNodig(), na);
+	}
+
+	async duwAlsNodig() {
+		if (!this.sessie || !this.vies || this.bezigMetDuwen || this.botsing) return;
+		if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+			this.hapert = true;
+			return;
+		}
+		this.bezigMetDuwen = true;
+		try {
+			await this.opsturen(false, true);
+		} finally {
+			this.bezigMetDuwen = false;
+		}
+	}
+
+	/** Bij het openen van de app, en als je terugkomt uit een ander scherm. */
+	async kijkEven() {
+		if (!this.sessie) return;
+		if (this.vies) {
+			await this.duwAlsNodig();
+			return;
+		}
+		try {
+			await this.ophalen(true);
+		} catch {
+			/* geen bereik: dan later */
+		}
 	}
 }
 

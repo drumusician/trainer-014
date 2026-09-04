@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { backupNaam, leesBackup, maakBackup } from '$lib/domein/backup';
-	import { leesCode, maakCode } from '$lib/domein/overzetten';
+	import { beschrijf, leesCode, maakCode } from '$lib/domein/overzetten';
 	import { app } from '$lib/toestand.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
 	import { zetKop } from '$lib/kop.svelte';
@@ -11,30 +11,16 @@
 	let inlogcode = $state('');
 	let overzet = $state<'geen' | 'maken' | 'invoeren'>('geen');
 	let code = $state('');
-	let backup = $state<'geen' | 'maken' | 'terugzetten'>('geen');
+	let backup = $state<'geen' | 'maken'>('geen');
 	let backuptekst = $state('');
 
 	async function codeMaken() {
-		code = maakCode({ v: 1, spelers: t.spelers, formatie: t.formatie, helftMinuten: t.helftMinuten, standaard: t.standaard });
+		code = maakCode(t);
 		overzet = 'maken';
 		try {
 			await navigator.clipboard.writeText(code);
 		} catch {
 			/* dan met de hand */
-		}
-	}
-
-	function codeOvernemen() {
-		try {
-			const pakket = leesCode(code);
-			if (!confirm('De selectie op dit toestel vervangen door ' + pakket.spelers.length + ' spelers uit de code?\n\nJe bewaarde wedstrijden blijven staan.'))
-				return;
-			app.neemOver(pakket);
-			overzet = 'geen';
-			code = '';
-			alert('Overgenomen.');
-		} catch (e) {
-			alert('Deze code kon ik niet lezen: ' + (e as Error).message);
 		}
 	}
 
@@ -55,19 +41,21 @@
 		URL.revokeObjectURL(a.href);
 	}
 
-	function backupTerugzetten() {
+	/** Eén knop voor allebei: een code en een back-up bevatten hetzelfde. */
+	function overnemen() {
 		try {
-			const d = leesBackup(backuptekst);
-			if (!confirm('Alles op dit toestel vervangen door de back-up?\n\n' + d.spelers.length + ' spelers, ' + d.archief.length + ' bewaarde wedstrijden, ' + d.trainingen.length + ' trainingen.'))
+			const pakket = leesCode(code);
+			if (!confirm('Dit overnemen op dit toestel?\n\n' + beschrijf(pakket) + '.\n\nWat hierin zit vervangt wat je nu hebt. Een wedstrijd die nu loopt blijft staan.'))
 				return;
-			app.zetBackupTerug(d);
-			backup = 'geen';
-			backuptekst = '';
-			alert('Teruggezet.');
+			app.neemOver(pakket);
+			overzet = 'geen';
+			code = '';
+			alert('Overgenomen.');
 		} catch (e) {
-			alert('Deze back-up kon ik niet lezen: ' + (e as Error).message);
+			alert('Dit kon ik niet lezen: ' + (e as Error).message);
 		}
 	}
+
 </script>
 
 <main>
@@ -101,12 +89,26 @@
 			{/if}
 		{:else}
 			<p class="uitleg">
-				Ingelogd als <b>{sync.sessie.email ?? 'onbekend'}</b>.
-				{#if sync.sessie.laatst}Laatst gelijkgezet {new Date(sync.sessie.laatst).toLocaleString('nl-NL')}.{/if}
-				Een lopende wedstrijd gaat nooit mee; die blijft op dit toestel.
+				Ingelogd als <b>{sync.sessie.email ?? 'onbekend'}</b>. De app werkt gewoon zonder bereik en stuurt vanzelf op
+				zodra er weer internet is. Een lopende wedstrijd gaat nooit mee; die blijft op dit toestel.
+			</p>
+			<p class="uitleg">
+				<b>
+					{#if sync.botsing}
+						Er staat iets nieuwers op de server.
+					{:else if sync.vies && sync.hapert}
+						Nog niet opgestuurd, geen verbinding.
+					{:else if sync.vies}
+						Nog niet opgestuurd.
+					{:else if sync.sessie.laatst}
+						Bijgewerkt {new Date(sync.sessie.laatst).toLocaleString('nl-NL')}.
+					{:else}
+						Nog niets uitgewisseld.
+					{/if}
+				</b>
 			</p>
 			<div class="knoprij" style="padding-left: 0">
-				<button class="prim" disabled={sync.bezig} onclick={() => sync.opsturen()}>Opsturen</button>
+				<button class="prim" disabled={sync.bezig} onclick={() => sync.opsturen()}>Nu opsturen</button>
 				<button disabled={sync.bezig} onclick={() => sync.ophalen()}>Ophalen</button>
 				<button onclick={() => sync.uitloggen()}>Uitloggen</button>
 			</div>
@@ -118,45 +120,29 @@
 		{/if}
 		{#if sync.melding}<p class="uitleg" style="margin-top: 8px">{sync.melding}</p>{/if}
 
-		<h2>Back-up</h2>
+		<h2>Overzetten en back-up</h2>
 		<p class="uitleg">
-			Alles wat de app onthoudt als tekst: selectie, standaardopstelling, trainingen en het hele archief. Je krijgt hem
-			als bestand én op je klembord. Een wedstrijd die nu loopt gaat niet mee.
+			Alles wat de app onthoudt: selectie, standaardopstelling, trainingen en het hele archief. Als bestand om te
+			bewaren, of als code om op je andere toestel in te voeren. Een wedstrijd die nu loopt gaat nooit mee.
 		</p>
 		<div class="knoprij" style="padding-left: 0">
-			<button onclick={backupMaken}>Back-up maken</button>
-			<button onclick={() => { backup = 'terugzetten'; backuptekst = ''; }}>Back-up terugzetten</button>
+			<button onclick={backupMaken}>Bestand opslaan</button>
+			<button onclick={codeMaken}>Code maken</button>
+			<button onclick={() => { overzet = 'invoeren'; backup = 'geen'; code = ''; }}>Invoeren</button>
 		</div>
 		{#if backup === 'maken'}
-			<p class="uitleg" style="margin-top: 12px">Bewaard als bestand, en gekopieerd. Zet hem ergens waar je hem terugvindt.</p>
+			<p class="uitleg" style="margin-top: 12px">Opgeslagen als bestand, en gekopieerd.</p>
 			<textarea readonly value={backuptekst} style="min-height: 120px"></textarea>
-		{:else if backup === 'terugzetten'}
-			<p class="uitleg" style="margin-top: 12px">Plak hier de inhoud van een back-up.</p>
-			<textarea bind:value={backuptekst} placeholder="Plak de back-up" style="min-height: 120px"></textarea>
-			<div class="knoprij" style="padding-left: 0; margin-top: 10px">
-				<button class="prim" onclick={backupTerugzetten}>Terugzetten</button>
-			</div>
-		{/if}
-
-		<h2>Overzetten zonder account</h2>
-		<p class="uitleg">
-			Kan ook zonder inloggen: maak op het ene toestel een code, voer hem op het andere in. Alleen de selectie en de
-			standaardopstelling gaan mee.
-		</p>
-		<div class="knoprij" style="padding-left: 0">
-			<button onclick={codeMaken}>Code maken</button>
-			<button onclick={() => { overzet = 'invoeren'; code = ''; }}>Code invoeren</button>
-		</div>
-		{#if overzet === 'maken'}
+		{:else if overzet === 'maken'}
 			<p class="uitleg" style="margin-top: 12px">
-				Kopieer deze code en stuur hem naar je andere toestel. Daar op <b>Code invoeren</b> tikken en plakken.
+				Gekopieerd. Stuur hem naar je andere toestel en tik daar op <b>Invoeren</b>.
 			</p>
 			<textarea readonly value={code}></textarea>
 		{:else if overzet === 'invoeren'}
-			<p class="uitleg" style="margin-top: 12px">Plak hier de code van je andere toestel.</p>
-			<textarea bind:value={code} placeholder="Plak de code"></textarea>
+			<p class="uitleg" style="margin-top: 12px">Plak hier een code of de inhoud van een bestand; allebei werkt.</p>
+			<textarea bind:value={code} placeholder="Plak de code of de back-up" style="min-height: 120px"></textarea>
 			<div class="knoprij" style="padding-left: 0; margin-top: 10px">
-				<button class="prim" onclick={codeOvernemen}>Overnemen</button>
+				<button class="prim" onclick={overnemen}>Overnemen</button>
 			</div>
 		{/if}
 

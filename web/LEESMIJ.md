@@ -58,6 +58,27 @@ brengt. Iemand die al opgesteld stond laat zijn plek leeg.
 Tik op de klok om hem bij te stellen: min of plus een minuut. De scheidsrechter
 is leidend, niet je telefoon.
 
+## Synchroniseren
+
+Lokaal is leidend. De app werkt zonder bereik, en zodra er internet is gaat wat
+er veranderd is vanzelf naar de server. De regel eronder:
+
+- **Opsturen** gebeurt vier seconden na de laatste wijziging, en alleen als het
+  pakket echt anders is dan wat er al staat. Een lopende wedstrijd zit er niet
+  in, dus tijdens een wedstrijd wordt er niets verstuurd.
+- **Ophalen** gebeurt bij het openen van de app en als je terugkomt uit een ander
+  scherm, maar **nooit** als er hier nog iets klaarstaat. Dan zou je je eigen
+  werk overschrijven.
+- Botst het (op allebei de toestellen iets veranderd), dan doet de app niets en
+  verschijnt er een balk: ophalen, of dit toestel opsturen. Die keuze is aan de
+  trainer.
+- Geen bereik? Dan blijft het klaarstaan en gaat het mee zodra je weer online
+  bent.
+
+Een code en een back-up bevatten precies hetzelfde als wat er naar de server
+gaat: alles behalve de wedstrijd die nu loopt. Zo hoef je niet te onthouden welke
+knop wat meeneemt.
+
 ## Opslag
 
 Alles staat in `localStorage` onder `o14-app-v1`, in precies dezelfde vorm als de

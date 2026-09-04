@@ -38,6 +38,8 @@ class App {
 	nu = $state(Date.now());
 	/** de plek die je hebt aangetikt om te wisselen */
 	gekozenPlek = $state<string | null>(null);
+	/** wordt na elke opslag geroepen, zodat de synchronisatie het weet */
+	naBewaren: (() => void) | null = null;
 
 	laad() {
 		const bak = opslag();
@@ -63,6 +65,7 @@ class App {
 		} catch {
 			/* stil: vol geheugen mag de wedstrijd niet stoppen */
 		}
+		this.naBewaren?.();
 	}
 
 	/* ---------- selectie ---------- */
@@ -476,25 +479,20 @@ class App {
 	}
 
 	/* ---------- overzetten ---------- */
-	/** Een back-up terugzetten: alles behalve de wedstrijd die nu loopt. */
-	zetBackupTerug(d: Omit<import('./domein/types').Toestand, 'wedstrijd'>) {
+	/**
+	 * Een pakket van een ander toestel overnemen. Alles wat erin staat vervangt
+	 * wat je had; wat er niet in staat blijft. Een lopende wedstrijd raakt het
+	 * nooit aan.
+	 */
+	neemOver(pakket: Partial<Omit<Toestand, 'wedstrijd'>>) {
 		const t = this.toestand;
-		t.spelers = d.spelers;
-		t.formatie = d.formatie;
-		t.helftMinuten = d.helftMinuten;
-		t.standaard = d.standaard;
-		t.archief = d.archief;
-		t.trainingen = d.trainingen;
-		t.verslagWissels = d.verslagWissels;
-		this.bewaar();
-	}
-
-	neemOver(pakket: { spelers: Speler[]; formatie?: string; helftMinuten?: number; standaard: Toestand['standaard'] }) {
-		const t = this.toestand;
-		t.spelers = pakket.spelers;
+		if (Array.isArray(pakket.spelers)) t.spelers = pakket.spelers;
 		if (pakket.formatie && plekken(pakket.formatie)) t.formatie = pakket.formatie;
 		if (pakket.helftMinuten) t.helftMinuten = pakket.helftMinuten;
-		t.standaard = pakket.standaard ?? null;
+		if ('standaard' in pakket) t.standaard = pakket.standaard ?? null;
+		if (Array.isArray(pakket.trainingen)) t.trainingen = pakket.trainingen;
+		if (Array.isArray(pakket.archief)) t.archief = pakket.archief;
+		if (typeof pakket.verslagWissels === 'boolean') t.verslagWissels = pakket.verslagWissels;
 		this.bewaar();
 	}
 
