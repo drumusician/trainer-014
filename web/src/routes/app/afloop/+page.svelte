@@ -13,7 +13,9 @@
 	const tijden = $derived(speeltijden(w, app.toestand.spelers, app.nu));
 	const posities = $derived(positietijden(w, app.nu));
 
-	$effect(() => zetKop('Uitslag', '/app', 'Menu'));
+	/* Geen terugknop maar een uitgang: terug het afgelopen wedstrijdscherm in
+	   heeft niemand wat aan. */
+	$effect(() => zetKop('Uitslag', '/app', 'Naar start', null, true));
 
 	function bewaren() {
 		if (app.bewaarInArchief()) goto('/app/archief');

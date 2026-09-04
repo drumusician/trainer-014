@@ -27,11 +27,12 @@
 			zetKop(
 				w.thuis ? ons + ' – ' + w.tegenstander : w.tegenstander + ' – ' + ons,
 				'/app',
-				'Menu',
-				uitslag[0] + ' – ' + uitslag[1]
+				'Naar start',
+				uitslag[0] + ' – ' + uitslag[1],
+				true
 			);
 		} else {
-			zetKop('Blaadje', '/app', 'Menu');
+			zetKop('Blaadje', '/app', 'Naar start', null, true);
 		}
 	});
 

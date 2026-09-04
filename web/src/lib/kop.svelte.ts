@@ -5,12 +5,25 @@ export const kop = $state({
 	terug: null as string | null,
 	terugTekst: 'Terug',
 	/** stand, alleen tijdens een wedstrijd */
-	stand: null as string | null
+	stand: null as string | null,
+	/**
+	 * Altijd naar `terug`, ook als je ergens vandaan komt. Voor knoppen die geen
+	 * "terug" zijn maar een uitgang: na een wedstrijd wil je naar het startscherm
+	 * en niet terug het afgelopen wedstrijdscherm in.
+	 */
+	vast: false
 });
 
-export function zetKop(titel: string, terug: string | null = null, terugTekst = 'Terug', stand: string | null = null) {
+export function zetKop(
+	titel: string,
+	terug: string | null = null,
+	terugTekst = 'Terug',
+	stand: string | null = null,
+	vast = false
+) {
 	kop.titel = titel;
 	kop.terug = terug;
 	kop.terugTekst = terugTekst;
 	kop.stand = stand;
+	kop.vast = vast;
 }

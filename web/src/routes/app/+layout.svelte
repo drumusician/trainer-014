@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { app } from '$lib/toestand.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
@@ -12,6 +13,20 @@
 	   moet het veld alle ruimte hebben en spring je toch nergens heen. Ervoor is
 	   het gewoon een tabblad. */
 	const VOLLEDIG = ['/app/opstelling', '/app/aanwezig', '/app/afloop', '/app/opzetten'];
+	/* Hoe vaak je binnen de app genavigeerd hebt. Is dat minstens één keer, dan
+	   is "terug" de vorige pagina; anders (diepe link, verse start) valt hij
+	   terug op de vaste bestemming van het scherm. */
+	let stappen = $state(0);
+	afterNavigate((nav) => {
+		if (nav.from) stappen++;
+	});
+
+	function terug(e: MouseEvent) {
+		if (stappen === 0 || !kop.terug || kop.vast) return; /* dan doet de link zelf zijn werk */
+		e.preventDefault();
+		history.back();
+	}
+
 	const inTaak = $derived(
 		VOLLEDIG.some((p) => page.url.pathname.startsWith(p)) ||
 			(page.url.pathname.startsWith('/app/wedstrijd') && app.gestart && !app.wedstrijd?.afgelopen)
@@ -94,7 +109,9 @@
 	<header>
 		<h1>{kop.titel}</h1>
 		{#if kop.stand}<span class="stand">{kop.stand}</span>{/if}
-		{#if kop.terug}<a class="knop klein" href={kop.terug}>{kop.terugTekst}</a>{/if}
+		{#if kop.terug}
+			<a class="knop klein" href={kop.terug} onclick={terug}>{kop.terugTekst}</a>
+		{/if}
 	</header>
 	{@render children()}
 	{#if !inTaak}<Tabs />{/if}
