@@ -74,7 +74,8 @@
 							<td>{b.naam}</td>
 							<td class="m" class:mager={tekort(b) || gedrang(b)}>
 								{#if b.linie === 'K'}
-									{b.spelers} kunnen keepen
+									{b.spelers}
+									{b.spelers === 1 ? 'kan keepen' : 'kunnen keepen'}
 								{:else}
 									{b.spelers} voor {b.plekken}
 									{b.plekken === 1 ? 'plek' : 'plekken'}
