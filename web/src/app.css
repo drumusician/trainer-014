@@ -317,3 +317,8 @@ html:has(.landing), body:has(.landing) { height: auto; min-height: 100%; }
 .landing footer p { font-size: 14px; color: var(--grijs); margin: 0; }
 /* Alleen links in lopende tekst; een knop houdt zijn eigen kleur. */
 .landing footer p a, .landing .rustig p a { color: var(--groen); }
+
+ol.stappen { margin: 0 0 14px; padding-left: 22px; color: var(--grijs); max-width: 36em; }
+ol.stappen li { margin-bottom: 8px; }
+ol.stappen b { color: var(--inkt); }
+.landing .klein { display: block; margin-top: 4px; }

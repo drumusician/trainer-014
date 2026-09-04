@@ -1,0 +1,93 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { bepaalToestel, staatOpBeginscherm, type Toestel } from '$lib/domein/toestel';
+
+	/** Chrome biedt zelf aan om te installeren; die gelegenheid vangen we op. */
+	interface InstallVraag extends Event {
+		prompt: () => Promise<void>;
+	}
+
+	let toestel = $state<Toestel>('desktop');
+	let alGeinstalleerd = $state(false);
+	let vraag = $state<InstallVraag | null>(null);
+	let gekozen = $state<Toestel | null>(null);
+
+	const tonen = $derived(gekozen ?? toestel);
+
+	onMount(() => {
+		toestel = bepaalToestel(navigator.userAgent, navigator.maxTouchPoints);
+		alGeinstalleerd = staatOpBeginscherm();
+		const opvangen = (e: Event) => {
+			e.preventDefault();
+			vraag = e as InstallVraag;
+		};
+		window.addEventListener('beforeinstallprompt', opvangen);
+		return () => window.removeEventListener('beforeinstallprompt', opvangen);
+	});
+
+	async function installeren() {
+		if (!vraag) return;
+		await vraag.prompt();
+		vraag = null;
+	}
+
+	const TABS: { code: Toestel; naam: string }[] = [
+		{ code: 'ios', naam: 'iPhone of iPad' },
+		{ code: 'android', naam: 'Android' },
+		{ code: 'desktop', naam: 'Laptop' }
+	];
+</script>
+
+<h2>Op je beginscherm zetten</h2>
+
+{#if alGeinstalleerd}
+	<p>Blaadje staat al op je beginscherm. Dat is precies goed.</p>
+{:else}
+	<p>
+		Blaadje is geen app uit de store, maar je zet hem er wel op. Dat is de moeite waard: hij opent dan schermvullend,
+		het scherm blijft vanzelf wakker zolang de klok loopt, en je gegevens zijn beter beschermd tegen een browser die
+		opruimt.
+	</p>
+
+	<div class="keuze sorteer" style="margin: 14px 0">
+		{#each TABS as tab (tab.code)}
+			<button class:aan={tonen === tab.code} onclick={() => (gekozen = tab.code)}>{tab.naam}</button>
+		{/each}
+	</div>
+
+	{#if tonen === 'ios'}
+		<ol class="stappen">
+			<li>Open <b>blaadje.app</b> in Safari. Andere browsers op de iPhone kunnen dit niet.</li>
+			<li>Tik onderin op de deelknop: het vierkantje met het pijltje omhoog.</li>
+			<li>Scrol naar <b>Zet op beginscherm</b> en tik op <b>Voeg toe</b>.</li>
+		</ol>
+	{:else if tonen === 'android'}
+		{#if vraag}
+			<p>Je browser kan het meteen doen:</p>
+			<div class="knoprij" style="padding: 0 0 12px">
+				<button class="prim" onclick={installeren}>Op mijn beginscherm zetten</button>
+			</div>
+		{/if}
+		<ol class="stappen">
+			<li>Open <b>blaadje.app</b> in Chrome.</li>
+			<li>Tik rechtsboven op de drie puntjes.</li>
+			<li>Kies <b>App installeren</b> of <b>Toevoegen aan startscherm</b>.</li>
+		</ol>
+	{:else}
+		{#if vraag}
+			<div class="knoprij" style="padding: 0 0 12px">
+				<button class="prim" onclick={installeren}>Blaadje installeren</button>
+			</div>
+		{/if}
+		<ol class="stappen">
+			<li>In Chrome of Edge staat rechts in de adresbalk een installatie-icoon.</li>
+			<li>Op een Mac in Safari: <b>Archief</b> → <b>Voeg toe aan Dock</b>.</li>
+			<li>Werkt ook prima zonder: op een laptop bereid je vooral voor, en dat gaat net zo goed in een tabblad.</li>
+		</ol>
+	{/if}
+
+	<p class="klein">
+		Je gegevens hangen aan het adres, niet aan het icoon. Zet je hem later opnieuw op je beginscherm, dan staat alles
+		er nog.
+	</p>
+{/if}

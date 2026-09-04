@@ -134,6 +134,12 @@
 		{#if sync.melding}<p class="uitleg" style="margin-top: 8px">{sync.melding}</p>{/if}
 
 		<h2>Overzetten en back-up</h2>
+		{#if !sync.sessie}
+			<p class="uitleg">
+				<b class="mager">Alles staat alleen op dit toestel.</b> Raakt het kwijt of gaat het stuk, dan is je seizoen weg.
+				Maak af en toe een back-up, of log hierboven in en het gaat vanzelf.
+			</p>
+		{/if}
 		<p class="uitleg">
 			Alles wat de app onthoudt: selectie, standaardopstelling, trainingen en het hele archief. Als bestand om te
 			bewaren, of als code om op je andere toestel in te voeren. Een wedstrijd die nu loopt gaat nooit mee.
