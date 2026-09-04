@@ -110,10 +110,15 @@
 		<p>
 			De app zelf is gratis, en dat blijft zo. Er komt één ding bij te betalen: een account. Daarmee staat je seizoen
 			veilig als je telefoon sneuvelt, en heb je het op al je toestellen — thuis voorbereiden op je laptop, langs de
-			lijn gebruiken op je telefoon. Dat gaat ongeveer een tientje per seizoen kosten.
+			lijn gebruiken op je telefoon. Dat gaat € 30 per seizoen kosten, ongeveer zeventig cent per speelweek.
 		</p>
 		<p>
-			Zolang Blaadje in ontwikkeling is, is ook dat gratis. Wie er nu bij is, houdt het dit seizoen zo.
+			Je betaalt pas nadat je het een seizoen hebt gebruikt, niet ervoor. En zolang Blaadje in ontwikkeling is, is ook
+			het account gratis: wie er nu bij is, houdt het dit seizoen zo.
+		</p>
+		<p>
+			Voor een hele club is er een tarief waarbij alle jeugdtrainers eronder vallen. Eén factuur, en de trainers hoeven
+			zelf niets te regelen.
 		</p>
 	</section>
 
