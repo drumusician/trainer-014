@@ -41,12 +41,6 @@
 			/>
 		</label>
 
-		<h2>Spelers</h2>
-		<p class="uitleg">Wie hoeveel speelde en hoe vaak hij op de training stond, alles op één rij.</p>
-		<div class="knoprij" style="padding-left: 0">
-			<a class="knop prim" href="/app/team/spelers">Spelersoverzicht</a>
-		</div>
-
 		<h2>Selectie</h2>
 		{#if !t.spelers.length}
 			<p class="uitleg">
@@ -84,6 +78,7 @@
 						if (naam?.trim()) app.namenErbij(naam);
 					}}>Speler toevoegen</button
 				>
+				<a class="knop prim" href="/app/team/spelers">Speeltijd en presentie</a>
 			</div>
 
 			<h2>Verdeling in {t.formatie}</h2>

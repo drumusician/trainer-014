@@ -56,7 +56,6 @@
 		{/if}
 		<div class="knoprij" style="padding-left: 0; margin-top: 12px">
 			<button class="prim" onclick={nieuw}>Nieuwe training</button>
-			<a class="knop" href="/app/team">Terug</a>
 		</div>
 	</div>
 </main>

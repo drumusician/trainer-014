@@ -13,7 +13,7 @@
 	const tijden = $derived(speeltijden(w, app.toestand.spelers, app.nu));
 	const posities = $derived(positietijden(w, app.nu));
 
-	$effect(() => zetKop('Uitslag', '/', 'Menu'));
+	$effect(() => zetKop('Uitslag', '/app', 'Menu'));
 
 	function bewaren() {
 		if (app.bewaarInArchief()) goto('/app/archief');

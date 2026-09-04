@@ -13,7 +13,7 @@
 	const doel = $derived(bron === 'standaard' ? app.toestand.standaard : app.wedstrijd);
 
 	$effect(() => {
-		zetKop(bron === 'standaard' ? 'Standaardopstelling' : 'Opstelling', '/', 'Terug');
+		zetKop(bron === 'standaard' ? 'Standaardopstelling' : 'Opstelling', '/app', 'Terug');
 	});
 
 	/* Pas ná de aftrap hoort schuiven hier niet meer: vanaf dan wordt de speeltijd

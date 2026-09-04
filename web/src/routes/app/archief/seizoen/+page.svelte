@@ -62,8 +62,6 @@
 			<p class="uitleg">Nog geen bewaarde wedstrijden.</p>
 		{/if}
 
-		<div class="knoprij" style="padding-left: 0; margin-top: 16px">
-			<a class="knop prim" href="/app/archief">Terug naar de wedstrijden</a>
-		</div>
+
 	</div>
 </main>
