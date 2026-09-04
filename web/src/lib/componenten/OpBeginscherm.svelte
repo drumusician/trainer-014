@@ -57,8 +57,11 @@
 
 	{#if tonen === 'ios'}
 		<ol class="stappen">
-			<li>Open <b>blaadje.app</b> in Safari. Andere browsers op de iPhone kunnen dit niet.</li>
-			<li>Tik onderin op de deelknop: het vierkantje met het pijltje omhoog.</li>
+			<li>Open <b>blaadje.app</b> in Safari of Chrome.</li>
+			<li>
+				Tik op de deelknop: het vierkantje met het pijltje omhoog. In Safari staat die onderin, in Chrome in de
+				adresbalk.
+			</li>
 			<li>Scrol naar <b>Zet op beginscherm</b> en tik op <b>Voeg toe</b>.</li>
 		</ol>
 	{:else if tonen === 'android'}
