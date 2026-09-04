@@ -5,7 +5,7 @@
 	import { datumKort } from '$lib/domein/datum';
 	import type { Training } from '$lib/domein/types';
 
-	$effect(() => zetKop('Trainingen', '/team', 'Terug'));
+	$effect(() => zetKop('Trainingen', '/app/team', 'Terug'));
 
 	const trainingen = $derived(app.toestand.trainingen);
 
@@ -23,7 +23,7 @@
 			alert('Zet eerst je selectie erin.');
 			return;
 		}
-		goto('/trainingen/' + app.nieuweTraining().id);
+		goto('/app/trainingen/' + app.nieuweTraining().id);
 	}
 </script>
 
@@ -43,7 +43,7 @@
 				{#each trainingen as t (t.id)}
 					{@const w = telling(t)}
 					<li class="klikbaar">
-						<a href="/trainingen/{t.id}">
+						<a href="/app/trainingen/{t.id}">
 							<b>{datumKort(t.datum)}</b>
 							<span>
 								{w.ja} er{w.af ? ', ' + w.af + ' afgemeld' : ''}{w.nee ? ', ' + w.nee + ' niet gekomen' : ''}
@@ -56,7 +56,7 @@
 		{/if}
 		<div class="knoprij" style="padding-left: 0; margin-top: 12px">
 			<button class="prim" onclick={nieuw}>Nieuwe training</button>
-			<a class="knop" href="/team">Terug</a>
+			<a class="knop" href="/app/team">Terug</a>
 		</div>
 	</div>
 </main>

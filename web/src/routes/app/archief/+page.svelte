@@ -21,7 +21,7 @@
 			</p>
 			{#if t.trainingen.length}
 				<div class="knoprij" style="padding-left: 0">
-					<a class="knop" href="/archief/seizoen">Presentie bekijken</a>
+					<a class="knop" href="/app/archief/seizoen">Presentie bekijken</a>
 				</div>
 			{/if}
 		{:else}
@@ -31,7 +31,7 @@
 			</p>
 			<p class="uitleg">{st.voor} voor, {st.tegen} tegen · {Math.round(st.seconden / 60)} minuten voetbal</p>
 			<div class="knoprij" style="padding-left: 0">
-				<a class="knop prim" href="/archief/seizoen">Speeltijd, topscorers en presentie</a>
+				<a class="knop prim" href="/app/archief/seizoen">Speeltijd, topscorers en presentie</a>
 			</div>
 
 			<h2>Wedstrijden</h2>
@@ -39,7 +39,7 @@
 			<ul class="log">
 				{#each t.archief as a, i (a)}
 					<li class="klikbaar">
-						<a href="/archief/{i}">
+						<a href="/app/archief/{i}">
 							<b>{datumKort(a.datum)}</b>
 							<span>{a.thuis !== false ? 'thuis' : 'uit'} tegen {a.tegenstander}</span>
 							<span style="flex: none; font-weight: 700; font-variant-numeric: tabular-nums">

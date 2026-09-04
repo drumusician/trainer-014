@@ -20,7 +20,7 @@
 	   teruggerekend uit de wissels, en ongemerkt ruilen zet die op scherp.
 	   Zolang de klok nog niet gelopen heeft mag je alles nog verzetten. */
 	$effect(() => {
-		if (bron === 'wedstrijd' && app.gestart) goto('/wedstrijd');
+		if (bron === 'wedstrijd' && app.gestart) goto('/app/wedstrijd');
 	});
 
 	const bezet = $derived(doel ? Object.values(doel.opstelling).filter(Boolean).length : 0);
@@ -78,18 +78,18 @@
 	function klaar() {
 		if (bron === 'standaard') {
 			app.bewaar();
-			goto('/');
+			goto('/app');
 			return;
 		}
 		if (bezet < nodig && !confirm('Er staan er ' + bezet + ' op het veld in plaats van ' + nodig + '. Toch doorgaan?')) return;
 		app.gekozenPlek = null;
-		goto('/wedstrijd');
+		goto('/app/wedstrijd');
 	}
 
 	function wissen() {
 		if (!confirm('De standaardopstelling weggooien?')) return;
 		app.wisStandaard();
-		goto('/');
+		goto('/app');
 	}
 </script>
 
@@ -97,7 +97,7 @@
 	<main>
 		<div class="pad">
 			<p class="uitleg">Er is niets om op te stellen.</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/">Terug</a></div>
+			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Terug</a></div>
 		</div>
 	</main>
 {:else}
@@ -166,7 +166,7 @@
 					{bron === 'standaard' ? 'Bewaren' : 'Klaar — naar de wedstrijd'}
 				</button>
 				{#if bron === 'wedstrijd'}
-					<a class="knop" href="/aanwezig">Wie is er?</a>
+					<a class="knop" href="/app/aanwezig">Wie is er?</a>
 				{/if}
 				<button onclick={kopieer}>Kopiëren</button>
 				{#if bron === 'standaard'}

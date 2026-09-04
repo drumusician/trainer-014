@@ -179,7 +179,7 @@ class Sync {
 		this.bezig = true;
 		this.melding = 'Bezig met versturen…';
 		try {
-			const terug = location.origin + '/';
+			const terug = location.origin + '/app/meer';
 			await sb('/auth/v1/otp?redirect_to=' + encodeURIComponent(terug), {
 				method: 'POST',
 				metToken: false,

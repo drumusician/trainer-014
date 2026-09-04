@@ -4,7 +4,7 @@
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 
-	$effect(() => zetKop('Spelers', '/team', 'Terug'));
+	$effect(() => zetKop('Spelers', '/app/team', 'Terug'));
 
 	let hoe = $state<Sortering>('minuten');
 

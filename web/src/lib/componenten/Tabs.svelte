@@ -5,15 +5,15 @@
 	   het opstellen is de balk weg: daar telt elke pixel en ben je met één ding
 	   bezig. */
 	const TABS = [
-		{ pad: '/', naam: 'Wedstrijd', icoon: 'bal' },
-		{ pad: '/team', naam: 'Team', icoon: 'team' },
-		{ pad: '/archief', naam: 'Archief', icoon: 'archief' },
-		{ pad: '/meer', naam: 'Meer', icoon: 'meer' }
+		{ pad: '/app', naam: 'Wedstrijd', icoon: 'bal' },
+		{ pad: '/app/team', naam: 'Team', icoon: 'team' },
+		{ pad: '/app/archief', naam: 'Archief', icoon: 'archief' },
+		{ pad: '/app/meer', naam: 'Meer', icoon: 'meer' }
 	];
 
 	function actief(pad: string): boolean {
-		const nu = page.url.pathname;
-		if (pad === '/') return nu === '/';
+		const nu = page.url.pathname.replace(/\/$/, '') || '/app';
+		if (pad === '/app') return nu === '/app';
 		return nu === pad || nu.startsWith(pad + '/');
 	}
 </script>

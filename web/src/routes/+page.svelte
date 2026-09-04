@@ -1,145 +1,114 @@
-<script lang="ts">
-	import { goto } from '$app/navigation';
-	import { aantalPlekken, speelvormVan, SPEELVORMEN } from '$lib/domein/formaties';
-	import { mmss, verstreken } from '$lib/domein/tijd';
-	import { deelNaam, pauzeNaam } from '$lib/domein/delen';
-	import { app } from '$lib/toestand.svelte';
-	import { zetKop } from '$lib/kop.svelte';
+<svelte:head>
+	<title>Blaadje — wedstrijdapp voor jeugdtrainers</title>
+	<meta
+		name="description"
+		content="Opstelling, wissels en speeltijd bijhouden langs de lijn. Werkt zonder bereik, zonder account, op je telefoon."
+	/>
+</svelte:head>
 
-	$effect(() => zetKop('Blaadje'));
+<div class="landing">
+	<header class="kop">
+		<span class="merk">Blaadje</span>
+		<a class="knop prim" href="/app">Openen</a>
+	</header>
 
-	const t = $derived(app.toestand);
-	const w = $derived(app.wedstrijd);
-	const staatKlaar = $derived(!!w && !w.afgelopen && Object.values(w.opstelling).some(Boolean));
-	const bezig = $derived(staatKlaar && app.gestart);
-	const opgezet = $derived(!!w && !w.afgelopen && !Object.values(w.opstelling).some(Boolean));
-
-	let tegenstander = $state('');
-	let thuis = $state('thuis');
-
-	function opstellingMaken() {
-		if (!t.spelers.length) {
-			alert('Zet eerst je selectie erin, bij Team.');
-			return;
-		}
-		app.nieuweWedstrijd(tegenstander, thuis === 'thuis');
-		goto('/aanwezig');
-	}
-
-	function standaard() {
-		if (!t.spelers.length) {
-			alert('Zet eerst je selectie erin, bij Team.');
-			return;
-		}
-		app.zorgVoorStandaard();
-		app.gekozenPlek = null;
-		goto('/opstelling/standaard');
-	}
-
-	function weggooien() {
-		if (!confirm('Deze wedstrijd tegen ' + w!.tegenstander + ' weggooien?\n\nAlles van deze wedstrijd is dan weg. Wat je in het archief bewaarde blijft staan.'))
-			return;
-		app.gooiWedstrijdWeg();
-	}
-</script>
-
-<main>
-	<div class="pad">
-		{#if staatKlaar || opgezet}
-			<h2>{bezig ? 'Bezig' : 'Klaarstaan'}</h2>
-			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
-				{w!.thuis ? 'O14 – ' + w!.tegenstander : w!.tegenstander + ' – O14'}
-			</p>
-			<p class="uitleg">
-				{#if bezig}
-					{mmss(verstreken(w, app.nu))} ·
-					{w!.pauze ? pauzeNaam(w!.deel, w!.delen).toLowerCase() : deelNaam(w!.deel, w!.delen)} ·
-					{w!.loopt ? 'klok loopt' : 'klok staat stil'}
-				{:else if staatKlaar}
-					De opstelling staat. De klok begint pas als je op Start drukt.
-				{:else}
-					De opstelling staat nog niet.
-				{/if}
-			</p>
-			<div class="knoprij" style="padding-left: 0">
-				{#if opgezet}
-					<a class="knop prim" href="/opstelling/wedstrijd">Opstelling maken</a>
-				{:else}
-					<a class="knop prim" href="/wedstrijd">{bezig ? 'Verder met de wedstrijd' : 'Naar de wedstrijd'}</a>
-					{#if !bezig}
-						<a class="knop" href="/opstelling/wedstrijd">Opstelling wijzigen</a>
-					{/if}
-				{/if}
-				<a class="knop" href="/aanwezig">Wie is er?</a>
-				<button class="uit" onclick={weggooien}>Weggooien</button>
-			</div>
-		{:else if w?.afgelopen && !w.bewaard}
-			<h2>Net gespeeld</h2>
-			<p class="uitleg">De wedstrijd tegen {w.tegenstander} is afgelopen maar nog niet bewaard.</p>
-			<div class="knoprij" style="padding-left: 0">
-				<a class="knop prim" href="/afloop">Naar het overzicht</a>
-			</div>
-		{:else}
-			<h2>Nieuwe wedstrijd</h2>
-			<div class="tweekolom">
-				<label class="vak">
-					Tegenstander
-					<input bind:value={tegenstander} placeholder="bijv. Sparta O14" />
-				</label>
-				<label class="vak">
-					Thuis of uit
-					<select bind:value={thuis}><option value="thuis">Thuis</option><option value="uit">Uit</option></select>
-				</label>
-			</div>
-			<div class="tweekolom">
-				<label class="vak">
-					Formatie
-					<select value={t.formatie} onchange={(e) => app.kiesFormatie(e.currentTarget.value)}>
-						{#each SPEELVORMEN as vorm (vorm.naam)}
-							<optgroup label={vorm.naam + (vorm.uitleg ? ' · ' + vorm.uitleg : '')}>
-								{#each vorm.formaties as f (f.sleutel)}
-									<option value={f.sleutel}>{f.sleutel}{f.uitleg ? ' · ' + f.uitleg : ''}</option>
-								{/each}
-							</optgroup>
-						{/each}
-					</select>
-				</label>
-				<label class="vak">
-					Speelwijze
-					<select bind:value={t.delen} onchange={() => app.bewaar()}>
-						<option value={2}>2 helften</option>
-						<option value={4}>4 kwarten</option>
-					</select>
-				</label>
-			</div>
-			<div class="tweekolom">
-				<label class="vak">
-					Minuten per {t.delen === 4 ? 'kwart' : 'helft'}
-					<input type="number" inputmode="numeric" bind:value={t.helftMinuten} onchange={() => app.bewaar()} />
-				</label>
-				<label class="vak">
-					Speelduur
-					<input value={t.helftMinuten * t.delen + ' minuten'} readonly />
-				</label>
-			</div>
-			<div class="knoprij" style="padding-left: 0">
-				<button class="prim" onclick={opstellingMaken}>Beginnen</button>
-			</div>
-		{/if}
-
-		<h2>Standaardopstelling</h2>
-		<p class="uitleg">
-			{#if t.standaard && t.standaard.formatie !== t.formatie}
-				<b class="mager">Je standaardopstelling staat in {t.standaard.formatie}, je speelt nu {t.formatie}.</b>
-				Open hem, dan zet ik hem om: wie past blijft staan, de rest gaat naar de bank.
-			{:else if t.standaard}
-				Elke nieuwe wedstrijd begint hiermee. Langs de lijn hoef je dan alleen nog te wisselen.
-			{:else}
-				Nog geen standaardopstelling. Maak er een, dan begint elke wedstrijd met je vaste team.
-			{/if}
+	<section class="hero">
+		<h1>Het blaadje in je hand,<br />maar dan op je telefoon.</h1>
+		<p class="groot">
+			Opstelling, wissels en speeltijd bijhouden terwijl je coacht. Twee tikken per wissel, en na afloop weet je
+			precies wie hoe lang gespeeld heeft.
 		</p>
-		<div class="knoprij" style="padding-left: 0">
-			<button onclick={standaard}>{t.standaard ? 'Standaardopstelling wijzigen' : 'Standaardopstelling maken'}</button>
+		<div class="knoprij">
+			<a class="knop prim groot" href="/app">Blaadje openen</a>
+			<span class="klein">Gratis · geen account nodig · werkt zonder bereik</span>
 		</div>
-	</div>
-</main>
+	</section>
+
+	<section class="plaat">
+		<img src="/scherm-wedstrijd.png" alt="Het wedstrijdscherm met de opstelling op een veld en de bank ernaast" />
+	</section>
+
+	<section class="blokken">
+		<div>
+			<h2>Wisselen in twee tikken</h2>
+			<p>
+				Tik wie eruit gaat, tik wie erin komt. De bank staat naast het veld in dezelfde volgorde als de linies, met
+				bovenaan wie het minst speelde. Twee spelers van plek ruilen kan ook, zonder dat er iemand van de bank af hoeft.
+			</p>
+		</div>
+		<div>
+			<h2>Speeltijd die je niet invoert</h2>
+			<p>
+				De minuten volgen uit je wissels, dus je hoeft niets bij te houden. Onder elke naam op het veld staat hoe lang
+				hij er al staat. Keeperminuten tellen apart, want een helft keepen is geen halve wedstrijd voetballen.
+			</p>
+		</div>
+		<div>
+			<h2>Helften of kwarten</h2>
+			<p>
+				Van 11 tegen 11 tot 4 tegen 4, in helften of in kwarten. De app rekent nergens met een vast aantal spelers,
+				dus de kleintjes werken net zo goed als de grote.
+			</p>
+		</div>
+		<div>
+			<h2>Presentie bij de training</h2>
+			<p>
+				Aanwezig, afgemeld of niet gekomen, in één tik per speler. Wie de laatste keren weinig kwam zie je terug op het
+				moment dat je je opstelling maakt — zonder dat de app er een oordeel over heeft.
+			</p>
+		</div>
+		<div>
+			<h2>Een verslagje voor de groepsapp</h2>
+			<p>
+				Na afloop staat er een kant-en-klaar berichtje klaar: uitslag, wie scoorde, en je eigen paar regels erover. De
+				wissels laat hij eruit, want daar hoeven de ouders niets van te vinden.
+			</p>
+		</div>
+		<div>
+			<h2>Langs de lijn, niet achter een bureau</h2>
+			<p>
+				Het scherm blijft wakker zolang de klok loopt, je hoeft nergens te scrollen, en zonder bereik werkt alles
+				gewoon door. Wat je invoert staat op je eigen telefoon.
+			</p>
+		</div>
+	</section>
+
+	<section class="plaat smal">
+		<img src="/scherm-spelers.png" alt="Het spelersoverzicht met speeltijd en presentie per speler" />
+		<p class="onderschrift">
+			Na een paar weken zie je in één lijst wie hoeveel speelde en hoe vaak hij op de training stond.
+		</p>
+	</section>
+
+	<section class="rustig">
+		<h2>Waar je gegevens blijven</h2>
+		<p>
+			Alles staat op je eigen toestel. Je hoeft niet in te loggen en er gaat niets naar een server zolang je dat niet
+			wilt. Wil je je laptop en je telefoon gelijk houden, dan kan dat met een account — dan gaat wat je invoert
+			versleuteld over de lijn en zie jij als enige je eigen team.
+		</p>
+		<p>
+			Namen van kinderen zijn geen bijzaak. Daarom houdt Blaadje het bij wat het nodig heeft: een voornaam, een linie,
+			en de minuten die uit je wissels volgen. Geen beoordelingen, geen dossier.
+		</p>
+	</section>
+
+	<section class="rustig">
+		<h2>Waar het vandaan komt</h2>
+		<p>
+			Blaadje is gebouwd door een ouder-trainer voor zijn eigen O14, omdat het bestaande gereedschap tactiekborden zijn
+			en geen wisselschriftjes. Het wordt elke week gebruikt langs een echte lijn, en dat is meteen de reden dat het
+			doet wat het doet en niet meer dan dat.
+		</p>
+		<p>
+			Het is nog in ontwikkeling en gratis te gebruiken. Loop je ergens tegenaan of mis je iets, dan hoor ik het graag.
+		</p>
+		<div class="knoprij">
+			<a class="knop prim groot" href="/app">Aan de slag</a>
+		</div>
+	</section>
+
+	<footer>
+		<p>Blaadje · gemaakt in Nederland · <a href="/app">de app</a></p>
+	</footer>
+</div>

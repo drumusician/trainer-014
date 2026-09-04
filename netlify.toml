@@ -1,6 +1,5 @@
 # Blaadje is een SvelteKit-app in web/, gebouwd naar statische bestanden.
-# De oude versie van één HTML-bestand staat nog in app/; die publiceren is
-# één regel terugdraaien (publish = "app", command leeg, base weg).
+# De landingspagina staat op /, de app zelf op /app.
 [build]
   base = "web"
   command = "npm run build"
@@ -9,7 +8,44 @@
 [build.environment]
   NODE_VERSION = "22"
 
-# Alles wat niet bestaat naar de app zelf, zodat een verdwaalde URL geen 404 geeft.
+# Oude adressen van voor de verhuizing naar /app.
+[[redirects]]
+  from = "/instellen"
+  to = "/app"
+  status = 301
+
+[[redirects]]
+  from = "/seizoen"
+  to = "/app/archief/seizoen"
+  status = 301
+
+[[redirects]]
+  from = "/wedstrijd"
+  to = "/app/wedstrijd"
+  status = 301
+
+[[redirects]]
+  from = "/team/*"
+  to = "/app/team/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/archief/*"
+  to = "/app/archief/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/trainingen/*"
+  to = "/app/trainingen/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/meer"
+  to = "/app/meer"
+  status = 301
+
+# De app is een enkele pagina die zelf routeert. Alles wat geen bestand is gaat
+# daarheen, zodat een diep adres als /app/archief/0 geen 404 geeft.
 [[redirects]]
   from = "/*"
   to = "/index.html"

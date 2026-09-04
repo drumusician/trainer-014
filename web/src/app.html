@@ -10,6 +10,24 @@
 		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
 		<link rel="apple-touch-icon" href="%sveltekit.assets%/icon-192.png" />
 		<link rel="icon" href="%sveltekit.assets%/icon-192.png" />
+
+		<!-- Staat hier en niet in een pagina, zodat een link die je in een groepsapp
+		     plakt meteen een titel en een plaatje heeft. Losse pagina's zetten hun
+		     eigen titel er daarna overheen. -->
+		<title>Blaadje — wedstrijdapp voor jeugdtrainers</title>
+		<meta
+			name="description"
+			content="Opstelling, wissels en speeltijd bijhouden langs de lijn. Werkt zonder bereik, zonder account, op je telefoon."
+		/>
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Blaadje" />
+		<meta property="og:title" content="Blaadje — wedstrijdapp voor jeugdtrainers" />
+		<meta
+			property="og:description"
+			content="Opstelling, wissels en speeltijd bijhouden langs de lijn. Werkt zonder bereik, zonder account, op je telefoon."
+		/>
+		<meta property="og:image" content="https://blaadje.app/scherm-wedstrijd.png" />
+		<meta name="twitter:card" content="summary_large_image" />
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

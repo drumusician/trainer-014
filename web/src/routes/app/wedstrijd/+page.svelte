@@ -66,7 +66,7 @@
 	function afsluiten() {
 		if (!confirm('Wedstrijd afsluiten?\n\nDe klok stopt en je krijgt het overzicht met de speeltijden.')) return;
 		app.beeindig();
-		goto('/afloop');
+		goto('/app/afloop');
 	}
 
 	const uit = $derived(app.gekozenPlek && w ? app.spelerVan(w.opstelling[app.gekozenPlek]) : null);
@@ -78,7 +78,7 @@
 		<div class="pad">
 			<h2>Nog geen spelers</h2>
 			<p class="uitleg">Ga naar <b>Instellen</b> en zet je selectie erin. De namen blijven op dit toestel staan.</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/team">Naar Team</a></div>
+			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app/team">Naar Team</a></div>
 		</div>
 	</main>
 {:else if !w || !Object.keys(w.opstelling).length}
@@ -86,14 +86,14 @@
 		<div class="pad">
 			<h2>Nog geen opstelling</h2>
 			<p class="uitleg">Maak een wedstrijd aan en zet je basiself op het veld.</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/">Wedstrijd opzetten</a></div>
+			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Wedstrijd opzetten</a></div>
 		</div>
 	</main>
 {:else if w.afgelopen}
 	<main>
 		<div class="pad">
 			<h2>Wedstrijd afgelopen</h2>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/afloop">Naar het overzicht</a></div>
+			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app/afloop">Naar het overzicht</a></div>
 		</div>
 	</main>
 {:else}

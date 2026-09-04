@@ -1,8 +1,8 @@
 {
   "name": "Blaadje — wedstrijdapp",
   "short_name": "Blaadje",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/app",
+  "scope": "/app",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",

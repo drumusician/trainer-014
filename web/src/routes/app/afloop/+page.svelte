@@ -16,7 +16,7 @@
 	$effect(() => zetKop('Uitslag', '/', 'Menu'));
 
 	function bewaren() {
-		if (app.bewaarInArchief()) goto('/archief');
+		if (app.bewaarInArchief()) goto('/app/archief');
 	}
 </script>
 
@@ -64,7 +64,7 @@
 				{:else}
 					<button class="prim" onclick={bewaren}>Bewaren in archief</button>
 				{/if}
-				<a class="knop" href="/">Nieuwe wedstrijd</a>
+				<a class="knop" href="/app">Nieuwe wedstrijd</a>
 			</div>
 		{/if}
 	</div>

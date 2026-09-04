@@ -4,7 +4,7 @@
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 
-	$effect(() => zetKop('Wie is er?', '/', 'Terug'));
+	$effect(() => zetKop('Wie is er?', '/app', 'Terug'));
 
 	const w = $derived(app.wedstrijd);
 	const afwezig = $derived(new Set(w?.afwezig ?? []));
@@ -15,7 +15,7 @@
 	<div class="pad">
 		{#if !w}
 			<p class="uitleg">Er is geen wedstrijd om spelers voor af te melden.</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/">Terug</a></div>
+			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Terug</a></div>
 		{:else}
 			<h2>Wie is er vandaag</h2>
 			<p class="uitleg">
@@ -39,7 +39,7 @@
 			{/each}
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
-				<a class="knop prim" href="/opstelling/wedstrijd">Verder naar de opstelling</a>
+				<a class="knop prim" href="/app/opstelling/wedstrijd">Verder naar de opstelling</a>
 			</div>
 		{/if}
 	</div>

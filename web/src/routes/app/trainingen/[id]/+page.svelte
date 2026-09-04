@@ -10,7 +10,7 @@
 
 	const t = $derived(app.trainingMetId(page.params.id));
 
-	$effect(() => zetKop(t ? 'Training ' + datumKort(t.datum) : 'Training', '/trainingen', 'Terug'));
+	$effect(() => zetKop(t ? 'Training ' + datumKort(t.datum) : 'Training', '/app/trainingen', 'Terug'));
 
 	const telling = $derived.by(() => {
 		const w = { ja: 0, af: 0, nee: 0 };
@@ -28,7 +28,7 @@
 		if (!t) return;
 		if (!confirm('De training van ' + datumKort(t.datum) + ' verwijderen?')) return;
 		app.verwijderTraining(t);
-		goto('/trainingen');
+		goto('/app/trainingen');
 	}
 </script>
 
@@ -36,7 +36,7 @@
 	<div class="pad">
 		{#if !t}
 			<p class="uitleg">Deze training staat er niet meer.</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/trainingen">Terug</a></div>
+			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app/trainingen">Terug</a></div>
 		{:else}
 			<h2>Training</h2>
 			<label class="vak">
@@ -57,7 +57,7 @@
 			{/each}
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
-				<a class="knop prim" href="/trainingen">Klaar</a>
+				<a class="knop prim" href="/app/trainingen">Klaar</a>
 				<button class="uit" onclick={verwijder}>Verwijderen</button>
 			</div>
 		{/if}

@@ -29,7 +29,7 @@
 		<h2>Spelers</h2>
 		<p class="uitleg">Wie hoeveel speelde en hoe vaak hij op de training stond, alles op één rij.</p>
 		<div class="knoprij" style="padding-left: 0">
-			<a class="knop prim" href="/team/spelers">Spelersoverzicht</a>
+			<a class="knop prim" href="/app/team/spelers">Spelersoverzicht</a>
 		</div>
 
 		<h2>Selectie</h2>
@@ -111,7 +111,7 @@
 			</p>
 		{/if}
 		<div class="knoprij" style="padding-left: 0">
-			<a class="knop prim" href="/trainingen">Presentie bijhouden</a>
+			<a class="knop prim" href="/app/trainingen">Presentie bijhouden</a>
 		</div>
 	</div>
 </main>
