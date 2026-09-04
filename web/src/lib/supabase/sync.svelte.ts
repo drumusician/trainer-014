@@ -2,6 +2,9 @@ import { app } from '$lib/toestand.svelte';
 import { SUPABASE_SLEUTEL, SUPABASE_URL } from './config';
 
 const SESSIESLEUTEL = 'o14-sessie-v1';
+/* Op een telefoon ga je tussendoor naar je mail; dan kan de app opnieuw laden.
+   Daarom onthouden we voor wie we een code aanvroegen. */
+const INLOGSLEUTEL = 'o14-inlog-v1';
 
 const opslag = () => (typeof localStorage === 'undefined' ? null : localStorage);
 
@@ -84,6 +87,27 @@ class Sync {
 		} catch {
 			this.sessie = null;
 		}
+		try {
+			const wachtend = JSON.parse(bak.getItem(INLOGSLEUTEL) ?? 'null');
+			if (wachtend?.email && !this.sessie) {
+				this.email = wachtend.email;
+				this.fase = 'code';
+				this.melding = 'Er is een code onderweg naar ' + wachtend.email + '.';
+			}
+		} catch {
+			/* stil */
+		}
+	}
+
+	private bewaarInlogpoging(email: string | null) {
+		const bak = opslag();
+		if (!bak) return;
+		try {
+			if (email) bak.setItem(INLOGSLEUTEL, JSON.stringify({ email, sinds: Date.now() }));
+			else bak.removeItem(INLOGSLEUTEL);
+		} catch {
+			/* stil */
+		}
 	}
 
 	private bewaar() {
@@ -114,7 +138,17 @@ class Sync {
 	uitloggen() {
 		this.sessie = null;
 		this.melding = '';
+		this.vies = false;
+		this.botsing = false;
 		opslag()?.removeItem(SESSIESLEUTEL);
+		this.bewaarInlogpoging(null);
+	}
+
+	/** Toch een ander adres proberen. */
+	opnieuw() {
+		this.fase = 'email';
+		this.melding = '';
+		this.bewaarInlogpoging(null);
 	}
 
 	/** Het token is een uur geldig; op tijd vernieuwen scheelt opnieuw inloggen. */
@@ -153,6 +187,7 @@ class Sync {
 			});
 			this.email = email.trim();
 			this.fase = 'code';
+			this.bewaarInlogpoging(this.email);
 			this.melding = 'Mail verstuurd naar ' + this.email + '. Kijk ook in je spam.';
 		} catch (e) {
 			this.melding = 'Versturen lukte niet: ' + (e as Error).message;
@@ -176,6 +211,7 @@ class Sync {
 			})) as Parameters<Sync['zet']>[0];
 			this.zet(d);
 			this.fase = 'email';
+			this.bewaarInlogpoging(null);
 			this.melding = 'Ingelogd.';
 		} catch (e) {
 			this.melding = 'Deze code klopt niet of is verlopen: ' + (e as Error).message;
@@ -203,6 +239,7 @@ class Sync {
 			refresh_token: f.get('refresh_token') ?? '',
 			expires_in: Number(f.get('expires_in') ?? 3600)
 		});
+		this.bewaarInlogpoging(null);
 		schoon();
 		try {
 			const u = (await sb('/auth/v1/user', {}, this.sessie!.access_token)) as { id: string; email: string };

@@ -87,7 +87,8 @@
 				</div>
 			{:else}
 				<p class="uitleg">
-					Staat er een <b>link</b> in de mail? Klik die op dit toestel. Staat er een <b>code</b> in, vul hem hieronder in.
+					Op een telefoon: vul de <b>code</b> uit de mail hieronder in. Je mag gerust even naar je mail-app; dit
+					scherm staat er straks nog. Op een laptop kun je ook gewoon de <b>link</b> in de mail aanklikken.
 				</p>
 				<label class="vak">
 					Code uit de mail
@@ -95,7 +96,7 @@
 				</label>
 				<div class="knoprij" style="padding-left: 0">
 					<button class="prim" disabled={sync.bezig} onclick={() => sync.controleerCode(inlogcode)}>Inloggen</button>
-					<button onclick={() => (sync.fase = 'email')}>Ander adres</button>
+					<button onclick={() => sync.opnieuw()}>Ander adres</button>
 				</div>
 			{/if}
 		{:else}

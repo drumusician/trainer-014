@@ -94,3 +94,35 @@ describe('vanzelf bijwerken', () => {
 		expect(sync.hapert).toBe(true);
 	});
 });
+
+describe('inloggen op een telefoon', () => {
+	it('onthoudt voor wie er een code onderweg is, ook na herladen', async () => {
+		globalThis.fetch = vi.fn(async () => new Response('{}', { status: 200 })) as unknown as typeof fetch;
+		sync.sessie = null;
+		await sync.stuurCode('trainer@voorbeeld.nl');
+		expect(sync.fase).toBe('code');
+
+		/* alsof de app opnieuw geladen wordt terwijl jij in je mail zit */
+		sync.sessie = null;
+		sync.fase = 'email';
+		sync.email = '';
+		sync.laad();
+		expect(sync.fase).toBe('code');
+		expect(sync.email).toBe('trainer@voorbeeld.nl');
+	});
+
+	it('vergeet de poging zodra je binnen bent', async () => {
+		globalThis.fetch = vi.fn(async (url: string) =>
+			url.includes('verify')
+				? new Response(JSON.stringify({ access_token: 'a', refresh_token: 'r', expires_in: 3600, user: { id: 'u', email: 'trainer@voorbeeld.nl' } }), { status: 200 })
+				: new Response('{}', { status: 200 })
+		) as unknown as typeof fetch;
+		await sync.stuurCode('trainer@voorbeeld.nl');
+		await sync.controleerCode('123456');
+		expect(sync.sessie?.email).toBe('trainer@voorbeeld.nl');
+		sync.sessie = null;
+		sync.fase = 'email';
+		sync.laad();
+		expect(sync.fase).toBe('email');
+	});
+});
