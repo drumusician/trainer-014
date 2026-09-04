@@ -16,7 +16,7 @@ Geen spelervolgsysteem, gewoon wat me opvalt. Handig voor opstelling en rotatie.
 | Mauro | | | | |
 | Yassir | | | | |
 | Zenith | | | | |
-| Enrico | | | | misschien vast |
+| Enrico | | | | *stopt waarschijnlijk* |
 | Amir | | | | |
 | Mirza | | | | |
 | Simon | | | | |
@@ -26,7 +26,7 @@ Geen spelervolgsysteem, gewoon wat me opvalt. Handig voor opstelling en rotatie.
 | Jack | | | | |
 | Gijs | | | | |
 
-*Compleet op 21 aug: 17 spelers. Enrico was er niet. Posities en voorkeuren nog aanvullen — bij training 1 heb ik dat maar bij een deel van de groep gevraagd.*
+*Compleet op 21 aug: 17 spelers, maar Enrico stopt waarschijnlijk — dan blijven er 16 over. Posities en voorkeuren nog aanvullen; bij training 1 heb ik dat maar bij een deel van de groep gevraagd.*
 
 **Groepsindeling technisch blok, training 1 (21 aug):**
 
@@ -37,9 +37,17 @@ Training 2 draait om: groep A gaat naar de slalom bij Tjaco, groep B naar aannem
 
 ## Keeper
 
-Vaste keeper of roteren? Bij roteren: ieder een helft. Uitkijken naar iemand die het gráág doet en aanleg heeft.
+**Enrico stopt waarschijnlijk.** Daarmee valt de kandidaat-vaste keeper weg en gaan we rouleren.
 
-**Enrico** is mogelijk de vaste keeper, maar was er training 1 niet. Zijn moeder belt in de week van 24 augustus — dan hoor ik of er iets speelt. Keeper-check schuift door naar training 2 op half veld.
+Uitgangspunten voor het rouleren:
+
+- **Alleen wie het wíl.** Een gedwongen keeper heeft een rotmiddag en dat zie je aan alles. Vragen, niet aanwijzen.
+- Mik op **twee of drie jongens die het leuk vinden** en wissel daartussen, in plaats van de hele selectie langs het doel te slepen. Iedereen een keer is eerlijk bedacht maar levert vooral ongelukkige kinderen op.
+- **Per helft wisselen**, niet halverwege een helft. Rustiger voor de verdediging.
+- De keeper is in training vaak de jongen die niks doet. Geef hem een eigen momentje in de warming-up, dan voelt keepen niet als straf.
+- Keeperminuten tellen gewoon mee als speeltijd in de app.
+
+Nog te doen: in de volgende training vragen wie het wil proberen, en dan in de slotpartij twee of drie elk een deel laten keepen.
 
 ## Rotatie-idee
 

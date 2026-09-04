@@ -33,12 +33,13 @@
 				stond ({t.trainingen.length}
 				{t.trainingen.length === 1 ? 'training' : 'trainingen'}).
 			</p>
-			<div class="keuze sorteer" style="margin-bottom: 12px">
-				{#each KNOPPEN as k (k.hoe)}
-					<button style="width: auto; padding: 7px 11px" class:aan={hoe === k.hoe} onclick={() => (hoe = k.hoe)}>
-						{k.naam}
-					</button>
-				{/each}
+			<div class="sorteerrij">
+				<span>Sorteer op</span>
+				<div class="keuze sorteer">
+					{#each KNOPPEN as k (k.hoe)}
+						<button class:aan={hoe === k.hoe} onclick={() => (hoe = k.hoe)}>{k.naam}</button>
+					{/each}
+				</div>
 			</div>
 
 			<table class="uitslag spelers">

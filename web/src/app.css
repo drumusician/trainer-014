@@ -151,6 +151,10 @@ textarea { min-height: 120px; line-height: 1.5; }
 .keuze button { width: 34px; padding: 7px 0; text-align: center; font-size: 13px; font-weight: 700; color: var(--grijs); }
 .keuze button.aan { background: var(--groen); border-color: var(--groen); color: #fff; }
 .keuze.sorteer { flex-wrap: wrap; gap: 6px; }
+.keuze.sorteer button { width: auto; padding: 7px 11px; }
+/* De knoppen zijn snel op een telefoon, maar dan moet er wel bij staan wat ze doen. */
+.sorteerrij { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 12px; }
+.sorteerrij > span { font-size: 13px; color: var(--grijs); }
 
 .presknop { width: 128px; text-align: center; font-size: 14px; }
 .presknop.ja { background: var(--groen); border-color: var(--groen); color: #fff; }
