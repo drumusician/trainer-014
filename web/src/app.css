@@ -187,6 +187,7 @@ label.vak input[type='date'] { -webkit-appearance: none; appearance: none; }
 .presknop.af { background: var(--bank); color: var(--grijs); }
 .presknop.nee { background: var(--oranje-licht); border-color: var(--oranje); color: var(--oranje); }
 .telling { display: flex; gap: 12px; font-size: 13px; color: var(--grijs); margin: 0 0 12px; }
+.stappen-teller { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--groen); font-weight: 700; margin-bottom: 10px; }
 .mager { color: var(--oranje); font-weight: 700; }
 
 table.uitslag { width: 100%; border-collapse: collapse; }

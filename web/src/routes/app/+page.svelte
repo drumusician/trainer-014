@@ -19,7 +19,7 @@
 
 	function opstellingMaken() {
 		if (!t.spelers.length) {
-			alert('Zet eerst je selectie erin, bij Team.');
+			goto('/app/opzetten');
 			return;
 		}
 		app.nieuweWedstrijd(tegenstander, thuis === 'thuis');
@@ -28,7 +28,7 @@
 
 	function standaard() {
 		if (!t.spelers.length) {
-			alert('Zet eerst je selectie erin, bij Team.');
+			goto('/app/opzetten');
 			return;
 		}
 		app.zorgVoorStandaard();
@@ -45,6 +45,15 @@
 
 <main>
 	<div class="pad">
+		{#if !t.spelers.length}
+			<h2>Welkom bij Blaadje</h2>
+			<p class="uitleg">
+				In drie stappen sta je klaar: de naam van je team, wie erin zitten, en hoe jullie spelen. Duurt een minuut.
+			</p>
+			<div class="knoprij" style="padding-left: 0">
+				<a class="knop prim" href="/app/opzetten">Aan de slag</a>
+			</div>
+		{:else}
 		{#if staatKlaar || opgezet}
 			<h2>{bezig ? 'Bezig' : 'Klaarstaan'}</h2>
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
@@ -81,7 +90,7 @@
 			</div>
 		{:else}
 			<h2>Nieuwe wedstrijd</h2>
-			{#if t.teamnaam === 'Ons team' && t.spelers.length}
+			{#if t.teamnaam === 'Ons team'}
 				<p class="uitleg">
 					<b class="mager">Je team heet nog "Ons team".</b> Zet bij
 					<a href="/app/team">Team</a> even je eigen naam erin, dan staat die goed in je verslag.
@@ -147,5 +156,6 @@
 		<div class="knoprij" style="padding-left: 0">
 			<button onclick={standaard}>{t.standaard ? 'Standaardopstelling wijzigen' : 'Standaardopstelling maken'}</button>
 		</div>
+		{/if}
 	</div>
 </main>

@@ -49,7 +49,10 @@
 
 		<h2>Selectie</h2>
 		{#if !t.spelers.length}
-			<p class="uitleg">Plak hier de namen, één per regel. Ze blijven op dit toestel en komen nergens anders terecht.</p>
+			<p class="uitleg">
+				Plak hier de namen, één per regel. Ze blijven op dit toestel en komen nergens anders terecht. Liever stap voor
+				stap? <a href="/app/opzetten">Loop het opzetten door.</a>
+			</p>
 			<textarea bind:value={namenVak} placeholder="Casper&#10;Maher&#10;Daan"></textarea>
 			<div class="knoprij" style="padding-left: 0; margin-top: 10px">
 				<button class="prim" onclick={() => { app.namenErbij(namenVak); namenVak = ''; }}>Toevoegen</button>
