@@ -12,6 +12,11 @@
 	let overzet = $state<'geen' | 'maken' | 'invoeren'>('geen');
 	let code = $state('');
 	let backup = $state<'geen' | 'maken'>('geen');
+	/* De link uit de mail komt terug waar je hem opvroeg. Op je eigen machine is
+	   dat localhost, en dat is een andere opslag dan de echte site. */
+	const opLokaal = $derived(
+		typeof location !== 'undefined' && /^(localhost|127\.|\[::1\])/.test(location.hostname)
+	);
 	let backuptekst = $state('');
 
 	async function codeMaken() {
@@ -66,6 +71,12 @@
 				Log in met je e-mailadres, dan staan je laptop en je telefoon gelijk. Je krijgt een mail met een link en een
 				code; geen wachtwoord om te onthouden.
 			</p>
+			{#if opLokaal}
+				<p class="uitleg">
+					<b class="mager">Let op:</b> je draait dit op {location.host}. De link in de mail komt hier terug, niet op de
+					echte site, en dit is een aparte opslag. Wil je inloggen voor je telefoon, doe dat dan op de echte site.
+				</p>
+			{/if}
 			{#if sync.fase === 'email'}
 				<label class="vak">
 					E-mailadres
