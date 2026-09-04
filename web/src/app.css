@@ -149,13 +149,19 @@ label.vak input, label.vak select, textarea {
 	border: 1px solid var(--lijn); border-radius: 9px; background: #fff; color: var(--inkt);
 }
 textarea { min-height: 120px; line-height: 1.5; }
-/* Twee velden naast elkaar, maar ze mogen niet buiten hun rand lopen. Zonder
-   min-width:0 weigert een flexitem te krimpen onder de eigen breedte, en een
-   datumveld is op iOS van zichzelf breed. Past het niet, dan gaan ze onder
-   elkaar. */
+/* Twee velden naast elkaar, maar ze mogen niet buiten hun rand lopen.
+   Twee dingen zitten dwars: een flexitem heeft min-width auto en weigert onder
+   zijn eigen breedte te krimpen, en Safari op iOS geeft een datumveld een eigen
+   minimumbreedte die max-width niet overruled. Dus min-width nul op allebei, en
+   een ondergrens van 200px zodat ze op een telefoon gewoon onder elkaar gaan in
+   plaats van over elkaar heen. */
 .tweekolom { display: flex; gap: 10px; flex-wrap: wrap; }
-.tweekolom > * { flex: 1 1 150px; min-width: 0; }
-label.vak input, label.vak select { max-width: 100%; }
+.tweekolom > * { flex: 1 1 200px; min-width: 0; }
+label.vak input, label.vak select, label.vak textarea {
+	max-width: 100%;
+	min-width: 0;
+}
+label.vak input[type='date'] { -webkit-appearance: none; appearance: none; }
 
 .sregel { display: flex; align-items: center; gap: 6px; padding: 7px 0; border-bottom: 1px solid var(--lijn); }
 .sregel .naam { flex: 1; font-size: 16px; cursor: pointer; }
