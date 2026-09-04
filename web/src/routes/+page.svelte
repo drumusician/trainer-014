@@ -96,12 +96,24 @@
 		<h2>Waar je gegevens blijven</h2>
 		<p>
 			Alles staat op je eigen toestel. Inloggen hoeft niet, en zolang jij dat niet wilt gaat er niets naar een server.
-			Wil je je laptop en je telefoon gelijk houden, dan kan dat met een account. Je gegevens gaan dan over een
-			beveiligde verbinding, en jij bent de enige die bij je eigen team kan.
+			Neem je wel een account, dan staat je seizoen ook veilig en heb je het op al je toestellen. Je gegevens gaan dan
+			over een beveiligde verbinding, en jij bent de enige die bij je eigen team kan.
 		</p>
 		<p>
 			Namen van kinderen zijn geen bijzaak. Daarom bewaart Blaadje alleen wat het echt nodig heeft: een voornaam, een
 			linie, en de minuten die uit je wissels volgen. Geen beoordelingen, geen dossier.
+		</p>
+	</section>
+
+	<section class="rustig">
+		<h2>Wat het kost</h2>
+		<p>
+			De app zelf is gratis, en dat blijft zo. Er komt één ding bij te betalen: een account. Daarmee staat je seizoen
+			veilig als je telefoon sneuvelt, en heb je het op al je toestellen — thuis voorbereiden op je laptop, langs de
+			lijn gebruiken op je telefoon. Dat gaat ongeveer een tientje per seizoen kosten.
+		</p>
+		<p>
+			Zolang Blaadje in ontwikkeling is, is ook dat gratis. Wie er nu bij is, houdt het dit seizoen zo.
 		</p>
 	</section>
 

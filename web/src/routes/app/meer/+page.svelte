@@ -69,8 +69,8 @@
 		<h2>Synchroniseren</h2>
 		{#if !sync.sessie}
 			<p class="uitleg">
-				Log in met je e-mailadres, dan staan je laptop en je telefoon gelijk. Je krijgt een mail met een link en een
-				code; geen wachtwoord om te onthouden.
+				Log in met je e-mailadres, dan staat je seizoen veilig en heb je het op al je toestellen. Je krijgt een mail met
+				een link en een code; geen wachtwoord om te onthouden.
 			</p>
 			{#if opLokaal}
 				<p class="uitleg">
