@@ -28,6 +28,7 @@ export function leesBackup(tekst: string): Omit<Toestand, 'wedstrijd'> {
 		spelers: t.spelers,
 		formatie: typeof t.formatie === 'string' ? t.formatie : leeg.formatie,
 		helftMinuten: Number(t.helftMinuten) || leeg.helftMinuten,
+		delen: t.delen === 4 ? 4 : leeg.delen,
 		standaard: t.standaard ?? null,
 		archief: Array.isArray(t.archief) ? t.archief : [],
 		trainingen: Array.isArray(t.trainingen) ? t.trainingen : [],

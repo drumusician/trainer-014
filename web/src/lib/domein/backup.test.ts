@@ -12,7 +12,7 @@ function volleToestand() {
 	}];
 	t.wedstrijd = {
 		datum: '2026-09-06', tegenstander: 'Sparta', thuis: true, formatie: '4-3-3', opstelling: {},
-		bank: [], gebeurtenissen: [], verstreken: 100, sinds: null, loopt: true, helft: 1, afgelopen: false
+		bank: [], gebeurtenissen: [], verstreken: 100, sinds: null, loopt: true, delen: 2, deel: 1, pauze: false, afgelopen: false
 	};
 	return t;
 }

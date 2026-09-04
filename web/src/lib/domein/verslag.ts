@@ -1,5 +1,6 @@
 import type { ArchiefWedstrijd, Gebeurtenis, Speler, Wedstrijd } from './types';
 import { eindTijd, stand } from './tijd';
+import { deelNaam, pauzeNaam } from './delen';
 
 /** Alles wat je nodig hebt om een wedstrijd terug te lezen, live of uit het archief. */
 export interface Verslagbron {
@@ -11,13 +12,15 @@ export interface Verslagbron {
 	duur: number;
 	gebeurtenissen: Gebeurtenis[];
 	namen?: Record<string, string>;
+	delen?: 2 | 4;
+	notitie?: string;
 }
 
 export function bronVanWedstrijd(w: Wedstrijd): Verslagbron {
 	return {
 		datum: w.datum, tegenstander: w.tegenstander, thuis: w.thuis,
 		stand: stand(w), formatie: w.formatie, duur: eindTijd(w),
-		gebeurtenissen: w.gebeurtenissen
+		gebeurtenissen: w.gebeurtenissen, delen: w.delen, notitie: w.notitie
 	};
 }
 
@@ -25,7 +28,8 @@ export function bronVanArchief(a: ArchiefWedstrijd): Verslagbron {
 	return {
 		datum: a.datum, tegenstander: a.tegenstander, thuis: a.thuis !== false,
 		stand: a.stand ?? [0, 0], formatie: a.formatie, duur: a.duur ?? 0,
-		gebeurtenissen: a.gebeurtenissen ?? [], namen: a.namen
+		gebeurtenissen: a.gebeurtenissen ?? [], namen: a.namen,
+		delen: a.delen, notitie: a.notitie
 	};
 }
 
@@ -35,11 +39,17 @@ export function naamVan(id: string | null | undefined, spelers: Speler[], namen?
 	return spelers.find((p) => p.id === id)?.naam ?? namen?.[id] ?? 'onbekend';
 }
 
-export function gebeurtenisTekst(g: Gebeurtenis, spelers: Speler[], namen?: Record<string, string>): string {
+export function gebeurtenisTekst(
+	g: Gebeurtenis,
+	spelers: Speler[],
+	namen?: Record<string, string>,
+	delen: 2 | 4 = 2
+): string {
 	const naam = (id?: string | null) => naamVan(id, spelers, namen);
 	switch (g.type) {
 		case 'start': return 'Aftrap';
-		case 'rust': return 'Rust';
+		case 'rust':
+			return g.deel ? pauzeNaam(g.deel, delen) + ' — ' + deelNaam(g.deel, delen) + ' voorbij' : 'Rust';
 		case 'eind': return 'Einde';
 		case 'tegen': return 'Tegendoelpunt';
 		case 'goal':
@@ -101,5 +111,9 @@ export function verslagTekst(bron: Verslagbron, spelers: Speler[], metWissels = 
 			}
 		});
 	if (voor + tegen === 0) regels.push('Geen doelpunten.');
+	if (bron.notitie?.trim()) {
+		regels.push('');
+		regels.push(bron.notitie.trim());
+	}
 	return regels.join('\n');
 }

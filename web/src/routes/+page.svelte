@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { aantalPlekken, speelvormVan, SPEELVORMEN } from '$lib/domein/formaties';
 	import { mmss, verstreken } from '$lib/domein/tijd';
+	import { deelNaam, pauzeNaam } from '$lib/domein/delen';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 
@@ -51,9 +52,9 @@
 			</p>
 			<p class="uitleg">
 				{#if bezig}
-					{mmss(verstreken(w, app.nu))} · {w!.helft === 1 ? '1e helft' : '2e helft'} · {w!.loopt
-						? 'klok loopt'
-						: 'klok staat stil'}
+					{mmss(verstreken(w, app.nu))} ·
+					{w!.pauze ? pauzeNaam(w!.deel, w!.delen).toLowerCase() : deelNaam(w!.deel, w!.delen)} ·
+					{w!.loopt ? 'klok loopt' : 'klok staat stil'}
 				{:else if staatKlaar}
 					De opstelling staat. De klok begint pas als je op Start drukt.
 				{:else}
@@ -104,8 +105,21 @@
 					</select>
 				</label>
 				<label class="vak">
-					Minuten per helft
+					Speelwijze
+					<select bind:value={t.delen} onchange={() => app.bewaar()}>
+						<option value={2}>2 helften</option>
+						<option value={4}>4 kwarten</option>
+					</select>
+				</label>
+			</div>
+			<div class="tweekolom">
+				<label class="vak">
+					Minuten per {t.delen === 4 ? 'kwart' : 'helft'}
 					<input type="number" inputmode="numeric" bind:value={t.helftMinuten} onchange={() => app.bewaar()} />
+				</label>
+				<label class="vak">
+					Speelduur
+					<input value={t.helftMinuten * t.delen + ' minuten'} readonly />
 				</label>
 			</div>
 			<div class="knoprij" style="padding-left: 0">

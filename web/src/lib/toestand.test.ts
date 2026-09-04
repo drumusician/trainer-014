@@ -234,3 +234,76 @@ describe('wie er die dag was, bewaren', () => {
 		expect(app.toestand.archief[0].afwezig).toEqual([]);
 	});
 });
+
+describe('kwarten spelen', () => {
+	function metKwarten() {
+		app.toestand.delen = 4;
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p1' };
+		return app.toestand.wedstrijd!;
+	}
+
+	it('neemt de speelwijze over van de instelling', () => {
+		expect(metKwarten().delen).toBe(4);
+	});
+
+	it('loopt door vier kwarten met een pauze ertussen', () => {
+		const w = metKwarten();
+		app.loopToggle();
+		expect(w.deel).toBe(1);
+
+		app.deelToggle(); /* einde 1e kwart */
+		expect(w.pauze).toBe(true);
+		expect(w.loopt).toBe(false);
+		expect(w.gebeurtenissen.at(-1)).toMatchObject({ type: 'rust', deel: 1 });
+
+		app.deelToggle(); /* 2e kwart begint */
+		expect(w.deel).toBe(2);
+		expect(w.pauze).toBe(false);
+		expect(w.loopt).toBe(true);
+
+		app.deelToggle();
+		app.deelToggle();
+		app.deelToggle();
+		app.deelToggle();
+		expect(w.deel).toBe(4);
+		expect(app.magVolgendDeel).toBe(false); /* na het laatste kwart houdt het op */
+	});
+
+	it('houdt twee helften gewoon zoals het was', () => {
+		app.toestand.delen = 2;
+		app.nieuweWedstrijd('Sparta', true);
+		const w = app.toestand.wedstrijd!;
+		app.loopToggle();
+		app.deelToggle();
+		expect(w.pauze).toBe(true);
+		app.deelToggle();
+		expect(w.deel).toBe(2);
+		expect(app.magVolgendDeel).toBe(false);
+	});
+
+	it('bewaart de speelwijze en de notitie in het archief', () => {
+		const w = metKwarten();
+		app.zetNotitie('Sterk begin, na rust weggezakt.');
+		app.beeindig();
+		app.bewaarInArchief();
+		expect(app.toestand.archief[0].delen).toBe(4);
+		expect(app.toestand.archief[0].notitie).toBe('Sterk begin, na rust weggezakt.');
+	});
+
+	it('vertaalt een oude wedstrijd met helften naar de nieuwe vorm', () => {
+		localStorage.setItem(
+			'o14-app-v1',
+			JSON.stringify({
+				...legeToestand(),
+				spelers: app.toestand.spelers,
+				wedstrijd: {
+					datum: '2026-09-06', tegenstander: 'Oud', thuis: true, formatie: '4-3-3', opstelling: {},
+					bank: [], gebeurtenissen: [], verstreken: 0, sinds: null, loopt: false, helft: 2, afgelopen: false
+				}
+			})
+		);
+		app.laad();
+		expect(app.toestand.wedstrijd).toMatchObject({ delen: 2, deel: 2, pauze: false });
+	});
+});

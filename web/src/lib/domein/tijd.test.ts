@@ -13,7 +13,7 @@ function wedstrijd(): Wedstrijd {
 		datum: '2026-09-06', tegenstander: 'Test', thuis: true, formatie: '4-3-3',
 		opstelling, bank: ['pAmir'],
 		gebeurtenissen: [{ type: 'start', t: 0 }],
-		verstreken: 4200, sinds: null, loopt: false, helft: 2, afgelopen: true
+		verstreken: 4200, sinds: null, loopt: false, delen: 2, deel: 2, pauze: false, afgelopen: true
 	};
 }
 
@@ -131,7 +131,7 @@ describe('kleinere speelvormen', () => {
 				{ type: 'ruil', t: 1800, plekA: 'K', plekB: 'MC' },
 				{ type: 'eind', t: 3600 }
 			],
-			verstreken: 3600, sinds: null, loopt: false, helft: 2, afgelopen: true
+			verstreken: 3600, sinds: null, loopt: false, delen: 2, deel: 2, pauze: false, afgelopen: true
 		};
 		const t = speeltijden(w, kort);
 		const k = keepertijden(w);
@@ -148,7 +148,7 @@ describe('kleinere speelvormen', () => {
 			datum: '2026-09-06', tegenstander: 'Test', thuis: true, formatie: '2-2',
 			opstelling, bank: [kort[4].id],
 			gebeurtenissen: [{ type: 'start', t: 0 }, { type: 'eind', t: 1800 }],
-			verstreken: 1800, sinds: null, loopt: false, helft: 2, afgelopen: true
+			verstreken: 1800, sinds: null, loopt: false, delen: 2, deel: 2, pauze: false, afgelopen: true
 		};
 		expect(Object.values(speeltijden(w, kort)).reduce((a, b) => a + b, 0)).toBe(4 * 1800);
 		expect(keepertijden(w)).toEqual({});

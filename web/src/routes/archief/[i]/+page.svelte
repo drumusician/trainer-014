@@ -98,7 +98,7 @@
 
 			<h2>Verloop</h2>
 			{#if !bewerken}
-				<Verloop gebeurtenissen={a.gebeurtenissen ?? []} namen={a.namen} />
+				<Verloop gebeurtenissen={a.gebeurtenissen ?? []} namen={a.namen} delen={a.delen} />
 			{:else}
 				<p class="uitleg">
 					Een doelpunt dat er niet was kun je weghalen; de stand telt vanzelf opnieuw. Wissels blijven staan, want
@@ -108,7 +108,7 @@
 					{#each a.gebeurtenissen ?? [] as g, index (index)}
 						<li>
 							<b>{mmss(g.t)}</b>
-							<span>{gebeurtenisTekst(g, app.toestand.spelers, a.namen)}</span>
+							<span>{gebeurtenisTekst(g, app.toestand.spelers, a.namen, a.delen)}</span>
 							{#if g.type === 'goal' || g.type === 'tegen'}
 								<button class="klein uit" onclick={() => app.verwijderDoelpunt(i, index)}>Weg</button>
 							{/if}
@@ -143,6 +143,13 @@
 					<button class="prim" onclick={doelpuntErbij}>Toevoegen</button>
 				</div>
 			{/if}
+
+			<h2>Hoe ging het</h2>
+			<textarea
+				value={a.notitie ?? ''}
+				placeholder="Nog niets opgeschreven."
+				oninput={(e) => app.zetArchiefNotitie(i, e.currentTarget.value)}
+			></textarea>
 
 			<h2>Delen</h2>
 			<Verslag bron={bronVanArchief(a)} />

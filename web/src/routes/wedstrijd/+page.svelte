@@ -2,7 +2,8 @@
 	import { goto } from '$app/navigation';
 	import Veld from '$lib/componenten/Veld.svelte';
 	import BankKolom from '$lib/componenten/BankKolom.svelte';
-	import { LINIES, plekLinie, plekken } from '$lib/domein/formaties';
+	import { LINIES, plekLinie } from '$lib/domein/formaties';
+	import { deelNaam, pauzeNaam } from '$lib/domein/delen';
 	import { keepertijden, mmss, speeltijden, stand, verstreken } from '$lib/domein/tijd';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
@@ -104,7 +105,13 @@
 			onkeydown={(e) => e.key === 'Enter' && (klokBijstellen = !klokBijstellen)}
 		>
 			<div class="klok">{mmss(verstreken(w, app.nu))}</div>
-			<div class="helft">{w.helft === 1 ? '1e helft' : '2e helft'} · tik om bij te stellen</div>
+			<div class="helft">
+				{#if w.pauze}
+					{pauzeNaam(w.deel, w.delen)} · {deelNaam(w.deel, w.delen)} voorbij
+				{:else}
+					{deelNaam(w.deel, w.delen)} · tik om bij te stellen
+				{/if}
+			</div>
 		</div>
 		<div style="flex: 1"></div>
 		{#if klokBijstellen}
@@ -112,8 +119,8 @@
 			<button onclick={() => app.verschuifKlok(60)}>+1′</button>
 		{/if}
 		<button onclick={() => app.loopToggle()}>{w.loopt ? 'Pauze' : 'Start'}</button>
-		<button onclick={() => app.rustToggle()} disabled={w.helft === 2 && w.loopt}>
-			{w.helft === 1 ? 'Rust' : '2e helft'}
+		<button onclick={() => app.deelToggle()} disabled={!app.magVolgendDeel}>
+			{w.pauze ? deelNaam(w.deel + 1, w.delen) : pauzeNaam(w.deel, w.delen)}
 		</button>
 	</div>
 

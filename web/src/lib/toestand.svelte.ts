@@ -25,6 +25,14 @@ function migreer(t: Toestand): Toestand {
 		}
 	});
 	if (!Array.isArray(t.trainingen)) t.trainingen = [];
+	if (t.delen !== 4) t.delen = 2;
+	const w = t.wedstrijd as (Wedstrijd & { helft?: number }) | null;
+	if (w && w.deel === undefined) {
+		/* van vroeger: toen waren het altijd twee helften */
+		w.delen = 2;
+		w.deel = w.helft === 2 ? 2 : 1;
+		w.pauze = false;
+	}
 	t.trainingen.forEach((tr, i) => {
 		if (!tr.id) tr.id = 't' + (tr.datum ?? 'onbekend') + '-' + i; /* van voor de id's */
 	});
@@ -123,7 +131,9 @@ class App {
 			verstreken: 0,
 			sinds: null,
 			loopt: false,
-			helft: 1,
+			delen: t.delen,
+			deel: 1,
+			pauze: false,
 			afgelopen: false,
 			afwezig: []
 		};
@@ -211,16 +221,42 @@ class App {
 		this.bewaar();
 	}
 
-	rustToggle() {
+	/**
+	 * Het huidige deel afsluiten, of het volgende beginnen. Werkt hetzelfde voor
+	 * twee helften als voor vier kwarten.
+	 */
+	deelToggle() {
 		const w = this.toestand.wedstrijd;
 		if (!w || w.afgelopen) return;
-		if (w.helft === 1) {
+		if (w.pauze) {
+			w.deel = Math.min(w.deel + 1, w.delen);
+			w.pauze = false;
+			if (!w.loopt) this.loopToggle();
+		} else if (w.deel < w.delen) {
 			if (w.loopt) this.loopToggle();
-			this.log('rust');
-			w.helft = 2;
-		} else if (!w.loopt) {
-			this.loopToggle();
+			this.log('rust', { deel: w.deel });
+			w.pauze = true;
 		}
+		this.bewaar();
+	}
+
+	/** Kan er nog een deel bij, of is dit het laatste? */
+	get magVolgendDeel(): boolean {
+		const w = this.toestand.wedstrijd;
+		return !!w && !w.afgelopen && (w.pauze || w.deel < w.delen);
+	}
+
+	zetNotitie(tekst: string) {
+		const w = this.toestand.wedstrijd;
+		if (!w) return;
+		w.notitie = tekst;
+		this.bewaar();
+	}
+
+	zetArchiefNotitie(i: number, tekst: string) {
+		const a = this.toestand.archief[i];
+		if (!a) return;
+		a.notitie = tekst;
 		this.bewaar();
 	}
 
@@ -328,6 +364,7 @@ class App {
 		const regel: ArchiefWedstrijd = {
 			datum: w.datum, tegenstander: w.tegenstander, thuis: w.thuis,
 			stand: stand(w), formatie: w.formatie, duur: eindTijd(w),
+			delen: w.delen, notitie: w.notitie,
 			gebeurtenissen: w.gebeurtenissen, namen,
 			afwezig: [...(w.afwezig ?? [])],
 			speeltijd: t.spelers
@@ -490,6 +527,7 @@ class App {
 		if (Array.isArray(pakket.spelers)) t.spelers = pakket.spelers;
 		if (pakket.formatie && plekken(pakket.formatie)) t.formatie = pakket.formatie;
 		if (pakket.helftMinuten) t.helftMinuten = pakket.helftMinuten;
+		if (pakket.delen === 2 || pakket.delen === 4) t.delen = pakket.delen;
 		if ('standaard' in pakket) t.standaard = pakket.standaard ?? null;
 		if (Array.isArray(pakket.trainingen)) t.trainingen = pakket.trainingen;
 		if (Array.isArray(pakket.archief)) t.archief = pakket.archief;
@@ -501,7 +539,7 @@ class App {
 	syncPakket() {
 		const t = this.toestand;
 		return {
-			spelers: t.spelers, formatie: t.formatie, helftMinuten: t.helftMinuten,
+			spelers: t.spelers, formatie: t.formatie, helftMinuten: t.helftMinuten, delen: t.delen,
 			standaard: t.standaard, trainingen: t.trainingen, archief: t.archief,
 			verslagWissels: t.verslagWissels
 		};
@@ -513,6 +551,7 @@ class App {
 		t.spelers = d.spelers;
 		if (d.formatie && plekken(d.formatie)) t.formatie = d.formatie;
 		if (d.helftMinuten) t.helftMinuten = d.helftMinuten;
+		if (d.delen === 2 || d.delen === 4) t.delen = d.delen;
 		t.standaard = d.standaard ?? null;
 		t.trainingen = Array.isArray(d.trainingen) ? d.trainingen : [];
 		t.archief = Array.isArray(d.archief) ? d.archief : [];

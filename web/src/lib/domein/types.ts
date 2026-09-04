@@ -29,6 +29,8 @@ export interface Gebeurtenis {
 	/** bij een ruil: de twee plekken die van speler wisselen */
 	plekA?: string;
 	plekB?: string;
+	/** bij een pauze: welk deel er net afgelopen is */
+	deel?: number;
 }
 
 /** Een opstelling: plek-id uit de formatie -> speler-id. */
@@ -47,8 +49,15 @@ export interface Wedstrijd {
 	/** tijdstip waarop de klok voor het laatst is gestart, in ms */
 	sinds: number | null;
 	loopt: boolean;
-	helft: 1 | 2;
+	/** in hoeveel delen je speelt: 2 helften of 4 kwarten */
+	delen: 2 | 4;
+	/** het deel waar je nu in zit, 1 tot en met `delen` */
+	deel: number;
+	/** tussen twee delen in: de klok staat stil en het volgende moet nog beginnen */
+	pauze: boolean;
 	afgelopen: boolean;
+	/** hoe het ging, in je eigen woorden */
+	notitie?: string;
 	bewaard?: boolean;
 	/** wie er vandaag niet is; die staan niet op de bank en tellen niet mee */
 	afwezig?: string[];
@@ -75,6 +84,8 @@ export interface ArchiefWedstrijd {
 	stand: [number, number];
 	formatie: string;
 	duur: number;
+	delen?: 2 | 4;
+	notitie?: string;
 	gebeurtenissen: Gebeurtenis[];
 	/** de namen zoals ze waren toen je bewaarde */
 	namen?: Record<string, string>;
@@ -96,7 +107,9 @@ export interface Training {
 export interface Toestand {
 	spelers: Speler[];
 	formatie: string;
+	/** minuten per deel; heet nog helftMinuten omdat het zo is opgeslagen */
 	helftMinuten: number;
+	delen: 2 | 4;
 	wedstrijd: Wedstrijd | null;
 	standaard: Standaard | null;
 	archief: ArchiefWedstrijd[];
@@ -109,6 +122,7 @@ export function legeToestand(): Toestand {
 		spelers: [],
 		formatie: '4-3-3',
 		helftMinuten: 35,
+		delen: 2,
 		wedstrijd: null,
 		standaard: null,
 		archief: [],

@@ -38,7 +38,15 @@
 			/>
 
 			<h2>Verloop</h2>
-			<Verloop gebeurtenissen={w.gebeurtenissen} />
+			<Verloop gebeurtenissen={w.gebeurtenissen} delen={w.delen} />
+
+			<h2>Hoe ging het</h2>
+			<p class="uitleg">Een paar regels voor jezelf of voor de groepsapp. Gaat mee in het verslag.</p>
+			<textarea
+				value={w.notitie ?? ''}
+				placeholder="Sterk begin, na rust wegge&#10;zakt. Achterin stond het goed."
+				oninput={(e) => app.zetNotitie(e.currentTarget.value)}
+			></textarea>
 
 			<h2>Delen</h2>
 			<p class="uitleg">Voor de groepsapp. De wissels laat ik er standaard uit.</p>
