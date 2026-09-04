@@ -59,7 +59,11 @@ export function gebeurtenisTekst(
 				(g.assist ? ' (assist ' + naam(g.assist) + ')' : '')
 			);
 		case 'wissel': return naam(g.erin) + ' voor ' + naam(g.eruit);
-		case 'ruil': return 'van plek gewisseld';
+		case 'ruil':
+			/* oudere wedstrijden legden alleen de plekken vast, niet wie er stonden */
+			return g.spelerA && g.spelerB
+				? naam(g.spelerA) + ' en ' + naam(g.spelerB) + ' wisselden van plek'
+				: 'Van plek gewisseld';
 		default: return g.type;
 	}
 }

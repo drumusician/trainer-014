@@ -287,7 +287,7 @@ class App {
 		w.opstelling[plekA] = b;
 		w.opstelling[plekB] = a;
 		/* Voor de aftrap is dit gewoon je opstelling maken, geen gebeurtenis. */
-		if (this.gestart) this.log('ruil', { plekA, plekB });
+		if (this.gestart) this.log('ruil', { plekA, plekB, spelerA: a, spelerB: b });
 		this.gekozenPlek = null;
 		this.bewaar();
 	}

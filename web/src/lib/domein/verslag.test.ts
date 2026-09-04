@@ -54,3 +54,15 @@ describe('kwarten en een notitie', () => {
 		expect(verslagTekst({ ...bron, notitie: '   ' }, spelers).endsWith('doelpunt')).toBe(true);
 	});
 });
+
+describe('van plek ruilen in het verloop', () => {
+	it('noemt wie er wisselden', () => {
+		const g = { type: 'ruil' as const, t: 800, plekA: 'K', plekB: 'SP', spelerA: 'p1', spelerB: 'p2' };
+		expect(gebeurtenisTekst(g, spelers)).toBe('Aad en Bram wisselden van plek');
+	});
+
+	it('houdt oude wedstrijden zonder namen leesbaar', () => {
+		const g = { type: 'ruil' as const, t: 800, plekA: 'K', plekB: 'SP' };
+		expect(gebeurtenisTekst(g, spelers)).toBe('Van plek gewisseld');
+	});
+});

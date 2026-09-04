@@ -26,9 +26,11 @@ export interface Gebeurtenis {
 	eruit?: string;
 	erin?: string;
 	plek?: string;
-	/** bij een ruil: de twee plekken die van speler wisselen */
+	/** bij een ruil: de twee plekken die van speler wisselen, en wie er stonden */
 	plekA?: string;
 	plekB?: string;
+	spelerA?: string | null;
+	spelerB?: string | null;
 	/** bij een pauze: welk deel er net afgelopen is */
 	deel?: number;
 }
