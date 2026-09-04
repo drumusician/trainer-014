@@ -5,6 +5,7 @@
 	import { app } from '$lib/toestand.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
 	import { kop } from '$lib/kop.svelte';
+	import { vraagBlijvendeOpslag } from '$lib/opslag.svelte';
 	import Tabs from '$lib/componenten/Tabs.svelte';
 
 	/* Schermen waar je met één ding bezig bent: daar gaat de balk weg. */
@@ -42,6 +43,7 @@
 		sync.pakInlogUitLink();
 		window.addEventListener('hashchange', () => sync.pakInlogUitLink());
 		sync.kijkEven();
+		vraagBlijvendeOpslag();
 		const weerOnline = () => sync.duwAlsNodig();
 		window.addEventListener('online', weerOnline);
 

@@ -4,6 +4,7 @@
 	import { app } from '$lib/toestand.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
 	import { zetKop } from '$lib/kop.svelte';
+	import { opslagstand } from '$lib/opslag.svelte';
 
 	$effect(() => zetKop('Meer'));
 
@@ -156,6 +157,13 @@
 			<div class="knoprij" style="padding-left: 0; margin-top: 10px">
 				<button class="prim" onclick={overnemen}>Overnemen</button>
 			</div>
+		{/if}
+
+		{#if opslagstand.ondersteund && opslagstand.blijvend === false}
+			<p class="uitleg" style="margin-top: 12px">
+				<b class="mager">Deze browser mag je gegevens opruimen</b> als hij plaats nodig heeft. Zet de app op je
+				beginscherm en log in, of maak af en toe een back-up.
+			</p>
 		{/if}
 
 		<p class="uitleg" style="margin-top: 24px; font-size: 11px; opacity: 0.75">
