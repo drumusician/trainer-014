@@ -41,7 +41,17 @@ export function tekort(b: LinieBezetting): boolean {
 /**
  * Ruim meer dan twee keer zoveel spelers als plekken. Dan zit er structureel
  * iemand op de bank die zichzelf in die linie ziet.
+ *
+ * Geldt niet voor de keeper: keepen is een kunnen en geen plek in het veld. Vier
+ * spelers die kunnen keepen is geen gedrang maar precies wat je wilt, want dan
+ * kun je rouleren en sta je niet stil als er eentje ziek is.
  */
 export function gedrang(b: LinieBezetting): boolean {
-	return b.plekken > 0 && b.spelers > b.plekken * 2;
+	return b.linie !== 'K' && b.plekken > 0 && b.spelers > b.plekken * 2;
+}
+
+/** Eén keeper is genoeg tot hij er een keer niet is. */
+export function dunneKeepersbezetting(rijen: LinieBezetting[]): boolean {
+	const k = rijen.find((b) => b.linie === 'K');
+	return !!k && k.spelers === 1;
 }

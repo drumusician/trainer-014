@@ -2,7 +2,7 @@
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 	import { mager, presentie } from '$lib/domein/presentie';
-	import { bezetting, gedrang, tekort } from '$lib/domein/bezetting';
+	import { bezetting, dunneKeepersbezetting, gedrang, tekort } from '$lib/domein/bezetting';
 	import type { Speler, Veldlinie } from '$lib/domein/types';
 
 	$effect(() => zetKop('Team'));
@@ -73,8 +73,12 @@
 						<tr>
 							<td>{b.naam}</td>
 							<td class="m" class:mager={tekort(b) || gedrang(b)}>
-								{b.spelers} voor {b.plekken}
-								{b.plekken === 1 ? 'plek' : 'plekken'}
+								{#if b.linie === 'K'}
+									{b.spelers} kunnen keepen
+								{:else}
+									{b.spelers} voor {b.plekken}
+									{b.plekken === 1 ? 'plek' : 'plekken'}
+								{/if}
 							</td>
 						</tr>
 					{/each}
@@ -83,6 +87,8 @@
 			<p class="uitleg" style="margin-top: 8px">
 				{#if verdeling.some(tekort)}
 					Een linie is niet vol te krijgen met de spelers die je zo gemarkeerd hebt.
+				{:else if dunneKeepersbezetting(verdeling)}
+					Er kan er maar één keepen. Is hij er niet, dan moet je ter plekke iemand aanwijzen.
 				{:else if verdeling.some(gedrang)}
 					Waar meer dan twee keer zoveel spelers als plekken staan, zit er elke wedstrijd iemand op de bank die
 					zichzelf daar ziet. Een andere formatie kan schelen.

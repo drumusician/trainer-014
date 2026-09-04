@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bezetting, gedrang, tekort } from './bezetting';
+import { bezetting, dunneKeepersbezetting, gedrang, tekort } from './bezetting';
 import type { Speler } from './types';
 
 /** De selectie zoals die op 4 september 2026 in de app stond. */
@@ -43,6 +43,19 @@ describe('bezetting per linie', () => {
 		const zonderVerdedigers = selectie.filter((p) => p.linie !== 'V');
 		const b = bezetting(zonderVerdedigers, '4-3-3').find((x) => x.linie === 'V')!;
 		expect(tekort(b)).toBe(true);
+	});
+
+	it('ziet vier keepers niet als gedrang, want keepen is een kunnen', () => {
+		const keeper = bezetting(selectie, '4-3-3').find((x) => x.linie === 'K')!;
+		expect(keeper.spelers).toBe(4);
+		expect(gedrang(keeper)).toBe(false);
+		expect(tekort(keeper)).toBe(false);
+	});
+
+	it('merkt op als er maar één kan keepen', () => {
+		const een = selectie.map((p) => ({ ...p, keept: p.naam === 'Maher' }));
+		expect(dunneKeepersbezetting(bezetting(een, '4-3-3'))).toBe(true);
+		expect(dunneKeepersbezetting(bezetting(selectie, '4-3-3'))).toBe(false);
 	});
 
 	it('laat de keeper weg bij 4 tegen 4', () => {
