@@ -78,6 +78,9 @@ export interface ArchiefWedstrijd {
 	gebeurtenissen: Gebeurtenis[];
 	/** de namen zoals ze waren toen je bewaarde */
 	namen?: Record<string, string>;
+	/** wie er die dag niet was. Zonder dit kun je nul minuten niet uit elkaar
+	    houden: was hij er niet, of stond hij de hele wedstrijd op de bank? */
+	afwezig?: string[];
 	speeltijd: SpeeltijdRegel[];
 }
 

@@ -329,6 +329,7 @@ class App {
 			datum: w.datum, tegenstander: w.tegenstander, thuis: w.thuis,
 			stand: stand(w), formatie: w.formatie, duur: eindTijd(w),
 			gebeurtenissen: w.gebeurtenissen, namen,
+			afwezig: [...(w.afwezig ?? [])],
 			speeltijd: t.spelers
 				.filter((p) => tijden[p.id] !== undefined)
 				.map((p) => ({ id: p.id, naam: p.naam, seconden: Math.round(tijden[p.id]), keeper: Math.round(keepers[p.id] ?? 0) }))

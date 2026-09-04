@@ -212,3 +212,25 @@ describe('klaarstaan of bezig', () => {
 		expect(app.toestand.wedstrijd!.gebeurtenissen.at(-1)).toMatchObject({ type: 'ruil' });
 	});
 });
+
+describe('wie er die dag was, bewaren', () => {
+	it('legt de afwezigen vast bij de wedstrijd', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p1' };
+		app.zetAfwezig('p2', true);
+		app.beeindig();
+		app.bewaarInArchief();
+		const a = app.toestand.archief[0];
+		expect(a.afwezig).toEqual(['p2']);
+		/* nul minuten betekent nu iets anders voor wie er wel was */
+		expect(a.speeltijd.find((r) => r.id === 'p2')!.seconden).toBe(0);
+	});
+
+	it('bewaart een lege lijst als iedereen er was', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p1' };
+		app.beeindig();
+		app.bewaarInArchief();
+		expect(app.toestand.archief[0].afwezig).toEqual([]);
+	});
+});
