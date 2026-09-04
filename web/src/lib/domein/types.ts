@@ -77,6 +77,8 @@ export interface SpeeltijdRegel {
 	seconden: number;
 	/** waarvan in het doel */
 	keeper?: number;
+	/** seconden per plek uit de formatie, bijvoorbeeld { K: 2100, LV: 2100 } */
+	posities?: Record<string, number>;
 }
 
 export interface ArchiefWedstrijd {

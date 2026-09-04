@@ -1,4 +1,4 @@
-import { plekLinie } from './formaties';
+import { plekken, plekLinie } from './formaties';
 import type { Gebeurtenis, Speler, Wedstrijd } from './types';
 
 export function mmss(sec: number): string {
@@ -121,6 +121,34 @@ export function keepertijden(w: Wedstrijd | null, nu = Date.now()): Record<strin
 		}
 	});
 	return uit;
+}
+
+/** Seconden per speler per plek. Wie waar stond, en hoe lang. */
+export function positietijden(w: Wedstrijd | null, nu = Date.now()): Record<string, Record<string, number>> {
+	const uit: Record<string, Record<string, number>> = {};
+	veldIntervallen(w, nu).forEach((i) => {
+		const perPlek = (uit[i.speler] ??= {});
+		perPlek[i.plek] = (perPlek[i.plek] ?? 0) + (i.tot - i.van);
+	});
+	return uit;
+}
+
+/**
+ * De plekken van een speler als leesbare regel, langste eerst:
+ * "35 min K · 35 min LV". Meer dan drie plekken wordt onleesbaar, dus die
+ * vallen weg onder "overig".
+ */
+export function positieTekst(perPlek: Record<string, number> | undefined, formatie: string): string {
+	if (!perPlek) return '';
+	const label = (plek: string) => plekken(formatie).find((p) => p[0] === plek)?.[1] ?? plek;
+	const rijen = Object.entries(perPlek)
+		.filter(([, sec]) => sec > 0)
+		.sort((a, b) => b[1] - a[1]);
+	if (!rijen.length) return '';
+	const eerste = rijen.slice(0, 3).map(([plek, sec]) => Math.round(sec / 60) + ' min ' + label(plek));
+	const rest = rijen.slice(3).reduce((a, [, sec]) => a + sec, 0);
+	if (rest > 0) eerste.push(Math.round(rest / 60) + ' min overig');
+	return eerste.join(' · ');
 }
 
 export function stand(w: Wedstrijd | null): [number, number] {

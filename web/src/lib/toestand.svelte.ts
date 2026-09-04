@@ -1,5 +1,5 @@
 import { plekken } from './domein/formaties';
-import { eindTijd, keepertijden, speeltijden, stand, verstreken } from './domein/tijd';
+import { eindTijd, keepertijden, positietijden, speeltijden, stand, verstreken } from './domein/tijd';
 import { sorteerTrainingen } from './domein/presentie';
 import type {
 	Aanwezigheid, ArchiefWedstrijd, Gebeurtenis, GebeurtenisType, Opstelling,
@@ -359,6 +359,7 @@ class App {
 		if (!w || w.bewaard) return false;
 		const tijden = speeltijden(w, t.spelers, this.nu);
 		const keepers = keepertijden(w, this.nu);
+		const posities = positietijden(w, this.nu);
 		const namen: Record<string, string> = {};
 		t.spelers.forEach((p) => (namen[p.id] = p.naam));
 		const regel: ArchiefWedstrijd = {
@@ -369,7 +370,18 @@ class App {
 			afwezig: [...(w.afwezig ?? [])],
 			speeltijd: t.spelers
 				.filter((p) => tijden[p.id] !== undefined)
-				.map((p) => ({ id: p.id, naam: p.naam, seconden: Math.round(tijden[p.id]), keeper: Math.round(keepers[p.id] ?? 0) }))
+				.map((p) => ({
+					id: p.id,
+					naam: p.naam,
+					seconden: Math.round(tijden[p.id]),
+					keeper: Math.round(keepers[p.id] ?? 0),
+					/* alleen plekken waar hij echt gestaan heeft; nul zegt niets */
+					posities: Object.fromEntries(
+						Object.entries(posities[p.id] ?? {})
+							.map(([plek, sec]) => [plek, Math.round(sec)] as const)
+							.filter(([, sec]) => sec > 0)
+					)
+				}))
 		};
 		t.archief.unshift(regel);
 		w.bewaard = true;

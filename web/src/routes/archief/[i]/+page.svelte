@@ -4,7 +4,7 @@
 	import Speeltijd from '$lib/componenten/Speeltijd.svelte';
 	import Verloop from '$lib/componenten/Verloop.svelte';
 	import Verslag from '$lib/componenten/Verslag.svelte';
-	import { mmss } from '$lib/domein/tijd';
+	import { mmss, positieTekst } from '$lib/domein/tijd';
 	import { gebeurtenisTekst } from '$lib/domein/verslag';
 	import { bronVanArchief } from '$lib/domein/verslag';
 	import { app } from '$lib/toestand.svelte';
@@ -92,7 +92,9 @@
 				rijen={(a.speeltijd ?? []).map((r) => ({
 					naam: naamNu(r),
 					seconden: r.seconden ?? 0,
-					sub: r.keeper ? Math.round(r.keeper / 60) + ' min in het doel' : undefined
+					/* oudere wedstrijden hebben alleen keeperminuten, nieuwere alle plekken */
+					sub: positieTekst(r.posities, a.formatie) ||
+						(r.keeper ? Math.round(r.keeper / 60) + ' min in het doel' : undefined)
 				}))}
 			/>
 

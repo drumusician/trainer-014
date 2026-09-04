@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { keepertijden, speeltijden, veldIntervallen } from './tijd';
+import { keepertijden, positieTekst, positietijden, speeltijden, veldIntervallen } from './tijd';
 import { FORMATIES } from './formaties';
 import type { Speler, Wedstrijd } from './types';
 
@@ -152,5 +152,33 @@ describe('kleinere speelvormen', () => {
 		};
 		expect(Object.values(speeltijden(w, kort)).reduce((a, b) => a + b, 0)).toBe(4 * 1800);
 		expect(keepertijden(w)).toEqual({});
+	});
+});
+
+describe('wie waar stond', () => {
+	it('telt de minuten per plek', () => {
+		const w = wedstrijd();
+		w.opstelling['K'] = 'pAmir';
+		w.opstelling['LV'] = 'pGijs';
+		w.bank = ['pMirza'];
+		w.gebeurtenissen.push(
+			{ type: 'wissel', t: 2100, eruit: 'pGijs', erin: 'pAmir', plek: 'K' },
+			{ type: 'wissel', t: 2100, eruit: 'pMirza', erin: 'pGijs', plek: 'LV' },
+			{ type: 'eind', t: 4200 }
+		);
+		const p = positietijden(w);
+		expect(p['pGijs']).toEqual({ K: 2100, LV: 2100 });
+		expect(p['pMirza']).toEqual({ LV: 2100 });
+	});
+
+	it('schrijft het leesbaar op, langste plek eerst', () => {
+		expect(positieTekst({ LV: 2100, K: 900 }, '4-3-3')).toBe('35 min LV · 15 min K');
+		expect(positieTekst({}, '4-3-3')).toBe('');
+		expect(positieTekst(undefined, '4-3-3')).toBe('');
+	});
+
+	it('vat samen als iemand overal gestaan heeft', () => {
+		const tekst = positieTekst({ K: 600, LV: 500, MC: 400, SP: 300, RV: 200 }, '4-3-3');
+		expect(tekst).toBe('10 min K · 8 min LV · 7 min M · 8 min overig');
 	});
 });

@@ -3,13 +3,14 @@
 	import Speeltijd from '$lib/componenten/Speeltijd.svelte';
 	import Verloop from '$lib/componenten/Verloop.svelte';
 	import Verslag from '$lib/componenten/Verslag.svelte';
-	import { eindTijd, mmss, speeltijden, stand } from '$lib/domein/tijd';
+	import { eindTijd, mmss, positieTekst, positietijden, speeltijden, stand } from '$lib/domein/tijd';
 	import { bronVanWedstrijd } from '$lib/domein/verslag';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 
 	const w = $derived(app.wedstrijd);
 	const tijden = $derived(speeltijden(w, app.toestand.spelers, app.nu));
+	const posities = $derived(positietijden(w, app.nu));
 
 	$effect(() => zetKop('Uitslag', '/', 'Menu'));
 
@@ -34,7 +35,11 @@
 			<Speeltijd
 				rijen={app.toestand.spelers
 					.filter((p) => tijden[p.id] !== undefined)
-					.map((p) => ({ naam: p.naam, seconden: tijden[p.id] ?? 0 }))}
+					.map((p) => ({
+						naam: p.naam,
+						seconden: tijden[p.id] ?? 0,
+						sub: positieTekst(posities[p.id], w!.formatie)
+					}))}
 			/>
 
 			<h2>Verloop</h2>
