@@ -4,11 +4,15 @@
 	/* Vier plekken, meer heeft deze app niet nodig. Tijdens een wedstrijd en bij
 	   het opstellen is de balk weg: daar telt elke pixel en ben je met één ding
 	   bezig. */
+	/* Vijf plekken, gekozen op hoe vaak je er bent: zaterdag de wedstrijd, twee
+	   keer per week de training, af en toe de rest. Wat verder weg ligt staat op
+	   het beginscherm als kaart. */
 	const TABS = [
-		{ pad: '/app', naam: 'Wedstrijd', icoon: 'bal' },
+		{ pad: '/app', naam: 'Start', icoon: 'start' },
+		{ pad: '/app/wedstrijd', naam: 'Wedstrijd', icoon: 'bal' },
+		{ pad: '/app/trainingen', naam: 'Training', icoon: 'fluit' },
 		{ pad: '/app/team', naam: 'Team', icoon: 'team' },
-		{ pad: '/app/archief', naam: 'Archief', icoon: 'archief' },
-		{ pad: '/app/meer', naam: 'Meer', icoon: 'meer' }
+		{ pad: '/app/archief', naam: 'Archief', icoon: 'archief' }
 	];
 
 	function actief(pad: string): boolean {
@@ -22,7 +26,14 @@
 	{#each TABS as tab (tab.pad)}
 		<a href={tab.pad} class:aan={actief(tab.pad)} aria-current={actief(tab.pad) ? 'page' : undefined}>
 			<svg viewBox="0 0 24 24" aria-hidden="true">
-				{#if tab.icoon === 'bal'}
+				{#if tab.icoon === 'start'}
+					<path d="M4 11.2L12 4.5l8 6.7" />
+					<path d="M6 10.4V19h12v-8.6" />
+				{:else if tab.icoon === 'fluit'}
+					<circle cx="9.5" cy="13" r="4.5" />
+					<path d="M14 13h6.5M14 10.4h4.5" />
+					<path d="M9.5 8.5V5.5h4" />
+				{:else if tab.icoon === 'bal'}
 					<!-- een veldje: dat is waar dit tabblad over gaat -->
 					<rect x="3.5" y="4.5" width="17" height="15" rx="1.6" />
 					<path d="M3.5 12h17" />

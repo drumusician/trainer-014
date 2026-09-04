@@ -26,8 +26,16 @@
 			property="og:description"
 			content="Je opstelling, je wissels en de speeltijd, bijgehouden terwijl je coacht. Werkt zonder bereik en zonder account, gewoon op je telefoon."
 		/>
-		<meta property="og:image" content="https://blaadje.app/scherm-wedstrijd.png" />
+		<meta property="og:url" content="https://blaadje.app/" />
+		<meta property="og:locale" content="nl_NL" />
+		<!-- Liggend en 1200x630: dat is wat WhatsApp en de rest verwachten. Een
+		     staande schermafdruk werd niet als voorvertoning getoond. -->
+		<meta property="og:image" content="https://blaadje.app/deelplaat.png" />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="Blaadje: wissels en speeltijd, langs de lijn" />
 		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:image" content="https://blaadje.app/deelplaat.png" />
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

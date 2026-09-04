@@ -19,11 +19,16 @@
 				Nog geen bewaarde wedstrijden. Sluit een wedstrijd af en bewaar hem, dan staat hij hier met uitslag,
 				speeltijden en het hele verloop.
 			</p>
-			{#if t.trainingen.length}
-				<div class="knoprij" style="padding-left: 0">
+			<div class="knoprij" style="padding-left: 0">
+				{#if t.spelers.length}
+					<a class="knop prim" href="/app">Naar start</a>
+				{:else}
+					<a class="knop prim" href="/app/opzetten">Aan de slag</a>
+				{/if}
+				{#if t.trainingen.length}
 					<a class="knop" href="/app/archief/seizoen">Presentie bekijken</a>
-				</div>
-			{/if}
+				{/if}
+			</div>
 		{:else}
 			<h2>Seizoen</h2>
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">

@@ -82,16 +82,16 @@
 	<main>
 		<div class="pad">
 			<h2>Nog geen spelers</h2>
-			<p class="uitleg">Ga naar <b>Instellen</b> en zet je selectie erin. De namen blijven op dit toestel staan.</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app/team">Naar Team</a></div>
+			<p class="uitleg">Zet eerst je selectie erin, dan valt er wat op te stellen.</p>
+			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app/opzetten">Aan de slag</a></div>
 		</div>
 	</main>
 {:else if !w || !Object.keys(w.opstelling).length}
 	<main>
 		<div class="pad">
-			<h2>Nog geen opstelling</h2>
-			<p class="uitleg">Maak een wedstrijd aan en zet je basiself op het veld.</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Wedstrijd opzetten</a></div>
+			<h2>Nog geen wedstrijd</h2>
+			<p class="uitleg">Begin er een op het startscherm, dan zet je hier je opstelling neer.</p>
+			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Naar start</a></div>
 		</div>
 	</main>
 {:else if w.afgelopen}
@@ -144,6 +144,7 @@
 					formatie={w.formatie}
 					gekozen={app.gekozenPlek}
 					{tijden}
+					aanwezigheid
 					ontik={(id) => app.zetOpPlek(id)}
 				/>
 			</div>

@@ -62,9 +62,19 @@ main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height:
    klok en de knoppen, en nooit meer dan dat. Daardoor hoef je tijdens een
    wedstrijd nergens te scrollen, op geen enkel scherm. */
 .veldscherm { display: flex; flex-direction: column; height: 100%; --chroom: 200px; }
+/* Staat de tabbalk eronder, dan is er zestig pixels minder voor het veld. */
+.app:not(.zonderbalk) .veldscherm { --chroom: 262px; }
+/* Op een heel smal scherm vallen de knoppen op twee regels; dan is er meer
+   chroom en moet het veld nog wat kleiner om binnen beeld te blijven. */
+@media (max-width: 360px) {
+	.veldscherm .knoprij button { font-size: 14px; padding: 8px 10px; }
+	.veldscherm { --chroom: 240px; }
+	.app:not(.zonderbalk) .veldscherm { --chroom: 300px; }
+}
 @supports (padding: env(safe-area-inset-bottom)) {
 	.veldscherm { --chroom: calc(200px + env(safe-area-inset-bottom)); }
 	.veldscherm.zonderklok { --chroom: calc(215px + env(safe-area-inset-bottom)); }
+	.app:not(.zonderbalk) .veldscherm { --chroom: calc(262px + env(safe-area-inset-bottom)); }
 }
 .veldscherm.zonderklok { --chroom: 215px; }
 /* Niet laten krimpen: het veld houdt zijn verhouding, dus een krimpende rij
@@ -228,13 +238,14 @@ ul.log li em { font-style: normal; color: var(--grijs); font-size: 18px; line-he
 	padding-bottom: env(safe-area-inset-bottom);
 }
 .tabs a {
-	flex: 1;
+	flex: 1; min-width: 0;
 	display: flex; flex-direction: column; align-items: center; gap: 2px;
-	padding: 7px 4px 6px;
+	padding: 7px 2px 6px;
 	text-decoration: none; color: var(--grijs);
 	font-size: 11px; font-weight: 600; letter-spacing: 0.01em;
 }
-.tabs a svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.tabs a span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tabs a svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .tabs a.aan { color: var(--groen); }
 .tabs a.aan svg { stroke-width: 2; }
 .tabs a:active { background: var(--groen-licht); }
@@ -323,3 +334,29 @@ ol.stappen { margin: 0 0 14px; padding-left: 22px; color: var(--grijs); max-widt
 ol.stappen li { margin-bottom: 8px; }
 ol.stappen b { color: var(--inkt); }
 .landing .klein { display: block; margin-top: 4px; }
+
+
+/* ---------- beginscherm met kaarten ----------
+   Wat je vaak doet staat in de tabbalk; alles wat verder weg ligt staat hier,
+   zodat niets in een ander scherm verstopt zit. */
+.kaarten { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 4px; }
+.kaart {
+	display: flex; flex-direction: column; gap: 3px;
+	padding: 14px; border: 1px solid var(--lijn); border-radius: 12px;
+	background: #fff; color: var(--inkt); text-decoration: none;
+	min-height: 84px;
+}
+.kaart:active { background: var(--bank); }
+.kaart b { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; hyphens: auto; }
+.kaart span { font-size: 13px; color: var(--grijs); line-height: 1.35; }
+.kaart .mager { color: var(--oranje); font-weight: 700; }
+
+/* De grote kaart bovenaan: wat er nu speelt. */
+.nu {
+	display: block; padding: 16px; border-radius: 14px; text-decoration: none;
+	background: var(--groen); color: #fff; margin-bottom: 12px;
+}
+.nu:active { background: var(--groen-diep); }
+.nu .wat { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.8; font-weight: 700; }
+.nu .titel { font-size: 21px; font-weight: 700; margin: 4px 0 2px; letter-spacing: -0.01em; }
+.nu .erbij { font-size: 14px; opacity: 0.85; font-variant-numeric: tabular-nums; }

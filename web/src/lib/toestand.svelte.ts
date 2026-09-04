@@ -248,6 +248,20 @@ class App {
 		return !!w && !w.afgelopen && (w.pauze || w.deel < w.delen);
 	}
 
+	zetTegenstander(naam: string) {
+		const w = this.toestand.wedstrijd;
+		if (!w) return;
+		w.tegenstander = naam.trim() || 'Tegenstander';
+		this.bewaar();
+	}
+
+	zetThuis(thuis: boolean) {
+		const w = this.toestand.wedstrijd;
+		if (!w) return;
+		w.thuis = thuis;
+		this.bewaar();
+	}
+
 	zetTeamnaam(naam: string) {
 		this.toestand.teamnaam = naam.trim() || 'Ons team';
 		this.bewaar();

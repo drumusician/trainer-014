@@ -17,6 +17,28 @@
 			<p class="uitleg">Er is geen wedstrijd om spelers voor af te melden.</p>
 			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Terug</a></div>
 		{:else}
+			<h2>Tegen wie</h2>
+			<div class="tweekolom">
+				<label class="vak">
+					Tegenstander
+					<input
+						value={w.tegenstander === 'Tegenstander' ? '' : w.tegenstander}
+						placeholder="bijv. Sparta JO11-2"
+						onchange={(e) => app.zetTegenstander(e.currentTarget.value)}
+					/>
+				</label>
+				<label class="vak">
+					Thuis of uit
+					<select
+						value={w.thuis ? 'thuis' : 'uit'}
+						onchange={(e) => app.zetThuis(e.currentTarget.value === 'thuis')}
+					>
+						<option value="thuis">Thuis</option>
+						<option value="uit">Uit</option>
+					</select>
+				</label>
+			</div>
+
 			<h2>Wie is er vandaag</h2>
 			<p class="uitleg">
 				Tik weg wie er niet is. Die staat dan niet op de bank, zodat je hem er langs de lijn niet per ongeluk in

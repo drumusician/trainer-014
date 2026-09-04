@@ -3,7 +3,6 @@
 	import { zetKop } from '$lib/kop.svelte';
 	import { mager, presentie } from '$lib/domein/presentie';
 	import { bezetting, dunneKeepersbezetting, gedrang, tekort } from '$lib/domein/bezetting';
-	import { datumKort } from '$lib/domein/datum';
 	import type { Speler, Veldlinie } from '$lib/domein/types';
 
 	$effect(() => zetKop('Team'));
@@ -114,17 +113,6 @@
 			</p>
 		{/if}
 
-		<h2>Trainingen</h2>
-		{#if !t.trainingen.length}
-			<p class="uitleg">Nog niets bijgehouden. Wie vaak niet komt trainen zie je hier straks meteen.</p>
-		{:else}
-			<p class="uitleg">
-				{t.trainingen.length}
-				{t.trainingen.length === 1 ? 'training' : 'trainingen'} bijgehouden. Laatste: {datumKort(t.trainingen[0].datum)}.
-			</p>
-		{/if}
-		<div class="knoprij" style="padding-left: 0">
-			<a class="knop prim" href="/app/trainingen">Presentie bijhouden</a>
-		</div>
+
 	</div>
 </main>

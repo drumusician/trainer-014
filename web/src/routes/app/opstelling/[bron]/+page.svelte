@@ -16,6 +16,15 @@
 		zetKop(bron === 'standaard' ? 'Standaardopstelling' : 'Opstelling', '/app', 'Terug');
 	});
 
+	/* Rechtstreeks hierheen komen moet ook werken, bijvoorbeeld vanaf een kaart
+	   op het startscherm. Bestaat er nog geen standaardopstelling, dan maken we
+	   hem hier aan in plaats van een doodlopend scherm te tonen. */
+	$effect(() => {
+		if (bron === 'standaard' && !app.toestand.standaard && app.toestand.spelers.length) {
+			app.zorgVoorStandaard();
+		}
+	});
+
 	/* Pas ná de aftrap hoort schuiven hier niet meer: vanaf dan wordt de speeltijd
 	   teruggerekend uit de wissels, en ongemerkt ruilen zet die op scherp.
 	   Zolang de klok nog niet gelopen heeft mag je alles nog verzetten. */
@@ -96,8 +105,18 @@
 {#if !doel}
 	<main>
 		<div class="pad">
-			<p class="uitleg">Er is niets om op te stellen.</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Terug</a></div>
+			<p class="uitleg">
+				{#if !app.toestand.spelers.length}
+					Zet eerst je selectie erin, dan valt er wat op te stellen.
+				{:else}
+					Er is geen wedstrijd om op te stellen. Begin er een op het startscherm.
+				{/if}
+			</p>
+			<div class="knoprij" style="padding-left: 0">
+				<a class="knop prim" href={app.toestand.spelers.length ? '/app' : '/app/opzetten'}>
+					{app.toestand.spelers.length ? 'Naar start' : 'Aan de slag'}
+				</a>
+			</div>
 		</div>
 	</main>
 {:else}

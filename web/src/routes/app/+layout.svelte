@@ -7,9 +7,15 @@
 	import { vraagBlijvendeOpslag } from '$lib/opslag.svelte';
 	import Tabs from '$lib/componenten/Tabs.svelte';
 
-	/* Schermen waar je met één ding bezig bent: daar gaat de balk weg. */
-	const VOLLEDIG = ['/app/wedstrijd', '/app/opstelling', '/app/aanwezig', '/app/afloop'];
-	const inTaak = $derived(VOLLEDIG.some((p) => page.url.pathname.startsWith(p)));
+	/* Schermen waar je met één ding bezig bent: daar gaat de balk weg.
+	   Het wedstrijdscherm hoort daar pas bij zodra de wedstrijd echt loopt: dan
+	   moet het veld alle ruimte hebben en spring je toch nergens heen. Ervoor is
+	   het gewoon een tabblad. */
+	const VOLLEDIG = ['/app/opstelling', '/app/aanwezig', '/app/afloop', '/app/opzetten'];
+	const inTaak = $derived(
+		VOLLEDIG.some((p) => page.url.pathname.startsWith(p)) ||
+			(page.url.pathname.startsWith('/app/wedstrijd') && app.gestart && !app.wedstrijd?.afgelopen)
+	);
 
 	let { children } = $props();
 

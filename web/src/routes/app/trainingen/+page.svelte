@@ -20,7 +20,7 @@
 
 	function nieuw() {
 		if (!app.toestand.spelers.length) {
-			alert('Zet eerst je selectie erin.');
+			goto('/app/opzetten');
 			return;
 		}
 		goto('/app/trainingen/' + app.nieuweTraining().id);
@@ -30,7 +30,9 @@
 <main>
 	<div class="pad">
 		<h2>Trainingen</h2>
-		{#if !trainingen.length}
+		{#if !app.toestand.spelers.length}
+			<p class="uitleg">Zet eerst je selectie erin, dan kun je afvinken wie er was.</p>
+		{:else if !trainingen.length}
 			<p class="uitleg">
 				Nog geen trainingen. Maak er een aan; iedereen staat dan op aanwezig en je tikt alleen wie er niet is.
 			</p>
