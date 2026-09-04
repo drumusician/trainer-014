@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
+	import { datumKort } from '$lib/domein/datum';
 	import type { Training } from '$lib/domein/types';
 
 	$effect(() => zetKop('Trainingen', '/team', 'Terug'));
@@ -15,14 +16,6 @@
 			if (st) w[st]++;
 		});
 		return w;
-	}
-
-	function datumKort(d: string) {
-		try {
-			return new Date(d + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
-		} catch {
-			return d;
-		}
 	}
 
 	function nieuw() {

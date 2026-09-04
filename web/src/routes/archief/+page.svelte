@@ -2,19 +2,13 @@
 	import { seizoenStand } from '$lib/domein/seizoen';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
+	import { datumKort } from '$lib/domein/datum';
 
 	$effect(() => zetKop('Archief'));
 
 	const t = $derived(app.toestand);
 	const st = $derived(seizoenStand(t.archief));
 
-	function datumKort(d: string) {
-		try {
-			return new Date(d + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
-		} catch {
-			return d;
-		}
-	}
 </script>
 
 <main>

@@ -3,13 +3,14 @@
 	import { page } from '$app/state';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
+	import { datumKort } from '$lib/domein/datum';
 	import type { Aanwezigheid } from '$lib/domein/types';
 
 	const WOORD: Record<Aanwezigheid, string> = { ja: 'Aanwezig', af: 'Afgemeld', nee: 'Niet gekomen' };
 
 	const t = $derived(app.trainingMetId(page.params.id));
 
-	$effect(() => zetKop(t ? 'Training ' + t.datum : 'Training', '/trainingen', 'Terug'));
+	$effect(() => zetKop(t ? 'Training ' + datumKort(t.datum) : 'Training', '/trainingen', 'Terug'));
 
 	const telling = $derived.by(() => {
 		const w = { ja: 0, af: 0, nee: 0 };
@@ -25,7 +26,7 @@
 
 	function verwijder() {
 		if (!t) return;
-		if (!confirm('De training van ' + t.datum + ' verwijderen?')) return;
+		if (!confirm('De training van ' + datumKort(t.datum) + ' verwijderen?')) return;
 		app.verwijderTraining(t);
 		goto('/trainingen');
 	}

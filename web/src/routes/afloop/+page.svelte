@@ -7,6 +7,7 @@
 	import { bronVanWedstrijd } from '$lib/domein/verslag';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
+	import { datumMetJaar } from '$lib/domein/datum';
 
 	const w = $derived(app.wedstrijd);
 	const tijden = $derived(speeltijden(w, app.toestand.spelers, app.nu));
@@ -29,7 +30,7 @@
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
 				{w.thuis ? 'O14' : w.tegenstander} {v} – {t} {w.thuis ? w.tegenstander : 'O14'}
 			</p>
-			<p class="uitleg">{w.datum} · {mmss(eindTijd(w))} gespeeld · {w.formatie}</p>
+			<p class="uitleg">{datumMetJaar(w.datum)} · {mmss(eindTijd(w))} gespeeld · {w.formatie}</p>
 
 			<h2>Speeltijd</h2>
 			<Speeltijd

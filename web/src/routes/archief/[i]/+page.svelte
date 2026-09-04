@@ -5,6 +5,7 @@
 	import Verloop from '$lib/componenten/Verloop.svelte';
 	import Verslag from '$lib/componenten/Verslag.svelte';
 	import { mmss, positieTekst } from '$lib/domein/tijd';
+	import { datumKort, datumMetJaar } from '$lib/domein/datum';
 	import { gebeurtenisTekst } from '$lib/domein/verslag';
 	import { bronVanArchief } from '$lib/domein/verslag';
 	import { app } from '$lib/toestand.svelte';
@@ -13,7 +14,7 @@
 	const i = $derived(Number(page.params.i));
 	const a = $derived(app.toestand.archief[i]);
 
-	$effect(() => zetKop(a ? a.datum + ' · ' + a.tegenstander : 'Archief', '/archief', 'Terug'));
+	$effect(() => zetKop(a ? datumKort(a.datum) + ' · ' + a.tegenstander : 'Archief', '/archief', 'Terug'));
 
 	/** De naam van nu, ook als iemand na de wedstrijd hernoemd is. */
 	function naamNu(r: { id?: string; naam: string }) {
@@ -62,7 +63,7 @@
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
 				{thuis ? 'O14' : a.tegenstander} {a.stand[0]} – {a.stand[1]} {thuis ? a.tegenstander : 'O14'}
 			</p>
-			<p class="uitleg">{a.datum} · {mmss(a.duur ?? 0)} gespeeld · {a.formatie}</p>
+			<p class="uitleg">{datumMetJaar(a.datum)} · {mmss(a.duur ?? 0)} gespeeld · {a.formatie}</p>
 			<div class="knoprij" style="padding-left: 0">
 				<button onclick={() => (bewerken = !bewerken)}>{bewerken ? 'Klaar met bijwerken' : 'Bijwerken'}</button>
 			</div>
