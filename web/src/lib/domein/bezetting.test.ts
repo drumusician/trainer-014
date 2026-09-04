@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { bezetting, dunneKeepersbezetting, gedrang, tekort } from './bezetting';
+import { groepVan, kanKeepen } from './formaties';
 import type { Speler } from './types';
 
 /** De selectie zoals die op 4 september 2026 in de app stond. */
@@ -60,5 +61,31 @@ describe('bezetting per linie', () => {
 
 	it('laat de keeper weg bij 4 tegen 4', () => {
 		expect(bezetting(selectie, '2-2').map((x) => x.linie)).toEqual(['A', 'V']);
+	});
+});
+
+describe('iemand die alleen keeper is', () => {
+	const alleenKeeper: Speler = { id: '99', naam: 'Vaste keeper', linie: '', keept: true };
+	const metVaste = [...selectie, alleenKeeper];
+
+	it('telt alleen mee bij de keepers, niet in een veldlinie', () => {
+		const b = bezetting(metVaste, '4-3-3');
+		expect(b.find((x) => x.linie === 'K')!.spelers).toBe(5);
+		expect(b.find((x) => x.linie === 'V')!.spelers).toBe(5); /* onveranderd */
+		expect(b.find((x) => x.linie === 'M')!.spelers).toBe(7);
+		expect(b.find((x) => x.linie === 'A')!.spelers).toBe(4);
+	});
+
+	it('staat op de bank in het keepersgroepje', () => {
+		expect(groepVan(alleenKeeper)).toBe('K');
+	});
+
+	it('licht op bij de keeperplek en niet bij een veldplek', () => {
+		expect(kanKeepen(alleenKeeper)).toBe(true);
+		expect(alleenKeeper.linie).toBe(''); /* dus geen enkele veldlinie claimt hem */
+	});
+
+	it('valt zonder K-vinkje in "zonder linie", niet stilletjes ergens anders', () => {
+		expect(groepVan({ id: 'x', naam: 'Nieuw', linie: '' })).toBe('');
 	});
 });

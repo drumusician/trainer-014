@@ -41,7 +41,8 @@
 		{:else}
 			<p class="uitleg">
 				Zet per speler de linie: V verdediging, M middenveld, A aanval. <b>K</b> staat los: dat is iedereen die kan
-				keepen, ook als hij verder in het veld speelt. Tik een naam aan om te wijzigen of te verwijderen.
+				keepen, ook als hij verder in het veld speelt. Alleen K aan en de rest uit betekent: keeper en verder niets.
+				Tik een naam aan om te wijzigen of te verwijderen.
 			</p>
 			{#each t.spelers as p (p.id)}
 				{@const recent = presentie(t.trainingen, p.id, 4)}
