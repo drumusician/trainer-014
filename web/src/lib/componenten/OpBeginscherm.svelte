@@ -89,6 +89,6 @@
 	{/if}
 
 	<p class="klein">
-		Wat je al hebt ingevuld blijft gewoon staan. Het is dezelfde Blaadje, alleen sneller te openen.
+		Wat je al hebt ingevuld blijft staan. Je hoeft Blaadje daarna alleen niet meer op te zoeken.
 	</p>
 {/if}
