@@ -8,11 +8,10 @@
 	import { vraagBlijvendeOpslag } from '$lib/opslag.svelte';
 	import Tabs from '$lib/componenten/Tabs.svelte';
 
-	/* Schermen waar je met één ding bezig bent: daar gaat de balk weg.
-	   Het wedstrijdscherm hoort daar pas bij zodra de wedstrijd echt loopt: dan
-	   moet het veld alle ruimte hebben en spring je toch nergens heen. Ervoor is
-	   het gewoon een tabblad. */
-	const VOLLEDIG = ['/app/opstelling', '/app/aanwezig', '/app/afloop', '/app/opzetten'];
+	/* De tabbalk staat er altijd, behalve waar het veld de hoogte nodig heeft.
+	   Dat is één regel die je ook ziet: op die schermen is het veld groter. Op
+	   het wedstrijdscherm geldt het pas zodra er is afgetrapt; daarvoor is het
+	   gewoon een tabblad. */
 	/* Hoe vaak je binnen de app genavigeerd hebt. Is dat minstens één keer, dan
 	   is "terug" de vorige pagina; anders (diepe link, verse start) valt hij
 	   terug op de vaste bestemming van het scherm. */
@@ -28,7 +27,7 @@
 	}
 
 	const inTaak = $derived(
-		VOLLEDIG.some((p) => page.url.pathname.startsWith(p)) ||
+		page.url.pathname.startsWith('/app/opstelling') ||
 			(page.url.pathname.startsWith('/app/wedstrijd') && app.gestart && !app.wedstrijd?.afgelopen)
 	);
 
