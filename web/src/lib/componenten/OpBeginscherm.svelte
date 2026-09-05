@@ -79,5 +79,4 @@
 		</ol>
 	{/if}
 
-	<p class="klein">Je begint niet opnieuw: je selectie en je wedstrijden staan er straks gewoon nog.</p>
 {/if}
