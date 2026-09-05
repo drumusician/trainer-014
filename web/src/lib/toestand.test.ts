@@ -74,6 +74,32 @@ describe('wie is er vandaag', () => {
 		app.zetAfwezig('p2', false);
 		expect(app.toestand.wedstrijd!.bank).toContain('p2');
 	});
+
+	/* Dit ging mis: de speeltijd wordt teruggerekend vanaf de opstelling van nu,
+	   dus wie je daar tijdens de wedstrijd uithaalt heeft volgens die berekening
+	   nooit gespeeld. Een hele wedstrijd werd stilletjes nul minuten. */
+	it('laat het veld met rust zodra de wedstrijd loopt', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
+		app.herzetBank();
+		app.toestand.wedstrijd!.gebeurtenissen = [{ type: 'start', t: 0 }];
+
+		app.zetAfwezig('p2', true);
+		expect(app.toestand.wedstrijd!.opstelling.K).toBe('p2');
+		expect(app.toestand.wedstrijd!.afwezig ?? []).not.toContain('p2');
+	});
+
+	it('laat wie op de bank zit ook na de aftrap afmelden', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p2' };
+		app.herzetBank();
+		app.toestand.wedstrijd!.gebeurtenissen = [{ type: 'start', t: 0 }];
+		expect(app.toestand.wedstrijd!.bank).toContain('p1');
+
+		app.zetAfwezig('p1', true);
+		expect(app.toestand.wedstrijd!.bank).not.toContain('p1');
+		expect(app.toestand.wedstrijd!.afwezig).toContain('p1');
+	});
 });
 
 describe('de klok', () => {

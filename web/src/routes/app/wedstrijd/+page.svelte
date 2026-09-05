@@ -145,7 +145,6 @@
 					formatie={w.formatie}
 					gekozen={app.gekozenPlek}
 					{tijden}
-					aanwezigheid
 					ontik={(id) => app.zetOpPlek(id)}
 				/>
 			</div>

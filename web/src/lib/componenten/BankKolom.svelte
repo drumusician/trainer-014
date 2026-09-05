@@ -10,7 +10,6 @@
 		gekozen = null,
 		tijden = null,
 		leegtekst = 'Iedereen speelt.',
-		aanwezigheid = false,
 		ontik
 	}: {
 		bank: string[];
@@ -19,8 +18,6 @@
 		/** speelminuten per speler; weglaten in het opstelscherm */
 		tijden?: Record<string, number> | null;
 		leegtekst?: string;
-		/** een ingang naar "Wie is er?", voor als er iemand later komt of afhaakt */
-		aanwezigheid?: boolean;
 		ontik: (spelerId: string) => void;
 	} = $props();
 
@@ -74,8 +71,5 @@
 				</div>
 			{/if}
 		{/each}
-		{#if aanwezigheid}
-			<a class="wieiser" href="/app/aanwezig">Wie is er?</a>
-		{/if}
 	</div>
 </div>

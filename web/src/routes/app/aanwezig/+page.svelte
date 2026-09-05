@@ -9,6 +9,8 @@
 	const w = $derived(app.wedstrijd);
 	const afwezig = $derived(new Set(w?.afwezig ?? []));
 	const er = $derived(app.toestand.spelers.filter((p) => !afwezig.has(p.id)).length);
+	/* Loopt de wedstrijd al, dan is dit geen opzetscherm meer maar een correctie. */
+	const bezig = $derived(app.gestart && !w?.afgelopen);
 </script>
 
 <main>
@@ -41,8 +43,13 @@
 
 			<h2>Wie is er vandaag</h2>
 			<p class="uitleg">
-				Tik weg wie er niet is. Die staat dan niet op de bank, zodat je hem er langs de lijn niet per ongeluk in
-				brengt. Wie al opgesteld stond, laat zijn plek leeg.
+				{#if bezig}
+					De wedstrijd loopt. Wie in het veld staat haal je eruit met een wissel, niet hier — anders klopt zijn
+					speeltijd niet meer. Van de bank afmelden kan wel.
+				{:else}
+					Tik weg wie er niet is. Die staat dan niet op de bank, zodat je hem er langs de lijn niet per ongeluk
+					in brengt. Wie al opgesteld stond, laat zijn plek leeg.
+				{/if}
 			</p>
 			<p class="telling">
 				<span><b>{er}</b> van de {app.toestand.spelers.length} aanwezig</span>
@@ -56,14 +63,22 @@
 						{p.naam}
 						{#if mager(recent)}<span class="min mager"> {recent.er}/{recent.totaal} training</span>{/if}
 					</span>
-					<button class="presknop {weg ? 'nee' : 'ja'}" onclick={() => app.zetAfwezig(p.id, !weg)}>
-						{weg ? 'Er niet' : 'Er wel'}
-					</button>
+					{#if bezig && app.staatInVeld(p.id)}
+						<span class="presknop veld">In het veld</span>
+					{:else}
+						<button class="presknop {weg ? 'nee' : 'ja'}" onclick={() => app.zetAfwezig(p.id, !weg)}>
+							{weg ? 'Er niet' : 'Er wel'}
+						</button>
+					{/if}
 				</div>
 			{/each}
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
-				<a class="knop prim" href="/app/opstelling/wedstrijd">Verder naar de opstelling</a>
+				{#if bezig}
+					<a class="knop prim" href="/app/wedstrijd">Terug naar de wedstrijd</a>
+				{:else}
+					<a class="knop prim" href="/app/opstelling/wedstrijd">Verder naar de opstelling</a>
+				{/if}
 			</div>
 		{/if}
 	</div>

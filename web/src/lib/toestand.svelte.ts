@@ -167,10 +167,26 @@ class App {
 		w.bank = t.spelers.map((p) => p.id).filter((id) => !inVeld.includes(id) && !afwezig.includes(id));
 	}
 
-	/** Wie er vandaag niet is. Uit het veld halen mag ook: dan valt de plek leeg. */
+	/** Staat hij op het veld? */
+	staatInVeld(spelerId: string): boolean {
+		const w = this.toestand.wedstrijd;
+		return !!w && Object.values(w.opstelling).includes(spelerId);
+	}
+
+	/**
+	 * Afmelden mag zolang het de opstelling niet met terugwerkende kracht verandert.
+	 *
+	 * Voor de aftrap: iemand uit het veld halen is prima, zijn plek valt leeg.
+	 * Daarna niet meer. De speeltijd wordt teruggerekend vanaf de opstelling van
+	 * nu, dus wie je daar weghaalt heeft volgens die berekening nooit gespeeld —
+	 * een heel gespeelde wedstrijd wordt dan stilletjes nul minuten. Wie speelt
+	 * haal je eruit met een wissel. Van de bank afmelden mag wel: dat raakt het
+	 * veld niet, en iemand kan nu eenmaal pas na de aftrap afhaken.
+	 */
 	zetAfwezig(spelerId: string, afwezig: boolean) {
 		const w = this.toestand.wedstrijd;
 		if (!w) return;
+		if (afwezig && this.gestart && this.staatInVeld(spelerId)) return;
 		const lijst = new Set(w.afwezig ?? []);
 		if (afwezig) {
 			lijst.add(spelerId);
