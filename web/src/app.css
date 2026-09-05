@@ -248,8 +248,18 @@ ul.log li em { font-style: normal; color: var(--grijs); font-size: 18px; line-he
 	z-index: 5;
 	display: flex;
 	border-top: 1px solid var(--lijn);
-	background: #fff;
+	/* Doorschijnend met een waas erachter, zoals iOS het zelf doet. Onder de
+	   labels ligt de strook van de home-indicator, en die kunnen we niet gebruiken:
+	   daar zit de veeggreep van het toestel. Wit op wit las die strook als lege
+	   app-ruimte. Zo zie je er de pagina doorheen schuiven en is het één balk. */
+	background: rgba(255, 255, 255, 0.82);
+	backdrop-filter: saturate(180%) blur(16px);
+	-webkit-backdrop-filter: saturate(180%) blur(16px);
 	padding-bottom: env(safe-area-inset-bottom);
+}
+/* Kan het toestel geen waas, dan liever ondoorzichtig dan grauw. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	.tabs { background: #fff; }
 }
 /* Zo veel houdt de balk bezet; de balk meet dat zelf en zet het op de root.
    De waarde hieronder is alleen de achtervang voor het eerste renderslagje. */
@@ -257,7 +267,7 @@ ul.log li em { font-style: normal; color: var(--grijs); font-size: 18px; line-he
 .tabs a {
 	flex: 1; min-width: 0;
 	display: flex; flex-direction: column; align-items: center; gap: 2px;
-	padding: 7px 2px 6px;
+	padding: 6px 2px 4px;
 	text-decoration: none; color: var(--grijs);
 	font-size: 11px; font-weight: 600; letter-spacing: 0.01em;
 }

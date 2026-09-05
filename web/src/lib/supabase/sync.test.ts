@@ -130,3 +130,30 @@ describe('inloggen op een telefoon', () => {
 		expect(sync.fase).toBe('email');
 	});
 });
+
+describe('bij het openen', () => {
+	/* Dit ging mis toen de wedstrijd bij het pakket kwam: op de laptop stond een
+	   opstelling klaar, maar er veranderde niets meer, dus merkte de app nooit dat
+	   er ineens meer te versturen viel. Op de telefoon bleef het leeg. */
+	it('merkt dat er hier iets staat wat de server nog niet heeft', async () => {
+		const { verstuurd } = nepFetch({ versie: 1, data: { spelers: app.toestand.spelers } });
+		sync.sessie!.afdruk = 'iets ouds';
+		app.nieuweWedstrijd('Sparta', true);
+		sync.vies = false;
+
+		await sync.kijkEven();
+		expect(sync.vies).toBe(true);
+		await sync.duwAlsNodig();
+		expect((verstuurd.at(-1) as { wedstrijd: { tegenstander: string } }).wedstrijd.tegenstander).toBe('Sparta');
+	});
+
+	it('laat het met rust als de server alles al heeft', async () => {
+		nepFetch({ versie: 1, data: { spelers: app.toestand.spelers } });
+		sync.merkVies();
+		await sync.duwAlsNodig(); /* nu weet hij wat er staat */
+		expect(sync.vies).toBe(false);
+
+		await sync.kijkEven();
+		expect(sync.vies).toBe(false);
+	});
+});

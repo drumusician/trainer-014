@@ -391,7 +391,7 @@ class Sync {
 	merkVies() {
 		if (!this.sessie) return;
 		const nu = vingerafdruk(app.syncPakket());
-		if (nu === this.sessie.afdruk) return; /* alleen de lopende wedstrijd veranderde */
+		if (nu === this.sessie.afdruk) return; /* niets veranderd wat de server aangaat */
 		this.vies = true;
 		this.plan();
 	}
@@ -429,6 +429,11 @@ class Sync {
 		} catch {
 			/* geen bereik: dan later */
 		}
+		/* En dan nog kijken of wat hier staat wel gelijk is aan wat de server heeft.
+		   Tot nu toe merkten we dat alleen ná een wijziging, en dat is te laat als
+		   er iets bíj komt in wat we uitwisselen: dan is alles wat er al stond
+		   ineens nieuw, terwijl er niemand iets aanraakt. */
+		this.merkVies();
 	}
 }
 
