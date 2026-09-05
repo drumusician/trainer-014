@@ -17,12 +17,19 @@ export function startMeten(): () => void {
 	if (typeof window === 'undefined' || location.hostname !== DOMEIN) return () => {};
 	if (document.querySelector(`script[src="${SCRIPT}"]`)) return () => {};
 
+	/* Letterlijk de stub van Plausible zelf. Belangrijk: init bewaart de opties in
+	   plausible.o. Het script leest die na het laden, en start zonder die waarde
+	   niet. Een init die niets doet ziet er onschuldig uit en meet niets. */
 	window.plausible =
 		window.plausible ||
 		function (...args: unknown[]) {
 			(window.plausible!.q = window.plausible!.q || []).push(args);
 		};
-	window.plausible.init = window.plausible.init || ((opties?: unknown) => void opties);
+	window.plausible.init =
+		window.plausible.init ||
+		function (opties?: unknown) {
+			window.plausible!.o = opties || {};
+		};
 
 	const script = document.createElement('script');
 	script.async = true;
