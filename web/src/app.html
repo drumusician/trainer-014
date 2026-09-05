@@ -7,7 +7,13 @@
 		<meta name="mobile-web-app-capable" content="yes" />
 		<!-- Oudere iOS kent alleen deze; nieuwere Chrome waarschuwt erover. Allebei dus. -->
 		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<!-- Niet black-translucent. Dat laat de app onder de statusbalk doorlopen,
+	     maar iOS geeft daar geen hoogte voor terug: het venster werd 797 hoog op
+	     een scherm van 844 en begon bovenaan, dus bleef er onderaan een witte
+	     strook van 47 punten over. Met default begint het venster onder de
+	     statusbalk en loopt het door tot de onderrand. De marge bovenin regelt
+	     zichzelf: env(safe-area-inset-top) is dan nul. -->
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 		<meta name="apple-mobile-web-app-title" content="Blaadje" />
 		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
 		<link rel="apple-touch-icon" href="%sveltekit.assets%/icon-192.png" />

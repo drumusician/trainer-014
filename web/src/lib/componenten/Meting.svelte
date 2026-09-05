@@ -29,6 +29,7 @@
 			['visualViewport offsetTop', vv ? Math.round(vv.offsetTop) + ' px' : 'onbekend'],
 			['documentElement clientHeight', document.documentElement.clientHeight + ' px'],
 			['screen.height', screen.height + ' px'],
+			['scherm min venster', screen.height - window.innerHeight + ' px  (moet 0 zijn)'],
 			['pixelverhouding', String(devicePixelRatio)],
 			['balk hoogte', r ? Math.round(r.height) + ' px' : 'geen balk'],
 			['balk onderkant', r ? Math.round(r.bottom) + ' px' : '—'],
