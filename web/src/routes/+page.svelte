@@ -1,5 +1,9 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import OpBeginscherm from '$lib/componenten/OpBeginscherm.svelte';
+	import { meld, startMeten } from '$lib/meten';
+
+	onMount(startMeten);
 </script>
 
 <svelte:head>
@@ -13,7 +17,7 @@
 <div class="landing">
 	<header class="kop">
 		<span class="merk">Blaadje</span>
-		<a class="knop prim" href="/app">Openen</a>
+		<a class="knop prim" href="/app" data-sveltekit-reload onclick={() => meld('App geopend')}>Openen</a>
 	</header>
 
 	<section class="hero">
@@ -23,7 +27,7 @@
 			na afloop weet je precies wie hoe lang heeft gespeeld.
 		</p>
 		<div class="knoprij">
-			<a class="knop prim groot" href="/app">Blaadje openen</a>
+			<a class="knop prim groot" href="/app" data-sveltekit-reload onclick={() => meld('App geopend')}>Blaadje openen</a>
 			<span class="klein">Gratis proberen · geen account nodig · werkt zonder bereik</span>
 		</div>
 	</section>
@@ -154,13 +158,13 @@
 			<a href="mailto:tjaco@blaadje.app">tjaco@blaadje.app</a>. Ik lees alles.
 		</p>
 		<div class="knoprij">
-			<a class="knop prim groot" href="/app">Aan de slag</a>
+			<a class="knop prim groot" href="/app" data-sveltekit-reload onclick={() => meld('App geopend')}>Aan de slag</a>
 		</div>
 	</section>
 
 	<footer>
 		<p>
-			Blaadje · gemaakt in Nederland · <a href="/app">naar de app</a> ·
+			Blaadje · gemaakt in Nederland · <a href="/app" data-sveltekit-reload onclick={() => meld('App geopend')}>naar de app</a> ·
 			<a href="mailto:tjaco@blaadje.app">tjaco@blaadje.app</a>
 		</p>
 	</footer>

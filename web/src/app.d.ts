@@ -8,6 +8,15 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
+
+	interface Window {
+		/** Plausible, alleen geladen op de landingspagina. Zie src/lib/meten.ts. */
+		plausible?: ((naam: string) => void) & {
+			q?: unknown[];
+			init?: (opties?: unknown) => void;
+			o?: unknown;
+		};
+	}
 }
 
 export {};
