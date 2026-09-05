@@ -14,6 +14,9 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; }
+/* 100% is op iOS in een app op je beginscherm niet altijd het hele scherm; dan
+   houdt de balk onderin ruimte over. dvh is wél de echte hoogte. */
+body { height: 100dvh; }
 body {
 	font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
 	color: var(--inkt); background: #fff; font-size: 17px;
@@ -265,7 +268,7 @@ ul.log li em { font-style: normal; color: var(--grijs); font-size: 18px; line-he
 	flex: 0 0 auto;
 	padding-bottom: env(safe-area-inset-bottom);
 }
-html:has(.landing), body:has(.landing) { height: auto; min-height: 100%; }
+html:has(.landing), body:has(.landing) { height: auto; min-height: 100%; min-height: 100dvh; }
 .landing > section,
 .landing > header,
 .landing > footer {
