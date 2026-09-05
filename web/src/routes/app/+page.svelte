@@ -102,8 +102,10 @@
 							Nog niets bijgehouden
 						{/if}
 					</span>
-					{#if mageren.length}
-						<span class="mager">{mageren.length} kwamen weinig</span>
+					{#if mageren.length === 1}
+						<span class="mager">{mageren[0].naam} kwam weinig</span>
+					{:else if mageren.length}
+						<span class="mager">{mageren.length} spelers kwamen weinig</span>
 					{/if}
 				</a>
 
