@@ -18,7 +18,7 @@
 	$effect(() => zetKop('Uitslag', '/app', 'Naar start', null, true));
 
 	function bewaren() {
-		if (app.bewaarInArchief()) goto('/app/archief');
+		if (app.bewaarInArchief()) goto('/app');
 	}
 </script>
 

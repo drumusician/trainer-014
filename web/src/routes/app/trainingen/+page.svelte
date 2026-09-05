@@ -3,11 +3,15 @@
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 	import { datumKort } from '$lib/domein/datum';
+	import { mager, presentie } from '$lib/domein/presentie';
 	import type { Training } from '$lib/domein/types';
 
 	$effect(() => zetKop('Trainingen', '/app/team', 'Terug'));
 
 	const trainingen = $derived(app.toestand.trainingen);
+	const mageren = $derived(
+		app.toestand.spelers.filter((p) => mager(presentie(app.toestand.trainingen, p.id, 4)))
+	);
 
 	function telling(t: Training) {
 		const w = { ja: 0, af: 0, nee: 0 };
@@ -61,5 +65,21 @@
 		<div class="knoprij" style="padding-left: 0; margin-top: 12px">
 			<button class="prim" onclick={nieuw}>Nieuwe training</button>
 		</div>
+
+		{#if mageren.length}
+			<h2>Weinig geweest</h2>
+			<p class="uitleg">Over de laatste vier trainingen. Je ziet het ook terug als je je opstelling maakt.</p>
+			<table class="uitslag">
+				<tbody>
+					{#each mageren as p (p.id)}
+						{@const r = presentie(app.toestand.trainingen, p.id, 4)}
+						<tr>
+							<td>{p.naam}</td>
+							<td class="m mager">{r.er}/{r.totaal}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		{/if}
 	</div>
 </main>

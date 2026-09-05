@@ -7,17 +7,21 @@
 	/* Vijf plekken, gekozen op hoe vaak je er bent: zaterdag de wedstrijd, twee
 	   keer per week de training, af en toe de rest. Wat verder weg ligt staat op
 	   het beginscherm als kaart. */
+	/* Vier plekken, elk een eigen onderwerp. De wedstrijd die nu loopt en de
+	   wedstrijden die je gespeeld hebt horen bij elkaar, dus die staan samen. */
 	const TABS = [
-		{ pad: '/app', naam: 'Start', icoon: 'start' },
-		{ pad: '/app/wedstrijd', naam: 'Wedstrijd', icoon: 'bal' },
+		{ pad: '/app', naam: 'Wedstrijden', icoon: 'bal' },
 		{ pad: '/app/trainingen', naam: 'Training', icoon: 'fluit' },
 		{ pad: '/app/team', naam: 'Team', icoon: 'team' },
-		{ pad: '/app/archief', naam: 'Archief', icoon: 'archief' }
+		{ pad: '/app/meer', naam: 'Meer', icoon: 'meer' }
 	];
+
+	/* Alles wat met een wedstrijd te maken heeft telt mee voor het eerste tabblad. */
+	const BIJ_WEDSTRIJDEN = ['/app/wedstrijd', '/app/archief', '/app/afloop', '/app/aanwezig', '/app/opstelling'];
 
 	function actief(pad: string): boolean {
 		const nu = page.url.pathname.replace(/\/$/, '') || '/app';
-		if (pad === '/app') return nu === '/app';
+		if (pad === '/app') return nu === '/app' || BIJ_WEDSTRIJDEN.some((p) => nu.startsWith(p));
 		return nu === pad || nu.startsWith(pad + '/');
 	}
 </script>

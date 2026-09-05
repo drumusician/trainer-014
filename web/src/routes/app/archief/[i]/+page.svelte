@@ -14,7 +14,7 @@
 	const i = $derived(Number(page.params.i));
 	const a = $derived(app.toestand.archief[i]);
 
-	$effect(() => zetKop(a ? datumKort(a.datum) + ' · ' + a.tegenstander : 'Archief', '/app/archief', 'Terug'));
+	$effect(() => zetKop(a ? datumKort(a.datum) + ' · ' + a.tegenstander : 'Wedstrijd', '/app', 'Terug'));
 
 	/** De naam van nu, ook als iemand na de wedstrijd hernoemd is. */
 	function naamNu(r: { id?: string; naam: string }) {
@@ -48,7 +48,7 @@
 	function verwijder() {
 		if (!confirm('De wedstrijd tegen ' + a.tegenstander + ' van ' + a.datum + ' uit het archief verwijderen?')) return;
 		app.verwijderUitArchief(i);
-		goto('/app/archief');
+		goto('/app');
 	}
 </script>
 
@@ -56,7 +56,7 @@
 	<div class="pad">
 		{#if !a}
 			<p class="uitleg">Deze wedstrijd staat er niet meer.</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app/archief">Terug</a></div>
+			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Terug</a></div>
 		{:else}
 			{@const thuis = a.thuis !== false}
 			{@const ons = a.teamnaam?.trim() || app.toestand.teamnaam}
@@ -159,7 +159,7 @@
 			<Verslag bron={bronVanArchief(a)} />
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
-				<a class="knop prim" href="/app/archief">Terug</a>
+				<a class="knop prim" href="/app">Terug</a>
 				<button class="uit" onclick={verwijder}>Verwijderen</button>
 			</div>
 		{/if}

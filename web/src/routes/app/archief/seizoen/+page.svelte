@@ -3,7 +3,7 @@
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 
-	$effect(() => zetKop('Seizoen', '/app/archief', 'Terug'));
+	$effect(() => zetKop('Seizoen', '/app', 'Terug'));
 
 	const t = $derived(app.toestand);
 	const st = $derived(seizoenStand(t.archief));
