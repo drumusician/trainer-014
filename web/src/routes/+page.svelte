@@ -137,7 +137,7 @@
 		</p>
 		<p>
 			Clubs kunnen het in één keer voor al hun jeugdtrainers regelen. Eén factuur, en de trainers hoeven zelf niets te
-			doen.
+			doen. Mail <a href="mailto:tjaco@blaadje.app">tjaco@blaadje.app</a> en we kijken wat er past.
 		</p>
 	</section>
 
@@ -149,8 +149,8 @@
 			dat verklaart waarom het doet wat het doet en niet meer dan dat.
 		</p>
 		<p>
-			Het is nog volop in ontwikkeling en gratis te gebruiken. Loop je ergens tegenaan of mis je iets, laat het vooral
-			weten.
+			Het is nog volop in ontwikkeling en op dit moment gratis te gebruiken. Loop je ergens tegenaan of mis je iets, mail dan naar
+			<a href="mailto:tjaco@blaadje.app">tjaco@blaadje.app</a>. Ik lees alles.
 		</p>
 		<div class="knoprij">
 			<a class="knop prim groot" href="/app">Aan de slag</a>
@@ -158,6 +158,9 @@
 	</section>
 
 	<footer>
-		<p>Blaadje · gemaakt in Nederland · <a href="/app">naar de app</a></p>
+		<p>
+			Blaadje · gemaakt in Nederland · <a href="/app">naar de app</a> ·
+			<a href="mailto:tjaco@blaadje.app">tjaco@blaadje.app</a>
+		</p>
 	</footer>
 </div>
