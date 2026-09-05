@@ -138,7 +138,7 @@
 		</p>
 		<p>
 			Clubs kunnen het in één keer voor al hun jeugdtrainers regelen. Eén factuur, en de trainers hoeven zelf niets te
-			doen. Mail <a href="mailto:tjaco@blaadje.app">tjaco@blaadje.app</a> en we kijken wat er past.
+			doen. Neem contact op via <a href="mailto:tjaco@blaadje.app">tjaco@blaadje.app</a>.
 		</p>
 	</section>
 
