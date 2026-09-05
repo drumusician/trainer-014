@@ -45,7 +45,7 @@
 {:else}
 	<p>
 		Blaadje is een website, geen download uit de App Store. Zet hem op je beginscherm en hij werkt als een gewone app:
-		geen browserbalk meer, het scherm blijft aan zolang de klok loopt, en je gegevens staan er steviger.
+		geen browserbalk meer, en het scherm blijft aan zolang de klok loopt.
 	</p>
 
 	<div class="keuze sorteer" style="margin: 14px 0">
