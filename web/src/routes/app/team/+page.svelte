@@ -28,7 +28,7 @@
 	<div class="pad">
 		{#if t.spelers.length}
 			<h2>Speeltijd en presentie</h2>
-			<p class="uitleg">Wie hoeveel speelde, hoe vaak hij op de training stond, en wie er scoorden.</p>
+			<p class="uitleg">Gespeelde minuten per speler, hoe vaak ze op de training waren, en wie er scoorden.</p>
 			<div class="knoprij" style="padding-left: 0">
 				<a class="knop prim" href="/app/team/spelers">Spelersoverzicht</a>
 			</div>

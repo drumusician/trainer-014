@@ -29,8 +29,8 @@
 			<h2>Spelers</h2>
 			<p class="uitleg">
 				Alles bij elkaar: gespeelde minuten over {t.archief.length}
-				{t.archief.length === 1 ? 'bewaarde wedstrijd' : 'bewaarde wedstrijden'}, en hoe vaak iemand op de training
-				stond ({t.trainingen.length}
+				{t.archief.length === 1 ? 'bewaarde wedstrijd' : 'bewaarde wedstrijden'}, en hoe vaak ze op de training waren
+				({t.trainingen.length}
 				{t.trainingen.length === 1 ? 'training' : 'trainingen'}).
 			</p>
 			<div class="sorteerrij">

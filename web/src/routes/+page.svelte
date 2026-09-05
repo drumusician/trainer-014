@@ -93,7 +93,8 @@
 			alt="Het spelersoverzicht met speeltijd en presentie per speler"
 		/>
 		<p class="onderschrift">
-			Na een paar weken zie je in één lijst wie hoeveel heeft gespeeld en wie er op de training stonden.
+			Na een paar weken staat het allemaal in één lijst: gespeelde minuten per speler, en hoe vaak ze op de training
+			waren.
 		</p>
 	</section>
 
