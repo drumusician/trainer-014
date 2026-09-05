@@ -155,6 +155,12 @@
 				{#if app.herstelbaar()}
 					<button onclick={() => app.herstelLaatste()}>↶ {app.herstelbaar()} terug</button>
 				{/if}
+				<!-- Alleen zolang de klok stilstaat. Daarna zou dit een mistik zijn tijdens
+				     het coachen, en ligt er toch niets meer te wijzigen. Achteraan, zodat
+				     Doelpunt en Tegen niet verspringen als je op Start drukt. -->
+				{#if !app.gestart}
+					<a class="knop" href="/app/aanwezig">Wie is er?</a>
+				{/if}
 				<button class="uit" onclick={afsluiten}>Wedstrijd afsluiten</button>
 			</div>
 
