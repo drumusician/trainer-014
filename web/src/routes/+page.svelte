@@ -129,7 +129,7 @@
 		<p>
 			Wordt het je vaste gereedschap, dan wil je een account. Je seizoen staat dan veilig als je telefoon kwijtraakt,
 			en je werkt op meer dan één toestel: thuis de opstelling maken, langs de lijn wisselen. Dat kost € 30 per
-			seizoen, zo'n zeventig cent per speelweek, en je betaalt achteraf.
+			seizoen, zo'n zeventig cent per speelweek.
 		</p>
 		<p>
 			Zolang Blaadje in ontwikkeling is hoeft dat nog helemaal niet. Wie er nu bij komt, gebruikt dit seizoen alles
