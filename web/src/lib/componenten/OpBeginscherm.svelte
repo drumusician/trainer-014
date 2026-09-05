@@ -44,8 +44,8 @@
 	<p>Blaadje staat al op je beginscherm. Dat is precies goed.</p>
 {:else}
 	<p>
-		Blaadje staat niet in de App Store, maar je zet hem er wel gewoon op. Dat is het waard: hij opent dan zonder
-		browserbalk, het scherm blijft vanzelf aan zolang de klok loopt, en je gegevens zijn er beter beschermd.
+		Blaadje is een website, geen download uit de App Store. Zet hem op je beginscherm en hij werkt als een gewone app:
+		geen browserbalk meer, het scherm blijft aan zolang de klok loopt, en je gegevens staan er steviger.
 	</p>
 
 	<div class="keuze sorteer" style="margin: 14px 0">
@@ -82,13 +82,11 @@
 			</div>
 		{/if}
 		<ol class="stappen">
-			<li>In Chrome of Edge staat rechts in de adresbalk een installatie-icoon.</li>
+			<li>In Chrome of Edge staat rechts in de adresbalk een icoon om te installeren.</li>
 			<li>Op een Mac in Safari: <b>Archief</b> → <b>Voeg toe aan Dock</b>.</li>
-			<li>Werkt ook prima zonder: op een laptop bereid je vooral voor, en dat gaat net zo goed in een tabblad.</li>
 		</ol>
+		<p class="klein">Hoeft trouwens niet. Op een laptop bereid je vooral voor, en dat gaat in een tabblad net zo goed.</p>
 	{/if}
 
-	<p class="klein">
-		Wat je al hebt ingevuld blijft staan. Je hoeft Blaadje daarna alleen niet meer op te zoeken.
-	</p>
+	<p class="klein">Je begint niet opnieuw: je selectie en je wedstrijden staan er straks gewoon nog.</p>
 {/if}
