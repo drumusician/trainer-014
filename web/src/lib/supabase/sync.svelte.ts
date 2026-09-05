@@ -325,7 +325,12 @@ class Sync {
 
 	async ophalen(stil = false) {
 		if (!this.sessie) return;
-		if (!stil && !confirm('De selectie, standaardopstelling, trainingen en het archief op dit toestel vervangen door wat er op de server staat?'))
+		if (
+			!stil &&
+			!confirm(
+				'De selectie, standaardopstelling, trainingen, het archief en de wedstrijd die klaarstaat op dit toestel vervangen door wat er op de server staat?\n\nEen wedstrijd die hier al loopt blijft staan.'
+			)
+		)
 			return;
 		if (stil && this.vies) return; /* nooit over eigen werk heen */
 		this.bezig = !stil;

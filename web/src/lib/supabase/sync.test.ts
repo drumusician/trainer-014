@@ -53,15 +53,19 @@ describe('vanzelf bijwerken', () => {
 		expect((verstuurd[0] as { spelers: unknown[] }).spelers).toHaveLength(1);
 	});
 
-	it('doet niets als alleen de lopende wedstrijd veranderde', async () => {
-		nepFetch({ versie: 1 });
+	/* Stond hier andersom: de wedstrijd bleef bewust op één toestel. Maar dan kun
+	   je thuis niets klaarzetten, en dat is juist het moment waarop je rustig zit. */
+	it('stuurt ook een wedstrijd op die je klaarzet', async () => {
+		const { verstuurd } = nepFetch({ versie: 1 });
 		sync.merkVies();
 		await sync.duwAlsNodig();
 		expect(sync.vies).toBe(false);
 
-		app.nieuweWedstrijd('Sparta', true); /* raakt het pakket niet */
+		app.nieuweWedstrijd('Sparta', true);
 		sync.merkVies();
-		expect(sync.vies).toBe(false);
+		expect(sync.vies).toBe(true);
+		await sync.duwAlsNodig();
+		expect((verstuurd.at(-1) as { wedstrijd: { tegenstander: string } }).wedstrijd.tegenstander).toBe('Sparta');
 	});
 
 	it('haalt niet stiekem op als er hier nog iets klaarstaat', async () => {

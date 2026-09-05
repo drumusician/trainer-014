@@ -103,7 +103,9 @@
 		{:else}
 			<p class="uitleg">
 				Ingelogd als <b>{sync.sessie.email ?? 'onbekend'}</b>. De app werkt gewoon zonder bereik en stuurt vanzelf op
-				zodra er weer internet is. Een lopende wedstrijd gaat nooit mee; die blijft op dit toestel.
+				zodra er weer internet is. Een wedstrijd die je klaarzet gaat mee, dus je stelt thuis op en pakt hem op het
+				veld op je telefoon op. Een wedstrijd die al loopt wordt wel opgestuurd, maar nooit overschreven door een
+				ander toestel.
 			</p>
 			<p class="uitleg">
 				<b>

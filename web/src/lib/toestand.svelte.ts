@@ -615,12 +615,22 @@ class App {
 	}
 
 	/** Alleen de voorbereiding en de geschiedenis; een lopende wedstrijd blijft lokaal. */
+	/**
+	 * Wat er tussen je toestellen heen en weer gaat.
+	 *
+	 * De wedstrijd gaat mee. Voor de aftrap is dat gewoon voorbereiding: je zet
+	 * thuis de opstelling en de afmeldingen klaar en pakt hem op het veld op je
+	 * telefoon op. Tijdens de wedstrijd is het een reservekopie, want een lege
+	 * accu is nu het enige wat je hele wedstrijd kan kosten. Wat níet gebeurt is
+	 * de andere kant op: een lopende wedstrijd wordt nooit overschreven door wat
+	 * er op de server staat. Zie neemSyncOver.
+	 */
 	syncPakket() {
 		const t = this.toestand;
 		return {
 			teamnaam: t.teamnaam, spelers: t.spelers, formatie: t.formatie, helftMinuten: t.helftMinuten, delen: t.delen,
 			standaard: t.standaard, trainingen: t.trainingen, archief: t.archief,
-			verslagWissels: t.verslagWissels
+			verslagWissels: t.verslagWissels, wedstrijd: t.wedstrijd
 		};
 	}
 
@@ -636,6 +646,10 @@ class App {
 		t.trainingen = Array.isArray(d.trainingen) ? d.trainingen : [];
 		t.archief = Array.isArray(d.archief) ? d.archief : [];
 		t.verslagWissels = !!d.verslagWissels;
+		/* Een wedstrijd die hier loopt blijft staan. Een opstelling die je kwijtraakt
+		   maak je opnieuw; wissels die je kwijtraakt zijn weg, en die stonden nergens
+		   anders. Alleen wat niet begonnen is mag wijken. */
+		if (!(this.gestart && !t.wedstrijd?.afgelopen)) t.wedstrijd = d.wedstrijd ?? null;
 		this.bewaar();
 		return true;
 	}

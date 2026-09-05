@@ -440,3 +440,45 @@ describe('de naam van je team', () => {
 		expect(app.toestand.teamnaam).toBe('Ons team');
 	});
 });
+
+describe('wat er tussen je toestellen heen en weer gaat', () => {
+	/* Dit ontbrak: je zette thuis de opstelling klaar en op je telefoon stond niets. */
+	it('neemt een wedstrijd die klaarstaat mee', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
+		app.zetAfwezig('p1', true);
+
+		const pakket = JSON.parse(JSON.stringify(app.syncPakket()));
+		app.toestand = legeToestand();
+		app.toestand.spelers = [
+			{ id: 'p1', naam: 'Daanish', linie: 'M' },
+			{ id: 'p2', naam: 'Gijs', linie: '', keept: true }
+		];
+		expect(app.neemSyncOver(pakket)).toBe(true);
+		expect(app.wedstrijd?.tegenstander).toBe('Sparta');
+		expect(app.wedstrijd?.opstelling.K).toBe('p2');
+		expect(app.wedstrijd?.afwezig).toContain('p1');
+	});
+
+	/* Een opstelling maak je opnieuw, wissels zijn weg. Dus: nooit overschrijven. */
+	it('laat een wedstrijd die hier loopt met rust', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p2' };
+		app.toestand.wedstrijd!.gebeurtenissen = [{ type: 'start', t: 0 }];
+
+		const vanElders = { ...app.syncPakket(), wedstrijd: null };
+		expect(app.neemSyncOver(JSON.parse(JSON.stringify(vanElders)))).toBe(true);
+		expect(app.wedstrijd?.tegenstander).toBe('Sparta');
+		expect(app.gestart).toBe(true);
+	});
+
+	it('ruimt de wedstrijd wel op als hij afgelopen is', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.gebeurtenissen = [{ type: 'start', t: 0 }];
+		app.toestand.wedstrijd!.afgelopen = true;
+
+		const vanElders = { ...app.syncPakket(), wedstrijd: null };
+		expect(app.neemSyncOver(JSON.parse(JSON.stringify(vanElders)))).toBe(true);
+		expect(app.wedstrijd).toBeNull();
+	});
+});
