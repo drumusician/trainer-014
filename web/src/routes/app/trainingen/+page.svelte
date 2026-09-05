@@ -48,7 +48,9 @@
 						<a href="/app/trainingen/{t.id}">
 							<b>{datumKort(t.datum)}</b>
 							<span>
-								{w.ja} er{w.af ? ', ' + w.af + ' afgemeld' : ''}{w.nee ? ', ' + w.nee + ' niet gekomen' : ''}
+								{w.ja} aanwezig{w.af ? ', ' + w.af + ' afgemeld' : ''}{w.nee
+									? ', ' + w.nee + ' niet gekomen'
+									: ''}
 							</span>
 							<em>›</em>
 						</a>

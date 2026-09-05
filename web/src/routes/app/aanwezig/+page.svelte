@@ -44,7 +44,9 @@
 				Tik weg wie er niet is. Die staat dan niet op de bank, zodat je hem er langs de lijn niet per ongeluk in
 				brengt. Wie al opgesteld stond, laat zijn plek leeg.
 			</p>
-			<p class="telling"><span><b>{er}</b> van de {app.toestand.spelers.length} zijn er</span></p>
+			<p class="telling">
+				<span><b>{er}</b> van de {app.toestand.spelers.length} aanwezig</span>
+			</p>
 
 			{#each app.toestand.spelers as p (p.id)}
 				{@const weg = afwezig.has(p.id)}
