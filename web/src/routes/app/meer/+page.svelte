@@ -6,7 +6,7 @@
 	import { zetKop } from '$lib/kop.svelte';
 	import { opslagstand } from '$lib/opslag.svelte';
 
-	$effect(() => zetKop('Meer'));
+	$effect(() => zetKop('Gegevens'));
 
 	const t = $derived(app.toestand);
 	let inlogcode = $state('');
@@ -173,7 +173,7 @@
 		{/if}
 
 		<p class="uitleg" style="margin-top: 24px; font-size: 11px; opacity: 0.75">
-			Blaadje · alles staat op dit toestel · het scherm blijft wakker zolang de klok loopt
+			Blaadje · het scherm blijft wakker zolang de klok loopt
 		</p>
 	</div>
 </main>

@@ -13,7 +13,7 @@
 		{ pad: '/app', naam: 'Wedstrijden', icoon: 'bal' },
 		{ pad: '/app/trainingen', naam: 'Training', icoon: 'fluit' },
 		{ pad: '/app/team', naam: 'Team', icoon: 'team' },
-		{ pad: '/app/meer', naam: 'Meer', icoon: 'meer' }
+		{ pad: '/app/meer', naam: 'Gegevens', icoon: 'gegevens' }
 	];
 
 	/* Alles wat met een wedstrijd te maken heeft telt mee voor het eerste tabblad. */
@@ -52,9 +52,11 @@
 					<rect x="4" y="4.5" width="16" height="15" rx="2" />
 					<path d="M8 9h8M8 12.5h8M8 16h4" />
 				{:else}
-					<circle cx="6" cy="12" r="1.4" />
-					<circle cx="12" cy="12" r="1.4" />
-					<circle cx="18" cy="12" r="1.4" />
+					<!-- een schijf met een pijl omhoog: bewaren en versturen -->
+					<ellipse cx="12" cy="6.8" rx="6.8" ry="2.6" />
+					<path d="M5.2 6.8v5.4c0 1.4 3 2.6 6.8 2.6" />
+					<path d="M18.8 6.8v4.2" />
+					<path d="M15.6 18.2h5.2M18.2 15.6v5.2" />
 				{/if}
 			</svg>
 			<span>{tab.naam}</span>
