@@ -6,7 +6,7 @@
 	import { mager, presentie } from '$lib/domein/presentie';
 	import type { Training } from '$lib/domein/types';
 
-	$effect(() => zetKop('Trainingen', '/app/team', 'Terug'));
+	$effect(() => zetKop('Trainingen'));
 
 	const trainingen = $derived(app.toestand.trainingen);
 	const mageren = $derived(

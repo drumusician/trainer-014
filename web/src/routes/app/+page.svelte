@@ -4,6 +4,7 @@
 	import { deelNaam, pauzeNaam } from '$lib/domein/delen';
 	import { datumKort } from '$lib/domein/datum';
 	import { seizoenStand } from '$lib/domein/seizoen';
+	import { SPEELVORMEN } from '$lib/domein/formaties';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 
@@ -100,9 +101,41 @@
 					>
 				</div>
 			{:else}
+				<h2>Zo spelen jullie</h2>
+				<div class="tweekolom">
+					<label class="vak">
+						Formatie
+						<select value={t.formatie} onchange={(e) => app.kiesFormatie(e.currentTarget.value)}>
+							{#each SPEELVORMEN as vorm (vorm.naam)}
+								<optgroup label={vorm.naam + (vorm.uitleg ? ' · ' + vorm.uitleg : '')}>
+									{#each vorm.formaties as f (f.sleutel)}
+										<option value={f.sleutel}>{f.sleutel}{f.uitleg ? ' · ' + f.uitleg : ''}</option>
+									{/each}
+								</optgroup>
+							{/each}
+						</select>
+					</label>
+					<label class="vak">
+						Speelwijze
+						<select bind:value={t.delen} onchange={() => app.bewaar()}>
+							<option value={2}>2 helften</option>
+							<option value={4}>4 kwarten</option>
+						</select>
+					</label>
+				</div>
+				<div class="tweekolom">
+					<label class="vak">
+						Minuten per {t.delen === 4 ? 'kwart' : 'helft'}
+						<input type="number" inputmode="numeric" bind:value={t.helftMinuten} onchange={() => app.bewaar()} />
+					</label>
+					<label class="vak">
+						Speelduur
+						<input value={t.helftMinuten * t.delen + ' minuten'} readonly />
+					</label>
+				</div>
 				<div class="knoprij" style="padding-left: 0">
 					<a class="knop" href="/app/opstelling/standaard">
-						{t.standaard ? 'Vaste opstelling' : 'Vaste opstelling maken'}
+						{t.standaard ? 'Vaste opstelling wijzigen' : 'Vaste opstelling maken'}
 					</a>
 				</div>
 			{/if}

@@ -26,19 +26,13 @@
 
 <main>
 	<div class="pad">
-		<h2>Naam van je team</h2>
-		<p class="uitleg">
-			Staat boven de wedstrijd en in het verslag dat je deelt.
-			{#if !ingevuld}<b class="mager">Vul hem in, anders staat er straks "Ons team" in je verslag.</b>{/if}
-		</p>
-		<label class="vak">
-			Teamnaam
-			<input
-				value={t.teamnaam}
-				placeholder="bijv. JO11-2"
-				onchange={(e) => app.zetTeamnaam(e.currentTarget.value)}
-			/>
-		</label>
+		{#if t.spelers.length}
+			<h2>Speeltijd en presentie</h2>
+			<p class="uitleg">Wie hoeveel speelde, hoe vaak hij op de training stond, en wie er scoorden.</p>
+			<div class="knoprij" style="padding-left: 0">
+				<a class="knop prim" href="/app/team/spelers">Spelersoverzicht</a>
+			</div>
+		{/if}
 
 		<h2>Selectie</h2>
 		{#if !t.spelers.length}
@@ -77,7 +71,7 @@
 						if (naam?.trim()) app.namenErbij(naam);
 					}}>Speler toevoegen</button
 				>
-				<a class="knop prim" href="/app/team/spelers">Speeltijd en presentie</a>
+
 			</div>
 
 			<h2>Verdeling in {t.formatie}</h2>
@@ -114,5 +108,18 @@
 		{/if}
 
 
+		<h2>Naam van je team</h2>
+		<p class="uitleg">
+			Staat boven de wedstrijd en in het verslag dat je deelt.
+			{#if !ingevuld}<b class="mager">Vul hem in, anders staat er straks "Ons team" in je verslag.</b>{/if}
+		</p>
+		<label class="vak">
+			Teamnaam
+			<input
+				value={t.teamnaam}
+				placeholder="bijv. JO11-2"
+				onchange={(e) => app.zetTeamnaam(e.currentTarget.value)}
+			/>
+		</label>
 	</div>
 </main>
