@@ -44,9 +44,8 @@
 	<p>Blaadje staat al op je beginscherm. Dat is precies goed.</p>
 {:else}
 	<p>
-		Blaadje is geen app uit de store, maar je zet hem er wel op. Dat is de moeite waard: hij opent dan schermvullend,
-		het scherm blijft vanzelf wakker zolang de klok loopt, en je gegevens zijn beter beschermd tegen een browser die
-		opruimt.
+		Blaadje staat niet in de App Store, maar je zet hem er wel gewoon op. Dat is het waard: hij opent dan zonder
+		browserbalk, het scherm blijft vanzelf aan zolang de klok loopt, en je gegevens zijn er beter beschermd.
 	</p>
 
 	<div class="keuze sorteer" style="margin: 14px 0">
@@ -90,7 +89,6 @@
 	{/if}
 
 	<p class="klein">
-		Je gegevens hangen aan het adres, niet aan het icoon. Zet je hem later opnieuw op je beginscherm, dan staat alles
-		er nog.
+		Wat je al hebt ingevuld blijft gewoon staan. Het is dezelfde Blaadje, alleen sneller te openen.
 	</p>
 {/if}
