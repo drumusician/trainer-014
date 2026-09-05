@@ -233,13 +233,25 @@ ul.log li em { font-style: normal; color: var(--grijs); font-size: 18px; line-he
 }
 .waarschuwing span { flex: 1; }
 
+/* Vast aan de onderkant van het scherm, wat de browser ook van de paginahoogte
+   vindt. De ruimte eronder is de plek van de home-indicator; die hoort leeg te
+   blijven maar krijgt wel de achtergrond van de balk. */
 .tabs {
-	flex: none;
+	position: fixed;
+	bottom: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 100%;
+	max-width: 900px;
+	z-index: 5;
 	display: flex;
 	border-top: 1px solid var(--lijn);
 	background: #fff;
 	padding-bottom: env(safe-area-inset-bottom);
 }
+/* Zo veel houdt de balk bezet; de balk meet dat zelf en zet het op de root.
+   De waarde hieronder is alleen de achtervang voor het eerste renderslagje. */
+.app:not(.zonderbalk) main { padding-bottom: var(--balk, calc(54px + env(safe-area-inset-bottom))); }
 .tabs a {
 	flex: 1; min-width: 0;
 	display: flex; flex-direction: column; align-items: center; gap: 2px;

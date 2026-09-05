@@ -19,6 +19,14 @@
 	/* Alles wat met een wedstrijd te maken heeft telt mee voor het eerste tabblad. */
 	const BIJ_WEDSTRIJDEN = ['/app/wedstrijd', '/app/archief', '/app/afloop', '/app/aanwezig', '/app/opstelling'];
 
+	/* De echte hoogte van de balk doorgeven, inclusief de veilige zone eronder.
+	   Schatten gaat mis op toestellen die ik niet in handen heb. */
+	let hoogte = $state(0);
+	$effect(() => {
+		document.documentElement.style.setProperty('--balk', hoogte + 'px');
+		return () => document.documentElement.style.removeProperty('--balk');
+	});
+
 	function actief(pad: string): boolean {
 		const nu = page.url.pathname.replace(/\/$/, '') || '/app';
 		if (pad === '/app') return nu === '/app' || BIJ_WEDSTRIJDEN.some((p) => nu.startsWith(p));
@@ -26,7 +34,7 @@
 	}
 </script>
 
-<nav class="tabs">
+<nav class="tabs" bind:clientHeight={hoogte}>
 	{#each TABS as tab (tab.pad)}
 		<a href={tab.pad} class:aan={actief(tab.pad)} aria-current={actief(tab.pad) ? 'page' : undefined}>
 			<svg viewBox="0 0 24 24" aria-hidden="true">
