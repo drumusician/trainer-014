@@ -5,7 +5,6 @@
 	import { sync } from '$lib/supabase/sync.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 	import { opslagstand } from '$lib/opslag.svelte';
-	import Meting from '$lib/componenten/Meting.svelte';
 
 	$effect(() => zetKop('Gegevens'));
 
@@ -174,8 +173,6 @@
 				beginscherm en log in, of maak af en toe een back-up.
 			</p>
 		{/if}
-
-		<Meting />
 
 		<p class="uitleg" style="margin-top: 24px; font-size: 11px; opacity: 0.75">
 			Blaadje · het scherm blijft wakker zolang de klok loopt
