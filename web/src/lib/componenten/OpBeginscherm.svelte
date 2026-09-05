@@ -12,8 +12,6 @@
 	let vraag = $state<InstallVraag | null>(null);
 	let gekozen = $state<Toestel | null>(null);
 
-	const tonen = $derived(gekozen ?? toestel);
-
 	onMount(() => {
 		toestel = bepaalToestel(navigator.userAgent, navigator.maxTouchPoints);
 		alGeinstalleerd = staatOpBeginscherm();
@@ -31,11 +29,15 @@
 		vraag = null;
 	}
 
+	/* Alleen de twee toestellen waar je hem langs de lijn op gebruikt. Op een
+	   laptop bereid je voor, en dat gaat in een tabblad net zo goed. */
 	const TABS: { code: Toestel; naam: string }[] = [
 		{ code: 'ios', naam: 'iPhone of iPad' },
-		{ code: 'android', naam: 'Android' },
-		{ code: 'desktop', naam: 'Laptop' }
+		{ code: 'android', naam: 'Android' }
 	];
+	/* Zit iemand op een laptop, dan tonen we de iPhone-uitleg; die zoekt hij hier
+	   toch voor zijn telefoon op. */
+	const tonen = $derived(gekozen ?? (toestel === 'desktop' ? 'ios' : toestel));
 </script>
 
 <h2>Op je beginscherm zetten</h2>
@@ -75,17 +77,6 @@
 			<li>Tik rechtsboven op de drie puntjes.</li>
 			<li>Kies <b>App installeren</b> of <b>Toevoegen aan startscherm</b>.</li>
 		</ol>
-	{:else}
-		{#if vraag}
-			<div class="knoprij" style="padding: 0 0 12px">
-				<button class="prim" onclick={installeren}>Blaadje installeren</button>
-			</div>
-		{/if}
-		<ol class="stappen">
-			<li>In Chrome of Edge staat rechts in de adresbalk een icoon om te installeren.</li>
-			<li>Op een Mac in Safari: <b>Archief</b> → <b>Voeg toe aan Dock</b>.</li>
-		</ol>
-		<p class="klein">Hoeft trouwens niet. Op een laptop bereid je vooral voor, en dat gaat in een tabblad net zo goed.</p>
 	{/if}
 
 	<p class="klein">Je begint niet opnieuw: je selectie en je wedstrijden staan er straks gewoon nog.</p>
