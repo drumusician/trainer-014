@@ -13,6 +13,10 @@
 
 	const i = $derived(Number(page.params.i));
 	const a = $derived(app.toestand.archief[i]);
+	/* Afgeleid, niet in de template aangeroepen: dat rekent bij elke render opnieuw. */
+	const regels = $derived(
+		a ? verloopRegels(a.gebeurtenissen ?? [], app.toestand.spelers, a.namen, a.delen, a.formatie) : []
+	);
 
 	$effect(() => zetKop(a ? datumKort(a.datum) + ' · ' + a.tegenstander : 'Wedstrijd', '/app', 'Terug'));
 
@@ -122,7 +126,7 @@
 					hangt de speeltijd aan.
 				</p>
 				<ul class="log">
-					{#each verloopRegels(a.gebeurtenissen ?? [], app.toestand.spelers, a.namen, a.delen, a.formatie) as r (r.index)}
+					{#each regels as r (r.index)}
 						<li>
 							<b>{mmss(r.t)}</b>
 							<span>{r.tekst}</span>

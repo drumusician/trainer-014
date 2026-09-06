@@ -17,6 +17,10 @@
 		tijden?: Record<string, number> | null;
 		onplek?: (plekId: string) => void;
 	} = $props();
+
+	/* Afgeleid in plaats van in de template aangeroepen: anders rekent hij bij
+	   elke render opnieuw, en tijdens een wedstrijd is dat elke seconde. */
+	const vakken = $derived(plekken(formatie));
 </script>
 
 <div class="veld">
@@ -32,7 +36,7 @@
 		</g>
 	</svg>
 
-	{#each plekken(formatie) as [plekId, label, x, y] (plekId)}
+	{#each vakken as [plekId, label, x, y] (plekId)}
 		{@const p = app.spelerVan(opstelling[plekId])}
 		<!-- Een echte knop, geen div die zich als knop voordoet: spatiebalk, focus en
 		     schermlezer zijn dan meteen goed en het scheelt handwerk. -->

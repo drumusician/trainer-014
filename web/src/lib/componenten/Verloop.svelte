@@ -16,10 +16,12 @@
 		/** om een plek zijn leesbare naam te geven: CVl heet CV, TIEN heet 10 */
 		formatie?: string;
 	} = $props();
+
+	const regels = $derived(verloopRegels(gebeurtenissen, app.toestand.spelers, namen, delen, formatie));
 </script>
 
 <ul class="log">
-	{#each verloopRegels(gebeurtenissen, app.toestand.spelers, namen, delen, formatie) as r (r.index)}
+	{#each regels as r (r.index)}
 		<li><b>{mmss(r.t)}</b><span>{r.tekst}</span></li>
 	{/each}
 </ul>
