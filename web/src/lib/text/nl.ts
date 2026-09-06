@@ -371,6 +371,42 @@ const lineupScreen = {
 		`Er staan er ${filled} op het veld in plaats van ${needed}. Toch doorgaan?`
 } as const;
 
+/** De setup-wizard: drie stappen om te beginnen. */
+const setup = {
+	title: 'Aan de slag',
+	skip: 'Overslaan',
+	step: (n: number) => `Stap ${n} van 3`,
+	next: 'Verder',
+	back: 'Terug',
+
+	nameHeading: 'Hoe heet je team?',
+	nameHint:
+		'Die naam staat boven je wedstrijd en in het verslag dat je na afloop deelt. Iets als JO11-2, MO13-1 of gewoon de naam die iedereen gebruikt.',
+	nameLabel: 'Teamnaam',
+	namePlaceholder: 'bijv. JO11-2',
+
+	squadHeading: 'Wie zitten erin?',
+	squadHint:
+		'Plak of typ de namen, één per regel. Alleen voornamen is genoeg. Ze blijven op dit toestel staan en gaan nergens anders heen.',
+	namesPlaceholder: 'Sem\nNoah\nLuuk',
+	already: (n: number) => `Je hebt er al ${n}.`,
+	adding: (n: number) => `Hier komen er ${n} bij.`,
+	filled: (n: number) => `${n} ${n === 1 ? 'naam' : 'namen'} ingevuld.`,
+	laterIsFine: 'Later spelers toevoegen kan altijd.',
+
+	playHeading: 'Hoe spelen jullie?',
+	playHint:
+		'Dit bepaalt hoeveel plekken er op het veld staan en hoe de klok loopt. Je kunt het later altijd omzetten; je opstelling verhuist dan mee.',
+
+	doneHeading: 'Klaar',
+	summary: (players: number, formation: string, parts: number, minutes: number) =>
+		`${players} ${players === 1 ? 'speler' : 'spelers'}, ${formation} in ${parts === 4 ? 'vier kwarten' : 'twee helften'} van ${minutes} minuten.`,
+	lineupHint:
+		'Wil je nu meteen je vaste opstelling neerzetten? Dan begint elke wedstrijd daarmee en hoef je langs de lijn alleen nog te wisselen.',
+	makeLineup: 'Opstelling maken',
+	later: 'Later'
+} as const;
+
 export const text = {
 	common,
 	attendance,
@@ -384,5 +420,6 @@ export const text = {
 	archivedMatch,
 	season,
 	players,
-	lineupScreen
+	lineupScreen,
+	setup
 } as const;

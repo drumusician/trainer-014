@@ -3,8 +3,9 @@
 	import { FORMATS } from '$lib/domain/formations';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
+	import { text } from '$lib/text/nl';
 
-	$effect(() => zetKop('Aan de slag', '/app', 'Overslaan'));
+	$effect(() => zetKop(text.setup.title, '/app', text.setup.skip));
 
 	const t = $derived(app.toestand);
 
@@ -57,52 +58,42 @@
 
 <main>
 	<div class="pad">
-		<p class="uitleg stappen-teller">Stap {stap} van 3</p>
+		<p class="uitleg stappen-teller">{text.setup.step(stap)}</p>
 
 		{#if stap === 1}
-			<h2>Hoe heet je team?</h2>
-			<p class="uitleg">
-				Die naam staat boven je wedstrijd en in het verslag dat je na afloop deelt. Iets als JO11-2, MO13-1 of gewoon de
-				naam die iedereen gebruikt.
-			</p>
+			<h2>{text.setup.nameHeading}</h2>
+			<p class="uitleg">{text.setup.nameHint}</p>
 			<label class="vak">
-				Teamnaam
-				<input bind:value={name} placeholder="bijv. JO11-2" />
+				{text.setup.nameLabel}
+				<input bind:value={name} placeholder={text.setup.namePlaceholder} />
 			</label>
 			<div class="knoprij" style="padding-left: 0">
-				<button class="prim" onclick={naarTwee}>Verder</button>
+				<button class="prim" onclick={naarTwee}>{text.setup.next}</button>
 			</div>
 		{:else if stap === 2}
-			<h2>Wie zitten erin?</h2>
-			<p class="uitleg">
-				Plak of typ de namen, één per regel. Alleen voornamen is genoeg. Ze blijven op dit toestel staan en gaan nergens
-				anders heen.
-			</p>
-			<textarea bind:value={namenVak} placeholder="Sem&#10;Noah&#10;Luuk"></textarea>
+			<h2>{text.setup.squadHeading}</h2>
+			<p class="uitleg">{text.setup.squadHint}</p>
+			<textarea bind:value={namenVak} placeholder={text.setup.namesPlaceholder}></textarea>
 			<p class="uitleg" style="margin-top: 8px">
 				{#if t.players.length}
-					Je hebt er al {t.players.length}.
-					{#if aantalNamen}Hier komen er {aantalNamen} bij.{/if}
+					{text.setup.already(t.players.length)}
+					{#if aantalNamen}{text.setup.adding(aantalNamen)}{/if}
 				{:else if aantalNamen}
-					{aantalNamen}
-					{aantalNamen === 1 ? 'naam' : 'namen'} ingevuld.
+					{text.setup.filled(aantalNamen)}
 				{:else}
-					Later spelers toevoegen kan altijd.
+					{text.setup.laterIsFine}
 				{/if}
 			</p>
 			<div class="knoprij" style="padding-left: 0">
-				<button class="prim" onclick={naarDrie}>Verder</button>
-				<button onclick={() => (stap = 1)}>Terug</button>
+				<button class="prim" onclick={naarDrie}>{text.setup.next}</button>
+				<button onclick={() => (stap = 1)}>{text.setup.back}</button>
 			</div>
 		{:else}
-			<h2>Hoe spelen jullie?</h2>
-			<p class="uitleg">
-				Dit bepaalt hoeveel plekken er op het veld staan en hoe de klok loopt. Je kunt het later altijd omzetten; je
-				opstelling verhuist dan mee.
-			</p>
+			<h2>{text.setup.playHeading}</h2>
+			<p class="uitleg">{text.setup.playHint}</p>
 			<div class="tweekolom">
 				<label class="vak">
-					Formatie
+					{text.home.formationLabel}
 					<select value={t.formation} onchange={(e) => app.chooseFormation(e.currentTarget.value)}>
 						{#each FORMATS as vorm (vorm.name)}
 							<optgroup label={vorm.name + (vorm.uitleg ? ' · ' + vorm.uitleg : '')}>
@@ -114,32 +105,27 @@
 					</select>
 				</label>
 				<label class="vak">
-					Speelwijze
+					{text.home.partsLabel}
 					<select bind:value={t.parts} onchange={() => app.save()}>
-						<option value={2}>2 helften</option>
-						<option value={4}>4 kwarten</option>
+						<option value={2}>{text.home.halves}</option>
+						<option value={4}>{text.home.quarters}</option>
 					</select>
 				</label>
 			</div>
 			<label class="vak">
-				Minuten per {t.parts === 4 ? 'kwart' : 'helft'}
+				{text.home.minutesLabel(t.parts)}
 				<input type="number" inputmode="numeric" bind:value={t.minutesPerPart} onchange={() => app.save()} />
 			</label>
 
-			<h2>Klaar</h2>
+			<h2>{text.setup.doneHeading}</h2>
 			<p class="uitleg">
-				<b>{t.teamName}</b>, {t.players.length}
-				{t.players.length === 1 ? 'speler' : 'spelers'}, {t.formation} in
-				{t.parts === 4 ? 'vier kwarten' : 'twee helften'} van {t.minutesPerPart} minuten.
+				<b>{t.teamName}</b>, {text.setup.summary(t.players.length, t.formation, t.parts, t.minutesPerPart)}
 			</p>
-			<p class="uitleg">
-				Wil je nu meteen je vaste opstelling neerzetten? Dan begint elke wedstrijd daarmee en hoef je langs de lijn
-				alleen nog te wisselen.
-			</p>
+			<p class="uitleg">{text.setup.lineupHint}</p>
 			<div class="knoprij" style="padding-left: 0">
-				<button class="prim" onclick={() => klaar(true)}>Opstelling maken</button>
-				<button onclick={() => klaar(false)}>Later</button>
-				<button onclick={() => (stap = 2)}>Terug</button>
+				<button class="prim" onclick={() => klaar(true)}>{text.setup.makeLineup}</button>
+				<button onclick={() => klaar(false)}>{text.setup.later}</button>
+				<button onclick={() => (stap = 2)}>{text.setup.back}</button>
 			</div>
 		{/if}
 	</div>
