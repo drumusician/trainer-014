@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { app } from './toestand.svelte';
 import { legeToestand } from './domein/types';
+import { problemen, wisProblemen } from './problemen.svelte';
 import { speeltijden } from './domein/tijd';
 
 beforeEach(() => {
@@ -837,5 +838,41 @@ describe('wat er van de server binnenkomt', () => {
 			formatie: '4-4-2'
 		} as unknown as ReturnType<(typeof app)['syncPakket']>);
 		expect(app.toestand.formatie).toBe('4-4-2');
+	});
+});
+
+describe('als de opslag het begeeft', () => {
+	/* Een volle opslag mag de klok niet stoppen, dus de app gaat door. Maar dan
+	   is alles wat je daarna doet weg zodra je afsluit, en dat mag je niet pas
+	   thuis ontdekken. */
+	it('gaat door met de wedstrijd maar zet de vlag en noteert het', () => {
+		wisProblemen();
+		app.nieuweWedstrijd('Sparta', true);
+		const echt = localStorage.setItem;
+		localStorage.setItem = () => {
+			throw new Error('QuotaExceededError');
+		};
+		expect(() => app.zetTegenstander('SV de Meer')).not.toThrow();
+		localStorage.setItem = echt;
+
+		expect(app.toestand.wedstrijd!.tegenstander).toBe('SV de Meer'); /* de app werkt door */
+		expect(problemen.opslaanHapert).toBe(true);
+		expect(problemen.lijst[0].wat).toContain('Opslaan lukte niet');
+	});
+
+	it('zet de vlag weer uit zodra opslaan wel lukt', () => {
+		problemen.opslaanHapert = true;
+		app.nieuweWedstrijd('Sparta', true);
+		expect(problemen.opslaanHapert).toBe(false);
+	});
+
+	/* Zonder dit lijkt onleesbare opslag op alles kwijt zijn, zonder uitleg. */
+	it('zet onleesbare gegevens apart in plaats van ze te laten vallen', () => {
+		wisProblemen();
+		localStorage.setItem('o14-app-v1', '{"spelers":[ dit is geen json');
+		app.toestand = legeToestand();
+		app.laad();
+		expect(localStorage.getItem('o14-app-v1-onleesbaar')).toContain('geen json');
+		expect(problemen.lijst[0].wat).toContain('niet te lezen');
 	});
 });

@@ -5,6 +5,7 @@
 	import { sync } from '$lib/supabase/sync.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 	import { opslagstand } from '$lib/opslag.svelte';
+	import { problemen, wisProblemen } from '$lib/problemen.svelte';
 
 	$effect(() => zetKop('Gegevens'));
 
@@ -229,6 +230,26 @@
 				<b class="mager">Deze browser mag je gegevens opruimen</b> als hij plaats nodig heeft. Zet de app op je beginscherm
 				en log in, of maak af en toe een back-up.
 			</p>
+		{/if}
+
+		{#if problemen.lijst.length}
+			<h2>Wat er misging</h2>
+			<p class="uitleg">
+				De app gaat door als er iets hapert — een volle opslag mag de klok niet stoppen. Maar dan moet je het achteraf
+				wel kunnen zien. Dit blijft op je toestel.
+			</p>
+			<div class="problemen">
+				{#each problemen.lijst as probleem (probleem.wanneer + probleem.wat)}
+					<div>
+						<b>{new Date(probleem.wanneer).toLocaleString('nl-NL')}</b>
+						<span>{probleem.wat}</span>
+						{#if probleem.melding}<code>{probleem.melding}</code>{/if}
+					</div>
+				{/each}
+			</div>
+			<div class="knoprij" style="padding-left: 0; margin-top: 12px">
+				<button class="klein" onclick={wisProblemen}>Lijst wissen</button>
+			</div>
 		{/if}
 
 		<p class="uitleg" style="margin-top: 24px; font-size: 11px; opacity: 0.75">

@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import { app } from '$lib/toestand.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
+	import { laadProblemen, problemen } from '$lib/problemen.svelte';
 	import { kop } from '$lib/kop.svelte';
 	import { vraagBlijvendeOpslag } from '$lib/opslag.svelte';
 	import Tabs from '$lib/componenten/Tabs.svelte';
@@ -33,6 +34,7 @@
 
 	let { children } = $props();
 
+	laadProblemen();
 	app.laad();
 	sync.laad();
 	/* Lokaal is leidend; de server krijgt het zodra er bereik is. */
@@ -98,6 +100,12 @@
 </svelte:head>
 
 <div class="app" class:zonderbalk={inTaak}>
+	<!-- Zwaarder dan een botsing: hier gaat vanaf nu alles verloren. -->
+	{#if problemen.opslaanHapert}
+		<div class="waarschuwing ernstig">
+			<span>Opslaan lukt niet. Wat je nu doet is weg zodra je de app sluit — maak ruimte op je toestel.</span>
+		</div>
+	{/if}
 	{#if sync.botsing}
 		<div class="waarschuwing">
 			<span>Op de server staat iets nieuwers, van een ander toestel.</span>

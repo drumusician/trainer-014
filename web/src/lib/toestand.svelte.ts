@@ -11,6 +11,7 @@ import type {
 	Wedstrijd
 } from './domein/types';
 import { legeToestand } from './domein/types';
+import { meldProbleem, problemen } from './problemen.svelte';
 import * as archief from './acties/archief';
 import * as gebeurtenissen from './acties/gebeurtenissen';
 import * as klok from './acties/klok';
@@ -74,8 +75,20 @@ class App {
 				this.toestand = migreer({ ...legeToestand(), ...d });
 				this.bewaar(); /* wat de migratie erbij zette, meteen vastleggen */
 			}
-		} catch {
-			/* liever een lege app dan een stukke */
+		} catch (fout) {
+			/*
+			 * Liever een lege app dan een stukke — maar niet stilletjes. Zonder
+			 * melding lijkt dit op alles kwijt zijn, zonder uitleg en zonder weg
+			 * terug. We zetten het onleesbare opzij en noteren het, zodat er iets
+			 * te redden valt in plaats van niets.
+			 */
+			try {
+				const ruw = bak.getItem(SLEUTEL);
+				if (ruw) bak.setItem(SLEUTEL + '-onleesbaar', ruw);
+			} catch {
+				/* dan niet */
+			}
+			meldProbleem('De opgeslagen gegevens waren niet te lezen. Wat erin stond is apart gezet.', fout);
 		}
 	}
 
@@ -84,8 +97,15 @@ class App {
 		if (!bak) return;
 		try {
 			bak.setItem(SLEUTEL, JSON.stringify(this.toestand));
-		} catch {
-			/* stil: vol geheugen mag de wedstrijd niet stoppen */
+			problemen.opslaanHapert = false;
+		} catch (fout) {
+			/*
+			 * Een volle opslag mag de wedstrijd niet stoppen, dus we gaan door. Maar
+			 * stil blijven mag hier niet: vanaf nu is alles wat je doet weg zodra je
+			 * de app sluit. Daarom een vlag die het scherm laat waarschuwen.
+			 */
+			if (!problemen.opslaanHapert) meldProbleem('Opslaan lukte niet. Nieuwe wijzigingen worden niet bewaard.', fout);
+			problemen.opslaanHapert = true;
 		}
 		this.naBewaren?.();
 	}

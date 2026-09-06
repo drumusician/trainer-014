@@ -263,6 +263,15 @@ ul.log li em { font-style: normal; color: var(--grijs); font-size: 18px; line-he
 	color: #7a3a15; font-size: 14px;
 }
 .waarschuwing span { flex: 1; }
+/* Voor het geval dat je niets meer kunt bewaren: dat is geen waarschuwing meer. */
+/* Het logboekje op Gegevens: leesbaar, niet alarmerend. */
+.problemen { border: 1px solid var(--lijn); border-radius: 9px; overflow: hidden; font-size: 13px; }
+.problemen div { padding: 8px 10px; border-top: 1px solid var(--lijn); display: flex; flex-direction: column; gap: 2px; }
+.problemen div:first-child { border-top: 0; }
+.problemen b { color: var(--grijs); font-weight: 600; font-size: 11px; font-variant-numeric: tabular-nums; }
+.problemen code { font-size: 11px; color: var(--grijs); word-break: break-word; }
+
+.waarschuwing.ernstig { background: var(--oranje); border-bottom-color: var(--oranje); color: #fff; font-weight: 600; }
 
 /* Vast aan de onderkant van het scherm, wat de browser ook van de paginahoogte
    vindt. De ruimte eronder is de plek van de home-indicator; die hoort leeg te
