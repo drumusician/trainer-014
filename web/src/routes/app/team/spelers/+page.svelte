@@ -73,8 +73,7 @@
 				</tbody>
 			</table>
 			<p class="uitleg" style="margin-top: 12px">
-				Speeltijd telt alleen wedstrijden die je bewaard hebt. Een wedstrijd waarin iemand niet in het veld kwam telt
-				bij hem niet mee, dus zijn gemiddelde blijft eerlijk.
+				{text.players.footnote}
 			</p>
 		{/if}
 	</div>

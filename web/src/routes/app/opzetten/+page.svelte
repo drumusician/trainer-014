@@ -27,7 +27,7 @@
 
 	function naarTwee() {
 		if (!name.trim()) {
-			alert('Vul de naam van je team in.');
+			alert(text.setup.needName);
 			return;
 		}
 		app.setTeamName(name);
@@ -38,7 +38,7 @@
 		if (aantalNamen) app.addPlayerNames(namenVak);
 		namenVak = '';
 		if (!t.players.length) {
-			alert('Zet er minstens één speler in, anders valt er niets op te stellen.');
+			alert(text.setup.needPlayer);
 			return;
 		}
 		stap = 3;

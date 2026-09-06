@@ -19,11 +19,8 @@
 </script>
 
 <svelte:head>
-	<title>Blaadje — wedstrijdapp voor jeugdtrainers</title>
-	<meta
-		name="description"
-		content="Je opstelling, je wissels en de speeltijd, bijgehouden terwijl je coacht. Werkt zonder bereik en zonder account, gewoon op je telefoon."
-	/>
+	<title>{text.landing.pageTitle}</title>
+	<meta name="description" content={text.landing.pageDescription} />
 </svelte:head>
 
 <div class="landing">

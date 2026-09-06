@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { text } from '$lib/text/nl';
 	import { reportText, type ReportSource } from '$lib/domain/report';
 	import { app } from '$lib/store.svelte';
 
@@ -28,6 +29,6 @@
 	</button>
 </div>
 {#if tekst}
-	<p class="uitleg" style="margin-top: 12px">Gekopieerd. Staat hier ook, voor als plakken niet lukt.</p>
+	<p class="uitleg" style="margin-top: 12px">{text.afterMatch.copied}</p>
 	<textarea readonly style="min-height: 160px">{tekst}</textarea>
 {/if}

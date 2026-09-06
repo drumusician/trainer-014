@@ -46,7 +46,7 @@
 	function doelpuntErbij() {
 		const m = Number(nieuwMinuut);
 		if (!Number.isFinite(m) || m < 0) {
-			alert('Vul een minuut in.');
+			alert(text.archivedMatch.needMinute);
 			return;
 		}
 		app.addGoal(i, m, nieuwTegen ? null : nieuwMaker || null, nieuwTegen);

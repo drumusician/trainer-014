@@ -11,7 +11,7 @@
 	import { text } from '$lib/text/nl';
 
 	$effect(() => {
-		reportIssue('Een scherm liep vast: ' + page.url.pathname, page.error?.message);
+		reportIssue(text.errorPage.logged(page.url.pathname), page.error?.message);
 	});
 </script>
 

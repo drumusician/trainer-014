@@ -28,12 +28,12 @@
 			zetKop(
 				w.home ? ons + ' – ' + w.opponent : w.opponent + ' – ' + ons,
 				'/app',
-				'Naar start',
+				text.common.toStart,
 				uitslag[0] + ' – ' + uitslag[1],
 				true
 			);
 		} else {
-			zetKop('Blaadje', '/app', 'Naar start', null, true);
+			zetKop('Blaadje', '/app', text.common.toStart, null, true);
 		}
 	});
 
@@ -85,7 +85,9 @@
 		<div class="pad">
 			<h2>{text.match.noSquadHeading}</h2>
 			<p class="uitleg">{text.common.noSquadHint}</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app/opzetten">Aan de slag</a></div>
+			<div class="knoprij" style="padding-left: 0">
+				<a class="knop prim" href="/app/opzetten">{text.common.getStarted}</a>
+			</div>
 		</div>
 	</main>
 {:else if !w || !Object.keys(w.lineup).length}
@@ -93,7 +95,7 @@
 		<div class="pad">
 			<h2>{text.match.noMatchHeading}</h2>
 			<p class="uitleg">{text.match.noMatchHint}</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Naar start</a></div>
+			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">{text.common.toStart}</a></div>
 		</div>
 	</main>
 {:else if w.finished}

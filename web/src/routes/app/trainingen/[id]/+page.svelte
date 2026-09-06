@@ -30,7 +30,7 @@
 
 	function verwijder() {
 		if (!t) return;
-		if (!confirm('De training van ' + shortDate(t.date) + ' verwijderen?')) return;
+		if (!confirm(text.trainings.confirmRemove(shortDate(t.date)))) return;
 		app.removeTraining(t);
 		goto('/app/trainingen');
 	}

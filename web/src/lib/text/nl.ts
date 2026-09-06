@@ -33,7 +33,9 @@ const common = {
 	change: 'Wijzigen',
 	noSquadYet: 'Nog geen spelers',
 	noSquadHint: 'Zet eerst je selectie erin, dan valt er wat op te stellen.',
-	toSquad: 'Naar Team'
+	toSquad: 'Naar Team',
+	toStart: 'Naar start',
+	getStarted: 'Aan de slag'
 } as const;
 
 /** Wie is er vandaag — tevens het opzetscherm van een wedstrijd. */
@@ -86,6 +88,7 @@ const afterMatch = {
 	notePlaceholder: 'Sterk begin, na rust weggezakt. Achterin stond het goed.',
 	shareHeading: 'Delen',
 	shareHint: 'Voor de groepsapp. De wissels laat ik er standaard uit.',
+	copied: 'Gekopieerd. Staat hier ook, voor als plakken niet lukt.',
 	archived: 'Bewaard in archief',
 	archive: 'Bewaren in archief',
 	newMatch: 'Nieuwe wedstrijd'
@@ -116,7 +119,8 @@ const trainings = {
 	cycleHint: 'Tik op de knop achter een naam om hem langs aanwezig, afgemeld en niet gekomen te zetten.',
 	/* De drie standen op de knop zelf. */
 	statusWord: { present: 'Aanwezig', excused: 'Afgemeld', absent: 'Niet gekomen' },
-	remove: 'Verwijderen'
+	remove: 'Verwijderen',
+	confirmRemove: (date: string) => `De training van ${date} verwijderen?`
 } as const;
 
 /** Team: de selectie, de verdeling over de linies, en de teamnaam. */
@@ -218,7 +222,8 @@ const errorPage = {
 	hint: 'Dit scherm kwam er niet uit. Je gegevens staan gewoon nog op dit toestel — er is niets kwijt.',
 	toMatches: 'Terug naar de wedstrijden',
 	toData: 'Gegevens en back-up',
-	forReporting: 'Voor als je het doorgeeft:'
+	forReporting: 'Voor als je het doorgeeft:',
+	logged: (path: string) => `Een scherm liep vast: ${path}`
 } as const;
 
 /** Het beginscherm: wat er nu speelt, hoe jullie spelen, en wat je gespeeld hebt. */
@@ -301,6 +306,7 @@ const archivedMatch = {
 	scorerLabel: 'Wie scoorde',
 	scorerUnknown: 'Weet ik niet',
 	add: 'Toevoegen',
+	needMinute: 'Vul een minuut in.',
 	noteHeading: 'Hoe ging het',
 	notePlaceholder: 'Nog niets opgeschreven.',
 	shareHeading: 'Delen',
@@ -320,7 +326,9 @@ const season = {
 	goals: (forGoals: number, against: number, minutes: number) =>
 		`${forGoals} voor, ${against} tegen · ${minutes} minuten voetbal`,
 	scorersHeading: 'Topscorers',
-	scorersHint: 'Alleen doelpunten waarvan je de maker aantikte. De rest telt gewoon mee in de uitslag.'
+	scorersHint: 'Alleen doelpunten waarvan je de maker aantikte. De rest telt gewoon mee in de uitslag.',
+	toPlayers: 'Speeltijd en presentie per speler',
+	noMatchesYet: 'Nog geen bewaarde wedstrijden.'
 } as const;
 
 /** Het spelersoverzicht: alles wat je van iedereen weet, op een rij. */
@@ -343,7 +351,9 @@ const players = {
 	assists: (n: number) => `${n} ${n === 1 ? 'assist' : 'assists'}`,
 	minutes: (n: number) => `${n} min`,
 	noSessions: 'geen training',
-	attendance: (pct: number, came: number, total: number) => `${pct}% · ${came}/${total}`
+	attendance: (pct: number, came: number, total: number) => `${pct}% · ${came}/${total}`,
+	footnote:
+		'Speeltijd telt alleen wedstrijden die je bewaard hebt. Een wedstrijd waarin iemand niet in het veld kwam telt bij hem niet mee, dus zijn gemiddelde blijft eerlijk.'
 } as const;
 
 /** Het opstelscherm: het veld met de bank ernaast, voor de wedstrijd of de standaard. */
@@ -408,6 +418,8 @@ const setup = {
 		`${players} ${players === 1 ? 'speler' : 'spelers'}, ${formation} in ${parts === 4 ? 'vier kwarten' : 'twee helften'} van ${minutes} minuten.`,
 	lineupHint:
 		'Wil je nu meteen je vaste opstelling neerzetten? Dan begint elke wedstrijd daarmee en hoef je langs de lijn alleen nog te wisselen.',
+	needName: 'Vul de naam van je team in.',
+	needPlayer: 'Zet er minstens één speler in, anders valt er niets op te stellen.',
 	makeLineup: 'Opstelling maken',
 	later: 'Later'
 } as const;
@@ -531,6 +543,12 @@ const install = {
  * link middenin zit; dat zijn de enige stukjes die opgeknipt zijn.
  */
 const landing = {
+	/* Ook in app.html, want een link die je in een groepsapp plakt moet meteen een
+	   titel hebben. Twee plekken, dus bij een wijziging allebei aanpassen. */
+	pageTitle: 'Blaadje — wedstrijdapp voor jeugdtrainers',
+	pageDescription:
+		'Je opstelling, je wissels en de speeltijd, bijgehouden terwijl je coacht. Werkt zonder bereik en zonder account, gewoon op je telefoon.',
+
 	openShort: 'Openen',
 	openLong: 'Blaadje openen',
 	getStarted: 'Aan de slag',

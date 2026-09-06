@@ -51,10 +51,10 @@
 			{/if}
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
-				<a class="knop prim" href="/app/team/spelers">Speeltijd en presentie per speler</a>
+				<a class="knop prim" href="/app/team/spelers">{text.season.toPlayers}</a>
 			</div>
 		{:else}
-			<p class="uitleg">Nog geen bewaarde wedstrijden.</p>
+			<p class="uitleg">{text.season.noMatchesYet}</p>
 		{/if}
 	</div>
 </main>
