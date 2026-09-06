@@ -188,6 +188,21 @@
 							Hij keepte deze wedstrijd al {keeperMin} minuten.
 						{/if}
 					</span>
+					<!-- Langs de lijn gaat je hand eerst naar de speler en pas dan naar wat hij
+					     deed. Wie zo begint zit nu in een wissel; hiermee is dat één tik terug,
+					     en werkt de volgorde allebei de kanten op. -->
+					{#if uit}
+						<button
+							class="klein"
+							onclick={() => {
+								const id = uit.id;
+								app.gekozenPlek = null;
+								app.doelpunt(id);
+								maker = id;
+								assistVragen = true;
+							}}>{uit.naam} scoorde</button
+						>
+					{/if}
 					<button class="klein" onclick={() => (app.gekozenPlek = null)}>Annuleren</button>
 				</div>
 			{/if}
