@@ -7,12 +7,17 @@
 	import { thinAttendance, attendanceOf } from '$lib/domain/attendance';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
+	import { text } from '$lib/text/nl';
 
 	const bron = $derived(page.params.bron === 'standaard' ? 'standaard' : 'wedstrijd');
 	const doel = $derived(bron === 'standaard' ? app.toestand.defaultLineup : app.match);
 
 	$effect(() => {
-		zetKop(bron === 'standaard' ? 'Standaardopstelling' : 'Opstelling', '/app', 'Terug');
+		zetKop(
+			bron === 'standaard' ? text.lineupScreen.titleDefault : text.lineupScreen.titleMatch,
+			'/app',
+			text.common.back
+		);
 	});
 
 	/* Arriving here directly has to work too, for instance from a card on the
@@ -71,14 +76,13 @@
 			goto('/app');
 			return;
 		}
-		if (bezet < nodig && !confirm('Er staan er ' + bezet + ' op het veld in plaats van ' + nodig + '. Toch doorgaan?'))
-			return;
+		if (bezet < nodig && !confirm(text.lineupScreen.confirmIncomplete(bezet, nodig))) return;
 		app.chosenPosition = null;
 		goto('/app/wedstrijd');
 	}
 
 	function wissen() {
-		if (!confirm('De standaardopstelling weggooien?')) return;
+		if (!confirm(text.lineupScreen.confirmClear)) return;
 		app.clearDefaultLineup();
 		goto('/app');
 	}
@@ -88,15 +92,11 @@
 	<main>
 		<div class="pad">
 			<p class="uitleg">
-				{#if !app.toestand.players.length}
-					Zet eerst je selectie erin, dan valt er wat op te stellen.
-				{:else}
-					Er is geen wedstrijd om op te stellen. Begin er een op het startscherm.
-				{/if}
+				{app.toestand.players.length ? text.lineupScreen.noMatch : text.common.noSquadHint}
 			</p>
 			<div class="knoprij" style="padding-left: 0">
 				<a class="knop prim" href={app.toestand.players.length ? '/app' : '/app/opzetten'}>
-					{app.toestand.players.length ? 'Naar start' : 'Aan de slag'}
+					{app.toestand.players.length ? text.lineupScreen.toStart : text.lineupScreen.getStarted}
 				</a>
 			</div>
 		</div>
@@ -110,7 +110,7 @@
 					bench={doel.bench}
 					formation={doel.formation}
 					gekozen={app.chosenPosition}
-					leegtekst="Niemand over."
+					leegtekst={text.lineupScreen.benchEmpty}
 					ontik={(id) => app.putOnPositionWhileSettingUp(bron, id)}
 				/>
 			</div>
@@ -119,31 +119,35 @@
 				<div class="melding">
 					<span>
 						{#if gekozenSpeler}
-							<b>{gekozenSpeler.name}</b> · {LINES[positionLine(app.chosenPosition, doel.formation)].toLowerCase()}. Tik
-							een andere plek om te ruilen, of iemand van de bank.
+							<b>{gekozenSpeler.name}</b> ·
+							{text.lineupScreen.chosenPlayer(LINES[positionLine(app.chosenPosition, doel.formation)].toLowerCase())}
 						{:else}
-							<b>Lege plek</b> · {LINES[positionLine(app.chosenPosition, doel.formation)].toLowerCase()}. Tik wie hier
-							komt te staan.
+							<b>{text.lineupScreen.emptyPosition}</b> ·
+							{text.lineupScreen.chosenEmpty(LINES[positionLine(app.chosenPosition, doel.formation)].toLowerCase())}
 						{/if}
 					</span>
 					{#if gekozenSpeler}
-						<button class="klein" onclick={() => app.takeOffPitch(bron, app.chosenPosition!)}>Naar de bank</button>
+						<button class="klein" onclick={() => app.takeOffPitch(bron, app.chosenPosition!)}
+							>{text.lineupScreen.toBench}</button
+						>
 					{/if}
-					<button class="klein" onclick={() => (app.chosenPosition = null)}>Annuleren</button>
+					<button class="klein" onclick={() => (app.chosenPosition = null)}>{text.common.cancel}</button>
 				</div>
 			{/if}
 
 			{#if !app.chosenPosition && zonderWissel.length}
 				<p class="uitleg" style="padding: 0 12px; margin: 0 0 8px">
-					<b class="mager">Geen wissel voor {zonderWissel.join(', ')}.</b>
+					<b class="mager">{text.lineupScreen.noSubstitute(zonderWissel.join(', '))}</b>
 				</p>
 			{/if}
 			{#if !app.chosenPosition && mageren.length}
 				<p class="uitleg" style="padding: 0 12px">
-					Weinig getraind:
+					{text.lineupScreen.thinLead}
 					{#each mageren as p, i (p.id)}
 						{@const r = attendanceOf(app.toestand.trainings, p.id, 4)}
-						<b class="mager">{p.name} {r.er}/{r.totaal}</b>{i < mageren.length - 1 ? ', ' : ''}
+						<b class="mager">{text.lineupScreen.thinPlayer(p.name, r.er, r.totaal)}</b>{i < mageren.length - 1
+							? ', '
+							: ''}
 					{/each}
 				</p>
 			{/if}
@@ -151,7 +155,7 @@
 			<div class="knoprij">
 				{#if bron === 'standaard'}
 					<label class="formatiekeuze">
-						Formatie
+						{text.lineupScreen.formationLabel}
 						<select value={doel.formation} onchange={(e) => app.chooseFormation(e.currentTarget.value)}>
 							{#each FORMATS as vorm (vorm.name)}
 								<optgroup label={vorm.name + (vorm.uitleg ? ' · ' + vorm.uitleg : '')}>
@@ -164,15 +168,15 @@
 					</label>
 				{/if}
 				<button class="prim" onclick={klaar}>
-					{bron === 'standaard' ? 'Bewaren' : 'Klaar — naar de wedstrijd'}
+					{bron === 'standaard' ? text.lineupScreen.saveDefault : text.lineupScreen.doneToMatch}
 				</button>
 				{#if bron === 'wedstrijd'}
-					<a class="knop" href="/app/aanwezig">Wie is er?</a>
+					<a class="knop" href="/app/aanwezig">{text.lineupScreen.whoIsThere}</a>
 				{/if}
 				{#if bron === 'standaard'}
-					<button class="uit" onclick={wissen}>Wissen</button>
+					<button class="uit" onclick={wissen}>{text.lineupScreen.clear}</button>
 				{/if}
-				<span class="uitleg" style="align-self: center; margin: 0">{bezet} van de {nodig} ingevuld</span>
+				<span class="uitleg" style="align-self: center; margin: 0">{text.lineupScreen.filled(bezet, nodig)}</span>
 			</div>
 		</div>
 	</main>

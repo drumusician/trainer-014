@@ -341,6 +341,36 @@ const players = {
 	attendance: (pct: number, came: number, total: number) => `${pct}% · ${came}/${total}`
 } as const;
 
+/** Het opstelscherm: het veld met de bank ernaast, voor de wedstrijd of de standaard. */
+const lineupScreen = {
+	titleDefault: 'Standaardopstelling',
+	titleMatch: 'Opstelling',
+	noMatch: 'Er is geen wedstrijd om op te stellen. Begin er een op het startscherm.',
+	toStart: 'Naar start',
+	getStarted: 'Aan de slag',
+	benchEmpty: 'Niemand over.',
+
+	/* De oranje balk zegt wat de volgende tik doet. */
+	chosenPlayer: (line: string) => `${line}. Tik een andere plek om te ruilen, of iemand van de bank.`,
+	emptyPosition: 'Lege plek',
+	chosenEmpty: (line: string) => `${line}. Tik wie hier komt te staan.`,
+	toBench: 'Naar de bank',
+
+	noSubstitute: (lines: string) => `Geen wissel voor ${lines}.`,
+	thinLead: 'Weinig getraind:',
+	thinPlayer: (name: string, came: number, total: number) => `${name} ${came}/${total}`,
+
+	formationLabel: 'Formatie',
+	saveDefault: 'Bewaren',
+	doneToMatch: 'Klaar — naar de wedstrijd',
+	whoIsThere: 'Wie is er?',
+	clear: 'Wissen',
+	confirmClear: 'De standaardopstelling weggooien?',
+	filled: (filled: number, needed: number) => `${filled} van de ${needed} ingevuld`,
+	confirmIncomplete: (filled: number, needed: number) =>
+		`Er staan er ${filled} op het veld in plaats van ${needed}. Toch doorgaan?`
+} as const;
+
 export const text = {
 	common,
 	attendance,
@@ -353,5 +383,6 @@ export const text = {
 	home,
 	archivedMatch,
 	season,
-	players
+	players,
+	lineupScreen
 } as const;
