@@ -416,6 +416,8 @@ class App {
 			delen: w.delen, notitie: w.notitie, teamnaam: t.teamnaam,
 			gebeurtenissen: w.gebeurtenissen, namen,
 			afwezig: [...(w.afwezig ?? [])],
+			opstelling: { ...w.opstelling },
+			bank: [...w.bank],
 			speeltijd: t.spelers
 				.filter((p) => tijden[p.id] !== undefined)
 				.map((p) => ({

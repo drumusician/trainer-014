@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { app } from './toestand.svelte';
 import { legeToestand } from './domein/types';
+import { speeltijden } from './domein/tijd';
 
 beforeEach(() => {
 	localStorage.clear();
@@ -533,5 +534,45 @@ describe('de aftrap vastleggen', () => {
 		app.laad();
 		expect(app.gestart).toBe(true);
 		expect(app.toestand.wedstrijd!.gebeurtenissen[0].type).toBe('start');
+	});
+});
+
+describe('een bewaarde wedstrijd op eigen benen', () => {
+	/* Het archief bewaarde de gebeurtenissen wel maar de eindopstelling niet, en
+	   de speeltijd wordt juist teruggerekend vanaf die opstelling. Daarmee was een
+	   bewaarde wedstrijd niet opnieuw uit te rekenen en dus nooit te repareren.
+	   Deze test bewijst dat dat nu wel kan. */
+	it('is uit zijn eigen gegevens opnieuw uit te rekenen', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		const w = app.toestand.wedstrijd!;
+		w.opstelling = { K: 'p2', SP: 'p1' };
+		app.herzetBank();
+		app.loopToggle();
+		w.verstreken = 600;
+		app.gekozenPlek = 'SP';
+		app.zetOpPlek('p2'); /* wissel onderweg */
+		w.verstreken = 1200;
+		app.beeindig();
+		app.bewaarInArchief();
+
+		const a = app.toestand.archief[0];
+		expect(a.opstelling).toBeDefined();
+
+		const herbouwd = {
+			...a,
+			opstelling: a.opstelling!,
+			bank: a.bank ?? [],
+			verstreken: a.duur,
+			sinds: null,
+			loopt: false,
+			deel: 2,
+			pauze: false,
+			afgelopen: true
+		} as unknown as Parameters<typeof speeltijden>[0];
+
+		const opnieuw = speeltijden(herbouwd, app.toestand.spelers);
+		for (const regel of a.speeltijd) {
+			expect(Math.round(opnieuw[regel.id])).toBe(regel.seconden);
+		}
 	});
 });

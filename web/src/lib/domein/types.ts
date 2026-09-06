@@ -99,6 +99,17 @@ export interface ArchiefWedstrijd {
 	    houden: was hij er niet, of stond hij de hele wedstrijd op de bank? */
 	afwezig?: string[];
 	speeltijd: SpeeltijdRegel[];
+	/**
+	 * De opstelling zoals hij aan het eind stond, plus wie er toen op de bank zat.
+	 *
+	 * Staat hier niet omdat een scherm het nodig heeft, maar omdat de speeltijd
+	 * wordt teruggerekend vanaf de eindopstelling. Zonder dit is een bewaarde
+	 * wedstrijd niet opnieuw uit te rekenen en dus nooit meer te repareren, ook
+	 * niet als we dat later zouden willen. Bewaren kost een regel; niet bewaren
+	 * is onomkeerbaar.
+	 */
+	opstelling?: Opstelling;
+	bank?: string[];
 }
 
 export type Aanwezigheid = 'ja' | 'af' | 'nee';
