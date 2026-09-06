@@ -2,10 +2,10 @@ import { groupOf, linesIn, LINES, positionsOf } from './formations';
 import type { Line, Player } from './types';
 
 export interface LineCoverage {
-	linie: Line;
-	naam: string;
+	line: Line;
+	name: string;
 	/** hoeveel spelers je voor deze linie hebt gemarkeerd */
-	spelers: number;
+	players: number;
 	/** hoeveel plekken de formatie er heeft */
 	positionsOf: number;
 }
@@ -16,23 +16,23 @@ export interface LineCoverage {
  *
  * Keepers tellen apart: keepen is een kunnen, geen plek in het veld.
  */
-export function bezetting(spelers: Player[], formatie: string): LineCoverage[] {
+export function bezetting(players: Player[], formation: string): LineCoverage[] {
 	const plekkenPerLinie: Record<string, number> = {};
-	positionsOf(formatie).forEach((p) => {
+	positionsOf(formation).forEach((p) => {
 		plekkenPerLinie[p[4]] = (plekkenPerLinie[p[4]] ?? 0) + 1;
 	});
 
-	return linesIn(formatie).map((linie) => ({
-		linie,
-		naam: LINES[linie],
-		spelers: linie === 'K' ? spelers.filter((p) => p.keept).length : spelers.filter((p) => groupOf(p) === linie).length,
-		positionsOf: plekkenPerLinie[linie] ?? 0
+	return linesIn(formation).map((line) => ({
+		line,
+		name: LINES[line],
+		players: line === 'K' ? players.filter((p) => p.keeper).length : players.filter((p) => groupOf(p) === line).length,
+		positionsOf: plekkenPerLinie[line] ?? 0
 	}));
 }
 
 /** Te weinig voor deze linie: dan krijg je hem niet eens vol. */
 export function tekort(b: LineCoverage): boolean {
-	return b.spelers < b.positionsOf;
+	return b.players < b.positionsOf;
 }
 
 /**
@@ -44,11 +44,11 @@ export function tekort(b: LineCoverage): boolean {
  * kun je rouleren en sta je niet stil als er eentje ziek is.
  */
 export function gedrang(b: LineCoverage): boolean {
-	return b.linie !== 'K' && b.positionsOf > 0 && b.spelers > b.positionsOf * 2;
+	return b.line !== 'K' && b.positionsOf > 0 && b.players > b.positionsOf * 2;
 }
 
 /** Eén keeper is genoeg tot hij er een keer niet is. */
 export function dunneKeepersbezetting(rijen: LineCoverage[]): boolean {
-	const k = rijen.find((b) => b.linie === 'K');
-	return !!k && k.spelers === 1;
+	const k = rijen.find((b) => b.line === 'K');
+	return !!k && k.players === 1;
 }

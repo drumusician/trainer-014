@@ -5,103 +5,106 @@ import { partName, breakName } from './parts';
 
 /** Alles wat je nodig hebt om een wedstrijd terug te lezen, live of uit het archief. */
 export interface ReportSource {
-	datum: string;
-	tegenstander: string;
-	thuis: boolean;
-	stand: [number, number];
-	formatie: string;
-	duur: number;
-	gebeurtenissen: MatchEvent[];
-	namen?: Record<string, string>;
-	delen?: 2 | 4;
-	notitie?: string;
-	teamnaam?: string;
+	date: string;
+	opponent: string;
+	home: boolean;
+	score: [number, number];
+	formation: string;
+	duration: number;
+	events: MatchEvent[];
+	names?: Record<string, string>;
+	parts?: 2 | 4;
+	note?: string;
+	teamName?: string;
 }
 
-export function bronVanWedstrijd(w: Match, teamnaam: string): ReportSource {
+export function bronVanWedstrijd(w: Match, teamName: string): ReportSource {
 	return {
-		datum: w.datum,
-		tegenstander: w.tegenstander,
-		thuis: w.thuis,
-		stand: score(w),
-		formatie: w.formatie,
-		duur: endTime(w),
-		gebeurtenissen: w.gebeurtenissen,
-		delen: w.delen,
-		notitie: w.notitie,
-		teamnaam
+		date: w.date,
+		opponent: w.opponent,
+		home: w.home,
+		score: score(w),
+		formation: w.formation,
+		duration: endTime(w),
+		events: w.events,
+		parts: w.parts,
+		note: w.note,
+		teamName
 	};
 }
 
 export function bronVanArchief(a: ArchivedMatch): ReportSource {
 	return {
-		datum: a.datum,
-		tegenstander: a.tegenstander,
-		thuis: a.thuis !== false,
-		stand: a.stand ?? [0, 0],
-		formatie: a.formatie,
-		duur: a.duur ?? 0,
-		gebeurtenissen: a.gebeurtenissen ?? [],
-		namen: a.namen,
-		delen: a.delen,
-		notitie: a.notitie,
-		teamnaam: a.teamnaam
+		date: a.date,
+		opponent: a.opponent,
+		home: a.home !== false,
+		score: a.score ?? [0, 0],
+		formation: a.formation,
+		duration: a.duration ?? 0,
+		events: a.events ?? [],
+		names: a.names,
+		parts: a.parts,
+		note: a.note,
+		teamName: a.teamName
 	};
 }
 
 /** De naam van nu; valt terug op de naam zoals hij bij het bewaren was. */
-export function nameOf(id: string | null | undefined, spelers: Player[], namen?: Record<string, string>): string {
+export function nameOf(id: string | null | undefined, players: Player[], names?: Record<string, string>): string {
 	if (!id) return 'onbekend';
-	return spelers.find((p) => p.id === id)?.naam ?? namen?.[id] ?? 'onbekend';
+	return players.find((p) => p.id === id)?.name ?? names?.[id] ?? 'onbekend';
 }
 
 export function eventText(
 	g: MatchEvent,
-	spelers: Player[],
-	namen?: Record<string, string>,
-	delen: 2 | 4 = 2,
-	formatie?: string
+	players: Player[],
+	names?: Record<string, string>,
+	parts: 2 | 4 = 2,
+	formation?: string
 ): string {
-	const naam = (id?: string | null) => nameOf(id, spelers, namen);
+	const name = (id?: string | null) => nameOf(id, players, names);
 	/* Zonder formatie weten we de leesbare naam niet; dan maar de plek zelf. */
-	const plek = (id?: string | null) => (id ? (formatie ? positionLabel(id, formatie) : id) : '');
+	const position = (id?: string | null) => (id ? (formation ? positionLabel(id, formation) : id) : '');
 	switch (g.type) {
 		case 'start':
 			return 'Aftrap';
-		case 'rust':
-			return g.deel ? breakName(g.deel, delen) + ' — ' + partName(g.deel, delen) + ' voorbij' : 'Rust';
-		case 'eind':
+		case 'break':
+			return g.part ? breakName(g.part, parts) + ' — ' + partName(g.part, parts) + ' voorbij' : 'Rust';
+		case 'end':
 			return 'Einde';
-		case 'tegen':
+		case 'conceded':
 			return 'Tegendoelpunt';
 		case 'goal':
 			return (
-				'Doelpunt' + (g.speler ? ' — ' + naam(g.speler) : '') + (g.assist ? ' (assist ' + naam(g.assist) + ')' : '')
+				'Doelpunt' + (g.player ? ' — ' + name(g.player) : '') + (g.assist ? ' (assist ' + name(g.assist) + ')' : '')
 			);
-		case 'wissel':
-			return naam(g.erin) + ' voor ' + naam(g.eruit) + (g.plek ? ' op ' + plek(g.plek) : '');
-		case 'ruil':
+		case 'substitution':
+			return name(g.on) + ' voor ' + name(g.off) + (g.position ? ' op ' + position(g.position) : '');
+		case 'swap':
 			/* Waar ze naartoe gingen zegt meer dan dat ze wisselden. Oudere
 			   wedstrijden legden alleen de plekken vast, niet wie er stonden. */
-			if (g.spelerA && g.spelerB && g.plekA && g.plekB) {
-				return naam(g.spelerA) + ' naar ' + plek(g.plekB) + ', ' + naam(g.spelerB) + ' naar ' + plek(g.plekA);
+			if (g.playerA && g.playerB && g.positionA && g.positionB) {
+				return (
+					name(g.playerA) + ' naar ' + position(g.positionB) + ', ' + name(g.playerB) + ' naar ' + position(g.positionA)
+				);
 			}
-			if (g.plekA && g.plekB) return 'Van plek gewisseld: ' + plek(g.plekA) + ' en ' + plek(g.plekB);
+			if (g.positionA && g.positionB)
+				return 'Van plek gewisseld: ' + position(g.positionA) + ' en ' + position(g.positionB);
 			return 'Van plek gewisseld';
 		default:
 			return g.type;
 	}
 }
 
-export function dateText(datum: string): string {
+export function dateText(date: string): string {
 	try {
-		return new Date(datum + 'T12:00:00').toLocaleDateString('nl-NL', {
+		return new Date(date + 'T12:00:00').toLocaleDateString('nl-NL', {
 			weekday: 'long',
 			day: 'numeric',
 			month: 'long'
 		});
 	} catch {
-		return datum;
+		return date;
 	}
 }
 
@@ -109,44 +112,42 @@ export function dateText(datum: string): string {
  * Het verslag voor de groepsapp. Wissels blijven er standaard uit: de uitslag
  * is voor iedereen, de opstelling is van de trainer.
  */
-export function reportText(bron: ReportSource, spelers: Player[], metWissels = false): string {
-	const [v, t] = bron.stand;
-	const thuis = bron.thuis !== false;
-	const ons = bron.teamnaam?.trim() || 'Ons team';
+export function reportText(bron: ReportSource, players: Player[], metWissels = false): string {
+	const [v, t] = bron.score;
+	const home = bron.home !== false;
+	const ons = bron.teamName?.trim() || 'Ons team';
 	const regels: string[] = [];
 	regels.push(
-		(thuis ? ons + ' – ' + bron.tegenstander : bron.tegenstander + ' – ' + ons) +
-			' ' +
-			(thuis ? v + '–' + t : t + '–' + v)
+		(home ? ons + ' – ' + bron.opponent : bron.opponent + ' – ' + ons) + ' ' + (home ? v + '–' + t : t + '–' + v)
 	);
-	regels.push(dateText(bron.datum));
+	regels.push(dateText(bron.date));
 	regels.push('');
 
 	let voor = 0;
 	let tegen = 0;
-	[...bron.gebeurtenissen]
+	[...bron.events]
 		.sort((a, b) => (a.t ?? 0) - (b.t ?? 0))
 		.forEach((g) => {
 			const min = Math.floor((g.t ?? 0) / 60) + '′';
 			if (g.type === 'goal') {
 				voor++;
-				const naam = g.speler ? nameOf(g.speler, spelers, bron.namen) : null;
-				const assist = g.assist ? nameOf(g.assist, spelers, bron.namen) : null;
+				const name = g.player ? nameOf(g.player, players, bron.names) : null;
+				const assist = g.assist ? nameOf(g.assist, players, bron.names) : null;
 				regels.push(
-					`${min}  ${voor}–${tegen}  ${naam && naam !== 'onbekend' ? naam : 'doelpunt'}` +
+					`${min}  ${voor}–${tegen}  ${name && name !== 'onbekend' ? name : 'doelpunt'}` +
 						(assist && assist !== 'onbekend' ? ` (assist ${assist})` : '')
 				);
-			} else if (g.type === 'tegen') {
+			} else if (g.type === 'conceded') {
 				tegen++;
 				regels.push(`${min}  ${voor}–${tegen}  tegendoelpunt`);
-			} else if (g.type === 'wissel' && metWissels) {
-				regels.push(`${min}       ${nameOf(g.erin, spelers, bron.namen)} voor ${nameOf(g.eruit, spelers, bron.namen)}`);
+			} else if (g.type === 'substitution' && metWissels) {
+				regels.push(`${min}       ${nameOf(g.on, players, bron.names)} voor ${nameOf(g.off, players, bron.names)}`);
 			}
 		});
 	if (voor + tegen === 0) regels.push('Geen doelpunten.');
-	if (bron.notitie?.trim()) {
+	if (bron.note?.trim()) {
 		regels.push('');
-		regels.push(bron.notitie.trim());
+		regels.push(bron.note.trim());
 	}
 	return regels.join('\n');
 }
@@ -168,20 +169,20 @@ export interface TimelineRow {
  * lezen is waar iedereen terechtkwam, niet hoe de administratie daar kwam.
  */
 export function timelineRows(
-	gebeurtenissen: MatchEvent[],
-	spelers: Player[],
-	namen?: Record<string, string>,
-	delen: 2 | 4 = 2,
-	formatie?: string
+	events: MatchEvent[],
+	players: Player[],
+	names?: Record<string, string>,
+	parts: 2 | 4 = 2,
+	formation?: string
 ): TimelineRow[] {
-	const naam = (id?: string | null) => nameOf(id, spelers, namen);
-	const plek = (id?: string | null) => (id ? (formatie ? positionLabel(id, formatie) : id) : '');
+	const name = (id?: string | null) => nameOf(id, players, names);
+	const position = (id?: string | null) => (id ? (formation ? positionLabel(id, formation) : id) : '');
 	const uit: TimelineRow[] = [];
 
-	for (let i = 0; i < gebeurtenissen.length; i++) {
-		const g = gebeurtenissen[i];
-		if (g.type !== 'ruil') {
-			uit.push({ t: g.t ?? 0, tekst: eventText(g, spelers, namen, delen, formatie), index: i, type: g.type });
+	for (let i = 0; i < events.length; i++) {
+		const g = events[i];
+		if (g.type !== 'swap') {
+			uit.push({ t: g.t ?? 0, tekst: eventText(g, players, names, parts, formation), index: i, type: g.type });
 			continue;
 		}
 
@@ -189,13 +190,13 @@ export function timelineRows(
 		const naartoe: Record<string, string> = {};
 		const volgorde: string[] = [];
 		let j = i;
-		while (j < gebeurtenissen.length) {
-			const r = gebeurtenissen[j];
-			if (r.type !== 'ruil' || (r.t ?? 0) !== (g.t ?? 0)) break;
-			if (r.plekA && r.plekB) {
+		while (j < events.length) {
+			const r = events[j];
+			if (r.type !== 'swap' || (r.t ?? 0) !== (g.t ?? 0)) break;
+			if (r.positionA && r.positionB) {
 				const stappen: [string | null | undefined, string, string][] = [
-					[r.spelerA, r.plekA, r.plekB],
-					[r.spelerB, r.plekB, r.plekA]
+					[r.playerA, r.positionA, r.positionB],
+					[r.playerB, r.positionB, r.positionA]
 				];
 				for (const [sp, van, naar] of stappen) {
 					if (!sp) continue;
@@ -212,13 +213,13 @@ export function timelineRows(
 		const verhuisd = volgorde.filter((sp) => vanaf[sp] !== naartoe[sp]);
 		if (!verhuisd.length) {
 			/* Geen namen vastgelegd, of alles kwam weer op zijn plek terug. */
-			uit.push({ t: g.t ?? 0, tekst: eventText(g, spelers, namen, delen, formatie), index: i, type: g.type });
+			uit.push({ t: g.t ?? 0, tekst: eventText(g, players, names, parts, formation), index: i, type: g.type });
 			i = j - 1;
 			continue;
 		}
 		uit.push({
 			t: g.t ?? 0,
-			tekst: verhuisd.map((sp) => naam(sp) + ' naar ' + plek(naartoe[sp])).join(', '),
+			tekst: verhuisd.map((sp) => name(sp) + ' naar ' + position(naartoe[sp])).join(', '),
 			index: i,
 			type: g.type
 		});

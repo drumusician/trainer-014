@@ -1,8 +1,8 @@
 import type { ArchivedMatch, Player } from './types';
 
 export interface SeizoenRegel {
-	naam: string;
-	seconden: number;
+	name: string;
+	seconds: number;
 	keeper: number;
 	wedstrijden: number;
 	doelpunten: number;
@@ -15,27 +15,27 @@ export interface SeizoenStand {
 	verloren: number;
 	voor: number;
 	tegen: number;
-	seconden: number;
+	seconds: number;
 }
 
-export function seizoenStand(archief: ArchivedMatch[]): SeizoenStand {
+export function seizoenStand(archive: ArchivedMatch[]): SeizoenStand {
 	const uit: SeizoenStand = {
-		wedstrijden: archief.length,
+		wedstrijden: archive.length,
 		gewonnen: 0,
 		gelijk: 0,
 		verloren: 0,
 		voor: 0,
 		tegen: 0,
-		seconden: 0
+		seconds: 0
 	};
-	archief.forEach((a) => {
-		const [v, t] = a.stand ?? [0, 0];
+	archive.forEach((a) => {
+		const [v, t] = a.score ?? [0, 0];
 		uit.voor += v;
 		uit.tegen += t;
 		if (v > t) uit.gewonnen++;
 		else if (v === t) uit.gelijk++;
 		else uit.verloren++;
-		uit.seconden += a.duur ?? 0;
+		uit.seconds += a.duration ?? 0;
 	});
 	return uit;
 }
@@ -44,69 +44,69 @@ export function seizoenStand(archief: ArchivedMatch[]): SeizoenStand {
  * Alles uit het archief opgeteld. Op speler-id waar dat kan, zodat iemand
  * hernoemen geen twee rijen oplevert; op naam voor oude wedstrijden zonder id.
  */
-export function seasonTotals(archief: ArchivedMatch[], spelers: Player[]): SeizoenRegel[] {
+export function seasonTotals(archive: ArchivedMatch[], players: Player[]): SeizoenRegel[] {
 	const per: Record<string, SeizoenRegel> = {};
-	const speler = (id?: string | null) => (id ? spelers.find((p) => p.id === id) : undefined);
+	const player = (id?: string | null) => (id ? players.find((p) => p.id === id) : undefined);
 
-	const pak = (sleutel: string, naam: string): SeizoenRegel => {
-		if (!per[sleutel]) per[sleutel] = { naam, seconden: 0, keeper: 0, wedstrijden: 0, doelpunten: 0 };
-		per[sleutel].naam = naam;
+	const pak = (sleutel: string, name: string): SeizoenRegel => {
+		if (!per[sleutel]) per[sleutel] = { name, seconds: 0, keeper: 0, wedstrijden: 0, doelpunten: 0 };
+		per[sleutel].name = name;
 		return per[sleutel];
 	};
 
-	archief.forEach((a) => {
-		(a.speeltijd ?? []).forEach((r) => {
-			const p = speler(r.id);
-			const rij = pak(p ? 'id:' + p.id : 'naam:' + r.naam, p ? p.naam : r.naam);
-			rij.seconden += r.seconden ?? 0;
+	archive.forEach((a) => {
+		(a.playingTime ?? []).forEach((r) => {
+			const p = player(r.id);
+			const rij = pak(p ? 'id:' + p.id : 'naam:' + r.name, p ? p.name : r.name);
+			rij.seconds += r.seconds ?? 0;
 			rij.keeper += r.keeper ?? 0;
-			if ((r.seconden ?? 0) > 0) rij.wedstrijden++;
+			if ((r.seconds ?? 0) > 0) rij.wedstrijden++;
 		});
-		(a.gebeurtenissen ?? [])
-			.filter((g) => g.type === 'goal' && g.speler)
+		(a.events ?? [])
+			.filter((g) => g.type === 'goal' && g.player)
 			.forEach((g) => {
-				const p = speler(g.speler);
-				const naam = p ? p.naam : a.namen?.[g.speler as string];
-				if (!naam) return; /* maker onbekend: telt alleen in de stand */
-				pak(p ? 'id:' + p.id : 'naam:' + naam, naam).doelpunten++;
+				const p = player(g.player);
+				const name = p ? p.name : a.names?.[g.player as string];
+				if (!name) return; /* maker onbekend: telt alleen in de stand */
+				pak(p ? 'id:' + p.id : 'naam:' + name, name).doelpunten++;
 			});
 	});
 
-	return Object.values(per).sort((a, b) => b.seconden - a.seconden);
+	return Object.values(per).sort((a, b) => b.seconds - a.seconds);
 }
 
 export interface MakerRegel {
-	naam: string;
+	name: string;
 	doelpunten: number;
 	/** in welke wedstrijden, nieuwste eerst */
-	wedstrijden: { datum: string; tegenstander: string; aantal: number }[];
+	wedstrijden: { date: string; opponent: string; aantal: number }[];
 }
 
 /**
  * Wie scoorde er, en wanneer. De stand telt alle doelpunten; deze lijst alleen
  * die met een maker erbij, want soms weet je het gewoon niet.
  */
-export function makers(archief: ArchivedMatch[], spelers: Player[]): MakerRegel[] {
+export function makers(archive: ArchivedMatch[], players: Player[]): MakerRegel[] {
 	const per: Record<string, MakerRegel> = {};
-	archief.forEach((a) => {
-		(a.gebeurtenissen ?? [])
-			.filter((g) => g.type === 'goal' && g.speler)
+	archive.forEach((a) => {
+		(a.events ?? [])
+			.filter((g) => g.type === 'goal' && g.player)
 			.forEach((g) => {
-				const p = spelers.find((s) => s.id === g.speler);
-				const naam = p ? p.naam : a.namen?.[g.speler as string];
-				if (!naam) return;
-				const rij = (per[naam] ??= { naam, doelpunten: 0, wedstrijden: [] });
+				const p = players.find((s) => s.id === g.player);
+				const name = p ? p.name : a.names?.[g.player as string];
+				if (!name) return;
+				const rij = (per[name] ??= { name, doelpunten: 0, wedstrijden: [] });
 				rij.doelpunten++;
-				const laatste = rij.wedstrijden.find((w) => w.datum === a.datum && w.tegenstander === a.tegenstander);
+				const laatste = rij.wedstrijden.find((w) => w.date === a.date && w.opponent === a.opponent);
 				if (laatste) laatste.aantal++;
-				else rij.wedstrijden.push({ datum: a.datum, tegenstander: a.tegenstander, aantal: 1 });
+				else rij.wedstrijden.push({ date: a.date, opponent: a.opponent, aantal: 1 });
 			});
 	});
 	return Object.values(per)
-		.map((r) => ({ ...r, wedstrijden: [...r.wedstrijden].sort((x, y) => y.datum.localeCompare(x.datum)) }))
-		.sort((a, b) => b.doelpunten - a.doelpunten || a.naam.localeCompare(b.naam));
+		.map((r) => ({ ...r, wedstrijden: [...r.wedstrijden].sort((x, y) => y.date.localeCompare(x.date)) }))
+		.sort((a, b) => b.doelpunten - a.doelpunten || a.name.localeCompare(b.name));
 }
 
 export function topscorers(rijen: SeizoenRegel[]): SeizoenRegel[] {
-	return rijen.filter((r) => r.doelpunten > 0).sort((a, b) => b.doelpunten - a.doelpunten || b.seconden - a.seconden);
+	return rijen.filter((r) => r.doelpunten > 0).sort((a, b) => b.doelpunten - a.doelpunten || b.seconds - a.seconds);
 }

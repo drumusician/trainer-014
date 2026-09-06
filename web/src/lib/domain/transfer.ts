@@ -1,3 +1,4 @@
+import { migreerToestand } from './migrate-storage';
 import type { State } from './types';
 
 /**
@@ -7,7 +8,7 @@ import type { State } from './types';
  * Precies dezelfde inhoud als een back-up en als wat er naar de server gaat, want
  * anders moet je onthouden welke knop wat meeneemt. Dat is precies wat er misging.
  */
-export type Overzetbaar = Partial<Omit<State, 'wedstrijd'>>;
+export type Overzetbaar = Partial<Omit<State, 'match'>>;
 
 export interface TransferPackage extends Overzetbaar {
 	v: 1 | 2;
@@ -27,7 +28,7 @@ function fromBase64(code: string): string {
 }
 
 export function makeTransferCode(t: State): string {
-	const { wedstrijd: _weg, ...rest } = t;
+	const { match: _weg, ...rest } = t;
 	const pakket: TransferPackage = { v: 2, ...rest };
 	return toBase64(JSON.stringify(pakket));
 }
@@ -40,8 +41,10 @@ export function readTransferCode(tekst: string): TransferPackage {
 	const ruw = tekst.trim();
 	const json = ruw.startsWith('{') ? ruw : fromBase64(ruw);
 	const d = JSON.parse(json);
-	const pakket: TransferPackage = d?.toestand ? { v: 2, ...d.toestand } : d;
-	if (!pakket || !Array.isArray(pakket.spelers) || !pakket.spelers.length) {
+	/* Een code van een toestel dat nog niet is bijgewerkt is Nederlands. */
+	const binnen = migreerToestand(d?.toestand ?? d) as Partial<TransferPackage>;
+	const pakket = (d?.toestand ? { v: 2, ...binnen } : binnen) as TransferPackage;
+	if (!pakket || !Array.isArray(pakket.players) || !pakket.players.length) {
 		throw new Error('hier staat geen selectie in');
 	}
 	return pakket;
@@ -54,11 +57,13 @@ export function readTransferCode(tekst: string): TransferPackage {
  * Neemt alleen wat het leest, zodat zowel een overzetcode als een teruggezet
  * back-upbestand erdoorheen kan.
  */
-export function describePackage(p: Partial<Pick<State, 'spelers' | 'archief' | 'trainingen' | 'standaard'>>): string {
-	const aantal = p.spelers?.length ?? 0;
+export function describePackage(
+	p: Partial<Pick<State, 'players' | 'archive' | 'trainings' | 'defaultLineup'>>
+): string {
+	const aantal = p.players?.length ?? 0;
 	const stukjes = [aantal + (aantal === 1 ? ' speler' : ' spelers')];
-	if (p.archief) stukjes.push(p.archief.length + (p.archief.length === 1 ? ' wedstrijd' : ' wedstrijden'));
-	if (p.trainingen) stukjes.push(p.trainingen.length + (p.trainingen.length === 1 ? ' training' : ' trainingen'));
-	if (p.standaard) stukjes.push('een standaardopstelling');
+	if (p.archive) stukjes.push(p.archive.length + (p.archive.length === 1 ? ' wedstrijd' : ' wedstrijden'));
+	if (p.trainings) stukjes.push(p.trainings.length + (p.trainings.length === 1 ? ' training' : ' trainingen'));
+	if (p.defaultLineup) stukjes.push('een standaardopstelling');
 	return stukjes.join(', ');
 }

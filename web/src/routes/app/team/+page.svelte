@@ -8,36 +8,36 @@
 	$effect(() => zetKop('Team'));
 
 	const t = $derived(app.toestand);
-	const verdeling = $derived(bezetting(t.spelers, t.formatie));
-	const ingevuld = $derived(t.teamnaam !== 'Ons team');
+	const verdeling = $derived(bezetting(t.players, t.formation));
+	const ingevuld = $derived(t.teamName !== 'Ons team');
 	let namenVak = $state('');
 	const LINIEKNOPPEN: FieldLine[] = ['V', 'M', 'A'];
 
 	function wijzig(p: Player) {
-		const naam = prompt('Naam wijzigen. Laat leeg om deze speler te verwijderen.', p.naam);
-		if (naam === null) return;
-		if (!naam.trim()) {
-			if (confirm(p.naam + ' verwijderen uit de selectie?')) app.removePlayer(p);
+		const name = prompt('Naam wijzigen. Laat leeg om deze speler te verwijderen.', p.name);
+		if (name === null) return;
+		if (!name.trim()) {
+			if (confirm(p.name + ' verwijderen uit de selectie?')) app.removePlayer(p);
 		} else {
-			app.renamePlayer(p, naam);
+			app.renamePlayer(p, name);
 		}
 	}
 </script>
 
 <main>
 	<div class="pad">
-		{#if t.spelers.length}
+		{#if t.players.length}
 			<h2>Speeltijd en presentie</h2>
-			<p class="uitleg">Gespeelde minuten per speler, hoe vaak ze op de training waren, en wie er scoorden.</p>
+			<p class="uitleg">Gespeelde minuten per player, hoe vaak ze op de training waren, en wie er scoorden.</p>
 			<div class="knoprij" style="padding-left: 0">
 				<a class="knop prim" href="/app/team/spelers">Spelersoverzicht</a>
 			</div>
 		{/if}
 
 		<h2>Selectie</h2>
-		{#if !t.spelers.length}
+		{#if !t.players.length}
 			<p class="uitleg">
-				Plak hier de namen, één per regel. Ze blijven op dit toestel en komen nergens anders terecht. Liever stap voor
+				Plak hier de names, één per regel. Ze blijven op dit toestel en komen nergens anders terecht. Liever stap voor
 				stap? <a href="/app/opzetten">Loop het opzetten door.</a>
 			</p>
 			<textarea bind:value={namenVak} placeholder="Casper&#10;Maher&#10;Daan"></textarea>
@@ -52,20 +52,20 @@
 			</div>
 		{:else}
 			<p class="uitleg">
-				Zet per speler de linie: V verdediging, M middenveld, A aanval. <b>K</b> staat los: dat is iedereen die kan keepen,
-				ook als hij verder in het veld speelt. Alleen K aan en de rest uit betekent: keeper en verder niets. Tik een naam
+				Zet per player de line: V verdediging, M middenveld, A aanval. <b>K</b> staat los: dat is iedereen die kan keepen,
+				ook als hij verder in het veld speelt. Alleen K aan en de rest uit betekent: keeper en verder niets. Tik een name
 				aan om te wijzigen of te verwijderen.
 			</p>
-			{#each t.spelers as p (p.id)}
-				{@const recent = attendanceOf(t.trainingen, p.id, 4)}
+			{#each t.players as p (p.id)}
+				{@const recent = attendanceOf(t.trainings, p.id, 4)}
 				<div class="sregel">
 					<button type="button" class="naam" onclick={() => wijzig(p)}>
-						{p.naam}{#if thinAttendance(recent)}<span class="min mager"> {recent.er}/{recent.totaal}</span>{/if}
+						{p.name}{#if thinAttendance(recent)}<span class="min mager"> {recent.er}/{recent.totaal}</span>{/if}
 					</button>
 					<div class="keuze">
-						<button class:aan={p.keept} onclick={() => app.toggleKeeper(p)}>K</button>
+						<button class:aan={p.keeper} onclick={() => app.toggleKeeper(p)}>K</button>
 						{#each LINIEKNOPPEN as code (code)}
-							<button class:aan={p.linie === code} onclick={() => app.setLine(p, code)}>{code}</button>
+							<button class:aan={p.line === code} onclick={() => app.setLine(p, code)}>{code}</button>
 						{/each}
 					</div>
 				</div>
@@ -73,24 +73,24 @@
 			<div class="knoprij" style="padding-left: 0; margin-top: 12px">
 				<button
 					onclick={() => {
-						const naam = prompt('Naam van de speler');
-						if (naam?.trim()) app.addPlayerNames(naam);
+						const name = prompt('Naam van de speler');
+						if (name?.trim()) app.addPlayerNames(name);
 					}}>Speler toevoegen</button
 				>
 			</div>
 
-			<h2>Verdeling in {t.formatie}</h2>
+			<h2>Verdeling in {t.formation}</h2>
 			<table class="uitslag">
 				<tbody>
-					{#each verdeling as b (b.linie)}
+					{#each verdeling as b (b.line)}
 						<tr>
-							<td>{b.naam}</td>
+							<td>{b.name}</td>
 							<td class="m" class:thinAttendance={tekort(b) || gedrang(b)}>
-								{#if b.linie === 'K'}
-									{b.spelers}
-									{b.spelers === 1 ? 'kan keepen' : 'kunnen keepen'}
+								{#if b.line === 'K'}
+									{b.players}
+									{b.players === 1 ? 'kan keepen' : 'kunnen keepen'}
 								{:else}
-									{b.spelers} voor {b.positionsOf}
+									{b.players} voor {b.positionsOf}
 									{b.positionsOf === 1 ? 'plek' : 'plekken'}
 								{/if}
 							</td>
@@ -100,12 +100,12 @@
 			</table>
 			<p class="uitleg" style="margin-top: 8px">
 				{#if verdeling.some(tekort)}
-					Een linie is niet vol te krijgen met de spelers die je zo gemarkeerd hebt.
+					Een line is niet vol te krijgen met de players die je zo gemarkeerd hebt.
 				{:else if dunneKeepersbezetting(verdeling)}
 					Er kan er maar één keepen. Is hij er niet, dan moet je ter plekke iemand aanwijzen.
 				{:else if verdeling.some(gedrang)}
-					Waar meer dan twee keer zoveel spelers als plekken staan, zit er elke wedstrijd iemand op de bank die zichzelf
-					daar ziet. Een andere formatie kan schelen.
+					Waar meer dan twee keer zoveel players als plekken staan, zit er elke match iemand op de bench die zichzelf
+					daar ziet. Een andere formation kan schelen.
 				{:else}
 					De letters zijn een hint bij het wisselen, geen regel: je kunt altijd iedereen kiezen.
 				{/if}
@@ -114,12 +114,12 @@
 
 		<h2>Naam van je team</h2>
 		<p class="uitleg">
-			Staat boven de wedstrijd en in het verslag dat je deelt.
+			Staat boven de match en in het verslag dat je deelt.
 			{#if !ingevuld}<b class="mager">Vul hem in, anders staat er straks "Ons team" in je verslag.</b>{/if}
 		</p>
 		<label class="vak">
 			Teamnaam
-			<input value={t.teamnaam} placeholder="bijv. JO11-2" onchange={(e) => app.setTeamName(e.currentTarget.value)} />
+			<input value={t.teamName} placeholder="bijv. JO11-2" onchange={(e) => app.setTeamName(e.currentTarget.value)} />
 		</label>
 	</div>
 </main>

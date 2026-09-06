@@ -63,7 +63,7 @@ async function sb(pad: string, opties: RequestInit & { metToken?: boolean } = {}
 
 class Sync {
 	sessie = $state<Sessie | null>(null);
-	melding = $state('');
+	message = $state('');
 	bezig = $state(false);
 	/** 'email' of 'code' */
 	fase = $state<'email' | 'code'>('email');
@@ -92,7 +92,7 @@ class Sync {
 			if (wachtend?.email && !this.sessie) {
 				this.email = wachtend.email;
 				this.fase = 'code';
-				this.melding = 'Er is een code onderweg naar ' + wachtend.email + '.';
+				this.message = 'Er is een code onderweg naar ' + wachtend.email + '.';
 			}
 		} catch {
 			/* stil */
@@ -103,7 +103,7 @@ class Sync {
 		const bak = storage();
 		if (!bak) return;
 		try {
-			if (email) bak.setItem(INLOGSLEUTEL, JSON.stringify({ email, sinds: Date.now() }));
+			if (email) bak.setItem(INLOGSLEUTEL, JSON.stringify({ email, since: Date.now() }));
 			else bak.removeItem(INLOGSLEUTEL);
 		} catch {
 			/* stil */
@@ -142,7 +142,7 @@ class Sync {
 
 	uitloggen() {
 		this.sessie = null;
-		this.melding = '';
+		this.message = '';
 		this.vies = false;
 		this.botsing = false;
 		storage()?.removeItem(SESSIESLEUTEL);
@@ -152,7 +152,7 @@ class Sync {
 	/** Toch een ander adres proberen. */
 	opnieuw() {
 		this.fase = 'email';
-		this.melding = '';
+		this.message = '';
 		this.bewaarInlogpoging(null);
 	}
 
@@ -178,11 +178,11 @@ class Sync {
 	/* ---------- inloggen ---------- */
 	async stuurCode(email: string) {
 		if (!email.trim()) {
-			this.melding = 'Vul je e-mailadres in.';
+			this.message = 'Vul je e-mailadres in.';
 			return;
 		}
 		this.bezig = true;
-		this.melding = 'Bezig met versturen…';
+		this.message = 'Bezig met versturen…';
 		try {
 			const terug = location.origin + '/app/meer';
 			await sb('/auth/v1/otp?redirect_to=' + encodeURIComponent(terug), {
@@ -193,9 +193,9 @@ class Sync {
 			this.email = email.trim();
 			this.fase = 'code';
 			this.bewaarInlogpoging(this.email);
-			this.melding = 'Mail verstuurd naar ' + this.email + '. Kijk ook in je spam.';
+			this.message = 'Mail verstuurd naar ' + this.email + '. Kijk ook in je spam.';
 		} catch (e) {
-			this.melding = 'Versturen lukte niet: ' + (e as Error).message;
+			this.message = 'Versturen lukte niet: ' + (e as Error).message;
 		} finally {
 			this.bezig = false;
 		}
@@ -203,11 +203,11 @@ class Sync {
 
 	async controleerCode(code: string) {
 		if (!code.trim()) {
-			this.melding = 'Vul de code uit de mail in.';
+			this.message = 'Vul de code uit de mail in.';
 			return;
 		}
 		this.bezig = true;
-		this.melding = 'Bezig met inloggen…';
+		this.message = 'Bezig met inloggen…';
 		try {
 			const d = (await sb('/auth/v1/verify', {
 				method: 'POST',
@@ -217,9 +217,9 @@ class Sync {
 			this.zet(d);
 			this.fase = 'email';
 			this.bewaarInlogpoging(null);
-			this.melding = 'Ingelogd.';
+			this.message = 'Ingelogd.';
 		} catch (e) {
-			this.melding = 'Deze code klopt niet of is verlopen: ' + (e as Error).message;
+			this.message = 'Deze code klopt niet of is verlopen: ' + (e as Error).message;
 		} finally {
 			this.bezig = false;
 		}
@@ -233,7 +233,7 @@ class Sync {
 		if (!h.includes('access_token=')) {
 			if (h.includes('error')) {
 				const f = new URLSearchParams(h.replace(/^#/, ''));
-				this.melding =
+				this.message =
 					'Inloggen via de link lukte niet: ' + (f.get('error_description') ?? f.get('error') ?? 'onbekende fout');
 				schoon();
 			}
@@ -255,7 +255,7 @@ class Sync {
 		} catch {
 			/* dan vullen we het bij de eerste synchronisatie aan */
 		}
-		this.melding = 'Ingelogd via de link.';
+		this.message = 'Ingelogd via de link.';
 	}
 
 	/* ---------- team ---------- */
@@ -276,7 +276,7 @@ class Sync {
 				{
 					method: 'POST',
 					headers: { Prefer: 'return=representation' },
-					body: JSON.stringify({ naam: app.toestand.teamnaam, eigenaar: s.user_id })
+					body: JSON.stringify({ name: app.toestand.teamName, eigenaar: s.user_id })
 				},
 				token
 			)) as { id: string }[];
@@ -287,17 +287,17 @@ class Sync {
 	}
 
 	private isBotsing(e: Fout): boolean {
-		return e.data?.code === '40001' || /versie loopt niet gelijk/.test(e.message ?? '');
+		return e.data?.code === '40001' || /versie running niet gelijk/.test(e.message ?? '');
 	}
 
 	async opsturen(overschrijven = false, stil = false) {
 		if (!this.sessie) return;
 		this.bezig = !stil;
-		if (!stil) this.melding = 'Bezig met opsturen…';
+		if (!stil) this.message = 'Bezig met opsturen…';
 		try {
 			const token = await this.token();
 			if (!token) {
-				this.melding = 'Je bent uitgelogd, log opnieuw in.';
+				this.message = 'Je bent uitgelogd, log opnieuw in.';
 				return;
 			}
 			const team = await this.zorgVoorTeam(token);
@@ -321,15 +321,15 @@ class Sync {
 			this.vies = false;
 			this.botsing = false;
 			this.hapert = false;
-			this.melding = 'Opgestuurd.';
+			this.message = 'Opgestuurd.';
 		} catch (e) {
 			if (this.isBotsing(e as Fout)) {
 				this.botsing = true;
-				this.melding =
+				this.message =
 					'Op de server staat iets nieuwers, van een ander toestel. Haal het eerst op, of stuur dit toestel er met opzet overheen.';
 			} else {
 				this.hapert = true;
-				this.melding = 'Opsturen lukte niet: ' + (e as Error).message;
+				this.message = 'Opsturen lukte niet: ' + (e as Error).message;
 			}
 		} finally {
 			this.bezig = false;
@@ -347,11 +347,11 @@ class Sync {
 			return;
 		if (stil && this.vies) return; /* nooit over eigen werk heen */
 		this.bezig = !stil;
-		if (!stil) this.melding = 'Bezig met ophalen…';
+		if (!stil) this.message = 'Bezig met ophalen…';
 		try {
 			const token = await this.token();
 			if (!token) {
-				this.melding = 'Je bent uitgelogd, log opnieuw in.';
+				this.message = 'Je bent uitgelogd, log opnieuw in.';
 				return;
 			}
 			const team = await this.zorgVoorTeam(token);
@@ -363,13 +363,13 @@ class Sync {
 					this.vies = true;
 					await this.duwAlsNodig();
 				} else {
-					this.melding = 'Er staat nog niets op de server.';
+					this.message = 'Er staat nog niets op de server.';
 				}
 				return;
 			}
 			if (stil && this.sessie.versie === rijen[0].versie) return; /* al gelijk */
 			if (!app.adoptSyncPayload(rijen[0].data)) {
-				this.melding = 'Wat er staat kon ik niet lezen.';
+				this.message = 'Wat er staat kon ik niet lezen.';
 				return;
 			}
 			this.sessie.versie = rijen[0].versie;
@@ -379,10 +379,10 @@ class Sync {
 			this.vies = false;
 			this.botsing = false;
 			this.hapert = false;
-			this.melding = stil ? '' : 'Opgehaald.';
+			this.message = stil ? '' : 'Opgehaald.';
 		} catch (e) {
 			this.hapert = true;
-			if (!stil) this.melding = 'Ophalen lukte niet: ' + (e as Error).message;
+			if (!stil) this.message = 'Ophalen lukte niet: ' + (e as Error).message;
 		} finally {
 			this.bezig = false;
 		}

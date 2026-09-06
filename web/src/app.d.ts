@@ -11,7 +11,7 @@ declare global {
 
 	interface Window {
 		/** Plausible, alleen geladen op de landingspagina. Zie src/lib/meten.ts. */
-		plausible?: ((naam: string) => void) & {
+		plausible?: ((name: string) => void) & {
 			q?: unknown[];
 			init?: (opties?: unknown) => void;
 			o?: unknown;

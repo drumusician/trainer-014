@@ -41,6 +41,6 @@ export function startMeten(): () => void {
 }
 
 /** Eén gebeurtenis melden, als er gemeten wordt. */
-export function meld(naam: string) {
-	window.plausible?.(naam);
+export function meld(name: string) {
+	window.plausible?.(name);
 }

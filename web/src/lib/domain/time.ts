@@ -10,19 +10,19 @@ export function mmss(sec: number): string {
 /** Hoeveel er gespeeld is, inclusief de periode die nu loopt. */
 export function elapsed(w: Match | null, nu = Date.now()): number {
 	if (!w) return 0;
-	let t = w.verstreken;
-	if (w.loopt && w.sinds) t += (nu - w.sinds) / 1000;
+	let t = w.elapsed;
+	if (w.running && w.since) t += (nu - w.since) / 1000;
 	return Math.floor(t);
 }
 
 export function endTime(w: Match): number {
-	const e = w.gebeurtenissen.filter((g) => g.type === 'eind').pop();
-	return e ? e.t : w.verstreken;
+	const e = w.events.filter((g) => g.type === 'end').pop();
+	return e ? e.t : w.elapsed;
 }
 
 export interface Interval {
-	speler: string;
-	plek: string;
+	player: string;
+	position: string;
 	van: number;
 	tot: number;
 }
@@ -36,73 +36,73 @@ export interface Interval {
  */
 export function fieldIntervals(w: Match | null, nu = Date.now()): Interval[] {
 	if (!w) return [];
-	const eind = w.afgelopen ? endTime(w) : elapsed(w, nu);
+	const eind = w.finished ? endTime(w) : elapsed(w, nu);
 	/* Wissels en ruilen samen: allebei veranderen ze wie waar staat. */
-	const beurten = w.gebeurtenissen.filter((g) => g.type === 'wissel' || g.type === 'ruil');
+	const beurten = w.events.filter((g) => g.type === 'substitution' || g.type === 'swap');
 
-	const start: Record<string, string | null> = { ...w.opstelling };
+	const start: Record<string, string | null> = { ...w.lineup };
 	[...beurten].reverse().forEach((g) => {
-		if (g.type === 'ruil') {
-			if (!g.plekA || !g.plekB) return;
-			const a = start[g.plekA] ?? null;
-			start[g.plekA] = start[g.plekB] ?? null;
-			start[g.plekB] = a;
+		if (g.type === 'swap') {
+			if (!g.positionA || !g.positionB) return;
+			const a = start[g.positionA] ?? null;
+			start[g.positionA] = start[g.positionB] ?? null;
+			start[g.positionB] = a;
 			return;
 		}
-		if (g.plek && start[g.plek] === g.erin) {
-			start[g.plek] = g.eruit ?? null;
+		if (g.position && start[g.position] === g.on) {
+			start[g.position] = g.off ?? null;
 			return;
 		}
-		for (const plek of Object.keys(start)) {
-			if (start[plek] === g.erin) {
-				start[plek] = g.eruit ?? null;
+		for (const position of Object.keys(start)) {
+			if (start[position] === g.on) {
+				start[position] = g.off ?? null;
 				return;
 			}
 		}
 	});
 
-	const bezet: Record<string, { speler: string; sinds: number }> = {};
-	for (const plek of Object.keys(start)) {
-		const id = start[plek];
-		if (id) bezet[plek] = { speler: id, sinds: 0 };
+	const bezet: Record<string, { player: string; since: number }> = {};
+	for (const position of Object.keys(start)) {
+		const id = start[position];
+		if (id) bezet[position] = { player: id, since: 0 };
 	}
 
 	const uit: Interval[] = [];
 	beurten.forEach((g) => {
-		if (g.type === 'ruil') {
+		if (g.type === 'swap') {
 			/* Allebei de plekken sluiten en meteen weer openen, met de ander erop. */
-			const a = g.plekA && bezet[g.plekA];
-			const b = g.plekB && bezet[g.plekB];
-			if (a) uit.push({ speler: a.speler, plek: g.plekA!, van: a.sinds, tot: g.t });
-			if (b) uit.push({ speler: b.speler, plek: g.plekB!, van: b.sinds, tot: g.t });
-			if (a && g.plekB) bezet[g.plekB] = { speler: a.speler, sinds: g.t };
-			else if (g.plekB) delete bezet[g.plekB];
-			if (b && g.plekA) bezet[g.plekA] = { speler: b.speler, sinds: g.t };
-			else if (g.plekA) delete bezet[g.plekA];
+			const a = g.positionA && bezet[g.positionA];
+			const b = g.positionB && bezet[g.positionB];
+			if (a) uit.push({ player: a.player, position: g.positionA!, van: a.since, tot: g.t });
+			if (b) uit.push({ player: b.player, position: g.positionB!, van: b.since, tot: g.t });
+			if (a && g.positionB) bezet[g.positionB] = { player: a.player, since: g.t };
+			else if (g.positionB) delete bezet[g.positionB];
+			if (b && g.positionA) bezet[g.positionA] = { player: b.player, since: g.t };
+			else if (g.positionA) delete bezet[g.positionA];
 			return;
 		}
-		let plek = g.plek;
-		if (!plek || bezet[plek]?.speler !== g.eruit) {
-			plek = Object.keys(bezet).find((k) => bezet[k].speler === g.eruit) ?? plek;
+		let position = g.position;
+		if (!position || bezet[position]?.player !== g.off) {
+			position = Object.keys(bezet).find((k) => bezet[k].player === g.off) ?? position;
 		}
-		if (plek && bezet[plek]) {
-			uit.push({ speler: bezet[plek].speler, plek, van: bezet[plek].sinds, tot: g.t });
+		if (position && bezet[position]) {
+			uit.push({ player: bezet[position].player, position, van: bezet[position].since, tot: g.t });
 		}
-		if (plek && g.erin) bezet[plek] = { speler: g.erin, sinds: g.t };
+		if (position && g.on) bezet[position] = { player: g.on, since: g.t };
 	});
 
-	for (const plek of Object.keys(bezet)) {
-		uit.push({ speler: bezet[plek].speler, plek, van: bezet[plek].sinds, tot: eind });
+	for (const position of Object.keys(bezet)) {
+		uit.push({ player: bezet[position].player, position, van: bezet[position].since, tot: eind });
 	}
 	return uit;
 }
 
 /** Seconden per speler. Iedereen uit de selectie komt erin, ook met nul. */
-export function playingTimes(w: Match | null, spelers: Player[], nu = Date.now()): Record<string, number> {
+export function playingTimes(w: Match | null, players: Player[], nu = Date.now()): Record<string, number> {
 	const totaal: Record<string, number> = {};
-	spelers.forEach((p) => (totaal[p.id] = 0));
+	players.forEach((p) => (totaal[p.id] = 0));
 	fieldIntervals(w, nu).forEach((i) => {
-		totaal[i.speler] = (totaal[i.speler] ?? 0) + (i.tot - i.van);
+		totaal[i.player] = (totaal[i.player] ?? 0) + (i.tot - i.van);
 	});
 	return totaal;
 }
@@ -112,8 +112,8 @@ export function keeperTimes(w: Match | null, nu = Date.now()): Record<string, nu
 	const uit: Record<string, number> = {};
 	if (!w) return uit;
 	fieldIntervals(w, nu).forEach((i) => {
-		if (positionLine(i.plek, w.formatie) === 'K') {
-			uit[i.speler] = (uit[i.speler] ?? 0) + (i.tot - i.van);
+		if (positionLine(i.position, w.formation) === 'K') {
+			uit[i.player] = (uit[i.player] ?? 0) + (i.tot - i.van);
 		}
 	});
 	return uit;
@@ -123,8 +123,8 @@ export function keeperTimes(w: Match | null, nu = Date.now()): Record<string, nu
 export function positionTimes(w: Match | null, nu = Date.now()): Record<string, Record<string, number>> {
 	const uit: Record<string, Record<string, number>> = {};
 	fieldIntervals(w, nu).forEach((i) => {
-		const perPlek = (uit[i.speler] ??= {});
-		perPlek[i.plek] = (perPlek[i.plek] ?? 0) + (i.tot - i.van);
+		const perPlek = (uit[i.player] ??= {});
+		perPlek[i.position] = (perPlek[i.position] ?? 0) + (i.tot - i.van);
 	});
 	return uit;
 }
@@ -134,14 +134,14 @@ export function positionTimes(w: Match | null, nu = Date.now()): Record<string, 
  * "35 min K · 35 min LV". Meer dan drie plekken wordt onleesbaar, dus die
  * vallen weg onder "overig".
  */
-export function positionText(perPlek: Record<string, number> | undefined, formatie: string): string {
+export function positionText(perPlek: Record<string, number> | undefined, formation: string): string {
 	if (!perPlek) return '';
-	const label = (plek: string) => positionLabel(plek, formatie);
+	const label = (position: string) => positionLabel(position, formation);
 	const rijen = Object.entries(perPlek)
 		.filter(([, sec]) => sec > 0)
 		.sort((a, b) => b[1] - a[1]);
 	if (!rijen.length) return '';
-	const eerste = rijen.slice(0, 3).map(([plek, sec]) => Math.round(sec / 60) + ' min ' + label(plek));
+	const eerste = rijen.slice(0, 3).map(([position, sec]) => Math.round(sec / 60) + ' min ' + label(position));
 	const rest = rijen.slice(3).reduce((a, [, sec]) => a + sec, 0);
 	if (rest > 0) eerste.push(Math.round(rest / 60) + ' min overig');
 	return eerste.join(' · ');
@@ -149,6 +149,6 @@ export function positionText(perPlek: Record<string, number> | undefined, format
 
 export function score(w: Match | null): [number, number] {
 	if (!w) return [0, 0];
-	const g: MatchEvent[] = w.gebeurtenissen;
-	return [g.filter((x) => x.type === 'goal').length, g.filter((x) => x.type === 'tegen').length];
+	const g: MatchEvent[] = w.events;
+	return [g.filter((x) => x.type === 'goal').length, g.filter((x) => x.type === 'conceded').length];
 }

@@ -2,62 +2,62 @@ import { describe, expect, it } from 'vitest';
 import { percentage, sorteer, spelersOverzicht } from './players';
 import type { ArchivedMatch, Player, Training } from './types';
 
-const spelers: Player[] = [
-	{ id: 'p1', naam: 'Daanish', linie: 'M' },
-	{ id: 'p2', naam: 'Gijs', linie: '', keept: true },
-	{ id: 'p3', naam: 'Nieuw', linie: 'A' }
+const players: Player[] = [
+	{ id: 'p1', name: 'Daanish', line: 'M' },
+	{ id: 'p2', name: 'Gijs', line: '', keeper: true },
+	{ id: 'p3', name: 'Nieuw', line: 'A' }
 ];
 
-const archief: ArchivedMatch[] = [
+const archive: ArchivedMatch[] = [
 	{
-		datum: '2026-08-30',
-		tegenstander: 'Ajax',
-		thuis: true,
-		stand: [1, 0],
-		formatie: '4-3-3',
-		duur: 4200,
-		namen: { p1: 'Daanish', p2: 'Gijs' },
-		gebeurtenissen: [{ type: 'goal', t: 900, speler: 'p1' }],
-		speeltijd: [
-			{ id: 'p1', naam: 'Daanish', seconden: 4200, keeper: 0 },
-			{ id: 'p2', naam: 'Gijs', seconden: 2100, keeper: 2100 }
+		date: '2026-08-30',
+		opponent: 'Ajax',
+		home: true,
+		score: [1, 0],
+		formation: '4-3-3',
+		duration: 4200,
+		names: { p1: 'Daanish', p2: 'Gijs' },
+		events: [{ type: 'goal', t: 900, player: 'p1' }],
+		playingTime: [
+			{ id: 'p1', name: 'Daanish', seconds: 4200, keeper: 0 },
+			{ id: 'p2', name: 'Gijs', seconds: 2100, keeper: 2100 }
 		]
 	}
 ];
 
-const trainingen: Training[] = [
-	{ id: 't1', datum: '2026-09-02', status: { p1: 'ja', p2: 'nee' } },
-	{ id: 't2', datum: '2026-08-26', status: { p1: 'ja', p2: 'ja' } }
+const trainings: Training[] = [
+	{ id: 't1', date: '2026-09-02', status: { p1: 'present', p2: 'absent' } },
+	{ id: 't2', date: '2026-08-26', status: { p1: 'present', p2: 'present' } }
 ];
 
 describe('spelersoverzicht', () => {
 	it('zet minuten, doelpunten en presentie op één regel', () => {
-		const rijen = spelersOverzicht(spelers, archief, trainingen);
-		const daanish = rijen.find((r) => r.naam === 'Daanish')!;
-		expect(daanish).toMatchObject({ seconden: 4200, wedstrijden: 1, doelpunten: 1 });
-		expect(daanish.attendanceOf).toEqual({ er: 2, totaal: 2 });
-		const gijs = rijen.find((r) => r.naam === 'Gijs')!;
-		expect(gijs.keeper).toBe(2100);
-		expect(percentage(gijs.attendanceOf)).toBe(50);
+		const rijen = spelersOverzicht(players, archive, trainings);
+		const daanish = rijen.find((r) => r.name === 'Daanish')!;
+		expect(daanish).toMatchObject({ seconds: 4200, matches: 1, goals: 1 });
+		expect(daanish.attendance).toEqual({ er: 2, totaal: 2 });
+		const gijs = rijen.find((r) => r.name === 'Gijs')!;
+		expect(gijs.keeperSeconds).toBe(2100);
+		expect(percentage(gijs.attendance)).toBe(50);
 	});
 
 	it('laat iemand die nog niets deed gewoon op nul staan', () => {
-		const nieuw = spelersOverzicht(spelers, archief, trainingen).find((r) => r.naam === 'Nieuw')!;
-		expect(nieuw.seconden).toBe(0);
-		expect(percentage(nieuw.attendanceOf)).toBeNull();
+		const nieuw = spelersOverzicht(players, archive, trainings).find((r) => r.name === 'Nieuw')!;
+		expect(nieuw.seconds).toBe(0);
+		expect(percentage(nieuw.attendance)).toBeNull();
 	});
 
 	it('zet de makers bovenaan als je op doelpunten sorteert', () => {
-		const rijen = spelersOverzicht(spelers, archief, trainingen);
-		expect(sorteer(rijen, 'doelpunten').map((r) => r.naam)).toEqual(['Daanish', 'Gijs', 'Nieuw']);
+		const rijen = spelersOverzicht(players, archive, trainings);
+		expect(sorteer(rijen, 'doelpunten').map((r) => r.name)).toEqual(['Daanish', 'Gijs', 'Nieuw']);
 	});
 
 	it('sorteert op naam, minuten of presentie', () => {
-		const rijen = spelersOverzicht(spelers, archief, trainingen);
-		expect(sorteer(rijen, 'naam').map((r) => r.naam)).toEqual(['Daanish', 'Gijs', 'Nieuw']);
-		expect(sorteer(rijen, 'minuten').map((r) => r.naam)).toEqual(['Daanish', 'Gijs', 'Nieuw']);
+		const rijen = spelersOverzicht(players, archive, trainings);
+		expect(sorteer(rijen, 'naam').map((r) => r.name)).toEqual(['Daanish', 'Gijs', 'Nieuw']);
+		expect(sorteer(rijen, 'minuten').map((r) => r.name)).toEqual(['Daanish', 'Gijs', 'Nieuw']);
 		/* wie het minst kwam bovenaan; wie nog nooit een training had onderaan */
-		expect(sorteer(rijen, 'presentie').map((r) => r.naam)).toEqual(['Gijs', 'Daanish', 'Nieuw']);
+		expect(sorteer(rijen, 'presentie').map((r) => r.name)).toEqual(['Gijs', 'Daanish', 'Nieuw']);
 	});
 });
 
@@ -65,12 +65,12 @@ describe('assists', () => {
 	it('telt ze mee per speler', () => {
 		const metAssist: ArchivedMatch[] = [
 			{
-				...archief[0],
-				gebeurtenissen: [{ type: 'goal', t: 900, speler: 'p1', assist: 'p2' }]
+				...archive[0],
+				events: [{ type: 'goal', t: 900, player: 'p1', assist: 'p2' }]
 			}
 		];
-		const rijen = spelersOverzicht(spelers, metAssist, trainingen);
-		expect(rijen.find((r) => r.naam === 'Gijs')!.assists).toBe(1);
-		expect(rijen.find((r) => r.naam === 'Daanish')!.assists).toBe(0);
+		const rijen = spelersOverzicht(players, metAssist, trainings);
+		expect(rijen.find((r) => r.name === 'Gijs')!.assists).toBe(1);
+		expect(rijen.find((r) => r.name === 'Daanish')!.assists).toBe(0);
 	});
 });

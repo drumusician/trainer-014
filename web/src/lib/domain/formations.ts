@@ -32,19 +32,19 @@ export const FORMATIONS: Record<string, PositionSlot[]> = {
 	],
 	/* De ruit: één controlerende middenvelder, twee op de flank, één erachter de
 	   spitsen. Precies het middenveld waarin de een dieper staat dan de ander. */
-	'4-4-2 ruit': [
+	'4-4-2 diamond': [
 		['K', 'K', 50, 92, 'K'],
 		['RV', 'RV', 88, 75, 'V'], ['CVr', 'CV', 64, 80, 'V'], ['CVl', 'CV', 36, 80, 'V'], ['LV', 'LV', 12, 75, 'V'],
 		['VM', 'VM', 50, 64, 'M'],
 		['MR', 'RM', 84, 50, 'M'], ['ML', 'LM', 16, 50, 'M'],
-		['TIEN', '10', 50, 38, 'M'],
+		['TEN', '10', 50, 38, 'M'],
 		['SPr', 'SP', 62, 20, 'A'], ['SPl', 'SP', 38, 20, 'A']
 	],
 	'4-2-3-1': [
 		['K', 'K', 50, 92, 'K'],
 		['RV', 'RV', 88, 75, 'V'], ['CVr', 'CV', 64, 80, 'V'], ['CVl', 'CV', 36, 80, 'V'], ['LV', 'LV', 12, 75, 'V'],
 		['VMr', 'VM', 64, 62, 'M'], ['VMl', 'VM', 36, 62, 'M'],
-		['RA', 'RA', 84, 38, 'A'], ['TIEN', '10', 50, 43, 'A'], ['LA', 'LA', 16, 38, 'A'],
+		['RA', 'RA', 84, 38, 'A'], ['TEN', '10', 50, 43, 'A'], ['LA', 'LA', 16, 38, 'A'],
 		['SP', 'SP', 50, 18, 'A']
 	],
 
@@ -107,26 +107,26 @@ export const FORMATIONS: Record<string, PositionSlot[]> = {
  * bij 11 tegen 11 doe je dat niet (4-3-3). Dat is verwarrend, maar het is hoe
  * trainers het zeggen, dus houden we het aan.
  */
-export const FORMATS: { naam: string; uitleg?: string; formaties: { sleutel: string; uitleg?: string }[] }[] = [
+export const FORMATS: { name: string; uitleg?: string; formaties: { sleutel: string; uitleg?: string }[] }[] = [
 	{
-		naam: '11 tegen 11',
+		name: '11 tegen 11',
 		formaties: [
 			{ sleutel: '4-3-3' },
 			{ sleutel: '4-4-2', uitleg: 'vlak middenveld' },
-			{ sleutel: '4-4-2 ruit', uitleg: 'één diep, één hoog' },
+			{ sleutel: '4-4-2 diamond', uitleg: 'één diep, één hoog' },
 			{ sleutel: '4-2-3-1' }
 		]
 	},
 	{
-		naam: '8 tegen 8',
+		name: '8 tegen 8',
 		formaties: [{ sleutel: '1-3-3-1', uitleg: 'meest gespeeld' }, { sleutel: '1-3-2-2' }, { sleutel: '1-2-3-2' }]
 	},
 	{
-		naam: '6 tegen 6',
+		name: '6 tegen 6',
 		formaties: [{ sleutel: '1-2-2-1', uitleg: 'meest gespeeld' }, { sleutel: '1-1-3-1' }, { sleutel: '1-2-1-2' }]
 	},
 	{
-		naam: '4 tegen 4',
+		name: '4 tegen 4',
 		uitleg: 'zonder keeper',
 		formaties: [
 			{ sleutel: '1-2-1', uitleg: 'ruit' },
@@ -151,24 +151,24 @@ export const LINES: Record<Line, string> = {
 /** Van boven naar beneden, net als op het veld. */
 export const LINE_ORDER: Line[] = ['A', 'M', 'V', 'K', ''];
 
-export function positionsOf(formatie: string): PositionSlot[] {
-	return FORMATIONS[formatie] ?? FORMATIONS['4-3-3'];
+export function positionsOf(formation: string): PositionSlot[] {
+	return FORMATIONS[formation] ?? FORMATIONS['4-3-3'];
 }
 
 /** Hoeveel spelers er in deze formatie op het veld staan. */
-export function positionCount(formatie: string): number {
-	return positionsOf(formatie).length;
+export function positionCount(formation: string): number {
+	return positionsOf(formation).length;
 }
 
 /** Welke linies in deze formatie voorkomen. Bij 4 tegen 4 is dat geen keeper. */
-export function linesIn(formatie: string): Line[] {
-	const gevonden = new Set(positionsOf(formatie).map((p) => p[4]));
+export function linesIn(formation: string): Line[] {
+	const gevonden = new Set(positionsOf(formation).map((p) => p[4]));
 	return LINE_ORDER.filter((l) => l && gevonden.has(l));
 }
 
 /** Bij welke speelvorm hoort deze formatie. */
-export function formatOf(formatie: string): string {
-	return FORMATS.find((s) => s.formaties.some((f) => f.sleutel === formatie))?.naam ?? '';
+export function formatOf(formation: string): string {
+	return FORMATS.find((s) => s.formaties.some((f) => f.sleutel === formation))?.name ?? '';
 }
 
 /**
@@ -178,25 +178,25 @@ export function formatOf(formatie: string): string {
  * nooit iets leegs terug. Een controle daarmee doet niets, en dan glipt een
  * onbekende naam ongemerkt de toestand in.
  */
-export function knowsFormation(naam: string | undefined | null): boolean {
-	return !!naam && naam in FORMATIONS;
+export function knowsFormation(name: string | undefined | null): boolean {
+	return !!name && name in FORMATIONS;
 }
 
 /** De leesbare naam van een plek: CVl heet CV, TIEN heet 10. */
-export function positionLabel(plekId: string, formatie: string): string {
-	return positionsOf(formatie).find((p) => p[0] === plekId)?.[1] ?? plekId;
+export function positionLabel(plekId: string, formation: string): string {
+	return positionsOf(formation).find((p) => p[0] === plekId)?.[1] ?? plekId;
 }
 
-export function positionLine(plekId: string, formatie: string): Line {
-	return positionsOf(formatie).find((p) => p[0] === plekId)?.[4] ?? '';
+export function positionLine(plekId: string, formation: string): Line {
+	return positionsOf(formation).find((p) => p[0] === plekId)?.[4] ?? '';
 }
 
 export function canKeep(p: Player): boolean {
-	return !!p.keept;
+	return !!p.keeper;
 }
 
 /** In welk bankgroepje hoort iemand: zijn veldlinie, of Keeper als hij alleen keept. */
 export function groupOf(p: Player): Line {
-	if (p.linie === 'V' || p.linie === 'M' || p.linie === 'A') return p.linie;
-	return p.keept ? 'K' : '';
+	if (p.line === 'V' || p.line === 'M' || p.line === 'A') return p.line;
+	return p.keeper ? 'K' : '';
 }

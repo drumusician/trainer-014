@@ -8,23 +8,23 @@ export interface AttendanceSummary {
 }
 
 /** Trainingen staan op datum, nieuwste eerst. */
-export function sortTrainings(trainingen: Training[]): Training[] {
-	return [...trainingen].sort((a, b) => (b.datum ?? '').localeCompare(a.datum ?? ''));
+export function sortTrainings(trainings: Training[]): Training[] {
+	return [...trainings].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
 }
 
 /**
  * Presentie over de laatste n trainingen waar deze speler in stond.
  * n = 0 betekent alles.
  */
-export function attendanceOf(trainingen: Training[], spelerId: string, n = 0): AttendanceSummary {
+export function attendanceOf(trainings: Training[], spelerId: string, n = 0): AttendanceSummary {
 	let er = 0;
 	let totaal = 0;
-	for (const t of trainingen) {
+	for (const t of trainings) {
 		if (n && totaal >= n) break;
 		const st = t.status[spelerId];
 		if (!st) continue;
 		totaal++;
-		if (st === 'ja') er++;
+		if (st === 'present') er++;
 	}
 	return { er, totaal };
 }

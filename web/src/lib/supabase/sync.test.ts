@@ -33,7 +33,7 @@ function nepFetch(opties: { versie?: number; data?: unknown; botsing?: boolean; 
 beforeEach(() => {
 	localStorage.clear();
 	app.toestand = emptyState();
-	app.toestand.spelers = [{ id: 'p1', naam: 'Daanish', linie: 'M' }];
+	app.toestand.players = [{ id: 'p1', name: 'Daanish', line: 'M' }];
 	sync.sessie = {
 		access_token: 'token',
 		refresh_token: 'r',
@@ -57,7 +57,7 @@ describe('vanzelf bijwerken', () => {
 		expect(sync.vies).toBe(true);
 		await sync.duwAlsNodig();
 		expect(sync.vies).toBe(false);
-		expect((verstuurd[0] as { spelers: unknown[] }).spelers).toHaveLength(1);
+		expect((verstuurd[0] as { players: unknown[] }).players).toHaveLength(1);
 	});
 
 	/* Stond hier andersom: de wedstrijd bleef bewust op één toestel. Maar dan kun
@@ -72,23 +72,23 @@ describe('vanzelf bijwerken', () => {
 		sync.merkVies();
 		expect(sync.vies).toBe(true);
 		await sync.duwAlsNodig();
-		expect((verstuurd.at(-1) as { wedstrijd: { tegenstander: string } }).wedstrijd.tegenstander).toBe('Sparta');
+		expect((verstuurd.at(-1) as { match: { opponent: string } }).match.opponent).toBe('Sparta');
 	});
 
 	it('haalt niet stiekem op als er hier nog iets klaarstaat', async () => {
-		nepFetch({ versie: 9, data: { spelers: [{ id: 'x', naam: 'Vreemd', linie: '' }] } });
+		nepFetch({ versie: 9, data: { players: [{ id: 'x', name: 'Vreemd', line: '' }] } });
 		sync.vies = true;
 		await sync.ophalen(true);
-		expect(app.toestand.spelers[0].naam).toBe('Daanish');
+		expect(app.toestand.players[0].name).toBe('Daanish');
 	});
 
 	it('haalt wel op als er hier niets klaarstaat', async () => {
 		nepFetch({
 			versie: 9,
-			data: { spelers: [{ id: 'x', naam: 'Vanaf de laptop', linie: '' }], trainingen: [], archief: [] }
+			data: { players: [{ id: 'x', name: 'Vanaf de laptop', line: '' }], trainings: [], archive: [] }
 		});
 		await sync.ophalen(true);
-		expect(app.toestand.spelers[0].naam).toBe('Vanaf de laptop');
+		expect(app.toestand.players[0].name).toBe('Vanaf de laptop');
 		expect(sync.sessie!.versie).toBe(9);
 	});
 
@@ -154,7 +154,7 @@ describe('bij het openen', () => {
 	   opstelling klaar, maar er veranderde niets meer, dus merkte de app nooit dat
 	   er ineens meer te versturen viel. Op de telefoon bleef het leeg. */
 	it('merkt dat er hier iets staat wat de server nog niet heeft', async () => {
-		const { verstuurd } = nepFetch({ versie: 1, data: { spelers: app.toestand.spelers } });
+		const { verstuurd } = nepFetch({ versie: 1, data: { players: app.toestand.players } });
 		sync.sessie!.afdruk = 'iets ouds';
 		app.newMatch('Sparta', true);
 		sync.vies = false;
@@ -162,11 +162,11 @@ describe('bij het openen', () => {
 		await sync.kijkEven();
 		expect(sync.vies).toBe(true);
 		await sync.duwAlsNodig();
-		expect((verstuurd.at(-1) as { wedstrijd: { tegenstander: string } }).wedstrijd.tegenstander).toBe('Sparta');
+		expect((verstuurd.at(-1) as { match: { opponent: string } }).match.opponent).toBe('Sparta');
 	});
 
 	it('laat het met rust als de server alles al heeft', async () => {
-		nepFetch({ versie: 1, data: { spelers: app.toestand.spelers } });
+		nepFetch({ versie: 1, data: { players: app.toestand.players } });
 		sync.merkVies();
 		await sync.duwAlsNodig(); /* nu weet hij wat er staat */
 		expect(sync.vies).toBe(false);

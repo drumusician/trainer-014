@@ -6,17 +6,17 @@
 	import { shortDate } from '$lib/domain/dates';
 	import type { Attendance } from '$lib/domain/types';
 
-	const WOORD: Record<Attendance, string> = { ja: 'Aanwezig', af: 'Afgemeld', nee: 'Niet gekomen' };
+	const WOORD: Record<Attendance, string> = { present: 'Aanwezig', excused: 'Afgemeld', absent: 'Niet gekomen' };
 
 	const t = $derived(app.trainingById(page.params.id));
 
-	$effect(() => zetKop(t ? 'Training ' + shortDate(t.datum) : 'Training', '/app/trainingen', 'Terug'));
+	$effect(() => zetKop(t ? 'Training ' + shortDate(t.date) : 'Training', '/app/trainingen', 'Terug'));
 
 	const telling = $derived.by(() => {
-		const w = { ja: 0, af: 0, nee: 0 };
+		const w = { present: 0, excused: 0, absent: 0 };
 		const training = t;
 		if (training) {
-			app.toestand.spelers.forEach((p) => {
+			app.toestand.players.forEach((p) => {
 				const st = training.status[p.id];
 				if (st) w[st]++;
 			});
@@ -26,7 +26,7 @@
 
 	function verwijder() {
 		if (!t) return;
-		if (!confirm('De training van ' + shortDate(t.datum) + ' verwijderen?')) return;
+		if (!confirm('De training van ' + shortDate(t.date) + ' verwijderen?')) return;
 		app.removeTraining(t);
 		goto('/app/trainingen');
 	}
@@ -41,17 +41,19 @@
 			<h2>Training</h2>
 			<label class="vak">
 				Datum
-				<input type="date" value={t.datum} onchange={(e) => app.setTrainingDate(t, e.currentTarget.value)} />
+				<input type="date" value={t.date} onchange={(e) => app.setTrainingDate(t, e.currentTarget.value)} />
 			</label>
 			<p class="telling">
-				<span>{telling.ja} aanwezig</span><span>{telling.af} afgemeld</span><span>{telling.nee} niet gekomen</span>
+				<span>{telling.present} aanwezig</span><span>{telling.excused} afgemeld</span><span
+					>{telling.absent} niet gekomen</span
+				>
 			</p>
-			<p class="uitleg">Tik op de knop achter een naam om hem langs aanwezig, afgemeld en niet gekomen te zetten.</p>
+			<p class="uitleg">Tik op de knop achter een name om hem langs aanwezig, afgemeld en niet gekomen te zetten.</p>
 
-			{#each app.toestand.spelers as p (p.id)}
-				{@const st = t.status[p.id] ?? 'ja'}
+			{#each app.toestand.players as p (p.id)}
+				{@const st = t.status[p.id] ?? 'present'}
 				<div class="sregel">
-					<span class="naam">{p.naam}</span>
+					<span class="naam">{p.name}</span>
 					<button class="presknop {st}" onclick={() => app.cycleAttendance(t, p.id)}>{WOORD[st]}</button>
 				</div>
 			{/each}

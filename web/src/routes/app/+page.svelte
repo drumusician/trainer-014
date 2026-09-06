@@ -11,17 +11,17 @@
 	$effect(() => zetKop('Wedstrijden'));
 
 	const t = $derived(app.toestand);
-	const w = $derived(app.wedstrijd);
-	const staatKlaar = $derived(!!w && !w.afgelopen && Object.values(w.opstelling).some(Boolean));
+	const w = $derived(app.match);
+	const staatKlaar = $derived(!!w && !w.finished && Object.values(w.lineup).some(Boolean));
 	const bezig = $derived(staatKlaar && app.kickedOff);
-	const opgezet = $derived(!!w && !w.afgelopen && !Object.values(w.opstelling).some(Boolean));
-	const teBewaren = $derived(!!w && w.afgelopen && !w.bewaard);
-	const loopt = $derived(staatKlaar || opgezet || teBewaren);
+	const opgezet = $derived(!!w && !w.finished && !Object.values(w.lineup).some(Boolean));
+	const teBewaren = $derived(!!w && w.finished && !w.archived);
+	const running = $derived(staatKlaar || opgezet || teBewaren);
 
-	const st = $derived(seizoenStand(t.archief));
+	const st = $derived(seizoenStand(t.archive));
 
 	function beginnen() {
-		if (!t.spelers.length) {
+		if (!t.players.length) {
 			goto('/app/opzetten');
 			return;
 		}
@@ -32,10 +32,10 @@
 
 <main>
 	<div class="pad">
-		{#if !t.spelers.length}
+		{#if !t.players.length}
 			<h2>Welkom bij Blaadje</h2>
 			<p class="uitleg">
-				In drie stappen sta je klaar: de naam van je team, wie erin zitten, en hoe jullie spelen. Duurt een minuut.
+				In drie stappen sta je klaar: de name van je team, wie on zitten, en hoe jullie spelen. Duurt een minuut.
 			</p>
 			<div class="knoprij" style="padding-left: 0">
 				<a class="knop prim" href="/app/opzetten">Aan de slag</a>
@@ -46,45 +46,45 @@
 				<a class="nu" href="/app/wedstrijd">
 					<div class="wat">Bezig</div>
 					<div class="titel">
-						{w!.thuis ? t.teamnaam + ' – ' + w!.tegenstander : w!.tegenstander + ' – ' + t.teamnaam}
+						{w!.home ? t.teamName + ' – ' + w!.opponent : w!.opponent + ' – ' + t.teamName}
 					</div>
 					<div class="erbij">
 						{mmss(elapsed(w, app.nu))} ·
-						{w!.pauze ? breakName(w!.deel, w!.delen).toLowerCase() : partName(w!.deel, w!.delen)} ·
-						{w!.loopt ? 'klok loopt' : 'klok staat stil'}
+						{w!.inBreak ? breakName(w!.part, w!.parts).toLowerCase() : partName(w!.part, w!.parts)} ·
+						{w!.running ? 'klok loopt' : 'klok staat stil'}
 					</div>
 				</a>
 			{:else if staatKlaar}
 				<a class="nu" href="/app/wedstrijd">
 					<div class="wat">Klaar om te beginnen</div>
 					<div class="titel">
-						{w!.thuis ? t.teamnaam + ' – ' + w!.tegenstander : w!.tegenstander + ' – ' + t.teamnaam}
+						{w!.home ? t.teamName + ' – ' + w!.opponent : w!.opponent + ' – ' + t.teamName}
 					</div>
-					<div class="erbij">De opstelling staat. De klok begint als jij op Start drukt.</div>
+					<div class="erbij">De lineup staat. De klok begint als jij op Start drukt.</div>
 				</a>
 			{:else if opgezet}
 				<a class="nu" href="/app/opstelling/wedstrijd">
 					<div class="wat">Nog te doen</div>
 					<div class="titel">Opstelling maken</div>
-					<div class="erbij">Tegen {w!.tegenstander}</div>
+					<div class="erbij">Tegen {w!.opponent}</div>
 				</a>
 			{:else if teBewaren}
 				<a class="nu" href="/app/afloop">
 					<div class="wat">Net gespeeld</div>
-					<div class="titel">Nog niet bewaard</div>
-					<div class="erbij">Tegen {w!.tegenstander}</div>
+					<div class="titel">Nog niet archived</div>
+					<div class="erbij">Tegen {w!.opponent}</div>
 				</a>
 			{:else}
 				<button class="nu" style="width: 100%; text-align: left; border: 0" onclick={beginnen}>
 					<div class="wat">Zaterdag</div>
-					<div class="titel">Nieuwe wedstrijd</div>
+					<div class="titel">Nieuwe match</div>
 					<div class="erbij">
-						{t.formatie} · {t.delen === 4 ? '4 kwarten' : '2 helften'} van {t.helftMinuten} min
+						{t.formation} · {t.parts === 4 ? '4 kwarten' : '2 helften'} van {t.minutesPerPart} min
 					</div>
 				</button>
 			{/if}
 
-			{#if loopt}
+			{#if running}
 				<div class="knoprij" style="padding-left: 0">
 					<a class="knop" href="/app/aanwezig">Wie is er?</a>
 					<a class="knop" href="/app/opstelling/wedstrijd">Opstelling</a>
@@ -93,9 +93,7 @@
 						onclick={() => {
 							if (
 								confirm(
-									'Deze wedstrijd tegen ' +
-										w!.tegenstander +
-										' weggooien?\n\nWat je in het archief bewaarde blijft staan.'
+									'Deze wedstrijd tegen ' + w!.opponent + ' weggooien?\n\nWat je in het archief bewaarde blijft staan.'
 								)
 							)
 								app.discardMatch();
@@ -107,9 +105,9 @@
 				<div class="tweekolom">
 					<label class="vak">
 						Formatie
-						<select value={t.formatie} onchange={(e) => app.chooseFormation(e.currentTarget.value)}>
-							{#each FORMATS as vorm (vorm.naam)}
-								<optgroup label={vorm.naam + (vorm.uitleg ? ' · ' + vorm.uitleg : '')}>
+						<select value={t.formation} onchange={(e) => app.chooseFormation(e.currentTarget.value)}>
+							{#each FORMATS as vorm (vorm.name)}
+								<optgroup label={vorm.name + (vorm.uitleg ? ' · ' + vorm.uitleg : '')}>
 									{#each vorm.formaties as f (f.sleutel)}
 										<option value={f.sleutel}>{f.sleutel}{f.uitleg ? ' · ' + f.uitleg : ''}</option>
 									{/each}
@@ -119,7 +117,7 @@
 					</label>
 					<label class="vak">
 						Speelwijze
-						<select bind:value={t.delen} onchange={() => app.save()}>
+						<select bind:value={t.parts} onchange={() => app.save()}>
 							<option value={2}>2 helften</option>
 							<option value={4}>4 kwarten</option>
 						</select>
@@ -127,40 +125,40 @@
 				</div>
 				<div class="tweekolom">
 					<label class="vak">
-						Minuten per {t.delen === 4 ? 'kwart' : 'helft'}
-						<input type="number" inputmode="numeric" bind:value={t.helftMinuten} onchange={() => app.save()} />
+						Minuten per {t.parts === 4 ? 'kwart' : 'helft'}
+						<input type="number" inputmode="numeric" bind:value={t.minutesPerPart} onchange={() => app.save()} />
 					</label>
 					<label class="vak">
 						Speelduur
-						<input value={t.helftMinuten * t.delen + ' minuten'} readonly />
+						<input value={t.minutesPerPart * t.parts + ' minuten'} readonly />
 					</label>
 				</div>
 				<div class="knoprij" style="padding-left: 0">
 					<a class="knop" href="/app/opstelling/standaard">
-						{t.standaard ? 'Vaste opstelling wijzigen' : 'Vaste opstelling maken'}
+						{t.defaultLineup ? 'Vaste opstelling wijzigen' : 'Vaste opstelling maken'}
 					</a>
 				</div>
 			{/if}
 
 			<h2>Gespeeld</h2>
-			{#if !t.archief.length}
+			{#if !t.archive.length}
 				<p class="uitleg">
-					Nog niets bewaard. Sluit een wedstrijd af en bewaar hem, dan staat hij hier met uitslag, speeltijden en het
-					hele verloop.
+					Nog niets archived. Sluit een match af en bewaar hem, dan staat hij hier met uitslag, speeltijden en het hele
+					verloop.
 				</p>
 			{:else}
 				<p class="uitleg">
 					{st.gewonnen}W {st.gelijk}G {st.verloren}V · {st.voor} voor, {st.tegen} tegen ·
-					{Math.round(st.seconden / 60)} minuten voetbal
+					{Math.round(st.seconds / 60)} minuten voetbal
 				</p>
 				<ul class="log">
-					{#each t.archief as a, i (a)}
+					{#each t.archive as a, i (a)}
 						<li class="klikbaar">
 							<a href="/app/archief/{i}">
-								<b>{shortDate(a.datum)}</b>
-								<span>{a.thuis !== false ? 'thuis' : 'uit'} tegen {a.tegenstander}</span>
+								<b>{shortDate(a.date)}</b>
+								<span>{a.home !== false ? 'thuis' : 'uit'} tegen {a.opponent}</span>
 								<span style="flex: none; font-weight: 700; font-variant-numeric: tabular-nums">
-									{a.stand?.[0] ?? 0}–{a.stand?.[1] ?? 0}
+									{a.score?.[0] ?? 0}–{a.score?.[1] ?? 0}
 								</span>
 								<em>›</em>
 							</a>

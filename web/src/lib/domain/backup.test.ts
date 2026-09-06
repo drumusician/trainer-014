@@ -5,38 +5,38 @@ import { emptyState } from './types';
 
 function volleToestand() {
 	const t = emptyState();
-	t.spelers = [
-		{ id: 'p1', naam: 'Daanish', linie: 'M' },
-		{ id: 'p2', naam: 'Gijs', linie: '', keept: true }
+	t.players = [
+		{ id: 'p1', name: 'Daanish', line: 'M' },
+		{ id: 'p2', name: 'Gijs', line: '', keeper: true }
 	];
-	t.trainingen = [{ id: 't1', datum: '2026-09-02', status: { p1: 'ja', p2: 'nee' } }];
-	t.archief = [
+	t.trainings = [{ id: 't1', date: '2026-09-02', status: { p1: 'present', p2: 'absent' } }];
+	t.archive = [
 		{
-			datum: '2026-08-30',
-			tegenstander: 'Ajax',
-			thuis: true,
-			stand: [2, 1],
-			formatie: '4-3-3',
-			duur: 4200,
-			gebeurtenissen: [],
-			speeltijd: [{ id: 'p1', naam: 'Daanish', seconden: 4200, keeper: 0 }]
+			date: '2026-08-30',
+			opponent: 'Ajax',
+			home: true,
+			score: [2, 1],
+			formation: '4-3-3',
+			duration: 4200,
+			events: [],
+			playingTime: [{ id: 'p1', name: 'Daanish', seconds: 4200, keeper: 0 }]
 		}
 	];
-	t.wedstrijd = {
-		datum: '2026-09-06',
-		tegenstander: 'Sparta',
-		thuis: true,
-		formatie: '4-3-3',
-		opstelling: {},
-		bank: [],
-		gebeurtenissen: [],
-		verstreken: 100,
-		sinds: null,
-		loopt: true,
-		delen: 2,
-		deel: 1,
-		pauze: false,
-		afgelopen: false
+	t.match = {
+		date: '2026-09-06',
+		opponent: 'Sparta',
+		home: true,
+		formation: '4-3-3',
+		lineup: {},
+		bench: [],
+		events: [],
+		elapsed: 100,
+		since: null,
+		running: true,
+		parts: 2,
+		part: 1,
+		inBreak: false,
+		finished: false
 	};
 	return t;
 }
@@ -44,21 +44,21 @@ function volleToestand() {
 describe('back-up', () => {
 	it('houdt selectie, trainingen en archief vast, maar niet de lopende wedstrijd', () => {
 		const terug = readBackup(makeBackup(volleToestand(), '2026-09-03T10:00:00.000Z'));
-		expect(terug.spelers).toHaveLength(2);
-		expect(terug.trainingen[0].status.p2).toBe('nee');
-		expect(terug.archief[0].tegenstander).toBe('Ajax');
+		expect(terug.players).toHaveLength(2);
+		expect(terug.trainings[0].status.p2).toBe('absent');
+		expect(terug.archive[0].opponent).toBe('Ajax');
 		expect(terug).not.toHaveProperty('wedstrijd');
 	});
 
 	it('slikt ook een kale toestand, zoals een oude export', () => {
-		const oud = JSON.stringify({ spelers: [{ id: 'p1', naam: 'Aad', linie: 'V' }], archief: [] });
-		expect(readBackup(oud).spelers[0].naam).toBe('Aad');
+		const oud = JSON.stringify({ players: [{ id: 'p1', name: 'Aad', line: 'V' }], archive: [] });
+		expect(readBackup(oud).players[0].name).toBe('Aad');
 	});
 
 	it('weigert wat geen back-up is', () => {
 		expect(() => readBackup('{}')).toThrow();
 		expect(() => readBackup('geen json')).toThrow();
-		expect(() => readBackup(JSON.stringify({ spelers: [] }))).toThrow();
+		expect(() => readBackup(JSON.stringify({ players: [] }))).toThrow();
 	});
 
 	it('noemt het bestand naar de dag', () => {
@@ -72,9 +72,9 @@ describe('een bewaard bestand terugzetten', () => {
 	it('leest terug wat maakBackup schreef, met archief en al', () => {
 		const heen = makeBackup(volleToestand(), '2026-09-06T10:00:00.000Z');
 		const terug = readBackup(heen);
-		expect(terug.spelers.length).toBe(volleToestand().spelers.length);
-		expect(terug.archief.length).toBe(volleToestand().archief.length);
-		expect(terug.teamnaam).toBe(volleToestand().teamnaam);
+		expect(terug.players.length).toBe(volleToestand().players.length);
+		expect(terug.archive.length).toBe(volleToestand().archive.length);
+		expect(terug.teamName).toBe(volleToestand().teamName);
 	});
 
 	it('beschrijft zowel een back-up als een overzetcode', () => {

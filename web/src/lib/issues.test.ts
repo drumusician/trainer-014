@@ -10,21 +10,21 @@ describe('het logboekje van wat er misging', () => {
 	it('noteert wat er gebeurde, nieuwste bovenaan', () => {
 		reportIssue('Eerste');
 		reportIssue('Tweede', new Error('kapot'));
-		expect(issues.lijst.map((p) => p.wat)).toEqual(['Tweede', 'Eerste']);
-		expect(issues.lijst[0].melding).toBe('kapot');
+		expect(issues.lijst.map((p) => p.what)).toEqual(['Tweede', 'Eerste']);
+		expect(issues.lijst[0].message).toBe('kapot');
 	});
 
 	it('overleeft opnieuw laden', () => {
 		reportIssue('Blijft staan');
 		issues.lijst = [];
 		loadIssues();
-		expect(issues.lijst.map((p) => p.wat)).toEqual(['Blijft staan']);
+		expect(issues.lijst.map((p) => p.what)).toEqual(['Blijft staan']);
 	});
 
 	it('houdt er hoogstens twintig, zodat de opslag niet volloopt', () => {
 		for (let i = 0; i < 30; i++) reportIssue('nummer ' + i);
 		expect(issues.lijst).toHaveLength(20);
-		expect(issues.lijst[0].wat).toBe('nummer 29');
+		expect(issues.lijst[0].what).toBe('nummer 29');
 	});
 
 	/* Dit wordt vanuit een catch aangeroepen. Een logboek dat zelf de app laat

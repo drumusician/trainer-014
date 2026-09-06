@@ -8,14 +8,14 @@
 
 	$effect(() => zetKop('Trainingen'));
 
-	const trainingen = $derived(app.toestand.trainingen);
+	const trainings = $derived(app.toestand.trainings);
 	const mageren = $derived(
-		app.toestand.spelers.filter((p) => thinAttendance(attendanceOf(app.toestand.trainingen, p.id, 4)))
+		app.toestand.players.filter((p) => thinAttendance(attendanceOf(app.toestand.trainings, p.id, 4)))
 	);
 
 	function telling(t: Training) {
-		const w = { ja: 0, af: 0, nee: 0 };
-		app.toestand.spelers.forEach((p) => {
+		const w = { present: 0, excused: 0, absent: 0 };
+		app.toestand.players.forEach((p) => {
 			const st = t.status[p.id];
 			if (st) w[st]++;
 		});
@@ -23,7 +23,7 @@
 	}
 
 	function nieuw() {
-		if (!app.toestand.spelers.length) {
+		if (!app.toestand.players.length) {
 			goto('/app/opzetten');
 			return;
 		}
@@ -34,25 +34,27 @@
 <main>
 	<div class="pad">
 		<h2>Trainingen</h2>
-		{#if !app.toestand.spelers.length}
-			<p class="uitleg">Zet eerst je selectie erin, dan kun je afvinken wie er was.</p>
-		{:else if !trainingen.length}
+		{#if !app.toestand.players.length}
+			<p class="uitleg">Zet eerst je selectie on, dan kun je afvinken wie er was.</p>
+		{:else if !trainings.length}
 			<p class="uitleg">
-				Nog geen trainingen. Maak er een aan; iedereen staat dan op aanwezig en je tikt alleen wie er niet is.
+				Nog geen trainings. Maak er een aan; iedereen staat dan op aanwezig en je tikt alleen wie er niet is.
 			</p>
 		{:else}
 			<p class="uitleg">
-				Tik een training aan om hem bij te werken. De datum kun je daar aanpassen, dus een gemiste week vul je later
+				Tik een training aan om hem bij te werken. De date kun je daar aanpassen, dus een gemiste week vul je later
 				gewoon in.
 			</p>
 			<ul class="log">
-				{#each trainingen as t (t.id)}
+				{#each trainings as t (t.id)}
 					{@const w = telling(t)}
 					<li class="klikbaar">
 						<a href="/app/trainingen/{t.id}">
-							<b>{shortDate(t.datum)}</b>
+							<b>{shortDate(t.date)}</b>
 							<span>
-								{w.ja} aanwezig{w.af ? ', ' + w.af + ' afgemeld' : ''}{w.nee ? ', ' + w.nee + ' niet gekomen' : ''}
+								{w.present} aanwezig{w.excused ? ', ' + w.excused + ' afgemeld' : ''}{w.absent
+									? ', ' + w.absent + ' niet gekomen'
+									: ''}
 							</span>
 							<em>›</em>
 						</a>
@@ -66,13 +68,13 @@
 
 		{#if mageren.length}
 			<h2>Weinig geweest</h2>
-			<p class="uitleg">Over de laatste vier trainingen. Je ziet het ook terug als je je opstelling maakt.</p>
+			<p class="uitleg">Over de laatste vier trainings. Je ziet het ook terug als je je lineup maakt.</p>
 			<table class="uitslag">
 				<tbody>
 					{#each mageren as p (p.id)}
-						{@const r = attendanceOf(app.toestand.trainingen, p.id, 4)}
+						{@const r = attendanceOf(app.toestand.trainings, p.id, 4)}
 						<tr>
-							<td>{p.naam}</td>
+							<td>{p.name}</td>
 							<td class="m mager">{r.er}/{r.totaal}</td>
 						</tr>
 					{/each}

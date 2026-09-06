@@ -29,7 +29,7 @@
 
 	const inTaak = $derived(
 		page.url.pathname.startsWith('/app/opstelling') ||
-			(page.url.pathname.startsWith('/app/wedstrijd') && app.kickedOff && !app.wedstrijd?.afgelopen)
+			(page.url.pathname.startsWith('/app/wedstrijd') && app.kickedOff && !app.match?.finished)
 	);
 
 	let { children } = $props();
@@ -70,13 +70,13 @@
 
 		/* Eén klok voor de hele app: schermen die tijd tonen werken vanzelf bij. */
 		const tik = setInterval(() => {
-			if (app.wedstrijd?.loopt) app.nu = Date.now();
+			if (app.match?.running) app.nu = Date.now();
 		}, 1000);
 
 		/* Het scherm mag niet uitvallen terwijl de klok loopt. */
 		const terug = () => {
 			if (document.visibilityState !== 'visible') return;
-			if (app.wedstrijd?.loopt) pakWakeLock();
+			if (app.match?.running) pakWakeLock();
 			sync.kijkEven();
 		};
 		document.addEventListener('visibilitychange', terug);
@@ -90,7 +90,7 @@
 	});
 
 	$effect(() => {
-		if (app.wedstrijd?.loopt) pakWakeLock();
+		if (app.match?.running) pakWakeLock();
 		else losWakeLock();
 	});
 </script>

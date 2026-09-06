@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { opstellingTekst } from './lineup';
 import type { Player } from './types';
 
-const namen = ['Gijs', 'Jack', 'Maher', 'Daan', 'Mirza', 'Siem', 'Kasper', 'Daanish', 'Mauro', 'Max', 'Simon', 'Amir'];
-const spelers: Player[] = namen.map((naam, i) => ({ id: 'p' + i, naam, linie: '' }));
-const opstelling = {
+const names = ['Gijs', 'Jack', 'Maher', 'Daan', 'Mirza', 'Siem', 'Kasper', 'Daanish', 'Mauro', 'Max', 'Simon', 'Amir'];
+const players: Player[] = names.map((name, i) => ({ id: 'p' + i, name, line: '' }));
+const lineup = {
 	K: 'p0',
 	RV: 'p1',
 	CVr: 'p2',
@@ -20,7 +20,7 @@ const opstelling = {
 
 describe('opstelling als tekst', () => {
 	it('zet elke linie op een eigen regel, keeper zonder plekcode', () => {
-		const tekst = opstellingTekst('4-3-3', opstelling, ['p11'], spelers);
+		const tekst = opstellingTekst('4-3-3', lineup, ['p11'], players);
 		expect(tekst.split('\n')).toEqual([
 			'Opstelling 4-3-3',
 			'Keeper: Gijs',
@@ -32,7 +32,7 @@ describe('opstelling als tekst', () => {
 	});
 
 	it('laat lege plekken en een lege bank gewoon weg', () => {
-		const tekst = opstellingTekst('4-3-3', { K: 'p0' }, [], spelers);
+		const tekst = opstellingTekst('4-3-3', { K: 'p0' }, [], players);
 		expect(tekst).toBe('Opstelling 4-3-3\nKeeper: Gijs');
 	});
 });

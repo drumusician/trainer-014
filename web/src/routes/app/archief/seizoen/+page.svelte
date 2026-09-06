@@ -6,8 +6,8 @@
 	$effect(() => zetKop('Seizoen', '/app', 'Terug'));
 
 	const t = $derived(app.toestand);
-	const st = $derived(seizoenStand(t.archief));
-	const scorers = $derived(makers(t.archief, t.spelers));
+	const st = $derived(seizoenStand(t.archive));
+	const scorers = $derived(makers(t.archive, t.players));
 
 	function shortDate(d: string) {
 		try {
@@ -21,31 +21,29 @@
 <main>
 	<div class="pad">
 		<h2>Seizoen</h2>
-		{#if !t.archief.length && !t.trainingen.length}
+		{#if !t.archive.length && !t.trainings.length}
 			<p class="uitleg">
-				Nog geen bewaarde wedstrijden en geen trainingen. Sluit een wedstrijd af en bewaar hem, dan telt hij hier mee.
+				Nog geen bewaarde wedstrijden en geen trainings. Sluit een match af en bewaar hem, dan telt hij hier mee.
 			</p>
-		{:else if t.archief.length}
+		{:else if t.archive.length}
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
 				{st.wedstrijden}
 				{st.wedstrijden === 1 ? 'wedstrijd' : 'wedstrijden'} · {st.gewonnen}W {st.gelijk}G {st.verloren}V
 			</p>
 			<p class="uitleg">
-				{st.voor} voor, {st.tegen} tegen · {Math.round(st.seconden / 60)} minuten voetbal
+				{st.voor} voor, {st.tegen} tegen · {Math.round(st.seconds / 60)} minuten voetbal
 			</p>
 
 			{#if scorers.length}
 				<h2>Topscorers</h2>
 				<ul class="log">
-					{#each scorers as r (r.naam)}
+					{#each scorers as r (r.name)}
 						<li>
 							<b>{r.doelpunten}×</b>
 							<span>
-								{r.naam}
+								{r.name}
 								<span class="sub">
-									{r.wedstrijden
-										.map((w) => shortDate(w.datum) + (w.aantal > 1 ? ' ' + w.aantal + '×' : ''))
-										.join(' · ')}
+									{r.wedstrijden.map((w) => shortDate(w.date) + (w.aantal > 1 ? ' ' + w.aantal + '×' : '')).join(' · ')}
 								</span>
 							</span>
 						</li>
@@ -55,7 +53,7 @@
 			{/if}
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
-				<a class="knop prim" href="/app/team/spelers">Speeltijd en presentie per speler</a>
+				<a class="knop prim" href="/app/team/spelers">Speeltijd en presentie per player</a>
 			</div>
 		{:else}
 			<p class="uitleg">Nog geen bewaarde wedstrijden.</p>

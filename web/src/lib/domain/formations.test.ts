@@ -10,7 +10,7 @@ describe('formaties', () => {
 			'4 tegen 4': 4
 		};
 		FORMATS.forEach((s) =>
-			s.formaties.forEach((f) => expect(positionCount(f.sleutel), f.sleutel).toBe(verwacht[s.naam]))
+			s.formaties.forEach((f) => expect(positionCount(f.sleutel), f.sleutel).toBe(verwacht[s.name]))
 		);
 	});
 
@@ -21,19 +21,19 @@ describe('formaties', () => {
 	});
 
 	it('geeft elke plek een eigen id', () => {
-		Object.entries(FORMATIONS).forEach(([naam, lijst]) => {
+		Object.entries(FORMATIONS).forEach(([name, lijst]) => {
 			const ids = lijst.map((p) => p[0]);
-			expect(new Set(ids).size, naam).toBe(ids.length);
+			expect(new Set(ids).size, name).toBe(ids.length);
 		});
 	});
 
 	it('zet iedereen binnen het veld', () => {
-		Object.entries(FORMATIONS).forEach(([naam, lijst]) =>
+		Object.entries(FORMATIONS).forEach(([name, lijst]) =>
 			lijst.forEach(([id, , x, y]) => {
-				expect(x, naam + ' ' + id).toBeGreaterThanOrEqual(10);
-				expect(x, naam + ' ' + id).toBeLessThanOrEqual(90);
-				expect(y, naam + ' ' + id).toBeGreaterThanOrEqual(10);
-				expect(y, naam + ' ' + id).toBeLessThanOrEqual(95);
+				expect(x, name + ' ' + id).toBeGreaterThanOrEqual(10);
+				expect(x, name + ' ' + id).toBeLessThanOrEqual(90);
+				expect(y, name + ' ' + id).toBeGreaterThanOrEqual(10);
+				expect(y, name + ' ' + id).toBeLessThanOrEqual(95);
 			})
 		);
 	});
@@ -42,14 +42,14 @@ describe('formaties', () => {
 		FORMATS.forEach((s) =>
 			s.formaties.forEach(({ sleutel }) => {
 				const heeftKeeper = positionsOf(sleutel).some((p) => p[4] === 'K');
-				expect(heeftKeeper, sleutel).toBe(s.naam !== '4 tegen 4');
-				expect(linesIn(sleutel).includes('K'), sleutel).toBe(s.naam !== '4 tegen 4');
+				expect(heeftKeeper, sleutel).toBe(s.name !== '4 tegen 4');
+				expect(linesIn(sleutel).includes('K'), sleutel).toBe(s.name !== '4 tegen 4');
 			})
 		);
 	});
 
 	it('weet bij welke speelvorm een formatie hoort', () => {
-		expect(formatOf('4-4-2 ruit')).toBe('11 tegen 11');
+		expect(formatOf('4-4-2 diamond')).toBe('11 tegen 11');
 		expect(formatOf('1-3-3-1')).toBe('8 tegen 8');
 		expect(formatOf('1-2-2-1')).toBe('6 tegen 6');
 		expect(formatOf('4-3-3')).toBe('11 tegen 11');

@@ -151,9 +151,8 @@
 		{:else}
 			<p class="uitleg">
 				Ingelogd als <b>{sync.sessie.email ?? 'onbekend'}</b>. De app werkt gewoon zonder bereik en stuurt vanzelf op
-				zodra er weer internet is. Een wedstrijd die je klaarzet gaat mee, dus je stelt thuis op en pakt hem op het veld
-				op je telefoon op. Een wedstrijd die al loopt wordt wel opgestuurd, maar nooit overschreven door een ander
-				toestel.
+				zodra er weer internet is. Een match die je klaarzet gaat mee, dus je stelt home op en pakt hem op het veld op
+				je telefoon op. Een match die al running wordt wel opgestuurd, maar nooit overschreven door een ander toestel.
 			</p>
 			<p class="uitleg">
 				<b>
@@ -181,7 +180,7 @@
 				</div>
 			{/if}
 		{/if}
-		{#if sync.melding}<p class="uitleg" style="margin-top: 8px">{sync.melding}</p>{/if}
+		{#if sync.message}<p class="uitleg" style="margin-top: 8px">{sync.message}</p>{/if}
 
 		<h2>Overzetten en back-up</h2>
 		{#if !sync.sessie}
@@ -191,8 +190,8 @@
 			</p>
 		{/if}
 		<p class="uitleg">
-			Alles wat de app onthoudt: selectie, standaardopstelling, trainingen en het hele archief. Als bestand om te
-			bewaren, of als code om op je andere toestel in te voeren. Een wedstrijd die nu loopt gaat nooit mee.
+			Alles what de app onthoudt: selectie, standaardopstelling, trainings en het hele archive. Als bestand om te
+			bewaren, of als code om op je andere toestel in te voeren. Een match die nu running gaat nooit mee.
 		</p>
 		<div class="knoprij" style="padding-left: 0">
 			<button onclick={backupMaken}>Bestand opslaan</button>
@@ -239,11 +238,11 @@
 				wel kunnen zien. Dit blijft op je toestel.
 			</p>
 			<div class="problemen">
-				{#each issues.lijst as probleem (probleem.wanneer + probleem.wat)}
+				{#each issues.lijst as probleem (probleem.when + probleem.what)}
 					<div>
-						<b>{new Date(probleem.wanneer).toLocaleString('nl-NL')}</b>
-						<span>{probleem.wat}</span>
-						{#if probleem.melding}<code>{probleem.melding}</code>{/if}
+						<b>{new Date(probleem.when).toLocaleString('nl-NL')}</b>
+						<span>{probleem.what}</span>
+						{#if probleem.message}<code>{probleem.message}</code>{/if}
 					</div>
 				{/each}
 			</div>
@@ -253,7 +252,7 @@
 		{/if}
 
 		<p class="uitleg" style="margin-top: 24px; font-size: 11px; opacity: 0.75">
-			Blaadje · het scherm blijft wakker zolang de klok loopt
+			Blaadje · het scherm blijft wakker zolang de klok running
 		</p>
 	</div>
 </main>

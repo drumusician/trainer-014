@@ -4,17 +4,17 @@
  */
 const RANGTELWOORD = ['', '1e', '2e', '3e', '4e'];
 
-export function partName(deel: number, delen: number): string {
-	const soort = delen === 4 ? 'kwart' : 'helft';
-	return (RANGTELWOORD[deel] ?? deel + 'e') + ' ' + soort;
+export function partName(part: number, parts: number): string {
+	const soort = parts === 4 ? 'kwart' : 'helft';
+	return (RANGTELWOORD[part] ?? part + 'e') + ' ' + soort;
 }
 
 /** De pauze halverwege heet rust; de andere onderbrekingen zijn gewoon pauzes. */
-export function breakName(naDeel: number, delen: number): string {
-	return naDeel === Math.floor(delen / 2) ? 'Rust' : 'Pauze';
+export function breakName(naDeel: number, parts: number): string {
+	return naDeel === Math.floor(parts / 2) ? 'Rust' : 'Pauze';
 }
 
 /** Hoe lang de wedstrijd duurt volgens de instelling. */
-export function speelduur(minutenPerDeel: number, delen: number): number {
-	return minutenPerDeel * delen;
+export function speelduur(minutenPerDeel: number, parts: number): number {
+	return minutenPerDeel * parts;
 }

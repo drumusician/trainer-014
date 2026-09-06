@@ -12,19 +12,19 @@ import type { MatchEvent, MatchEventType, Match } from '$lib/domain/types';
 
 /** Is er afgetrapt? Pas dan ligt de opstelling vast en gaat de klok tellen. */
 export function kickedOff(w: Match | null): boolean {
-	return !!w?.gebeurtenissen.some((g) => g.type === 'start');
+	return !!w?.events.some((g) => g.type === 'start');
 }
 
 /** Een gebeurtenis op de stand van de klok van dit moment. */
 export function log(w: Match | null, nu: number, type: MatchEventType, extra: Partial<MatchEvent> = {}) {
 	if (!w) return;
-	w.gebeurtenissen.push({ type, t: elapsed(w, nu), ...extra } as MatchEvent);
+	w.events.push({ type, t: elapsed(w, nu), ...extra } as MatchEvent);
 }
 
 /** Bijstellen als de scheidsrechter er anders over denkt. Nooit onder nul. */
-export function verschuif(w: Match | null, seconden: number): boolean {
-	if (!w || w.afgelopen) return false;
-	w.verstreken = Math.max(0, w.verstreken + seconden);
+export function verschuif(w: Match | null, seconds: number): boolean {
+	if (!w || w.finished) return false;
+	w.elapsed = Math.max(0, w.elapsed + seconds);
 	return true;
 }
 
@@ -38,18 +38,18 @@ export function verschuif(w: Match | null, seconden: number): boolean {
  * werd de aftrap nooit vastgelegd.
  */
 export function toggleRunning(w: Match | null, nu: number, vandaag: string): boolean {
-	if (!w || w.afgelopen) return false;
-	if (w.loopt) {
-		w.verstreken += (nu - (w.sinds ?? nu)) / 1000;
-		w.loopt = false;
-		w.sinds = null;
+	if (!w || w.finished) return false;
+	if (w.running) {
+		w.elapsed += (nu - (w.since ?? nu)) / 1000;
+		w.running = false;
+		w.since = null;
 	} else {
 		if (!kickedOff(w)) {
-			w.datum = vandaag;
+			w.date = vandaag;
 			log(w, nu, 'start');
 		}
-		w.loopt = true;
-		w.sinds = nu;
+		w.running = true;
+		w.since = nu;
 	}
 	return true;
 }
@@ -59,15 +59,15 @@ export function toggleRunning(w: Match | null, nu: number, vandaag: string): boo
  * twee helften als voor vier kwarten.
  */
 export function togglePart(w: Match | null, nu: number, vandaag: string): boolean {
-	if (!w || w.afgelopen) return false;
-	if (w.pauze) {
-		w.deel = Math.min(w.deel + 1, w.delen);
-		w.pauze = false;
-		if (!w.loopt) toggleRunning(w, nu, vandaag);
-	} else if (w.deel < w.delen) {
-		if (w.loopt) toggleRunning(w, nu, vandaag);
-		log(w, nu, 'rust', { deel: w.deel });
-		w.pauze = true;
+	if (!w || w.finished) return false;
+	if (w.inBreak) {
+		w.part = Math.min(w.part + 1, w.parts);
+		w.inBreak = false;
+		if (!w.running) toggleRunning(w, nu, vandaag);
+	} else if (w.part < w.parts) {
+		if (w.running) toggleRunning(w, nu, vandaag);
+		log(w, nu, 'break', { part: w.part });
+		w.inBreak = true;
 	}
 	return true;
 }
@@ -81,13 +81,13 @@ export function togglePart(w: Match | null, nu: number, vandaag: string): boolea
  * anders telt de tijd sinds de laatste start er nog eens bovenop.
  */
 export function zetOp(w: Match | null, nu: number, minuten: number): boolean {
-	if (!w || w.afgelopen || !Number.isFinite(minuten)) return false;
-	w.verstreken = Math.max(0, Math.round(minuten * 60));
-	if (w.loopt) w.sinds = nu;
+	if (!w || w.finished || !Number.isFinite(minuten)) return false;
+	w.elapsed = Math.max(0, Math.round(minuten * 60));
+	if (w.running) w.since = nu;
 	return true;
 }
 
 /** Kan er nog een deel bij, of is dit het laatste? */
 export function canStartNextPart(w: Match | null): boolean {
-	return !!w && !w.afgelopen && (w.pauze || w.deel < w.delen);
+	return !!w && !w.finished && (w.inBreak || w.part < w.parts);
 }

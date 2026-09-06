@@ -34,7 +34,7 @@
 	<section class="hero">
 		<h1>Het blaadje in je hand,<br />maar dan op je telefoon</h1>
 		<p class="groot">
-			Blaadje houdt je opstelling, je wissels en de speeltijd bij terwijl jij coacht. Een wissel kost twee tikken, en na
+			Blaadje houdt je lineup, je wissels en de playingTime bij terwijl jij coacht. Een wissel kost twee tikken, en na
 			afloop weet je precies wie hoe lang heeft gespeeld.
 		</p>
 		<div class="knoprij">
@@ -57,44 +57,43 @@
 		<div>
 			<h2>Wisselen in twee tikken</h2>
 			<p>
-				Tik wie eruit gaat, tik wie erin komt. De bank staat naast het veld, in dezelfde volgorde als de linies, en
-				bovenaan staat wie tot nu toe het minst heeft gespeeld. Twee spelers van plek laten ruilen kan ook, zonder dat
-				er iemand van de bank hoeft te komen.
+				Tik wie off gaat, tik wie on komt. De bench staat naast het veld, in dezelfde volgorde als de linies, en
+				bovenaan staat wie tot nu toe het minst heeft gespeeld. Twee players van position laten ruilen kan ook, zonder
+				dat er iemand van de bench hoeft te komen.
 			</p>
 		</div>
 		<div>
 			<h2>Speeltijd zonder invoeren</h2>
 			<p>
-				De minuten volgen uit je wissels, dus je hoeft niets bij te houden. Onder elke naam op het veld staat de
-				speeltijd tot nu toe. Minuten in het doel tellen apart, want een helft keepen is geen halve wedstrijd
-				voetballen.
+				De minuten volgen uit je wissels, dus je hoeft niets bij te houden. Onder elke name op het veld staat de
+				playingTime tot nu toe. Minuten in het doel tellen apart, want een helft keepen is geen halve match voetballen.
 			</p>
 		</div>
 		<div>
 			<h2>Helften of kwarten</h2>
 			<p>
-				Van 11 tegen 11 tot 4 tegen 4, in twee helften of in vier kwarten. Het aantal spelers ligt nergens vast, dus bij
+				Van 11 tegen 11 tot 4 tegen 4, in twee helften of in vier kwarten. Het aantal players ligt nergens vast, dus bij
 				de kleinsten werkt het net zo goed als bij de grote elftallen.
 			</p>
 		</div>
 		<div>
 			<h2>Presentie op de training</h2>
 			<p>
-				Aanwezig, afgemeld of niet gekomen: één tik per speler. Wie de laatste keren weinig kwam, zie je terug op het
-				moment dat je je opstelling maakt. De app zet het er alleen bij; wat je ermee doet is aan jou.
+				Aanwezig, afgemeld of niet gekomen: één tik per player. Wie de laatste keren weinig kwam, zie je terug op het
+				moment dat je je lineup maakt. De app zet het er alleen bij; what je ermee doet is aan jou.
 			</p>
 		</div>
 		<div>
 			<h2>Een verslagje voor de groepsapp</h2>
 			<p>
 				Na afloop ligt er een kant-en-klaar bericht: de uitslag, wie er scoorden, en de paar regels die je er zelf bij
-				schrijft. De wissels blijven eruit, want daar hoeven de ouders niets van te vinden.
+				schrijft. De wissels blijven off, want daar hoeven de ouders niets van te vinden.
 			</p>
 		</div>
 		<div>
 			<h2>Langs de lijn, niet achter een bureau</h2>
 			<p>
-				Het scherm blijft aan zolang de klok loopt, je hoeft nergens te scrollen, en zonder bereik gaat alles gewoon
+				Het scherm blijft aan zolang de klok running, je hoeft nergens te scrollen, en zonder bereik gaat alles gewoon
 				door. Wat je invult blijft op je eigen telefoon staan.
 			</p>
 		</div>
@@ -109,7 +108,7 @@
 			alt="Het spelersoverzicht met speeltijd en presentie per speler"
 		/>
 		<p class="onderschrift">
-			Na een paar weken staat het allemaal in één lijst: gespeelde minuten per speler, en hoe vaak ze op de training
+			Na een paar weken staat het allemaal in één lijst: gespeelde minuten per player, en hoe vaak ze op de training
 			waren.
 		</p>
 	</section>
@@ -126,8 +125,8 @@
 			team kan.
 		</p>
 		<p>
-			Namen van kinderen zijn geen bijzaak. Daarom bewaart Blaadje alleen wat het echt nodig heeft: een voornaam, een
-			linie, en de minuten die uit je wissels volgen. Geen beoordelingen, geen dossier.
+			Namen van kinderen zijn geen bijzaak. Daarom bewaart Blaadje alleen what het echt nodig heeft: een voornaam, een
+			line, en de minuten die uit je wissels volgen. Geen beoordelingen, geen dossier.
 		</p>
 		<p>
 			<b>Daar zit ook een keerzijde aan.</b> Staat je seizoen alleen op je telefoon, dan is het weg zodra die telefoon weg
@@ -139,14 +138,14 @@
 	<section class="rustig">
 		<h2>Wat het kost</h2>
 		<p>
-			Zonder account is Blaadje gratis, en dat blijft zo. Alles werkt: opstellen, wisselen, speeltijd, presentie, het
-			archief. Het enige wat je mist is een vangnet, want alles staat alleen op dat ene toestel. Zo kun je een paar
+			Zonder account is Blaadje gratis, en dat blijft zo. Alles werkt: opstellen, wisselen, playingTime, presentie, het
+			archive. Het enige what je mist is een vangnet, want alles staat alleen op dat ene toestel. Zo kun je een paar
 			wedstrijden uitproberen zonder ergens aan vast te zitten.
 		</p>
 		<p>
 			Wordt het je vaste gereedschap, dan wil je een account. Je seizoen staat dan veilig als je telefoon kwijtraakt, en
-			je werkt op meer dan één toestel: thuis de opstelling maken, langs de lijn wisselen. Dat kost € 30 per seizoen,
-			zo'n zeventig cent per speelweek.
+			je werkt op meer dan één toestel: home de lineup maken, langs de lijn wisselen. Dat kost € 30 per seizoen, zo'n
+			zeventig cent per speelweek.
 		</p>
 		<p>
 			Zolang Blaadje in ontwikkeling is hoeft dat nog helemaal niet. Wie er nu bij komt, gebruikt dit seizoen alles

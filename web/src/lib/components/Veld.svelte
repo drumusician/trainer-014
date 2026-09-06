@@ -4,14 +4,14 @@
 	import type { Lineup } from '$lib/domain/types';
 
 	let {
-		formatie,
-		opstelling,
+		formation,
+		lineup,
 		gekozen = null,
 		tijden = null,
 		onplek
 	}: {
-		formatie: string;
-		opstelling: Lineup;
+		formation: string;
+		lineup: Lineup;
 		gekozen?: string | null;
 		/** speelminuten per speler; tijdens een wedstrijd staan die onder de naam */
 		tijden?: Record<string, number> | null;
@@ -20,7 +20,7 @@
 
 	/* Afgeleid in plaats van in de template aangeroepen: anders rekent hij bij
 	   elke render opnieuw, en tijdens een wedstrijd is dat elke seconde. */
-	const vakken = $derived(positionsOf(formatie));
+	const vakken = $derived(positionsOf(formation));
 </script>
 
 <div class="veld">
@@ -37,7 +37,7 @@
 	</svg>
 
 	{#each vakken as [plekId, label, x, y] (plekId)}
-		{@const p = app.playerById(opstelling[plekId])}
+		{@const p = app.playerById(lineup[plekId])}
 		<!-- Een echte knop, geen div die zich als knop voordoet: spatiebalk, focus en
 		     schermlezer zijn dan meteen goed en het scheelt handwerk. -->
 		<button
@@ -46,10 +46,10 @@
 			class:leeg={!p}
 			class:gekozen={gekozen === plekId}
 			style="left: {x}%; top: {y}%"
-			aria-label="{label}{p ? ': ' + p.naam : ': leeg'}"
+			aria-label="{label}{p ? ': ' + p.name : ': leeg'}"
 			onclick={() => onplek?.(plekId)}
 		>
-			<span class="bol">{p ? p.naam : '+'}</span>
+			<span class="bol">{p ? p.name : '+'}</span>
 			<span class="pos">
 				{label}{#if p && tijden}<span class="min">{Math.round((tijden[p.id] ?? 0) / 60)}′</span>{/if}
 			</span>

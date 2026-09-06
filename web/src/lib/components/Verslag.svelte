@@ -6,7 +6,7 @@
 	let tekst = $state('');
 
 	async function kopieer() {
-		tekst = reportText(bron, app.toestand.spelers, app.toestand.verslagWissels);
+		tekst = reportText(bron, app.toestand.players, app.toestand.reportSubs);
 		try {
 			await navigator.clipboard.writeText(tekst);
 		} catch {
@@ -19,12 +19,12 @@
 	<button class="prim" onclick={kopieer}>Verslag kopiëren</button>
 	<button
 		onclick={() => {
-			app.toestand.verslagWissels = !app.toestand.verslagWissels;
+			app.toestand.reportSubs = !app.toestand.reportSubs;
 			app.save();
 			if (tekst) kopieer();
 		}}
 	>
-		Wissels: {app.toestand.verslagWissels ? 'wel' : 'niet'} mee
+		Wissels: {app.toestand.reportSubs ? 'wel' : 'niet'} mee
 	</button>
 </div>
 {#if tekst}

@@ -9,9 +9,9 @@
 	import { zetKop } from '$lib/header.svelte';
 	import { datumMetJaar } from '$lib/domain/dates';
 
-	const w = $derived(app.wedstrijd);
-	const tijden = $derived(playingTimes(w, app.toestand.spelers, app.nu));
-	const posities = $derived(positionTimes(w, app.nu));
+	const w = $derived(app.match);
+	const tijden = $derived(playingTimes(w, app.toestand.players, app.nu));
+	const positions = $derived(positionTimes(w, app.nu));
 
 	/* Geen terugknop maar een uitgang: terug het afgelopen wedstrijdscherm in
 	   heeft niemand wat aan. */
@@ -25,49 +25,49 @@
 <main>
 	<div class="pad">
 		{#if !w}
-			<p class="uitleg">Nog geen wedstrijd.</p>
+			<p class="uitleg">Nog geen match.</p>
 		{:else}
 			{@const [v, t] = score(w)}
 			<h2>Uitslag</h2>
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
-				{w.thuis ? app.toestand.teamnaam : w.tegenstander}
+				{w.home ? app.toestand.teamName : w.opponent}
 				{v} – {t}
-				{w.thuis ? w.tegenstander : app.toestand.teamnaam}
+				{w.home ? w.opponent : app.toestand.teamName}
 			</p>
-			<p class="uitleg">{datumMetJaar(w.datum)} · {mmss(endTime(w))} gespeeld · {w.formatie}</p>
+			<p class="uitleg">{datumMetJaar(w.date)} · {mmss(endTime(w))} gespeeld · {w.formation}</p>
 
 			<h2>Speeltijd</h2>
 			<Speeltijd
-				rijen={app.toestand.spelers
+				rijen={app.toestand.players
 					.filter((p) => tijden[p.id] !== undefined)
 					.map((p) => ({
-						naam: p.naam,
-						seconden: tijden[p.id] ?? 0,
-						sub: positionText(posities[p.id], w!.formatie)
+						name: p.name,
+						seconds: tijden[p.id] ?? 0,
+						sub: positionText(positions[p.id], w!.formation)
 					}))}
 			/>
 
 			<h2>Verloop</h2>
-			<Verloop gebeurtenissen={w.gebeurtenissen} delen={w.delen} formatie={w.formatie} />
+			<Verloop events={w.events} parts={w.parts} formation={w.formation} />
 
 			<h2>Hoe ging het</h2>
 			<p class="uitleg">Een paar regels voor jezelf of voor de groepsapp. Gaat mee in het verslag.</p>
 			<textarea
-				value={w.notitie ?? ''}
+				value={w.note ?? ''}
 				placeholder="Sterk begin, na rust wegge&#10;zakt. Achterin stond het goed."
 				oninput={(e) => app.setNote(e.currentTarget.value)}></textarea>
 
 			<h2>Delen</h2>
-			<p class="uitleg">Voor de groepsapp. De wissels laat ik er standaard uit.</p>
-			<Verslag bron={bronVanWedstrijd(w, app.toestand.teamnaam)} />
+			<p class="uitleg">Voor de groepsapp. De wissels laat ik er defaultLineup uit.</p>
+			<Verslag bron={bronVanWedstrijd(w, app.toestand.teamName)} />
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
-				{#if w.bewaard}
-					<button disabled>Bewaard in archief</button>
+				{#if w.archived}
+					<button disabled>Bewaard in archive</button>
 				{:else}
-					<button class="prim" onclick={bewaren}>Bewaren in archief</button>
+					<button class="prim" onclick={bewaren}>Bewaren in archive</button>
 				{/if}
-				<a class="knop" href="/app">Nieuwe wedstrijd</a>
+				<a class="knop" href="/app">Nieuwe match</a>
 			</div>
 		{/if}
 	</div>

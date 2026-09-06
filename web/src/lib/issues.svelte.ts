@@ -14,11 +14,11 @@ const MAX = 20;
 
 export interface Issue {
 	/** wanneer, als ISO-tekst zodat het in de opslag leesbaar blijft */
-	wanneer: string;
+	when: string;
 	/** wat er misging, in gewone taal */
-	wat: string;
+	what: string;
 	/** de technische melding, voor als ik moet zoeken */
-	melding?: string;
+	message?: string;
 }
 
 const storage = () => (typeof localStorage === 'undefined' ? null : localStorage);
@@ -47,12 +47,12 @@ export function loadIssues() {
  * Iets noteren. Mag nooit zelf stukgaan: dit wordt aangeroepen vanuit een catch,
  * en een logboek dat de app laat vallen is erger dan geen logboek.
  */
-export function reportIssue(wat: string, fout?: unknown) {
+export function reportIssue(what: string, fout?: unknown) {
 	try {
-		const melding = fout instanceof Error ? fout.message : fout ? String(fout) : undefined;
+		const message = fout instanceof Error ? fout.message : fout ? String(fout) : undefined;
 		/* eslint-disable-next-line svelte/prefer-svelte-reactivity -- meteen omgezet naar tekst, niet bewaard */
-		const wanneer = new Date().toISOString();
-		issues.lijst = [{ wanneer, wat, melding }, ...issues.lijst].slice(0, MAX);
+		const when = new Date().toISOString();
+		issues.lijst = [{ when, what, message }, ...issues.lijst].slice(0, MAX);
 		storage()?.setItem(SLEUTEL, JSON.stringify(issues.lijst));
 	} catch {
 		/* Dan houdt het op. Hier niets meer proberen. */

@@ -5,29 +5,29 @@ import type { Line, Lineup, Player } from './types';
  * De opstelling als tekst, om naar een mede-trainer te sturen. Per linie op één
  * regel, met de plek erachter waar dat iets toevoegt.
  */
-export function opstellingTekst(formatie: string, opstelling: Lineup, bank: string[], spelers: Player[]): string {
-	const naam = (id?: string | null) => spelers.find((p) => p.id === id)?.naam;
-	const regels: string[] = ['Opstelling ' + formatie];
+export function opstellingTekst(formation: string, lineup: Lineup, bench: string[], players: Player[]): string {
+	const name = (id?: string | null) => players.find((p) => p.id === id)?.name;
+	const regels: string[] = ['Opstelling ' + formation];
 
-	(['K', 'V', 'M', 'A'] as Line[]).forEach((linie) => {
-		const namen = positionsOf(formatie)
-			.filter((p) => p[4] === linie)
+	(['K', 'V', 'M', 'A'] as Line[]).forEach((line) => {
+		const names = positionsOf(formation)
+			.filter((p) => p[4] === line)
 			.map((p) => {
-				const n = naam(opstelling[p[0]]);
-				return n ? (linie === 'K' ? n : n + ' (' + p[1] + ')') : null;
+				const n = name(lineup[p[0]]);
+				return n ? (line === 'K' ? n : n + ' (' + p[1] + ')') : null;
 			})
 			.filter(Boolean);
-		if (namen.length) regels.push(LINES[linie] + ': ' + namen.join(', '));
+		if (names.length) regels.push(LINES[line] + ': ' + names.join(', '));
 	});
 
-	const opDeBank = bank.map((id) => naam(id)).filter(Boolean);
+	const opDeBank = bench.map((id) => name(id)).filter(Boolean);
 	if (opDeBank.length) regels.push('Bank: ' + opDeBank.join(', '));
 	return regels.join('\n');
 }
 
 export interface Omgezet {
-	opstelling: Lineup;
-	bank: string[];
+	lineup: Lineup;
+	bench: string[];
 	/** wie er niet meer paste en naar de bank ging */
 	afgevallen: string[];
 }
@@ -41,36 +41,36 @@ export interface Omgezet {
  * blijven staan, en dat er van je drie aanvallers eentje op de bank komt.
  */
 export function convertLineup(
-	opstelling: Lineup,
+	lineup: Lineup,
 	vanFormatie: string,
 	naarFormatie: string,
-	bank: string[] = []
+	bench: string[] = []
 ): Omgezet {
 	const oudePlekken = positionsOf(vanFormatie);
 	const nieuwePlekken = positionsOf(naarFormatie);
 	const nieuw: Lineup = {};
-	const vrij: { speler: string; linie: string }[] = [];
+	const vrij: { player: string; line: string }[] = [];
 
 	/* stap 1: plekken die in beide formaties bestaan houden hun speler */
 	const nieuweIds = new Set(nieuwePlekken.map((p) => p[0]));
-	oudePlekken.forEach(([plekId, , , , linie]) => {
-		const speler = opstelling[plekId];
-		if (!speler) return;
-		if (nieuweIds.has(plekId)) nieuw[plekId] = speler;
-		else vrij.push({ speler, linie });
+	oudePlekken.forEach(([plekId, , , , line]) => {
+		const player = lineup[plekId];
+		if (!player) return;
+		if (nieuweIds.has(plekId)) nieuw[plekId] = player;
+		else vrij.push({ player, line });
 	});
 
 	/* stap 2: de rest verdelen over lege plekken van dezelfde linie */
-	nieuwePlekken.forEach(([plekId, , , , linie]) => {
+	nieuwePlekken.forEach(([plekId, , , , line]) => {
 		if (nieuw[plekId]) return;
-		const i = vrij.findIndex((v) => v.linie === linie);
-		if (i >= 0) nieuw[plekId] = vrij.splice(i, 1)[0].speler;
+		const i = vrij.findIndex((v) => v.line === line);
+		if (i >= 0) nieuw[plekId] = vrij.splice(i, 1)[0].player;
 	});
 
-	const afgevallen = vrij.map((v) => v.speler);
+	const afgevallen = vrij.map((v) => v.player);
 	return {
-		opstelling: nieuw,
-		bank: [...bank.filter((id) => !Object.values(nieuw).includes(id)), ...afgevallen],
+		lineup: nieuw,
+		bench: [...bench.filter((id) => !Object.values(nieuw).includes(id)), ...afgevallen],
 		afgevallen
 	};
 }

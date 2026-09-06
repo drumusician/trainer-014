@@ -10,10 +10,10 @@
 	/* Vier plekken, elk een eigen onderwerp. De wedstrijd die nu loopt en de
 	   wedstrijden die je gespeeld hebt horen bij elkaar, dus die staan samen. */
 	const TABS = [
-		{ pad: '/app', naam: 'Wedstrijden', icoon: 'bal' },
-		{ pad: '/app/trainingen', naam: 'Training', icoon: 'fluit' },
-		{ pad: '/app/team', naam: 'Team', icoon: 'team' },
-		{ pad: '/app/meer', naam: 'Gegevens', icoon: 'gegevens' }
+		{ pad: '/app', name: 'Wedstrijden', icoon: 'bal' },
+		{ pad: '/app/trainingen', name: 'Training', icoon: 'fluit' },
+		{ pad: '/app/team', name: 'Team', icoon: 'team' },
+		{ pad: '/app/meer', name: 'Gegevens', icoon: 'gegevens' }
 	];
 
 	/* Alles wat met een wedstrijd te maken heeft telt mee voor het eerste tabblad. */
@@ -67,7 +67,7 @@
 					<path d="M15.6 18.2h5.2M18.2 15.6v5.2" />
 				{/if}
 			</svg>
-			<span>{tab.naam}</span>
+			<span>{tab.name}</span>
 		</a>
 	{/each}
 </nav>

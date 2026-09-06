@@ -5,15 +5,15 @@
 	import type { Line, Player } from '$lib/domain/types';
 
 	let {
-		bank,
-		formatie,
+		bench,
+		formation,
 		gekozen = null,
 		tijden = null,
 		leegtekst = 'Iedereen speelt.',
 		ontik
 	}: {
-		bank: string[];
-		formatie: string;
+		bench: string[];
+		formation: string;
 		gekozen?: string | null;
 		/** speelminuten per speler; weglaten in het opstelscherm */
 		tijden?: Record<string, number> | null;
@@ -21,25 +21,25 @@
 		ontik: (spelerId: string) => void;
 	} = $props();
 
-	const spelers = $derived(bank.map((id) => app.playerById(id)).filter(Boolean) as Player[]);
-	const doelLinie = $derived(gekozen ? positionLine(gekozen, formatie) : null);
+	const players = $derived(bench.map((id) => app.playerById(id)).filter(Boolean) as Player[]);
+	const doelLinie = $derived(gekozen ? positionLine(gekozen, formation) : null);
 
 	function pastBij(p: Player): boolean {
 		if (!doelLinie) return false;
-		return doelLinie === 'K' ? canKeep(p) : p.linie === doelLinie;
+		return doelLinie === 'K' ? canKeep(p) : p.line === doelLinie;
 	}
 
 	function groep(code: Line): Player[] {
-		return spelers
+		return players
 			.filter((p) => groupOf(p) === code)
-			.sort((a, b) => (tijden ? (tijden[a.id] ?? 0) - (tijden[b.id] ?? 0) : a.naam.localeCompare(b.naam)));
+			.sort((a, b) => (tijden ? (tijden[a.id] ?? 0) - (tijden[b.id] ?? 0) : a.name.localeCompare(b.name)));
 	}
 </script>
 
 <div class="banknaast">
 	<div class="bankkop">Bank</div>
 	<div class="groepen">
-		{#if !spelers.length}
+		{#if !players.length}
 			<p class="uitleg" style="margin: 0; font-size: 13px">{leegtekst}</p>
 		{/if}
 		{#each LINE_ORDER as code (code)}
@@ -50,7 +50,7 @@
 				</div>
 				<div class="rij">
 					{#each groepje as p (p.id)}
-						{@const recent = attendanceOf(app.toestand.trainingen, p.id, 4)}
+						{@const recent = attendanceOf(app.toestand.trainings, p.id, 4)}
 						<button
 							type="button"
 							class="chip"
@@ -58,7 +58,7 @@
 							class:andere={gekozen && !pastBij(p)}
 							onclick={() => ontik(p.id)}
 						>
-							<span>{p.naam}</span>
+							<span>{p.name}</span>
 							{#if tijden}
 								<span class="min">{Math.round((tijden[p.id] ?? 0) / 60)}′</span>
 							{:else if thinAttendance(recent)}

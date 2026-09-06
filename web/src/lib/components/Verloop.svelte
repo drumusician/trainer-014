@@ -5,19 +5,19 @@
 	import type { MatchEvent } from '$lib/domain/types';
 
 	let {
-		gebeurtenissen,
-		namen,
-		delen = 2,
-		formatie
+		events,
+		names,
+		parts = 2,
+		formation
 	}: {
-		gebeurtenissen: MatchEvent[];
-		namen?: Record<string, string>;
-		delen?: 2 | 4;
+		events: MatchEvent[];
+		names?: Record<string, string>;
+		parts?: 2 | 4;
 		/** om een plek zijn leesbare naam te geven: CVl heet CV, TIEN heet 10 */
-		formatie?: string;
+		formation?: string;
 	} = $props();
 
-	const regels = $derived(timelineRows(gebeurtenissen, app.toestand.spelers, namen, delen, formatie));
+	const regels = $derived(timelineRows(events, app.toestand.players, names, parts, formation));
 </script>
 
 <ul class="log">

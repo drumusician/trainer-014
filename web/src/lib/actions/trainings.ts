@@ -17,31 +17,31 @@ function newId(): string {
 /** Iedereen staat op aanwezig; afmelden doe je bij uitzondering. */
 export function newTraining(t: State, vandaag: string): Training {
 	const status: Record<string, Attendance> = {};
-	t.spelers.forEach((p) => (status[p.id] = 'ja'));
-	const training: Training = { id: newId(), datum: vandaag, status };
-	t.trainingen = sortTrainings([training, ...t.trainingen]);
+	t.players.forEach((p) => (status[p.id] = 'present'));
+	const training: Training = { id: newId(), date: vandaag, status };
+	t.trainings = sortTrainings([training, ...t.trainings]);
 	return training;
 }
 
 export function trainingById(t: State, id: string | undefined): Training | undefined {
-	return t.trainingen.find((x) => x.id === id);
+	return t.trainings.find((x) => x.id === id);
 }
 
 /** Eén tik verder: aanwezig, afgemeld, niet gekomen, en weer aanwezig. */
 export function cycleAttendance(training: Training, spelerId: string) {
-	const volgorde: Attendance[] = ['ja', 'af', 'nee'];
-	const nu = training.status[spelerId] ?? 'ja';
+	const volgorde: Attendance[] = ['present', 'excused', 'absent'];
+	const nu = training.status[spelerId] ?? 'present';
 	training.status[spelerId] = volgorde[(volgorde.indexOf(nu) + 1) % volgorde.length];
 }
 
 /** Een datum kan de volgorde omgooien, dus daarna opnieuw sorteren. */
-export function setTrainingDate(t: State, training: Training, datum: string): boolean {
-	if (!datum) return false;
-	training.datum = datum;
-	t.trainingen = sortTrainings(t.trainingen);
+export function setTrainingDate(t: State, training: Training, date: string): boolean {
+	if (!date) return false;
+	training.date = date;
+	t.trainings = sortTrainings(t.trainings);
 	return true;
 }
 
 export function removeTraining(t: State, training: Training) {
-	t.trainingen = t.trainingen.filter((x) => x.id !== training.id);
+	t.trainings = t.trainings.filter((x) => x.id !== training.id);
 }

@@ -4,39 +4,39 @@ import { emptyState, type State } from './types';
 
 function volleToestand(): State {
 	const t = emptyState();
-	t.spelers = [
-		{ id: 'p1', naam: 'Daanish', linie: 'M' },
-		{ id: 'p2', naam: 'Zoë', linie: '', keept: true }
+	t.players = [
+		{ id: 'p1', name: 'Daanish', line: 'M' },
+		{ id: 'p2', name: 'Zoë', line: '', keeper: true }
 	];
-	t.trainingen = [{ id: 't1', datum: '2026-09-02', status: { p1: 'ja', p2: 'nee' } }];
-	t.archief = [
+	t.trainings = [{ id: 't1', date: '2026-09-02', status: { p1: 'present', p2: 'absent' } }];
+	t.archive = [
 		{
-			datum: '2026-08-30',
-			tegenstander: 'Ajax',
-			thuis: true,
-			stand: [1, 0],
-			formatie: '4-3-3',
-			duur: 4200,
-			gebeurtenissen: [],
-			speeltijd: [{ id: 'p1', naam: 'Daanish', seconden: 4200 }]
+			date: '2026-08-30',
+			opponent: 'Ajax',
+			home: true,
+			score: [1, 0],
+			formation: '4-3-3',
+			duration: 4200,
+			events: [],
+			playingTime: [{ id: 'p1', name: 'Daanish', seconds: 4200 }]
 		}
 	];
-	t.standaard = { formatie: '4-3-3', opstelling: { K: 'p2' }, bank: ['p1'] };
-	t.wedstrijd = {
-		datum: '2026-09-06',
-		tegenstander: 'Sparta',
-		thuis: true,
-		formatie: '4-3-3',
-		opstelling: {},
-		bank: [],
-		gebeurtenissen: [],
-		verstreken: 100,
-		sinds: null,
-		loopt: true,
-		delen: 2,
-		deel: 1,
-		pauze: false,
-		afgelopen: false
+	t.defaultLineup = { formation: '4-3-3', lineup: { K: 'p2' }, bench: ['p1'] };
+	t.match = {
+		date: '2026-09-06',
+		opponent: 'Sparta',
+		home: true,
+		formation: '4-3-3',
+		lineup: {},
+		bench: [],
+		events: [],
+		elapsed: 100,
+		since: null,
+		running: true,
+		parts: 2,
+		part: 1,
+		inBreak: false,
+		finished: false
 	};
 	return t;
 }
@@ -44,27 +44,27 @@ function volleToestand(): State {
 describe('overzetten', () => {
 	it('neemt alles mee behalve de wedstrijd die loopt', () => {
 		const p = readTransferCode(makeTransferCode(volleToestand()));
-		expect(p.spelers).toHaveLength(2);
-		expect(p.trainingen).toHaveLength(1);
-		expect(p.archief).toHaveLength(1);
-		expect(p.standaard).not.toBeNull();
+		expect(p.players).toHaveLength(2);
+		expect(p.trainings).toHaveLength(1);
+		expect(p.archive).toHaveLength(1);
+		expect(p.defaultLineup).not.toBeNull();
 		expect(p).not.toHaveProperty('wedstrijd');
 	});
 
 	it('overleeft accenten in namen', () => {
-		expect(readTransferCode(makeTransferCode(volleToestand())).spelers![1].naam).toBe('Zoë');
+		expect(readTransferCode(makeTransferCode(volleToestand())).players![1].name).toBe('Zoë');
 	});
 
 	it('slikt ook een back-up, die is immers hetzelfde', () => {
-		const backup = JSON.stringify({ blaadje: 1, toestand: { spelers: [{ id: 'p1', naam: 'Aad', linie: 'V' }] } });
-		expect(readTransferCode(backup).spelers![0].naam).toBe('Aad');
+		const backup = JSON.stringify({ blaadje: 1, toestand: { players: [{ id: 'p1', name: 'Aad', line: 'V' }] } });
+		expect(readTransferCode(backup).players![0].name).toBe('Aad');
 	});
 
 	it('laat weg wat er niet in staat, in plaats van het te wissen', () => {
-		const oud = btoa(JSON.stringify({ v: 1, spelers: [{ id: 'p1', naam: 'Aad', linie: 'V' }], formatie: '4-4-2' }));
+		const oud = btoa(JSON.stringify({ v: 1, players: [{ id: 'p1', name: 'Aad', line: 'V' }], formation: '4-4-2' }));
 		const p = readTransferCode(oud);
-		expect(p.trainingen).toBeUndefined();
-		expect(p.archief).toBeUndefined();
+		expect(p.trainings).toBeUndefined();
+		expect(p.archive).toBeUndefined();
 	});
 
 	it('vertelt wat erin zit', () => {
@@ -75,6 +75,6 @@ describe('overzetten', () => {
 
 	it('klaagt over een code zonder selectie', () => {
 		expect(() => readTransferCode('geen geldige code')).toThrow();
-		expect(() => readTransferCode(btoa(JSON.stringify({ v: 2, spelers: [] })))).toThrow();
+		expect(() => readTransferCode(btoa(JSON.stringify({ v: 2, players: [] })))).toThrow();
 	});
 });

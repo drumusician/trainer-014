@@ -4,36 +4,36 @@ import type { ArchivedMatch, State, Match } from '$lib/domain/types';
 
 /** Een wedstrijd opzetten, bijhouden wie er is, en hem afronden. */
 
-export function nieuwe(t: State, tegenstander: string, thuis: boolean, vandaag: string) {
-	t.wedstrijd = {
-		datum: vandaag,
-		tegenstander: tegenstander || 'Tegenstander',
-		thuis,
-		formatie: t.formatie,
-		opstelling: {},
-		bank: [],
-		gebeurtenissen: [],
-		verstreken: 0,
-		sinds: null,
-		loopt: false,
-		delen: t.delen,
-		deel: 1,
-		pauze: false,
-		afgelopen: false,
-		afwezig: []
+export function nieuwe(t: State, opponent: string, home: boolean, vandaag: string) {
+	t.match = {
+		date: vandaag,
+		opponent: opponent || 'Tegenstander',
+		home,
+		formation: t.formation,
+		lineup: {},
+		bench: [],
+		events: [],
+		elapsed: 0,
+		since: null,
+		running: false,
+		parts: t.parts,
+		part: 1,
+		inBreak: false,
+		finished: false,
+		absent: []
 	};
 	fillFromDefaultLineup(t);
 }
 
 /** De wedstrijd begint met de standaardopstelling, voor zover die nog klopt. */
 export function fillFromDefaultLineup(t: State) {
-	const w = t.wedstrijd;
+	const w = t.match;
 	if (!w) return;
-	const st = t.standaard;
-	const ids = new Set(t.spelers.map((p) => p.id));
-	if (st && st.formatie === w.formatie) {
-		for (const [plek, id] of Object.entries(st.opstelling)) {
-			if (id && ids.has(id)) w.opstelling[plek] = id;
+	const st = t.defaultLineup;
+	const ids = new Set(t.players.map((p) => p.id));
+	if (st && st.formation === w.formation) {
+		for (const [position, id] of Object.entries(st.lineup)) {
+			if (id && ids.has(id)) w.lineup[position] = id;
 		}
 	}
 	rebuildBench(t);
@@ -41,15 +41,15 @@ export function fillFromDefaultLineup(t: State) {
 
 /** De bank is iedereen die er is en niet in het veld staat. */
 export function rebuildBench(t: State) {
-	const w = t.wedstrijd;
+	const w = t.match;
 	if (!w) return;
-	const inVeld = Object.values(w.opstelling).filter(Boolean) as string[];
-	const afwezig = w.afwezig ?? [];
-	w.bank = t.spelers.map((p) => p.id).filter((id) => !inVeld.includes(id) && !afwezig.includes(id));
+	const inVeld = Object.values(w.lineup).filter(Boolean) as string[];
+	const absent = w.absent ?? [];
+	w.bench = t.players.map((p) => p.id).filter((id) => !inVeld.includes(id) && !absent.includes(id));
 }
 
 export function isOnPitch(w: Match | null, spelerId: string): boolean {
-	return !!w && Object.values(w.opstelling).includes(spelerId);
+	return !!w && Object.values(w.lineup).includes(spelerId);
 }
 
 /**
@@ -62,31 +62,31 @@ export function isOnPitch(w: Match | null, spelerId: string): boolean {
  * met een wissel. Van de bank afmelden mag wel: dat raakt het veld niet, en
  * iemand kan nu eenmaal pas na de aftrap afhaken.
  */
-export function setAbsent(t: State, spelerId: string, afwezig: boolean): boolean {
-	const w = t.wedstrijd;
+export function setAbsent(t: State, spelerId: string, absent: boolean): boolean {
+	const w = t.match;
 	if (!w) return false;
-	if (afwezig && klok.kickedOff(w) && isOnPitch(w, spelerId)) return false;
-	const lijst = (w.afwezig ?? []).filter((id) => id !== spelerId);
-	if (afwezig) {
+	if (absent && klok.kickedOff(w) && isOnPitch(w, spelerId)) return false;
+	const lijst = (w.absent ?? []).filter((id) => id !== spelerId);
+	if (absent) {
 		lijst.push(spelerId);
-		for (const plek of Object.keys(w.opstelling)) {
-			if (w.opstelling[plek] === spelerId) w.opstelling[plek] = null;
+		for (const position of Object.keys(w.lineup)) {
+			if (w.lineup[position] === spelerId) w.lineup[position] = null;
 		}
 	}
-	w.afwezig = lijst;
+	w.absent = lijst;
 	rebuildBench(t);
 	return true;
 }
 
 export function finish(w: Match | null, nu: number): boolean {
-	if (!w || w.afgelopen) return false;
-	if (w.loopt) {
-		w.verstreken += (nu - (w.sinds ?? nu)) / 1000;
-		w.loopt = false;
-		w.sinds = null;
+	if (!w || w.finished) return false;
+	if (w.running) {
+		w.elapsed += (nu - (w.since ?? nu)) / 1000;
+		w.running = false;
+		w.since = null;
 	}
-	klok.log(w, nu, 'eind');
-	w.afgelopen = true;
+	klok.log(w, nu, 'end');
+	w.finished = true;
 	return true;
 }
 
@@ -98,45 +98,45 @@ export function finish(w: Match | null, nu: number): boolean {
  * rekenen en is een bewaarde wedstrijd voorgoed onherstelbaar.
  */
 export function archiveMatch(t: State, nu: number): ArchivedMatch | null {
-	const w = t.wedstrijd;
-	if (!w || w.bewaard) return null;
-	const tijden = playingTimes(w, t.spelers, nu);
+	const w = t.match;
+	if (!w || w.archived) return null;
+	const tijden = playingTimes(w, t.players, nu);
 	const keepers = keeperTimes(w, nu);
-	const posities = positionTimes(w, nu);
-	const namen: Record<string, string> = {};
-	t.spelers.forEach((p) => (namen[p.id] = p.naam));
+	const positions = positionTimes(w, nu);
+	const names: Record<string, string> = {};
+	t.players.forEach((p) => (names[p.id] = p.name));
 
 	const regel: ArchivedMatch = {
-		datum: w.datum,
-		tegenstander: w.tegenstander,
-		thuis: w.thuis,
-		stand: score(w),
-		formatie: w.formatie,
-		duur: endTime(w),
-		delen: w.delen,
-		notitie: w.notitie,
-		teamnaam: t.teamnaam,
-		gebeurtenissen: w.gebeurtenissen,
-		namen,
-		afwezig: [...(w.afwezig ?? [])],
-		opstelling: { ...w.opstelling },
-		bank: [...w.bank],
-		speeltijd: t.spelers
+		date: w.date,
+		opponent: w.opponent,
+		home: w.home,
+		score: score(w),
+		formation: w.formation,
+		duration: endTime(w),
+		parts: w.parts,
+		note: w.note,
+		teamName: t.teamName,
+		events: w.events,
+		names,
+		absent: [...(w.absent ?? [])],
+		lineup: { ...w.lineup },
+		bench: [...w.bench],
+		playingTime: t.players
 			.filter((p) => tijden[p.id] !== undefined)
 			.map((p) => ({
 				id: p.id,
-				naam: p.naam,
-				seconden: Math.round(tijden[p.id]),
+				name: p.name,
+				seconds: Math.round(tijden[p.id]),
 				keeper: Math.round(keepers[p.id] ?? 0),
 				/* alleen plekken waar hij echt gestaan heeft; nul zegt niets */
-				posities: Object.fromEntries(
-					Object.entries(posities[p.id] ?? {})
-						.map(([plek, sec]) => [plek, Math.round(sec)] as const)
+				positions: Object.fromEntries(
+					Object.entries(positions[p.id] ?? {})
+						.map(([position, sec]) => [position, Math.round(sec)] as const)
 						.filter(([, sec]) => sec > 0)
 				)
 			}))
 	};
-	t.archief.unshift(regel);
-	w.bewaard = true;
+	t.archive.unshift(regel);
+	w.archived = true;
 	return regel;
 }

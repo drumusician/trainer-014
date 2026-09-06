@@ -31,9 +31,9 @@
 
 	/* Alleen de twee toestellen waar je hem langs de lijn op gebruikt. Op een
 	   laptop bereid je voor, en dat gaat in een tabblad net zo goed. */
-	const TABS: { code: Device; naam: string }[] = [
-		{ code: 'ios', naam: 'iPhone of iPad' },
-		{ code: 'android', naam: 'Android' }
+	const TABS: { code: Device; name: string }[] = [
+		{ code: 'ios', name: 'iPhone of iPad' },
+		{ code: 'android', name: 'Android' }
 	];
 	/* Zit iemand op een laptop, dan tonen we de iPhone-uitleg; die zoekt hij hier
 	   toch voor zijn telefoon op. */
@@ -47,12 +47,12 @@
 {:else}
 	<p>
 		Blaadje is een website, geen download uit de App Store. Zet hem op je beginscherm en hij werkt als een gewone app:
-		geen browserbalk meer, en het scherm blijft aan zolang de klok loopt.
+		geen browserbalk meer, en het scherm blijft aan zolang de klok running.
 	</p>
 
 	<div class="keuze sorteer" style="margin: 14px 0">
 		{#each TABS as tab (tab.code)}
-			<button class:aan={tonen === tab.code} onclick={() => (gekozen = tab.code)}>{tab.naam}</button>
+			<button class:aan={tonen === tab.code} onclick={() => (gekozen = tab.code)}>{tab.name}</button>
 		{/each}
 	</div>
 
