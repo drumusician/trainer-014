@@ -1,20 +1,20 @@
 import type { ArchivedMatch, MatchEvent, State } from '$lib/domain/types';
 
 /**
- * Een bewaarde wedstrijd bijwerken.
+ * Amending an archived match.
  *
- * Alleen de score is hier te veranderen, en dat is met opzet: doelpunten raken
- * de tijdrekening niet aan. Wissels en ruilen blijven staan, want daar hangt de
- * speeltijd aan en die kan een verkeerde lijst niet als fout herkennen — hij
- * gaat dan gokken en levert geloofwaardige, verkeerde minuten.
+ * Only the score can be changed here, and that is deliberate: goals do not touch
+ * the time calculation at all. Substitutions and swaps stay put, because playing
+ * time hangs off them — and the calculation cannot recognise a wrong list as
+ * wrong. It starts guessing instead, and returns believable, incorrect minutes.
  */
 
-/** De stand volgt uit de doelpunten, dus na elke wijziging opnieuw tellen. */
+/** The score follows from the goals, so recount after every change. */
 export function recountScore(a: ArchivedMatch) {
 	a.score = [a.events.filter((g) => g.type === 'goal').length, a.events.filter((g) => g.type === 'conceded').length];
 }
 
-/** Datum, tegenstander, thuis of uit. De cijfers blijven zoals ze waren. */
+/** Date, opponent, home or away. The numbers stay as they were. */
 export function wijzig(
 	t: State,
 	i: number,
@@ -37,7 +37,7 @@ export function verwijderWedstrijd(t: State, i: number) {
 	t.archive.splice(i, 1);
 }
 
-/** Een doelpunt weghalen dat er niet was. */
+/** Remove a goal that never happened. */
 export function removeGoal(t: State, i: number, index: number): boolean {
 	const a = t.archive[i];
 	const g = a?.events[index];
@@ -47,7 +47,7 @@ export function removeGoal(t: State, i: number, index: number): boolean {
 	return true;
 }
 
-/** Een doelpunt dat je miste, op de goede minuut ertussen. */
+/** A goal you missed, slotted in at the right minute. */
 export function addGoal(t: State, i: number, minuut: number, spelerId: string | null, tegen = false): boolean {
 	const a = t.archive[i];
 	if (!a) return false;

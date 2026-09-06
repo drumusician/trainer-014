@@ -6,23 +6,23 @@ export interface PlayerRow {
 	id: string;
 	name: string;
 	line: string;
-	/** mag hij keepen — niet te verwarren met keeperSeconds hieronder */
+	/** whether he may keep — not to be confused with keeperSeconds below */
 	canKeep: boolean;
 	assists: number;
-	/** speeltijd over alle bewaarde wedstrijden */
+	/** playing time across every archived match */
 	seconds: number;
-	/** waarvan in het doel */
+	/** of which in goal */
 	keeperSeconds: number;
 	matches: number;
 	goals: number;
 	attendance: AttendanceSummary;
-	/** presentie over de laatste vier trainingen */
+	/** attendance over the last four sessions */
 	recent: AttendanceSummary;
 }
 
 export type Sortering = 'naam' | 'minuten' | 'presentie' | 'doelpunten';
 
-/** Alles wat je van een speler weet, op één regel. */
+/** Everything you know about a player, on one row. */
 export function spelersOverzicht(players: Player[], archive: ArchivedMatch[], trainings: Training[]): PlayerRow[] {
 	const totalen = seasonTotals(archive, players);
 	const assists: Record<string, number> = {};
@@ -50,7 +50,7 @@ export function spelersOverzicht(players: Player[], archive: ArchivedMatch[], tr
 }
 
 export function sorteer(rijen: PlayerRow[], hoe: Sortering): PlayerRow[] {
-	/* Wie nog geen training had, hoort niet bovenaan een lijstje over presentie. */
+	/* Someone with no sessions yet does not belong at the top of an attendance list. */
 	const part = (p: AttendanceSummary) => (p.totaal ? p.er / p.totaal : 2);
 	return [...rijen].sort((a, b) => {
 		if (hoe === 'minuten') return b.seconds - a.seconds || a.name.localeCompare(b.name);
@@ -61,7 +61,7 @@ export function sorteer(rijen: PlayerRow[], hoe: Sortering): PlayerRow[] {
 	});
 }
 
-/** Percentage aanwezig, of null als er nog geen training geweest is. */
+/** Percentage present, or null when there has been no session yet. */
 export function percentage(p: AttendanceSummary): number | null {
 	return p.totaal ? Math.round((p.er / p.totaal) * 100) : null;
 }

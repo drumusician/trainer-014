@@ -2,7 +2,7 @@ import * as klok from './clock';
 import { endTime, keeperTimes, positionTimes, playingTimes, score } from '$lib/domain/time';
 import type { ArchivedMatch, State, Match } from '$lib/domain/types';
 
-/** Een wedstrijd opzetten, bijhouden wie er is, en hem afronden. */
+/** Setting up a match, tracking who is there, and finishing it. */
 
 export function nieuwe(t: State, opponent: string, home: boolean, vandaag: string) {
 	t.match = {
@@ -25,7 +25,7 @@ export function nieuwe(t: State, opponent: string, home: boolean, vandaag: strin
 	fillFromDefaultLineup(t);
 }
 
-/** De wedstrijd begint met de standaardopstelling, voor zover die nog klopt. */
+/** The match starts from the default lineup, as far as it still applies. */
 export function fillFromDefaultLineup(t: State) {
 	const w = t.match;
 	if (!w) return;
@@ -39,7 +39,7 @@ export function fillFromDefaultLineup(t: State) {
 	rebuildBench(t);
 }
 
-/** De bank is iedereen die er is en niet in het veld staat. */
+/** The bench is everyone who is present and not on the pitch. */
 export function rebuildBench(t: State) {
 	const w = t.match;
 	if (!w) return;
@@ -53,14 +53,15 @@ export function isOnPitch(w: Match | null, spelerId: string): boolean {
 }
 
 /**
- * Afmelden mag zolang het de opstelling niet met terugwerkende kracht verandert.
+ * Marking someone absent is allowed as long as it does not change the lineup
+ * retroactively.
  *
- * Voor de aftrap: iemand uit het veld halen is prima, zijn plek valt leeg. Daarna
- * niet meer. De speeltijd wordt teruggerekend vanaf de opstelling van nu, dus wie
- * je daar weghaalt heeft volgens die berekening nooit gespeeld — een heel
- * gespeelde wedstrijd wordt dan stilletjes nul minuten. Wie speelt haal je eruit
- * met een wissel. Van de bank afmelden mag wel: dat raakt het veld niet, en
- * iemand kan nu eenmaal pas na de aftrap afhaken.
+ * Before kick-off: taking someone off the pitch is fine, their position falls
+ * empty. After that, no. Playing time is wound back from the lineup as it stands
+ * now, so anyone you remove from it never played according to that calculation —
+ * a fully played match silently becomes zero minutes. Someone who is playing you
+ * take off with a substitution. From the bench it is fine: that does not touch
+ * the pitch, and people do drop out after kick-off.
  */
 export function setAbsent(t: State, spelerId: string, absent: boolean): boolean {
 	const w = t.match;
@@ -91,11 +92,11 @@ export function finish(w: Match | null, nu: number): boolean {
 }
 
 /**
- * De wedstrijd in het archief zetten.
+ * Put the match into the archive.
  *
- * De speeltijd wordt hier één keer uitgerekend en daarna bewaard. De
- * eindopstelling gaat mee: zonder die opstelling valt er niets meer terug te
- * rekenen en is een bewaarde wedstrijd voorgoed onherstelbaar.
+ * Playing time is calculated once here and then stored. The final lineup goes
+ * with it: without that lineup there is nothing left to wind back from, and an
+ * archived match is beyond repair for good.
  */
 export function archiveMatch(t: State, nu: number): ArchivedMatch | null {
 	const w = t.match;
@@ -128,7 +129,7 @@ export function archiveMatch(t: State, nu: number): ArchivedMatch | null {
 				name: p.name,
 				seconds: Math.round(tijden[p.id]),
 				keeper: Math.round(keepers[p.id] ?? 0),
-				/* alleen plekken waar hij echt gestaan heeft; nul zegt niets */
+				/* only positions he actually stood in; a zero says nothing */
 				positions: Object.fromEntries(
 					Object.entries(positions[p.id] ?? {})
 						.map(([position, sec]) => [position, Math.round(sec)] as const)

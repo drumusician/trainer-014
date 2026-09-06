@@ -41,8 +41,8 @@ export function seizoenStand(archive: ArchivedMatch[]): SeizoenStand {
 }
 
 /**
- * Alles uit het archief opgeteld. Op speler-id waar dat kan, zodat iemand
- * hernoemen geen twee rijen oplevert; op naam voor oude wedstrijden zonder id.
+ * Everything in the archive added up. By player id where possible, so renaming
+ * someone does not produce two rows; by name for older matches without ids.
  */
 export function seasonTotals(archive: ArchivedMatch[], players: Player[]): SeizoenRegel[] {
 	const per: Record<string, SeizoenRegel> = {};
@@ -67,7 +67,7 @@ export function seasonTotals(archive: ArchivedMatch[], players: Player[]): Seizo
 			.forEach((g) => {
 				const p = player(g.player);
 				const name = p ? p.name : a.names?.[g.player as string];
-				if (!name) return; /* maker onbekend: telt alleen in de stand */
+				if (!name) return; /* scorer unknown: counts towards the score only */
 				pak(p ? 'id:' + p.id : 'naam:' + name, name).doelpunten++;
 			});
 	});
@@ -78,13 +78,13 @@ export function seasonTotals(archive: ArchivedMatch[], players: Player[]): Seizo
 export interface MakerRegel {
 	name: string;
 	doelpunten: number;
-	/** in welke wedstrijden, nieuwste eerst */
+	/** in which matches, newest first */
 	wedstrijden: { date: string; opponent: string; aantal: number }[];
 }
 
 /**
- * Wie scoorde er, en wanneer. De stand telt alle doelpunten; deze lijst alleen
- * die met een maker erbij, want soms weet je het gewoon niet.
+ * Who scored, and when. The score counts every goal; this list only the ones
+ * with a scorer attached, because sometimes you simply do not know.
  */
 export function makers(archive: ArchivedMatch[], players: Player[]): MakerRegel[] {
 	const per: Record<string, MakerRegel> = {};

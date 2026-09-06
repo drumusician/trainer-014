@@ -7,7 +7,7 @@ export function mmss(sec: number): string {
 	return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
 }
 
-/** Hoeveel er gespeeld is, inclusief de periode die nu loopt. */
+/** How much has been played, including the period currently running. */
 export function elapsed(w: Match | null, nu = Date.now()): number {
 	if (!w) return 0;
 	let t = w.elapsed;
@@ -28,16 +28,16 @@ export interface Interval {
 }
 
 /**
- * Wie stond wanneer op welke plek. Alles wat met tijd te maken heeft komt
- * hieruit: speeltijd per speler, en apart de minuten in het doel.
+ * Who stood where, and when. Everything to do with time comes out of this:
+ * playing time per player, and goalkeeping minutes counted separately.
  *
- * De opstelling die we bewaren is die van NU, dus we rekenen eerst terug naar
- * de aftrap door de wissels in omgekeerde volgorde ongedaan te maken.
+ * The lineup we store is the one from RIGHT NOW, so we first wind back to
+ * kick-off by undoing the substitutions in reverse order.
  */
 export function fieldIntervals(w: Match | null, nu = Date.now()): Interval[] {
 	if (!w) return [];
 	const eind = w.finished ? endTime(w) : elapsed(w, nu);
-	/* Wissels en ruilen samen: allebei veranderen ze wie waar staat. */
+	/* Substitutions and swaps together: both change who stands where. */
 	const beurten = w.events.filter((g) => g.type === 'substitution' || g.type === 'swap');
 
 	const start: Record<string, string | null> = { ...w.lineup };
@@ -70,7 +70,7 @@ export function fieldIntervals(w: Match | null, nu = Date.now()): Interval[] {
 	const uit: Interval[] = [];
 	beurten.forEach((g) => {
 		if (g.type === 'swap') {
-			/* Allebei de plekken sluiten en meteen weer openen, met de ander erop. */
+			/* Close both positions and reopen them at once, with the other player on. */
 			const a = g.positionA && bezet[g.positionA];
 			const b = g.positionB && bezet[g.positionB];
 			if (a) uit.push({ player: a.player, position: g.positionA!, van: a.since, tot: g.t });
@@ -97,7 +97,7 @@ export function fieldIntervals(w: Match | null, nu = Date.now()): Interval[] {
 	return uit;
 }
 
-/** Seconden per speler. Iedereen uit de selectie komt erin, ook met nul. */
+/** Seconds per player. Everyone in the squad is listed, zero included. */
 export function playingTimes(w: Match | null, players: Player[], nu = Date.now()): Record<string, number> {
 	const totaal: Record<string, number> = {};
 	players.forEach((p) => (totaal[p.id] = 0));
@@ -107,7 +107,7 @@ export function playingTimes(w: Match | null, players: Player[], nu = Date.now()
 	return totaal;
 }
 
-/** Seconden in het doel. Een helft keepen is geen halve wedstrijd voetballen. */
+/** Seconds in goal. Keeping for a half is not half a match of football. */
 export function keeperTimes(w: Match | null, nu = Date.now()): Record<string, number> {
 	const uit: Record<string, number> = {};
 	if (!w) return uit;
@@ -119,7 +119,7 @@ export function keeperTimes(w: Match | null, nu = Date.now()): Record<string, nu
 	return uit;
 }
 
-/** Seconden per speler per plek. Wie waar stond, en hoe lang. */
+/** Seconds per player per position. Who stood where, and for how long. */
 export function positionTimes(w: Match | null, nu = Date.now()): Record<string, Record<string, number>> {
 	const uit: Record<string, Record<string, number>> = {};
 	fieldIntervals(w, nu).forEach((i) => {
@@ -130,9 +130,9 @@ export function positionTimes(w: Match | null, nu = Date.now()): Record<string, 
 }
 
 /**
- * De plekken van een speler als leesbare regel, langste eerst:
- * "35 min K · 35 min LV". Meer dan drie plekken wordt onleesbaar, dus die
- * vallen weg onder "overig".
+ * A player's positions as one readable line, longest first:
+ * "35 min K · 35 min LV". More than three positions becomes unreadable, so the
+ * rest is collapsed into "overig".
  */
 export function positionText(perPlek: Record<string, number> | undefined, formation: string): string {
 	if (!perPlek) return '';

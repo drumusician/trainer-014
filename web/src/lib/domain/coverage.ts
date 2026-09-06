@@ -4,17 +4,18 @@ import type { Line, Player } from './types';
 export interface LineCoverage {
 	line: Line;
 	name: string;
-	/** hoeveel spelers je voor deze linie hebt gemarkeerd */
+	/** how many players you marked for this line */
 	players: number;
-	/** hoeveel plekken de formatie er heeft */
+	/** how many positions the formation has for it */
 	positionsOf: number;
 }
 
 /**
- * Hoeveel spelers je per linie hebt tegenover hoeveel plekken je formatie heeft.
- * Zo zie je zonder tellen dat zeven middenvelders voor drie plekken scheef is.
+ * How many players you have per line against how many positions your formation
+ * offers. That way you see without counting that seven midfielders for three
+ * positions is lopsided.
  *
- * Keepers tellen apart: keepen is een kunnen, geen plek in het veld.
+ * Keepers count separately: keeping is an ability, not a position on the pitch.
  */
 export function bezetting(players: Player[], formation: string): LineCoverage[] {
 	const plekkenPerLinie: Record<string, number> = {};
@@ -30,24 +31,24 @@ export function bezetting(players: Player[], formation: string): LineCoverage[] 
 	}));
 }
 
-/** Te weinig voor deze linie: dan krijg je hem niet eens vol. */
+/** Too few for this line: you cannot even fill it. */
 export function tekort(b: LineCoverage): boolean {
 	return b.players < b.positionsOf;
 }
 
 /**
- * Ruim meer dan twee keer zoveel spelers als plekken. Dan zit er structureel
- * iemand op de bank die zichzelf in die linie ziet.
+ * Well over twice as many players as positions. Then someone who sees themselves
+ * in that line is structurally on the bench.
  *
- * Geldt niet voor de keeper: keepen is een kunnen en geen plek in het veld. Vier
- * spelers die kunnen keepen is geen gedrang maar precies wat je wilt, want dan
- * kun je rouleren en sta je niet stil als er eentje ziek is.
+ * Does not apply to the keeper: keeping is an ability, not a position on the
+ * pitch. Four players who can keep is not a crowd but exactly what you want,
+ * because then you can rotate and are not stuck when one is ill.
  */
 export function gedrang(b: LineCoverage): boolean {
 	return b.line !== 'K' && b.positionsOf > 0 && b.players > b.positionsOf * 2;
 }
 
-/** Eén keeper is genoeg tot hij er een keer niet is. */
+/** One keeper is enough until the day he is not there. */
 export function dunneKeepersbezetting(rijen: LineCoverage[]): boolean {
 	const k = rijen.find((b) => b.line === 'K');
 	return !!k && k.players === 1;

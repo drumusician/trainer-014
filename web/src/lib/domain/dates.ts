@@ -1,11 +1,11 @@
-/** Datums zoals je ze zegt, niet zoals ze zijn opgeslagen. */
+/** Dates the way you say them, not the way they are stored. */
 function lees(date: string): Date | null {
-	/* Middaguur, zodat een tijdzone er nooit een dag naast zit. */
+	/* Midday, so a time zone can never be a day out. */
 	const d = new Date(date + 'T12:00:00');
 	return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** "4 sep". Kan de datum niet gelezen worden, dan blijft hij zoals hij was. */
+/** "4 sep". If the date cannot be read, it stays as it was. */
 export function shortDate(date: string): string {
 	return lees(date)?.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }) ?? date;
 }

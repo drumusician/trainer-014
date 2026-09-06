@@ -1,6 +1,6 @@
 /**
- * Een wedstrijd loopt in helften of in kwarten. In de jeugd tot en met 8 tegen 8
- * speelt de KNVB in vier kwarten, en trainers wisselen dan per kwart.
+ * A match runs in halves or in quarters. In Dutch youth football up to 8-a-side
+ * the KNVB plays four quarters, and coaches substitute per quarter.
  */
 const RANGTELWOORD = ['', '1e', '2e', '3e', '4e'];
 
@@ -9,12 +9,12 @@ export function partName(part: number, parts: number): string {
 	return (RANGTELWOORD[part] ?? part + 'e') + ' ' + soort;
 }
 
-/** De pauze halverwege heet rust; de andere onderbrekingen zijn gewoon pauzes. */
+/** The break at the midpoint is half-time; the others are just breaks. */
 export function breakName(naDeel: number, parts: number): string {
 	return naDeel === Math.floor(parts / 2) ? 'Rust' : 'Pauze';
 }
 
-/** Hoe lang de wedstrijd duurt volgens de instelling. */
+/** How long the match lasts according to the settings. */
 export function speelduur(minutenPerDeel: number, parts: number): number {
 	return minutenPerDeel * parts;
 }

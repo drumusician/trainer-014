@@ -3,21 +3,21 @@ import { convertLineup } from '$lib/domain/lineup';
 import type { DefaultLineup, State, Match } from '$lib/domain/types';
 
 /**
- * Opstellen buiten een lopende wedstrijd om: de standaardopstelling, en het
- * schuiven voor de aftrap.
+ * Picking a lineup outside a running match: the default lineup, and the
+ * shuffling you do before kick-off.
  *
- * Deze functies raken de gebeurtenissenlijst niet aan. Wat tijdens een wedstrijd
- * gebeurt hoort daar wél in en staat daarom niet hier maar in de winkel zelf.
+ * These functions never touch the event list. What happens during a match does
+ * belong in that list, and therefore lives in the store rather than here.
  */
 
-/** Waar je aan het opstellen bent: de wedstrijd van vandaag of de standaard. */
+/** What you are picking: today's match, or the default lineup. */
 export type Bron = 'wedstrijd' | 'standaard';
 
 export function doelVan(t: State, bron: Bron): Match | DefaultLineup | null {
 	return bron === 'standaard' ? t.defaultLineup : t.match;
 }
 
-/** Zorgt dat er een standaard is die klopt met de selectie en de formatie. */
+/** Makes sure a default lineup exists that matches the squad and the formation. */
 export function ensureDefaultLineup(t: State): DefaultLineup {
 	if (!t.defaultLineup) t.defaultLineup = { formation: t.formation, lineup: {}, bench: [] };
 	const st = t.defaultLineup;
@@ -32,7 +32,7 @@ export function ensureDefaultLineup(t: State): DefaultLineup {
 	return st;
 }
 
-/** Twee plekken omwisselen. Is er een leeg, dan verhuist die ene ernaartoe. */
+/** Swap two positions. If one is empty, the other player simply moves there. */
 export function swapPositions(t: State, bron: Bron, positionA: string, positionB: string): boolean {
 	const doel = doelVan(t, bron);
 	if (!doel || positionA === positionB) return false;
@@ -44,7 +44,7 @@ export function swapPositions(t: State, bron: Bron, positionA: string, positionB
 	return true;
 }
 
-/** Iemand van het veld halen zonder dat er meteen een ander in komt. */
+/** Take someone off the pitch without anyone coming on in their place. */
 export function takeOffPitch(t: State, bron: Bron, position: string): boolean {
 	const doel = doelVan(t, bron);
 	const id = doel?.lineup[position];
@@ -54,7 +54,7 @@ export function takeOffPitch(t: State, bron: Bron, position: string): boolean {
 	return true;
 }
 
-/** Iemand op de gekozen plek zetten; wie daar stond gaat naar de bank. */
+/** Put someone in the chosen position; whoever stood there goes to the bench. */
 export function zetOpPlekInOpzet(t: State, bron: Bron, position: string, spelerId: string): boolean {
 	const doel = doelVan(t, bron);
 	if (!doel) return false;
@@ -66,10 +66,10 @@ export function zetOpPlekInOpzet(t: State, bron: Bron, position: string, spelerI
 }
 
 /**
- * De standaardopstelling meenemen naar een andere formatie. Wie op een plek
- * staat die ook in de nieuwe formatie bestaat blijft staan; de rest schuift door
- * binnen zijn eigen linie. Wat niet past gaat naar de bank, en plekken die
- * overblijven laten we leeg: die vult de trainer zelf.
+ * Carry the default lineup over to another formation. Anyone in a position that
+ * also exists in the new formation stays put; the rest shift along within their
+ * own line. What does not fit goes to the bench, and positions left over stay
+ * empty: the coach fills those in.
  */
 export function moveDefaultToFormation(t: State, formation: string): boolean {
 	const st = t.defaultLineup;
@@ -82,8 +82,8 @@ export function moveDefaultToFormation(t: State, formation: string): boolean {
 }
 
 /**
- * De formatie van het team. Er is er maar één: je standaardopstelling staat erin
- * en je volgende wedstrijd begint ermee. Waar je hem ook omzet, hij verhuist mee.
+ * The team's formation. There is only one: your default lineup is in it and your
+ * next match starts from it. Wherever you change it, it moves along.
  */
 export function chooseFormation(t: State, formation: string): boolean {
 	if (!FORMATIONS[formation]) return false;

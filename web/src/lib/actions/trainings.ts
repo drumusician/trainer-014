@@ -2,19 +2,19 @@ import { sortTrainings } from '$lib/domain/attendance';
 import type { Attendance, State, Training } from '$lib/domain/types';
 
 /**
- * Alles wat een training verandert.
+ * Everything that changes a training session.
  *
- * De scheiding met domein/ is bewust: daar wordt gerekend zonder iets aan te
- * raken, hier wordt de toestand gewijzigd. Deze functies bewaren zelf niets —
- * dat doet de winkel, zodat er één plek is waar synchronisatie op gang komt.
+ * The split from domain/ is deliberate: that folder calculates without touching
+ * anything, this one changes state. These functions never save by themselves —
+ * the store does, so there is a single place where syncing is triggered.
  */
 
-/** Kort, uniek genoeg, en te lezen als er ooit iets misgaat. */
+/** Short, unique enough, and readable if something ever goes wrong. */
 function newId(): string {
 	return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
-/** Iedereen staat op aanwezig; afmelden doe je bij uitzondering. */
+/** Everyone starts as present; marking someone off is the exception. */
 export function newTraining(t: State, vandaag: string): Training {
 	const status: Record<string, Attendance> = {};
 	t.players.forEach((p) => (status[p.id] = 'present'));
@@ -27,14 +27,14 @@ export function trainingById(t: State, id: string | undefined): Training | undef
 	return t.trainings.find((x) => x.id === id);
 }
 
-/** Eén tik verder: aanwezig, afgemeld, niet gekomen, en weer aanwezig. */
+/** One tap onwards: present, excused, no-show, and back to present. */
 export function cycleAttendance(training: Training, spelerId: string) {
 	const volgorde: Attendance[] = ['present', 'excused', 'absent'];
 	const nu = training.status[spelerId] ?? 'present';
 	training.status[spelerId] = volgorde[(volgorde.indexOf(nu) + 1) % volgorde.length];
 }
 
-/** Een datum kan de volgorde omgooien, dus daarna opnieuw sorteren. */
+/** A date can upend the order, so sort again afterwards. */
 export function setTrainingDate(t: State, training: Training, date: string): boolean {
 	if (!date) return false;
 	training.date = date;

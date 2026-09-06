@@ -1,20 +1,20 @@
 import type { Training } from './types';
 
 export interface AttendanceSummary {
-	/** hoe vaak aanwezig */
+	/** how often present */
 	er: number;
-	/** hoeveel trainingen meetellen */
+	/** how many sessions count towards this */
 	totaal: number;
 }
 
-/** Trainingen staan op datum, nieuwste eerst. */
+/** Sessions are ordered by date, newest first. */
 export function sortTrainings(trainings: Training[]): Training[] {
 	return [...trainings].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
 }
 
 /**
- * Presentie over de laatste n trainingen waar deze speler in stond.
- * n = 0 betekent alles.
+ * Attendance over the last n sessions this player appeared in.
+ * n = 0 means all of them.
  */
 export function attendanceOf(trainings: Training[], spelerId: string, n = 0): AttendanceSummary {
 	let er = 0;
@@ -29,7 +29,7 @@ export function attendanceOf(trainings: Training[], spelerId: string, n = 0): At
 	return { er, totaal };
 }
 
-/** Minder dan de helft van de laatste keren: dat is het gesprek waard. */
+/** Under half of the recent sessions: that is worth a conversation. */
 export function thinAttendance(p: AttendanceSummary): boolean {
 	return p.totaal >= 2 && p.er * 2 < p.totaal;
 }

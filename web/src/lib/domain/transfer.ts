@@ -2,11 +2,12 @@ import { migreerToestand } from './migrate-storage';
 import type { State } from './types';
 
 /**
- * Wat er meegaat naar een ander toestel: alles wat de app onthoudt, behalve de
- * wedstrijd die nu loopt. Die hoort bij het toestel waar je hem speelt.
+ * What travels to another device: everything the app remembers, except the match
+ * currently running. That one belongs to the device you are playing it on.
  *
- * Precies dezelfde inhoud als een back-up en als wat er naar de server gaat, want
- * anders moet je onthouden welke knop wat meeneemt. Dat is precies wat er misging.
+ * Exactly the same content as a backup and as what goes to the server, because
+ * otherwise you have to remember which button takes what along. That is precisely
+ * what went wrong before.
  */
 export type Overzetbaar = Partial<Omit<State, 'match'>>;
 
@@ -34,14 +35,14 @@ export function makeTransferCode(t: State): string {
 }
 
 /**
- * Leest een code of een back-up; allebei mag. Wat er niet in staat blijft staan
- * zoals het was: een oude code zonder trainingen wist je trainingen dus niet.
+ * Reads a code or a backup; either is fine. What is not in it stays as it was:
+ * an old code without sessions therefore does not wipe your sessions.
  */
 export function readTransferCode(tekst: string): TransferPackage {
 	const ruw = tekst.trim();
 	const json = ruw.startsWith('{') ? ruw : fromBase64(ruw);
 	const d = JSON.parse(json);
-	/* Een code van een toestel dat nog niet is bijgewerkt is Nederlands. */
+	/* A code from a device that has not been updated yet is still in Dutch. */
 	const binnen = migreerToestand(d?.toestand ?? d) as Partial<TransferPackage>;
 	const pakket = (d?.toestand ? { v: 2, ...binnen } : binnen) as TransferPackage;
 	if (!pakket || !Array.isArray(pakket.players) || !pakket.players.length) {
@@ -50,12 +51,12 @@ export function readTransferCode(tekst: string): TransferPackage {
 	return pakket;
 }
 
-/** Wat er in dit pakket zit, om te laten zien voor je het overneemt. */
+/** What is in this package, to show before you adopt it. */
 /**
- * Wat er in een pakket zit, in één zin voor de bevestigingsvraag.
+ * What a package contains, in one sentence for the confirmation prompt.
  *
- * Neemt alleen wat het leest, zodat zowel een overzetcode als een teruggezet
- * back-upbestand erdoorheen kan.
+ * Takes only what it reads, so both a transfer code and a restored backup file
+ * can go through it.
  */
 export function describePackage(
 	p: Partial<Pick<State, 'players' | 'archive' | 'trainings' | 'defaultLineup'>>
