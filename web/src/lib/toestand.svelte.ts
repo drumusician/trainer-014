@@ -1,5 +1,4 @@
 import { kentFormatie } from './domein/formaties';
-import { eindTijd, keepertijden, positietijden, speeltijden, stand, verstreken } from './domein/tijd';
 import type {
 	ArchiefWedstrijd,
 	Gebeurtenis,
@@ -13,6 +12,9 @@ import type {
 } from './domein/types';
 import { legeToestand } from './domein/types';
 import * as archief from './acties/archief';
+import * as gebeurtenissen from './acties/gebeurtenissen';
+import * as klok from './acties/klok';
+import * as wedstrijd from './acties/wedstrijd';
 import * as opstellen from './acties/opstellen';
 import * as selectie from './acties/selectie';
 import * as trainingen from './acties/trainingen';
@@ -125,96 +127,32 @@ class App {
 
 	/** Is er afgetrapt? Pas dan ligt de opstelling vast en gaat de klok tellen. */
 	get gestart(): boolean {
-		return !!this.toestand.wedstrijd?.gebeurtenissen.some((g) => g.type === 'start');
+		return klok.gestart(this.toestand.wedstrijd);
 	}
 
 	nieuweWedstrijd(tegenstander: string, thuis: boolean) {
-		const t = this.toestand;
-		t.wedstrijd = {
-			datum: new Date().toISOString().slice(0, 10),
-			tegenstander: tegenstander || 'Tegenstander',
-			thuis,
-			formatie: t.formatie,
-			opstelling: {},
-			bank: [],
-			gebeurtenissen: [],
-			verstreken: 0,
-			sinds: null,
-			loopt: false,
-			delen: t.delen,
-			deel: 1,
-			pauze: false,
-			afgelopen: false,
-			afwezig: []
-		};
-		this.vulUitStandaard();
+		wedstrijd.nieuwe(this.toestand, tegenstander, thuis, new Date().toISOString().slice(0, 10));
 		this.bewaar();
 	}
 
-	/** De wedstrijd begint met de standaardopstelling, voor zover die nog klopt. */
 	vulUitStandaard() {
-		const t = this.toestand;
-		const w = t.wedstrijd;
-		if (!w) return;
-		const st = t.standaard;
-		if (st && st.formatie === w.formatie) {
-			for (const [plek, id] of Object.entries(st.opstelling)) {
-				if (id && this.spelerVan(id)) w.opstelling[plek] = id;
-			}
-		}
-		this.herzetBank();
+		wedstrijd.vulUitStandaard(this.toestand);
 	}
 
-	/** De bank is iedereen die er is en niet in het veld staat. */
 	herzetBank() {
-		const t = this.toestand;
-		const w = t.wedstrijd;
-		if (!w) return;
-		const inVeld = Object.values(w.opstelling).filter(Boolean) as string[];
-		const afwezig = w.afwezig ?? [];
-		w.bank = t.spelers.map((p) => p.id).filter((id) => !inVeld.includes(id) && !afwezig.includes(id));
+		wedstrijd.herzetBank(this.toestand);
 	}
 
-	/** Staat hij op het veld? */
 	staatInVeld(spelerId: string): boolean {
-		const w = this.toestand.wedstrijd;
-		return !!w && Object.values(w.opstelling).includes(spelerId);
+		return wedstrijd.staatInVeld(this.toestand.wedstrijd, spelerId);
 	}
 
-	/**
-	 * Afmelden mag zolang het de opstelling niet met terugwerkende kracht verandert.
-	 *
-	 * Voor de aftrap: iemand uit het veld halen is prima, zijn plek valt leeg.
-	 * Daarna niet meer. De speeltijd wordt teruggerekend vanaf de opstelling van
-	 * nu, dus wie je daar weghaalt heeft volgens die berekening nooit gespeeld —
-	 * een heel gespeelde wedstrijd wordt dan stilletjes nul minuten. Wie speelt
-	 * haal je eruit met een wissel. Van de bank afmelden mag wel: dat raakt het
-	 * veld niet, en iemand kan nu eenmaal pas na de aftrap afhaken.
-	 */
 	zetAfwezig(spelerId: string, afwezig: boolean) {
-		const w = this.toestand.wedstrijd;
-		if (!w) return;
-		if (afwezig && this.gestart && this.staatInVeld(spelerId)) return;
-		/* eslint-disable-next-line svelte/prefer-svelte-reactivity -- lokaal hulpje, gaat als array de toestand in */
-		const lijst = new Set(w.afwezig ?? []);
-		if (afwezig) {
-			lijst.add(spelerId);
-			for (const plek of Object.keys(w.opstelling)) {
-				if (w.opstelling[plek] === spelerId) w.opstelling[plek] = null;
-			}
-		} else {
-			lijst.delete(spelerId);
-		}
-		w.afwezig = [...lijst];
-		this.herzetBank();
-		this.bewaar();
+		if (wedstrijd.zetAfwezig(this.toestand, spelerId, afwezig)) this.bewaar();
 	}
 
-	/** De klok bijstellen als de scheidsrechter er anders over denkt. */
 	verschuifKlok(seconden: number) {
-		const w = this.toestand.wedstrijd;
-		if (!w || w.afgelopen) return;
-		w.verstreken = Math.max(0, w.verstreken + seconden);
+		if (!klok.verschuif(this.toestand.wedstrijd, seconden)) return;
 		this.nu = Date.now();
 		this.bewaar();
 	}
@@ -227,60 +165,24 @@ class App {
 	}
 
 	log(type: GebeurtenisType, extra: Partial<Gebeurtenis> = {}) {
-		const w = this.toestand.wedstrijd;
-		if (!w) return;
-		w.gebeurtenissen.push({ type, t: verstreken(w, this.nu), ...extra } as Gebeurtenis);
+		klok.log(this.toestand.wedstrijd, this.nu, type, extra);
 	}
 
 	loopToggle() {
-		const w = this.toestand.wedstrijd;
-		if (!w || w.afgelopen) return;
-		if (w.loopt) {
-			w.verstreken += (Date.now() - (w.sinds ?? Date.now())) / 1000;
-			w.loopt = false;
-			w.sinds = null;
-		} else {
-			/* Op het ontbreken van een start-gebeurtenis letten, niet op een lege lijst.
-			   Wie voor het fluitsignaal nog even schuift had al iets in de lijst staan,
-			   en dan werd 'start' nooit vastgelegd. De app dacht de hele wedstrijd dat
-			   er nog niet was afgetrapt: positiewissels werden niet meer bewaard, de
-			   tabbalk bleef staan en de wedstrijd was niet beschermd tegen ophalen. */
-			if (!this.gestart) {
-				/* De datum pas nu vastleggen. Sinds je een wedstrijd vooruit kunt
-				   klaarzetten is de dag waarop je hem aanmaakte niet de speeldag. */
-				w.datum = new Date().toISOString().slice(0, 10);
-				this.log('start');
-			}
-			w.loopt = true;
-			w.sinds = Date.now();
-		}
+		if (!klok.loopToggle(this.toestand.wedstrijd, Date.now(), new Date().toISOString().slice(0, 10))) return;
 		this.nu = Date.now();
 		this.bewaar();
 	}
 
-	/**
-	 * Het huidige deel afsluiten, of het volgende beginnen. Werkt hetzelfde voor
-	 * twee helften als voor vier kwarten.
-	 */
 	deelToggle() {
-		const w = this.toestand.wedstrijd;
-		if (!w || w.afgelopen) return;
-		if (w.pauze) {
-			w.deel = Math.min(w.deel + 1, w.delen);
-			w.pauze = false;
-			if (!w.loopt) this.loopToggle();
-		} else if (w.deel < w.delen) {
-			if (w.loopt) this.loopToggle();
-			this.log('rust', { deel: w.deel });
-			w.pauze = true;
-		}
+		if (!klok.deelToggle(this.toestand.wedstrijd, Date.now(), new Date().toISOString().slice(0, 10))) return;
+		this.nu = Date.now();
 		this.bewaar();
 	}
 
 	/** Kan er nog een deel bij, of is dit het laatste? */
 	get magVolgendDeel(): boolean {
-		const w = this.toestand.wedstrijd;
-		return !!w && !w.afgelopen && (w.pauze || w.deel < w.delen);
+		return klok.magVolgendDeel(this.toestand.wedstrijd);
 	}
 
 	zetTegenstander(naam: string) {
@@ -315,147 +217,50 @@ class App {
 
 	/** Iemand van de bank op de gekozen plek zetten. Tijdens een wedstrijd is dat een wissel. */
 	zetOpPlek(spelerId: string) {
-		const w = this.toestand.wedstrijd;
-		if (!w || !this.gekozenPlek) return;
-		const plek = this.gekozenPlek;
-		const eruit = w.opstelling[plek];
-		w.opstelling[plek] = spelerId;
-		w.bank = w.bank.filter((x) => x !== spelerId);
-		if (eruit) {
-			w.bank.push(eruit);
-			/* Voor de aftrap is dit je opstelling maken, geen wissel. Net als bij ruilen. */
-			if (this.gestart) this.log('wissel', { eruit, erin: spelerId, plek });
-		}
+		if (!this.gekozenPlek) return;
+		gebeurtenissen.zetOpPlek(this.toestand.wedstrijd, this.nu, this.gekozenPlek, spelerId);
 		this.gekozenPlek = null;
 		this.bewaar();
 	}
 
-	/** Twee spelers op het veld wisselen van plek. Wordt vastgelegd, want anders
-	    klopt straks de speeltijd per plek niet meer. */
 	ruilInWedstrijd(plekA: string, plekB: string) {
-		const w = this.toestand.wedstrijd;
-		if (!w || plekA === plekB) return;
-		const a = w.opstelling[plekA] ?? null;
-		const b = w.opstelling[plekB] ?? null;
-		if (!a && !b) return;
-		w.opstelling[plekA] = b;
-		w.opstelling[plekB] = a;
-		/* Voor de aftrap is dit gewoon je opstelling maken, geen gebeurtenis. */
-		if (this.gestart) this.log('ruil', { plekA, plekB, spelerA: a, spelerB: b });
+		if (!gebeurtenissen.ruil(this.toestand.wedstrijd, this.nu, plekA, plekB)) return;
 		this.gekozenPlek = null;
 		this.bewaar();
 	}
 
 	doelpunt(spelerId: string | null) {
-		this.log('goal', { speler: spelerId });
+		gebeurtenissen.doelpunt(this.toestand.wedstrijd, this.nu, spelerId);
 		this.bewaar();
 	}
 
-	/** De assist bij het laatste doelpunt. Mag ook later, mag ook niet. */
 	zetAssist(spelerId: string | null) {
-		const w = this.toestand.wedstrijd;
-		if (!w) return;
-		for (let i = w.gebeurtenissen.length - 1; i >= 0; i--) {
-			if (w.gebeurtenissen[i].type === 'goal') {
-				w.gebeurtenissen[i].assist = spelerId;
-				this.bewaar();
-				return;
-			}
-		}
+		if (gebeurtenissen.zetAssist(this.toestand.wedstrijd, spelerId)) this.bewaar();
 	}
 
 	tegendoelpunt() {
-		this.log('tegen');
+		gebeurtenissen.tegendoelpunt(this.toestand.wedstrijd, this.nu);
 		this.bewaar();
 	}
 
-	/** Per ongeluk getikt? De laatste actie kan terug, zolang er niets overheen is gegaan. */
 	herstelbaar(): string | null {
-		const g = this.toestand.wedstrijd?.gebeurtenissen ?? [];
-		const laatste = g[g.length - 1];
-		if (!laatste) return null;
-		if (laatste.type === 'goal') return 'Doelpunt';
-		if (laatste.type === 'tegen') return 'Tegendoelpunt';
-		if (laatste.type === 'wissel') return 'Wissel';
-		/* Ook een positieruil. Wie de speler aantikt die scoorde en daarna zijn
-		   aangever, maakt per ongeluk een ruil — dat moet je terug kunnen draaien. */
-		if (laatste.type === 'ruil') return 'Positiewissel';
-		return null;
+		return gebeurtenissen.herstelbaar(this.toestand.wedstrijd);
 	}
 
 	herstelLaatste() {
-		const w = this.toestand.wedstrijd;
-		if (!w || !this.herstelbaar()) return;
-		const laatste = w.gebeurtenissen[w.gebeurtenissen.length - 1];
-		if (laatste.type === 'wissel' && laatste.plek) {
-			w.opstelling[laatste.plek] = laatste.eruit ?? null;
-			w.bank = w.bank.filter((x) => x !== laatste.eruit);
-			if (laatste.erin && !w.bank.includes(laatste.erin)) w.bank.push(laatste.erin);
-		}
-		if (laatste.type === 'ruil' && laatste.plekA && laatste.plekB) {
-			const a = w.opstelling[laatste.plekA] ?? null;
-			w.opstelling[laatste.plekA] = w.opstelling[laatste.plekB] ?? null;
-			w.opstelling[laatste.plekB] = a;
-		}
-		w.gebeurtenissen.pop();
+		if (!gebeurtenissen.herstelLaatste(this.toestand.wedstrijd)) return;
 		this.gekozenPlek = null;
 		this.bewaar();
 	}
 
 	beeindig() {
-		const w = this.toestand.wedstrijd;
-		if (!w) return;
-		if (w.loopt) {
-			w.verstreken += (Date.now() - (w.sinds ?? Date.now())) / 1000;
-			w.loopt = false;
-			w.sinds = null;
-		}
-		this.log('eind');
-		w.afgelopen = true;
+		if (!wedstrijd.beeindig(this.toestand.wedstrijd, this.nu)) return;
+		this.nu = Date.now();
 		this.bewaar();
 	}
 
 	bewaarInArchief(): boolean {
-		const t = this.toestand;
-		const w = t.wedstrijd;
-		if (!w || w.bewaard) return false;
-		const tijden = speeltijden(w, t.spelers, this.nu);
-		const keepers = keepertijden(w, this.nu);
-		const posities = positietijden(w, this.nu);
-		const namen: Record<string, string> = {};
-		t.spelers.forEach((p) => (namen[p.id] = p.naam));
-		const regel: ArchiefWedstrijd = {
-			datum: w.datum,
-			tegenstander: w.tegenstander,
-			thuis: w.thuis,
-			stand: stand(w),
-			formatie: w.formatie,
-			duur: eindTijd(w),
-			delen: w.delen,
-			notitie: w.notitie,
-			teamnaam: t.teamnaam,
-			gebeurtenissen: w.gebeurtenissen,
-			namen,
-			afwezig: [...(w.afwezig ?? [])],
-			opstelling: { ...w.opstelling },
-			bank: [...w.bank],
-			speeltijd: t.spelers
-				.filter((p) => tijden[p.id] !== undefined)
-				.map((p) => ({
-					id: p.id,
-					naam: p.naam,
-					seconden: Math.round(tijden[p.id]),
-					keeper: Math.round(keepers[p.id] ?? 0),
-					/* alleen plekken waar hij echt gestaan heeft; nul zegt niets */
-					posities: Object.fromEntries(
-						Object.entries(posities[p.id] ?? {})
-							.map(([plek, sec]) => [plek, Math.round(sec)] as const)
-							.filter(([, sec]) => sec > 0)
-					)
-				}))
-		};
-		t.archief.unshift(regel);
-		w.bewaard = true;
+		if (!wedstrijd.bewaarInArchief(this.toestand, this.nu)) return false;
 		this.bewaar();
 		return true;
 	}
