@@ -157,10 +157,46 @@ const team = {
 	namePlaceholder: 'bijv. JO11-2'
 } as const;
 
+/** Het wedstrijdscherm: de klok, het veld en alles wat je langs de lijn tikt. */
+const match = {
+	noSquadHeading: 'Nog geen spelers',
+	noMatchHeading: 'Nog geen wedstrijd',
+	noMatchHint: 'Begin er een op het startscherm, dan zet je hier je opstelling neer.',
+	finishedHeading: 'Wedstrijd afgelopen',
+	toOverview: 'Naar het overzicht',
+
+	/* De klokregel. Tijdens een pauze staat er welk deel voorbij is. */
+	clockInBreak: (breakName: string, partName: string) => `${breakName} · ${partName} voorbij`,
+	clockRunning: (partName: string) => `${partName} · tik om de tijd te zetten`,
+	pause: 'Pauze',
+	start: 'Start',
+	minuteLabel: 'Minuut',
+	minuteBack: '−1′',
+	minuteForward: '+1′',
+
+	goal: 'Doelpunt',
+	conceded: 'Tegen',
+	undo: (what: string) => `↶ ${what} terug`,
+	whoIsThere: 'Wie is er?',
+	finish: 'Wedstrijd afsluiten',
+	confirmFinish: 'Wedstrijd afsluiten?\n\nDe klok stopt en je krijgt het overzicht met de speeltijden.',
+
+	/* De oranje balk onderin, die zegt wat de volgende tik doet. */
+	goalPrompt: 'Tik op het veld wie hem maakte.',
+	goalUnknown: 'Weet ik niet',
+	assistPrompt: 'scoorde. Wie legde hem klaar? Tik hem aan, of sla dit over.',
+	noAssist: 'Geen assist',
+	emptyPosition: 'Lege plek',
+	substitutePrompt: (line: string) => `${line}. Tik wie erin komt, of een andere plek om te ruilen.`,
+	alreadyKept: (minutes: number) => `Hij keepte deze wedstrijd al ${minutes} minuten.`,
+	scored: (name: string) => `${name} scoorde`
+} as const;
+
 export const text = {
 	common,
 	attendance,
 	afterMatch,
 	trainings,
-	team
+	team,
+	match
 } as const;

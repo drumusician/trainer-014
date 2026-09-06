@@ -77,6 +77,17 @@ class Sync {
 	/** the last attempt failed (usually: no signal) */
 	hapert = $state(false);
 	private wachter: ReturnType<typeof setTimeout> | null = null;
+	/**
+	 * Hoe vaak het opsturen achter elkaar mislukte.
+	 *
+	 * Er stond alleen een rem op botsingen, en toen die herkenning stuk was bleef
+	 * de app in hetzelfde tempo doorproberen — 357.000 fouten in een uur op de
+	 * database. Nu wachten we na elke mislukking twee keer zo lang, tot vijf
+	 * minuten. Niet helemaal stoppen: dan zou de app zichzelf klemzetten, want
+	 * ophalen gebeurt niet zolang er hier nog iets klaarstaat.
+	 */
+	private mislukt = 0;
+	private static readonly LANGSTE_WACHT = 300_000;
 	private bezigMetDuwen = false;
 
 	load() {
@@ -276,7 +287,7 @@ class Sync {
 				{
 					method: 'POST',
 					headers: { Prefer: 'return=representation' },
-					body: JSON.stringify({ name: app.toestand.teamName, eigenaar: s.user_id })
+					body: JSON.stringify({ naam: app.toestand.teamName, eigenaar: s.user_id })
 				},
 				token
 			)) as { id: string }[];
@@ -287,7 +298,10 @@ class Sync {
 	}
 
 	private isBotsing(e: Fout): boolean {
-		return e.data?.code === '40001' || /versie running niet gelijk/.test(e.message ?? '');
+		/* De tekst komt uit de database en is Nederlands; de hernoeming naar het
+		   Engels maakte er 'versie running niet gelijk' van, waardoor een conflict
+		   niet meer als conflict werd herkend en de rem er nooit op ging. */
+		return e.data?.code === '40001' || /versie loopt niet gelijk/.test(e.message ?? '');
 	}
 
 	async opsturen(overschrijven = false, stil = false) {
@@ -321,15 +335,19 @@ class Sync {
 			this.vies = false;
 			this.botsing = false;
 			this.hapert = false;
+			this.mislukt = 0;
 			this.message = 'Opgestuurd.';
 		} catch (e) {
+			this.mislukt++;
 			if (this.isBotsing(e as Fout)) {
 				this.botsing = true;
+				/* Hier beslist de trainer; de app probeert niet vanzelf opnieuw. */
 				this.message =
 					'Op de server staat iets nieuwers, van een ander toestel. Haal het eerst op, of stuur dit toestel er met opzet overheen.';
 			} else {
 				this.hapert = true;
 				this.message = 'Opsturen lukte niet: ' + (e as Error).message;
+				this.plan(this.wachttijd());
 			}
 		} finally {
 			this.bezig = false;
@@ -379,6 +397,7 @@ class Sync {
 			this.vies = false;
 			this.botsing = false;
 			this.hapert = false;
+			this.mislukt = 0;
 			this.message = stil ? '' : 'Opgehaald.';
 		} catch (e) {
 			this.hapert = true;
@@ -410,6 +429,11 @@ class Sync {
 
 	/** Wait until things settle; otherwise we push on every single tap during a
 	    match. */
+	/** Na elke mislukking twee keer zo lang, tot vijf minuten. */
+	private wachttijd(): number {
+		return Math.min(Sync.LANGSTE_WACHT, 4000 * 2 ** Math.max(0, this.mislukt - 1));
+	}
+
 	private plan(na = 4000) {
 		if (this.wachter) clearTimeout(this.wachter);
 		this.wachter = setTimeout(() => this.duwAlsNodig(), na);

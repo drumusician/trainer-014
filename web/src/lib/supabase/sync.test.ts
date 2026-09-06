@@ -4,7 +4,9 @@ import { app } from '$lib/store.svelte';
 import { emptyState } from '$lib/domain/types';
 
 /** A fake server: enough to test the decisions, not the network. */
-function nepFetch(opties: { versie?: number; data?: unknown; botsing?: boolean; stuk?: boolean } = {}) {
+function nepFetch(
+	opties: { versie?: number; data?: unknown; botsing?: boolean; stuk?: boolean; zonderCode?: boolean } = {}
+) {
 	const verstuurd: unknown[] = [];
 	const f = vi.fn(async (url: string, init?: RequestInit) => {
 		const body = init?.body ? JSON.parse(String(init.body)) : null;
@@ -14,7 +16,11 @@ function nepFetch(opties: { versie?: number; data?: unknown; botsing?: boolean; 
 		}
 		if (url.includes('rpc/toestand_opslaan')) {
 			if (opties.botsing) {
-				return new Response(JSON.stringify({ code: '40001', message: 'versie loopt niet gelijk' }), { status: 500 });
+				/* Zonder code: dan moet de tekst het doen. Dat is het pad dat stukging. */
+				const lijf = opties.zonderCode
+					? { message: 'versie loopt niet gelijk (hier 82, jij 78)' }
+					: { code: '40001', message: 'versie loopt niet gelijk (hier 82, jij 78)' };
+				return new Response(JSON.stringify(lijf), { status: 500 });
 			}
 			verstuurd.push(body.p_data);
 			return new Response(JSON.stringify({ versie: (opties.versie ?? 0) + 1 }), { status: 200 });
@@ -174,5 +180,45 @@ describe('bij het openen', () => {
 
 		await sync.kijkEven();
 		expect(sync.vies).toBe(false);
+	});
+});
+
+describe('niet blijven hameren', () => {
+	/* Dit ging echt mis: de tekst van de database is Nederlands, en de hernoeming
+	   naar het Engels maakte er 'versie running niet gelijk' van. Daardoor werd een
+	   versieconflict niet als conflict herkend, ging de rem er nooit op en bleef de
+	   app doorproberen — 357.000 fouten in een uur op de database. */
+	it('herkent een versieconflict aan de tekst van de database', async () => {
+		nepFetch({ botsing: true, zonderCode: true });
+		sync.merkVies();
+		await sync.duwAlsNodig();
+		expect(sync.botsing).toBe(true);
+	});
+
+	it('probeert na een botsing niet uit zichzelf opnieuw', async () => {
+		const { f } = nepFetch({ botsing: true });
+		sync.merkVies();
+		await sync.duwAlsNodig();
+		const na = f.mock.calls.length;
+		for (let i = 0; i < 20; i++) await sync.duwAlsNodig();
+		expect(f.mock.calls.length).toBe(na);
+	});
+
+	it('wacht steeds langer als het opsturen blijft mislukken', async () => {
+		nepFetch({ stuk: true });
+		sync.merkVies();
+		const wachten: number[] = [];
+		const echt = globalThis.setTimeout;
+		globalThis.setTimeout = ((fn: () => void, ms: number) => {
+			wachten.push(ms);
+			return 0 as unknown as ReturnType<typeof setTimeout>;
+		}) as typeof setTimeout;
+		for (let i = 0; i < 8; i++) await sync.duwAlsNodig();
+		globalThis.setTimeout = echt;
+
+		expect(wachten.length).toBeGreaterThan(3);
+		/* oplopend, en nooit langer dan vijf minuten */
+		expect(wachten[1]).toBeGreaterThan(wachten[0]);
+		expect(Math.max(...wachten)).toBeLessThanOrEqual(300_000);
 	});
 });

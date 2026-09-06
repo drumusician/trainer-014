@@ -7,6 +7,7 @@
 	import { keeperTimes, mmss, playingTimes, score, elapsed } from '$lib/domain/time';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
+	import { text } from '$lib/text/nl';
 
 	const w = $derived(app.match);
 	const klaar = $derived(!!w && !w.finished && Object.keys(w.lineup).length > 0);
@@ -70,7 +71,7 @@
 	}
 
 	function afsluiten() {
-		if (!confirm('Wedstrijd afsluiten?\n\nDe klok stopt en je krijgt het overzicht met de speeltijden.')) return;
+		if (!confirm(text.match.confirmFinish)) return;
 		app.finish();
 		goto('/app/afloop');
 	}
@@ -82,24 +83,26 @@
 {#if !app.toestand.players.length}
 	<main>
 		<div class="pad">
-			<h2>Nog geen spelers</h2>
-			<p class="uitleg">Zet eerst je selectie erin, dan valt er wat op te stellen.</p>
+			<h2>{text.match.noSquadHeading}</h2>
+			<p class="uitleg">{text.common.noSquadHint}</p>
 			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app/opzetten">Aan de slag</a></div>
 		</div>
 	</main>
 {:else if !w || !Object.keys(w.lineup).length}
 	<main>
 		<div class="pad">
-			<h2>Nog geen wedstrijd</h2>
-			<p class="uitleg">Begin er een op het startscherm, dan zet je hier je opstelling neer.</p>
+			<h2>{text.match.noMatchHeading}</h2>
+			<p class="uitleg">{text.match.noMatchHint}</p>
 			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Naar start</a></div>
 		</div>
 	</main>
 {:else if w.finished}
 	<main>
 		<div class="pad">
-			<h2>Wedstrijd afgelopen</h2>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app/afloop">Naar het overzicht</a></div>
+			<h2>{text.match.finishedHeading}</h2>
+			<div class="knoprij" style="padding-left: 0">
+				<a class="knop prim" href="/app/afloop">{text.match.toOverview}</a>
+			</div>
 		</div>
 	</main>
 {:else}
@@ -107,15 +110,13 @@
 		<button type="button" class="kloktik" onclick={() => (klokBijstellen = !klokBijstellen)}>
 			<div class="klok">{mmss(elapsed(w, app.nu))}</div>
 			<div class="helft">
-				{#if w.inBreak}
-					{breakName(w.part, w.parts)} · {partName(w.part, w.parts)} voorbij
-				{:else}
-					{partName(w.part, w.parts)} · tik om de tijd te zetten
-				{/if}
+				{w.inBreak
+					? text.match.clockInBreak(breakName(w.part, w.parts), partName(w.part, w.parts))
+					: text.match.clockRunning(partName(w.part, w.parts))}
 			</div>
 		</button>
 		<div style="flex: 1"></div>
-		<button onclick={() => app.toggleRunning()}>{w.running ? 'Pauze' : 'Start'}</button>
+		<button onclick={() => app.toggleRunning()}>{w.running ? text.match.pause : text.match.start}</button>
 		<button onclick={() => app.togglePart()} disabled={!app.canStartNextPart}>
 			{w.inBreak ? partName(w.part + 1, w.parts) : breakName(w.part, w.parts)}
 		</button>
@@ -126,20 +127,20 @@
 		     phone, and the bar ran off the edge. -->
 		<div class="klokzetrij">
 			<label class="klokzet">
-				<span>Minuut</span>
+				<span>{text.match.minuteLabel}</span>
 				<input
 					type="number"
 					min="0"
 					max="200"
 					inputmode="numeric"
-					aria-label="Minuut"
+					aria-label={text.match.minuteLabel}
 					value={Math.floor(elapsed(w, app.nu) / 60)}
 					onchange={(e) => app.setClock(Number(e.currentTarget.value))}
 				/>
 			</label>
-			<button onclick={() => app.shiftClock(-60)}>−1′</button>
-			<button onclick={() => app.shiftClock(60)}>+1′</button>
-			<button class="klein" onclick={() => (klokBijstellen = false)}>Klaar</button>
+			<button onclick={() => app.shiftClock(-60)}>{text.match.minuteBack}</button>
+			<button onclick={() => app.shiftClock(60)}>{text.match.minuteForward}</button>
+			<button class="klein" onclick={() => (klokBijstellen = false)}>{text.common.done}</button>
 		</div>
 	{/if}
 
@@ -162,53 +163,53 @@
 					onclick={() => {
 						assistVragen = false;
 						doelpuntKiezen = !doelpuntKiezen;
-					}}>Doelpunt</button
+					}}>{text.match.goal}</button
 				>
 				<button
 					onclick={() => {
 						assistVragen = false;
 						app.concede();
-					}}>Tegen</button
+					}}>{text.match.conceded}</button
 				>
 				{#if app.undoable()}
-					<button onclick={() => app.undoLast()}>↶ {app.undoable()} terug</button>
+					<button onclick={() => app.undoLast()}>{text.match.undo(app.undoable()!)}</button>
 				{/if}
 				<!-- Only while the clock is stopped. After that this would be a mis-tap during
 				     coaching, and there is nothing left to change anyway. At the end, so
 				     Doelpunt and Tegen do not shift when you press Start. -->
 				{#if !app.kickedOff}
-					<a class="knop" href="/app/aanwezig">Wie is er?</a>
+					<a class="knop" href="/app/aanwezig">{text.match.whoIsThere}</a>
 				{/if}
-				<button class="uit" onclick={afsluiten}>Wedstrijd afsluiten</button>
+				<button class="uit" onclick={afsluiten}>{text.match.finish}</button>
 			</div>
 
 			{#if doelpuntKiezen}
 				<div class="melding">
-					<span><b>Doelpunt.</b> Tik op het veld wie hem maakte.</span>
+					<span><b>{text.match.goal}.</b> {text.match.goalPrompt}</span>
 					<button
 						class="klein"
 						onclick={() => {
 							app.goal(null);
 							doelpuntKiezen = false;
-						}}>Weet ik niet</button
+						}}>{text.match.goalUnknown}</button
 					>
-					<button class="klein" onclick={() => (doelpuntKiezen = false)}>Annuleren</button>
+					<button class="klein" onclick={() => (doelpuntKiezen = false)}>{text.common.cancel}</button>
 				</div>
 			{:else if assistVragen}
 				<div class="melding">
 					<span>
-						<b>{app.playerById(maker)?.name ?? 'Doelpunt'}</b> scoorde. Wie legde hem klaar? Tik hem aan, of sla dit over.
+						<b>{app.playerById(maker)?.name ?? text.match.goal}</b>
+						{text.match.assistPrompt}
 					</span>
-					<button class="klein" onclick={() => (assistVragen = false)}>Geen assist</button>
+					<button class="klein" onclick={() => (assistVragen = false)}>{text.match.noAssist}</button>
 				</div>
 			{:else if app.chosenPosition}
 				<div class="melding">
 					<span>
-						<b>{uit ? uit.name : 'Lege plek'}</b> ·
-						{LINES[positionLine(app.chosenPosition, w.formation)].toLowerCase()}. Tik wie erin komt, of een andere plek
-						om te ruilen.
+						<b>{uit ? uit.name : text.match.emptyPosition}</b> ·
+						{text.match.substitutePrompt(LINES[positionLine(app.chosenPosition, w.formation)].toLowerCase())}
 						{#if keeperMin > 0 && positionLine(app.chosenPosition, w.formation) !== 'K'}
-							Hij keepte deze wedstrijd al {keeperMin} minuten.
+							{text.match.alreadyKept(keeperMin)}
 						{/if}
 					</span>
 					<!-- At the touchline your hand goes to the player first and only then to what
@@ -223,10 +224,10 @@
 								app.goal(id);
 								maker = id;
 								assistVragen = true;
-							}}>{uit.name} scoorde</button
+							}}>{text.match.scored(uit.name)}</button
 						>
 					{/if}
-					<button class="klein" onclick={() => (app.chosenPosition = null)}>Annuleren</button>
+					<button class="klein" onclick={() => (app.chosenPosition = null)}>{text.common.cancel}</button>
 				</div>
 			{/if}
 		</div>
