@@ -377,8 +377,13 @@ class Sync {
 				{},
 				token
 			)) as { id: string; email: string }[];
-		} catch (e) {
-			this.message = 'De ploeg ophalen lukte niet: ' + (e as Error).message;
+		} catch {
+			/* Stil. Dit draait vanzelf bij het openen van het scherm, en er is niets
+			   wat de trainer eraan kan doen — geen bereik, of het schema staat er nog
+			   niet in. Dan verschijnt het blok gewoon niet. Een foutmelding zou hier
+			   alleen maar onrust zaaien over iets wat niet van hem is. */
+			this.leden = [];
+			this.openstaand = [];
 		}
 	}
 

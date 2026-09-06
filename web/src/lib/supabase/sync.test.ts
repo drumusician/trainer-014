@@ -633,3 +633,59 @@ describe('uitgenodigd worden', () => {
 		expect(sync.message).toContain('geen uitnodiging');
 	});
 });
+
+/*
+ * Voordat het nieuwe schema erin staat.
+ *
+ * De app gaat live via Netlify zodra main groen is; schema.sql draait iemand met
+ * de hand in Supabase. Tussen die twee momenten zit tijd, en dan bestaan
+ * team_leden en uitnodigingen nog niet. Dat mag niets kapotmaken: een trainer die
+ * er niets van weet moet gewoon zijn wedstrijd kunnen bijhouden.
+ */
+describe('als het nieuwe schema er nog niet is', () => {
+	function zonderNieuweTabellen() {
+		globalThis.fetch = vi.fn(async (url: string) => {
+			const u = String(url);
+			if (u.includes('team_leden') || u.includes('uitnodigingen')) {
+				return new Response(JSON.stringify({ code: '42P01', message: 'relation "public.team_leden" does not exist' }), {
+					status: 404
+				});
+			}
+			if (u.includes('teams?select=id'))
+				return new Response(JSON.stringify([{ id: 'team-1', naam: 'JO13-1' }]), { status: 200 });
+			if (u.includes('rpc/toestand_opslaan')) return new Response(JSON.stringify({ versie: 2 }), { status: 200 });
+			return new Response('[]', { status: 200 });
+		}) as unknown as typeof fetch;
+	}
+
+	beforeEach(() => {
+		sync.leden = [];
+		sync.openstaand = [];
+		sync.uitgenodigdVoor = [];
+		sync.message = '';
+	});
+
+	it('houdt de wedstrijd gewoon bij', async () => {
+		zonderNieuweTabellen();
+		await sync.opsturen();
+		expect(sync.vies).toBe(false);
+		expect(sync.message).toBe('Opgestuurd.');
+	});
+
+	/* En zonder melding: er is niets wat de trainer eraan kan doen, dus een
+	   foutmelding zou alleen maar onrust zaaien over iets wat niet van hem is. */
+	it('laat de ploeg leeg, zonder erover te klagen', async () => {
+		zonderNieuweTabellen();
+		await sync.haalPloeg();
+		expect(sync.leden).toHaveLength(0);
+		expect(sync.openstaand).toHaveLength(0);
+		expect(sync.message).toBe('');
+	});
+
+	it('kijkt naar uitnodigingen zonder te klagen', async () => {
+		zonderNieuweTabellen();
+		await sync.kijkNaarUitnodigingen();
+		expect(sync.uitgenodigdVoor).toHaveLength(0);
+		expect(sync.message).toBe('');
+	});
+});
