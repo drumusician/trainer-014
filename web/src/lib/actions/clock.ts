@@ -37,7 +37,7 @@ export function verschuif(w: Match | null, seconds: number): boolean {
  * empty: anyone still shuffling players before the whistle has already filled
  * that list, and then kick-off was never recorded at all.
  */
-export function toggleRunning(w: Match | null, nu: number, vandaag: string): boolean {
+export function toggleRunning(w: Match | null, nu: number, vandaag: string, wie?: string): boolean {
 	if (!w || w.finished) return false;
 	if (w.running) {
 		w.elapsed += (nu - (w.since ?? nu)) / 1000;
@@ -46,6 +46,9 @@ export function toggleRunning(w: Match | null, nu: number, vandaag: string): boo
 	} else {
 		if (!kickedOff(w)) {
 			w.date = vandaag;
+			/* Wie er tikt wordt hier vastgelegd en nergens anders. Bij de aftrap, want
+			   daarna verandert het niet meer: wie begonnen is maakt de wedstrijd af. */
+			if (wie) w.keptBy = wie;
 			log(w, nu, 'start');
 		}
 		w.running = true;

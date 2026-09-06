@@ -22,6 +22,20 @@
 	let backuptekst = $state('');
 	/* Het logboekje doorsturen: pas nadat je het gezien hebt. */
 	let melden = $state('');
+	let uitnodigen = $state('');
+	/* Ben ik de eigenaar? Alleen dan kun je hier iemand bij zetten. */
+	const eigenaar = $derived(sync.leden.some((l) => l.gebruiker === sync.sessie?.user_id && l.rol === 'eigenaar'));
+
+	/* Eén keer ophalen per team. Op '!leden.length' aftrappen zou blijven herhalen
+	   zodra het ophalen niets oplevert — geen bereik bijvoorbeeld. */
+	let opgehaaldVoor = $state<string | null>(null);
+	$effect(() => {
+		const team = sync.sessie?.teamId;
+		if (team && opgehaaldVoor !== team) {
+			opgehaaldVoor = team;
+			sync.haalPloeg();
+		}
+	});
 
 	async function codeMaken() {
 		code = makeTransferCode(t);
@@ -194,6 +208,74 @@
 			{/if}
 		{/if}
 		{#if sync.message}<p class="uitleg" style="margin-top: 8px">{sync.message}</p>{/if}
+
+		{#if sync.uitgenodigdVoor.length}
+			<h2>{text.data.invitedHeading}</h2>
+			{#each sync.uitgenodigdVoor as u (u.id)}
+				<p class="uitleg">{text.data.invitedFor(u.naam)}</p>
+			{/each}
+			<div class="knoprij" style="padding-left: 0">
+				<button class="prim" disabled={sync.bezig} onclick={() => sync.neemUitnodigingAan()}
+					>{text.data.acceptInvite}</button
+				>
+			</div>
+		{/if}
+
+		{#if sync.teamKeuze.length}
+			<h2>{text.data.chooseTeamHeading}</h2>
+			<p class="uitleg">{text.data.chooseTeamHint}</p>
+			<div class="knoprij" style="padding-left: 0">
+				{#each sync.teamKeuze as ploeg (ploeg.id)}
+					<button onclick={() => sync.kiesTeam(ploeg.id)}>{text.data.chooseTeam(ploeg.naam)}</button>
+				{/each}
+			</div>
+		{/if}
+
+		<!-- Pas tonen als we weten wie er lid zijn: anders staat er even 'alleen de
+		     eigenaar' terwijl je zelf de eigenaar bent. -->
+		{#if sync.sessie && sync.sessie.teamId && sync.leden.length}
+			<h2>{text.data.teamHeading}</h2>
+			<p class="uitleg">{eigenaar ? text.data.teamHint : text.data.teamOnlyOwner}</p>
+			{#each sync.leden as lid (lid.gebruiker)}
+				<div class="sregel">
+					<span class="naam">
+						{lid.rol === 'eigenaar' ? text.data.roleOwner : text.data.roleTrainer}
+						{#if lid.gebruiker === sync.sessie.user_id}<span class="min mager"> {text.data.you}</span>{/if}
+					</span>
+					{#if eigenaar && lid.rol !== 'eigenaar'}
+						<button
+							class="klein"
+							onclick={() => {
+								if (confirm(text.data.confirmRemoveMember)) sync.haalEruit(lid.gebruiker);
+							}}>{text.data.removeMember}</button
+						>
+					{/if}
+				</div>
+			{/each}
+			{#each sync.openstaand as u (u.id)}
+				<div class="sregel">
+					<span class="naam mager">{text.data.invitePending(u.email)}</span>
+					{#if eigenaar}
+						<button class="klein" onclick={() => sync.trekIn(u.id)}>{text.data.withdraw}</button>
+					{/if}
+				</div>
+			{/each}
+			{#if eigenaar}
+				<label class="vak">
+					{text.data.inviteLabel}
+					<input type="email" inputmode="email" bind:value={uitnodigen} placeholder={text.data.invitePlaceholder} />
+				</label>
+				<div class="knoprij" style="padding-left: 0">
+					<button
+						disabled={sync.bezig}
+						onclick={async () => {
+							await sync.nodigUit(uitnodigen);
+							uitnodigen = '';
+						}}>{text.data.invite}</button
+					>
+				</div>
+			{/if}
+		{/if}
 
 		<h2>{text.data.transferHeading}</h2>
 		{#if !sync.sessie}

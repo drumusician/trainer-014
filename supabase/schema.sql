@@ -160,8 +160,21 @@ as $$
   );
 $$;
 
-revoke all on function public.is_lid(uuid), public.is_eigenaar(uuid) from public;
-grant execute on function public.is_lid(uuid), public.is_eigenaar(uuid) to authenticated;
+-- Ook definer, en om dezelfde reden: zonder dit zou de leesregel op teams een
+-- subvraag op uitnodigingen doen, waarvan de eigen regel weer teams bevraagt.
+create or replace function public.is_uitgenodigd(p_team uuid) returns boolean
+language sql security definer stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.uitnodigingen u
+     where u.team_id = p_team
+       and lower(u.email) = lower(auth.jwt() ->> 'email')
+  );
+$$;
+
+revoke all on function public.is_lid(uuid), public.is_eigenaar(uuid), public.is_uitgenodigd(uuid) from public;
+grant execute on function public.is_lid(uuid), public.is_eigenaar(uuid), public.is_uitgenodigd(uuid) to authenticated;
 
 -- Wie een team aanmaakt is er meteen lid van. Met de hand erbij zetten zou
 -- betekenen dat een half mislukte aanmelding een team achterlaat waar niemand
@@ -196,8 +209,10 @@ drop policy if exists "alleen de eigenaar verwijdert" on public.teams;
 
 -- Lezen mag ieder lid. De eigenaar staat er los bij omdat de RETURNING van een
 -- verse insert al langs de leesregel komt voordat het lidmaatschap gezien wordt.
+-- En wie uitgenodigd is mag de naam zien: anders neem je iets aan zonder te weten
+-- wat. Verder komt hij nergens bij; de gegevens hangen aan het lidmaatschap.
 create policy "teams van mijn ploeg lezen" on public.teams for select
-  using (eigenaar = auth.uid() or public.is_lid(id));
+  using (eigenaar = auth.uid() or public.is_lid(id) or public.is_uitgenodigd(id));
 create policy "alleen de eigenaar wijzigt" on public.teams for update
   using (eigenaar = auth.uid());
 create policy "alleen de eigenaar verwijdert" on public.teams for delete

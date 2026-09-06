@@ -63,6 +63,16 @@ export interface Match {
 	archived?: boolean;
 	/** who is not there today; they are off the bench and do not count */
 	absent?: string[];
+	/**
+	 * Wie deze wedstrijd bijhoudt, als e-mailadres.
+	 *
+	 * Gezet bij de aftrap, en alleen als je ingelogd bent. Sinds er meer dan één
+	 * trainer bij een team kan, kunnen er ook twee tegelijk gaan tikken — en dan
+	 * duwen twee toestellen om beurten hun eigen versie naar de server en raakt de
+	 * helft van de wissels zoek. Dit lost dat niet op; het maakt het zichtbaar,
+	 * zodat je het onderling regelt voordat het misgaat.
+	 */
+	keptBy?: string;
 }
 
 export interface DefaultLineup {

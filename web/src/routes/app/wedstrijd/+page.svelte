@@ -8,6 +8,7 @@
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
 	import { text } from '$lib/text/nl';
+	import { sync } from '$lib/supabase/sync.svelte';
 
 	const w = $derived(app.match);
 	const klaar = $derived(!!w && !w.finished && Object.keys(w.lineup).length > 0);
@@ -76,6 +77,12 @@
 		goto('/app/afloop');
 	}
 
+	/* Houdt iemand anders deze wedstrijd al bij? Twee toestellen die tegelijk
+	   tikken duwen om beurten hun eigen versie naar de server, en dan raakt de
+	   helft van de wissels zoek. Zichtbaar maken is genoeg; onderling regelen ze
+	   het zelf. */
+	const anderTikt = $derived(w?.keptBy && sync.sessie?.email && w.keptBy !== sync.sessie.email ? w.keptBy : null);
+
 	const uit = $derived(app.chosenPosition && w ? app.playerById(w.lineup[app.chosenPosition]) : null);
 	const keeperMin = $derived(uit ? Math.round((keeperTimes(w, app.nu)[uit.id] ?? 0) / 60) : 0);
 </script>
@@ -108,6 +115,9 @@
 		</div>
 	</main>
 {:else}
+	{#if anderTikt}
+		<div class="waarschuwing"><span>{text.match.keptBy(anderTikt)}</span></div>
+	{/if}
 	<div class="klokbalk">
 		<button type="button" class="kloktik" onclick={() => (klokBijstellen = !klokBijstellen)}>
 			<div class="klok">{mmss(elapsed(w, app.nu))}</div>

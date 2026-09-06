@@ -6,6 +6,7 @@ import { app } from '$lib/store.svelte';
 import { emptyState } from '$lib/domain/types';
 import { lopendeWedstrijd, metSelectie, metWedstrijd } from '../../../test/wedstrijd';
 import { gegaanNaar } from '../../../test/sveltekit/navigation';
+import { sync } from '$lib/supabase/sync.svelte';
 
 /*
  * Het wedstrijdscherm is het enige scherm dat langs de lijn in de hand wordt
@@ -18,6 +19,8 @@ import { gegaanNaar } from '../../../test/sveltekit/navigation';
 beforeEach(() => {
 	localStorage.clear();
 	gegaanNaar.length = 0;
+	sync.sessie = null;
+	app.whoIsKeeping = null;
 	app.toestand = emptyState();
 	app.chosenPosition = null;
 });
@@ -339,5 +342,67 @@ describe('het wedstrijdscherm tijdens een wedstrijd', () => {
 		screen.getByRole('button', { name: 'Wedstrijd afsluiten' }).click();
 		await tick();
 		expect(app.toestand.match!.finished).toBe(false);
+	});
+
+	/*
+	 * Wie houdt deze wedstrijd bij.
+	 *
+	 * Sinds er twee trainers bij een team kunnen, kunnen er ook twee tegelijk gaan
+	 * tikken. Dan duwen twee toestellen om beurten hun eigen versie naar de server
+	 * en raakt de helft van de wissels zoek. De app lost dat niet op — dat kan hij
+	 * ook niet — maar hij laat het wel zien voordat het misgaat.
+	 */
+	it('legt bij de aftrap vast wie er tikt', async () => {
+		metWedstrijd();
+		app.whoIsKeeping = 'tjaco@voorbeeld.nl';
+		render(Wedstrijd);
+		screen.getByRole('button', { name: 'Start' }).click();
+		await tick();
+		expect(app.toestand.match!.keptBy).toBe('tjaco@voorbeeld.nl');
+	});
+
+	it('laat het leeg als je niet ingelogd bent', async () => {
+		metWedstrijd();
+		render(Wedstrijd);
+		screen.getByRole('button', { name: 'Start' }).click();
+		await tick();
+		expect(app.toestand.match!.keptBy).toBeUndefined();
+	});
+
+	/* Wie begonnen is maakt hem af: bij een pauze en een herstart verandert het niet. */
+	it('wisselt onderweg niet van eigenaar', async () => {
+		metWedstrijd();
+		app.whoIsKeeping = 'tjaco@voorbeeld.nl';
+		render(Wedstrijd);
+		screen.getByRole('button', { name: 'Start' }).click();
+		await tick();
+		app.whoIsKeeping = 'matthijs@voorbeeld.nl';
+		screen.getByRole('button', { name: 'Stop' }).click();
+		await tick();
+		screen.getByRole('button', { name: 'Start' }).click();
+		await tick();
+		expect(app.toestand.match!.keptBy).toBe('tjaco@voorbeeld.nl');
+	});
+
+	it('waarschuwt als een ander deze wedstrijd al bijhoudt', () => {
+		lopendeWedstrijd(600, { keptBy: 'tjaco@voorbeeld.nl' });
+		sync.sessie = { access_token: 'x', refresh_token: 'y', email: 'matthijs@voorbeeld.nl' } as never;
+		render(Wedstrijd);
+		const melding = document.querySelector('.waarschuwing')?.textContent ?? '';
+		expect(melding).toContain('tjaco@voorbeeld.nl');
+		expect(melding).toContain('wissels zoek');
+	});
+
+	it('waarschuwt jezelf niet', () => {
+		lopendeWedstrijd(600, { keptBy: 'tjaco@voorbeeld.nl' });
+		sync.sessie = { access_token: 'x', refresh_token: 'y', email: 'tjaco@voorbeeld.nl' } as never;
+		render(Wedstrijd);
+		expect(document.querySelector('.waarschuwing')).toBeNull();
+	});
+
+	it('zwijgt als je niet ingelogd bent en dus niets kunt weten', () => {
+		lopendeWedstrijd(600, { keptBy: 'tjaco@voorbeeld.nl' });
+		render(Wedstrijd);
+		expect(document.querySelector('.waarschuwing')).toBeNull();
 	});
 });

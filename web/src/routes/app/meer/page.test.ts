@@ -25,6 +25,11 @@ beforeEach(() => {
 	sync.hapert = false;
 	sync.botsing = false;
 	sync.message = '';
+	sync.teamKeuze = [];
+	sync.leden = [];
+	sync.openstaand = [];
+	sync.uitgenodigdVoor = [];
+	globalThis.fetch = vi.fn(async () => new Response('[]', { status: 200 })) as unknown as typeof fetch;
 	vi.restoreAllMocks();
 	vi.stubGlobal('alert', () => {});
 	vi.stubGlobal('confirm', () => true);
@@ -261,5 +266,98 @@ describe('het gegevensscherm als je ingelogd bent', () => {
 		for (const woord of ['undefined', 'NaN', 'sign in', 'sync']) {
 			expect(tekst).not.toContain(woord);
 		}
+	});
+
+	/*
+	 * Wie kan hierbij. Alleen de eigenaar kan hier iemand toelaten of eruit halen —
+	 * de database weigert het anders toch, maar een knop die je niet mag indrukken
+	 * hoort er niet te staan.
+	 */
+	it('laat de eigenaar de ploeg zien en iemand uitnodigen', async () => {
+		sync.sessie!.user_id = 'u1';
+		sync.sessie!.teamId = 'team-1';
+		sync.leden = [
+			{ gebruiker: 'u1', rol: 'eigenaar' },
+			{ gebruiker: 'u2', rol: 'trainer' }
+		];
+		render(Meer);
+		await tick();
+		expect(document.body.textContent).toContain('Wie kan hierbij');
+		expect(screen.getByRole('button', { name: 'Uitnodigen' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Eruit halen' })).toBeTruthy();
+	});
+
+	it('geeft een tweede trainer geen knoppen die hij toch niet mag indrukken', async () => {
+		sync.sessie!.user_id = 'u2';
+		sync.sessie!.teamId = 'team-1';
+		sync.leden = [
+			{ gebruiker: 'u1', rol: 'eigenaar' },
+			{ gebruiker: 'u2', rol: 'trainer' }
+		];
+		render(Meer);
+		await tick();
+		expect(document.body.textContent).toContain('Alleen de eigenaar');
+		expect(screen.queryByRole('button', { name: 'Uitnodigen' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Eruit halen' })).toBeNull();
+	});
+
+	it('zet de eigenaar niet zichzelf eruit', async () => {
+		sync.sessie!.user_id = 'u1';
+		sync.sessie!.teamId = 'team-1';
+		sync.leden = [{ gebruiker: 'u1', rol: 'eigenaar' }];
+		render(Meer);
+		await tick();
+		expect(screen.queryByRole('button', { name: 'Eruit halen' })).toBeNull();
+	});
+
+	it('toont een uitnodiging die nog niet aangenomen is', async () => {
+		sync.sessie!.user_id = 'u1';
+		sync.sessie!.teamId = 'team-1';
+		sync.leden = [{ gebruiker: 'u1', rol: 'eigenaar' }];
+		sync.openstaand = [{ id: 'i1', email: 'matthijs@voorbeeld.nl' }];
+		render(Meer);
+		await tick();
+		expect(document.body.textContent).toContain('matthijs@voorbeeld.nl');
+		expect(screen.getByRole('button', { name: 'Intrekken' })).toBeTruthy();
+	});
+
+	it('vraagt of je een uitnodiging aanneemt, met de naam van het team erbij', async () => {
+		sync.sessie!.teamId = 'team-1';
+		sync.uitgenodigdVoor = [{ id: 'team-9', naam: 'JO15-2' }];
+		render(Meer);
+		await tick();
+		expect(document.body.textContent).toContain('JO15-2');
+		expect(screen.getByRole('button', { name: 'Aannemen' })).toBeTruthy();
+	});
+
+	/* Bij meer dan één team kiest de trainer; de app gokt niet. */
+	it('laat je kiezen welk team dit toestel volgt', async () => {
+		sync.sessie!.teamId = undefined;
+		sync.teamKeuze = [
+			{ id: 'team-1', naam: 'JO13-1' },
+			{ id: 'team-9', naam: 'JO15-2' }
+		];
+		render(Meer);
+		await tick();
+		expect(screen.getByRole('button', { name: 'Dit toestel volgt JO13-1' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Dit toestel volgt JO15-2' })).toBeTruthy();
+	});
+
+	/* Zolang we nog niet weten wie er lid zijn, staat er niets. Anders leest de
+	   eigenaar even dat alleen de eigenaar hier iets mag. */
+	it('houdt de ploeg verborgen tot hij opgehaald is', async () => {
+		sync.sessie!.teamId = 'team-1';
+		sync.leden = [];
+		render(Meer);
+		await tick();
+		expect(document.body.textContent).not.toContain('Wie kan hierbij');
+		expect(document.body.textContent).not.toContain('Alleen de eigenaar');
+	});
+
+	it('vraagt niets als je maar bij één team hoort', async () => {
+		sync.sessie!.teamId = 'team-1';
+		render(Meer);
+		await tick();
+		expect(document.body.textContent).not.toContain('Welk team op dit toestel');
 	});
 });

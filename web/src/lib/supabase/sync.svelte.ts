@@ -61,6 +61,13 @@ async function sb(pad: string, opties: RequestInit & { metToken?: boolean } = {}
 	return data;
 }
 
+/** Iemand die bij dit team kan. De eigenaar staat er ook bij, met zijn rol. */
+export interface Lid {
+	gebruiker: string;
+	rol: 'eigenaar' | 'trainer';
+	email?: string;
+}
+
 class Sync {
 	sessie = $state<Sessie | null>(null);
 	message = $state('');
@@ -89,6 +96,19 @@ class Sync {
 	private mislukt = 0;
 	private static readonly LANGSTE_WACHT = 300_000;
 	private bezigMetDuwen = false;
+
+	/* ---------- meerdere trainers ----------
+	   Zolang er één team was, kon de app het gewoon pakken. Nu je ook lid kunt
+	   zijn van het team van een ander, mag hij dat niet meer gokken: het verkeerde
+	   team pakken betekent andermans seizoen overschrijven met dat van jou. Staat
+	   deze lijst gevuld, dan wacht het synchroniseren tot de trainer kiest. */
+	teamKeuze = $state<{ id: string; naam: string }[]>([]);
+	/** de ploeg van dit team, om te laten zien wie er allemaal bij kan */
+	leden = $state<Lid[]>([]);
+	/** uitnodigingen die nog openstaan voor dit team */
+	openstaand = $state<{ id: string; email: string }[]>([]);
+	/** teams waarvoor er een uitnodiging op jouw adres klaarstaat */
+	uitgenodigdVoor = $state<{ id: string; naam: string }[]>([]);
 
 	load() {
 		const bak = storage();
@@ -156,6 +176,10 @@ class Sync {
 		this.message = '';
 		this.vies = false;
 		this.botsing = false;
+		this.teamKeuze = [];
+		this.leden = [];
+		this.openstaand = [];
+		this.uitgenodigdVoor = [];
 		storage()?.removeItem(SESSIESLEUTEL);
 		this.bewaarInlogpoging(null);
 	}
@@ -270,19 +294,37 @@ class Sync {
 	}
 
 	/* ---------- team ---------- */
+	/**
+	 * Welk team hoort bij dit toestel?
+	 *
+	 * Zolang een trainer maar bij één team kon, was dit 'pak de eerste'. Sinds je
+	 * ook lid kunt zijn van het team van een ander is dat gevaarlijk geworden: het
+	 * verkeerde team pakken betekent dat jouw seizoen over dat van iemand anders
+	 * heen gaat, en dat is met geen enkele knop terug te draaien. Dus: één team is
+	 * duidelijk, geen team maken we aan, en bij meer dan één kiest de trainer.
+	 */
 	private async zorgVoorTeam(token: string): Promise<string> {
 		const s = this.sessie!;
 		if (s.teamId) return s.teamId;
-		const rijen = (await sb('/rest/v1/teams?select=id&order=gemaakt.asc&limit=1', {}, token)) as { id: string }[];
-		if (rijen?.length) {
+
+		const rijen = (await sb('/rest/v1/teams?select=id,naam&order=gemaakt.asc', {}, token)) as {
+			id: string;
+			naam: string;
+		}[];
+
+		if (rijen?.length === 1) {
 			s.teamId = rijen[0].id;
+			this.teamKeuze = [];
+		} else if (rijen?.length > 1) {
+			this.teamKeuze = rijen;
+			throw new Error('Je hoort bij meer dan één team. Kies er een bij Gegevens.');
 		} else {
 			if (!s.user_id) {
 				const u = (await sb('/auth/v1/user', {}, token)) as { id: string; email: string };
 				s.user_id = u.id;
 				s.email = u.email;
 			}
-			const nieuw = (await sb(
+			const gemaakt = (await sb(
 				'/rest/v1/teams',
 				{
 					method: 'POST',
@@ -291,10 +333,183 @@ class Sync {
 				},
 				token
 			)) as { id: string }[];
-			s.teamId = nieuw[0].id;
+			s.teamId = gemaakt[0].id;
 		}
 		this.save();
 		return s.teamId!;
+	}
+
+	/**
+	 * Kiezen bij welk team dit toestel hoort.
+	 *
+	 * Alleen als er niets klaarstaat om op te sturen. Anders zou je met de gegevens
+	 * van het ene team in de hand naar het andere overstappen, en die daar
+	 * overheen zetten.
+	 */
+	async kiesTeam(teamId: string) {
+		if (!this.sessie) return;
+		if (this.vies) {
+			this.message = 'Stuur eerst op wat hier nog klaarstaat, of haal op.';
+			return;
+		}
+		this.sessie.teamId = teamId;
+		this.sessie.versie = undefined;
+		this.sessie.afdruk = null;
+		this.teamKeuze = [];
+		this.save();
+		await this.ophalen();
+	}
+
+	/* ---------- wie kan erbij ---------- */
+	/** De ploeg ophalen: wie er lid is en welke uitnodigingen nog openstaan. */
+	async haalPloeg() {
+		const token = await this.token();
+		if (!token || !this.sessie?.teamId) return;
+		const team = this.sessie.teamId;
+		try {
+			this.leden = (await sb(
+				'/rest/v1/team_leden?select=gebruiker,rol&team_id=eq.' + team + '&order=toegevoegd.asc',
+				{},
+				token
+			)) as Lid[];
+			this.openstaand = (await sb(
+				'/rest/v1/uitnodigingen?select=id,email&team_id=eq.' + team + '&order=gemaakt.asc',
+				{},
+				token
+			)) as { id: string; email: string }[];
+		} catch (e) {
+			this.message = 'De ploeg ophalen lukte niet: ' + (e as Error).message;
+		}
+	}
+
+	/** Iemand uitnodigen. Op adres, niet met een code die kan rondslingeren. */
+	async nodigUit(email: string) {
+		const adres = email.trim();
+		if (!adres.includes('@')) {
+			this.message = 'Vul het e-mailadres in waarmee de ander inlogt.';
+			return;
+		}
+		const token = await this.token();
+		if (!token || !this.sessie?.teamId || !this.sessie.user_id) return;
+		this.bezig = true;
+		try {
+			await sb(
+				'/rest/v1/uitnodigingen',
+				{
+					method: 'POST',
+					headers: { Prefer: 'return=minimal' },
+					body: JSON.stringify({ team_id: this.sessie.teamId, email: adres, door: this.sessie.user_id })
+				},
+				token
+			);
+			this.message = adres + ' is uitgenodigd. Hij ziet het zodra hij inlogt.';
+			await this.haalPloeg();
+		} catch (e) {
+			const f = e as Fout;
+			/* 23505: dit adres staat er al. Dat is geen fout om de trainer mee
+			   lastig te vallen; het antwoord op zijn vraag is gewoon ja. */
+			this.message = f.data?.code === '23505' ? adres + ' was al uitgenodigd.' : 'Uitnodigen lukte niet: ' + f.message;
+			await this.haalPloeg();
+		} finally {
+			this.bezig = false;
+		}
+	}
+
+	/** Een uitnodiging weer intrekken zolang hij niet is aangenomen. */
+	async trekIn(id: string) {
+		const token = await this.token();
+		if (!token) return;
+		try {
+			await sb('/rest/v1/uitnodigingen?id=eq.' + id, { method: 'DELETE' }, token);
+			await this.haalPloeg();
+		} catch (e) {
+			this.message = 'Intrekken lukte niet: ' + (e as Error).message;
+		}
+	}
+
+	/** Iemand er weer uit halen. De eigenaar kan er niet uit; dat weigert de database. */
+	async haalEruit(gebruiker: string) {
+		const token = await this.token();
+		if (!token || !this.sessie?.teamId) return;
+		try {
+			await sb(
+				'/rest/v1/team_leden?team_id=eq.' + this.sessie.teamId + '&gebruiker=eq.' + gebruiker,
+				{ method: 'DELETE' },
+				token
+			);
+			await this.haalPloeg();
+		} catch (e) {
+			this.message = 'Verwijderen lukte niet: ' + (e as Error).message;
+		}
+	}
+
+	/* ---------- uitgenodigd worden ---------- */
+	/**
+	 * Staat er een uitnodiging klaar op mijn adres?
+	 *
+	 * De regels laten de eigenaar ook zijn eigen openstaande uitnodigingen zien —
+	 * dat moet, want hij moet ze kunnen intrekken. Hier zijn die niet interessant:
+	 * je hoeft jezelf niet uit te nodigen voor je eigen team.
+	 */
+	async kijkNaarUitnodigingen() {
+		const token = await this.token();
+		if (!token) return;
+		try {
+			const rijen = (await sb('/rest/v1/uitnodigingen?select=team_id', {}, token)) as {
+				team_id: string;
+			}[];
+			const vreemd = rijen.filter((r) => r.team_id !== this.sessie?.teamId);
+			if (!vreemd.length) {
+				this.uitgenodigdVoor = [];
+				return;
+			}
+			/* De naam erbij, anders neem je iets aan zonder te weten wat. Meer dan de
+			   naam krijgt een uitgenodigde niet te zien; dat regelt de database. */
+			const ids = vreemd.map((r) => r.team_id).join(',');
+			const teams = (await sb('/rest/v1/teams?select=id,naam&id=in.(' + ids + ')', {}, token)) as {
+				id: string;
+				naam: string;
+			}[];
+			this.uitgenodigdVoor = vreemd.map((r) => ({
+				id: r.team_id,
+				naam: teams.find((t) => t.id === r.team_id)?.naam ?? 'een team'
+			}));
+		} catch {
+			/* geen bereik, of niet ingelogd: dan een andere keer */
+		}
+	}
+
+	/**
+	 * Een uitnodiging aannemen.
+	 *
+	 * De database doet het echte werk: alleen uitnodigingen op jouw eigen adres,
+	 * en jij kunt jezelf niet zomaar lid maken. Wat hier gebeurt is kiezen wat het
+	 * toestel daarna volgt.
+	 */
+	async neemUitnodigingAan(): Promise<string[]> {
+		const token = await this.token();
+		if (!token) return [];
+		this.bezig = true;
+		try {
+			const teams = (await sb('/rest/v1/rpc/uitnodiging_aannemen', { method: 'POST' }, token)) as string[] | null;
+			this.uitgenodigdVoor = [];
+			if (!teams?.length) {
+				this.message = 'Er stond geen uitnodiging klaar op dit adres.';
+				return [];
+			}
+			this.message = 'Aangenomen. Kies hieronder welk team je op dit toestel wilt.';
+			const alle = (await sb('/rest/v1/teams?select=id,naam&order=gemaakt.asc', {}, token)) as {
+				id: string;
+				naam: string;
+			}[];
+			this.teamKeuze = alle.length > 1 ? alle : [];
+			return teams;
+		} catch (e) {
+			this.message = 'Aannemen lukte niet: ' + (e as Error).message;
+			return [];
+		} finally {
+			this.bezig = false;
+		}
 	}
 
 	private isBotsing(e: Fout): boolean {
@@ -456,6 +671,9 @@ class Sync {
 	/** On opening the app, and when you come back from another screen. */
 	async kijkEven() {
 		if (!this.sessie) return;
+		/* Stil op de achtergrond: een uitnodiging die klaarstaat wil je zien zonder
+		   ernaar te hoeven zoeken. */
+		void this.kijkNaarUitnodigingen();
 		if (this.vies) {
 			await this.duwAlsNodig();
 			return;

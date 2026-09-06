@@ -405,3 +405,231 @@ describe('het team op de server', () => {
 		expect(f.mock.calls.filter((c) => String(c[0]).includes('teams?select=id'))).toHaveLength(0);
 	});
 });
+
+/*
+ * Meerdere trainers per team.
+ *
+ * De database bewaakt wie er waarbij mag; die proef staat in supabase/test. Wat
+ * hier bewaakt wordt is het toestel: welk team het volgt. Dat is de gevaarlijkste
+ * beslissing in dit bestand, want het verkeerde team pakken betekent dat jouw
+ * seizoen over dat van iemand anders heen gaat, en dat is met geen enkele knop
+ * terug te draaien.
+ */
+describe('welk team dit toestel volgt', () => {
+	function metTeams(teams: { id: string; naam: string }[]) {
+		const gemaakt: unknown[] = [];
+		const f = vi.fn(async (url: string, init?: RequestInit) => {
+			const u = String(url);
+			if (u.includes('teams?select=id')) return new Response(JSON.stringify(teams), { status: 200 });
+			if (u.includes('/rest/v1/teams') && init?.method === 'POST') {
+				gemaakt.push(JSON.parse(String(init.body)));
+				return new Response(JSON.stringify([{ id: 'vers-team' }]), { status: 200 });
+			}
+			if (u.includes('team_toestand')) return new Response('[]', { status: 200 });
+			return new Response(JSON.stringify({ versie: 2 }), { status: 200 });
+		});
+		globalThis.fetch = f as unknown as typeof fetch;
+		return { f, gemaakt };
+	}
+
+	beforeEach(() => {
+		sync.teamKeuze = [];
+		sync.leden = [];
+		sync.openstaand = [];
+		sync.uitgenodigdVoor = [];
+		sync.message = '';
+	});
+
+	it('neemt het team over als er maar één is', async () => {
+		metTeams([{ id: 'team-1', naam: 'JO13-1' }]);
+		sync.sessie!.teamId = undefined;
+		await sync.opsturen();
+		expect(sync.sessie!.teamId).toBe('team-1');
+		expect(sync.teamKeuze).toHaveLength(0);
+	});
+
+	/*
+	 * Dit is de test die ertoe doet. Bij twee teams mag de app niet gokken. Vóór
+	 * het lidmaatschap pakte hij simpelweg het oudste; dat werkte zolang je alleen
+	 * je eigen team had, en zou vanaf nu andermans seizoen kunnen overschrijven.
+	 */
+	it('gokt niet als je bij meer dan één team hoort', async () => {
+		const { f } = metTeams([
+			{ id: 'team-1', naam: 'JO13-1' },
+			{ id: 'team-2', naam: 'JO15-2' }
+		]);
+		sync.sessie!.teamId = undefined;
+		await sync.opsturen();
+
+		expect(sync.sessie!.teamId).toBeUndefined();
+		expect(sync.teamKeuze.map((t) => t.naam)).toEqual(['JO13-1', 'JO15-2']);
+		/* en er is niets opgestuurd */
+		expect(f.mock.calls.some((c) => String(c[0]).includes('toestand_opslaan'))).toBe(false);
+	});
+
+	it('maakt er een aan als je nog nergens bij hoort', async () => {
+		const { gemaakt } = metTeams([]);
+		app.toestand.teamName = 'JO14-3';
+		sync.sessie!.teamId = undefined;
+		await sync.opsturen();
+		expect(sync.sessie!.teamId).toBe('vers-team');
+		expect(gemaakt[0]).toMatchObject({ naam: 'JO14-3' });
+	});
+
+	it('volgt het team dat je kiest en haalt dat op', async () => {
+		metTeams([]);
+		sync.vies = false;
+		await sync.kiesTeam('team-2');
+		expect(sync.sessie!.teamId).toBe('team-2');
+		expect(sync.teamKeuze).toHaveLength(0);
+	});
+
+	/*
+	 * Overstappen terwijl er nog iets klaarstaat zou dat werk bij het andere team
+	 * naar binnen duwen. Dus eerst opsturen of ophalen, dan pas kiezen.
+	 */
+	it('stapt niet over zolang er hier nog iets klaarstaat', async () => {
+		metTeams([]);
+		sync.sessie!.teamId = 'team-1';
+		sync.vies = true;
+		await sync.kiesTeam('team-2');
+		expect(sync.sessie!.teamId).toBe('team-1');
+		expect(sync.message).toContain('Stuur eerst op');
+	});
+
+	it('vergeet de versie van het vorige team bij het overstappen', async () => {
+		metTeams([]);
+		sync.sessie!.versie = 42;
+		sync.sessie!.afdruk = 'iets';
+		await sync.kiesTeam('team-2');
+		expect(sync.sessie!.versie).toBeUndefined();
+		expect(sync.sessie!.afdruk).toBeNull();
+	});
+});
+
+describe('wie er bij het team kan', () => {
+	function metPloeg(leden: { gebruiker: string; rol: string }[], open: { id: string; email: string }[] = []) {
+		const verstuurd: { url: string; method?: string; body?: unknown }[] = [];
+		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+			const u = String(url);
+			verstuurd.push({ url: u, method: init?.method, body: init?.body ? JSON.parse(String(init.body)) : null });
+			if (u.includes('team_leden')) return new Response(JSON.stringify(leden), { status: 200 });
+			if (u.includes('uitnodigingen')) return new Response(JSON.stringify(open), { status: 200 });
+			return new Response('{}', { status: 200 });
+		}) as unknown as typeof fetch;
+		return verstuurd;
+	}
+
+	beforeEach(() => {
+		sync.leden = [];
+		sync.openstaand = [];
+		sync.message = '';
+	});
+
+	it('haalt op wie er lid is en wat er openstaat', async () => {
+		metPloeg([{ gebruiker: 'u1', rol: 'eigenaar' }], [{ id: 'i1', email: 'matthijs@voorbeeld.nl' }]);
+		await sync.haalPloeg();
+		expect(sync.leden).toHaveLength(1);
+		expect(sync.openstaand[0].email).toBe('matthijs@voorbeeld.nl');
+	});
+
+	it('nodigt uit op adres', async () => {
+		const verstuurd = metPloeg([]);
+		await sync.nodigUit(' Matthijs@Voorbeeld.nl ');
+		const post = verstuurd.find((v) => v.url.includes('uitnodigingen') && v.method === 'POST');
+		expect(post?.body).toMatchObject({ email: 'Matthijs@Voorbeeld.nl', team_id: 'team-1', door: 'u1' });
+		expect(sync.message).toContain('uitgenodigd');
+	});
+
+	it('vraagt om een adres als je iets anders intikt', async () => {
+		const verstuurd = metPloeg([]);
+		await sync.nodigUit('matthijs');
+		expect(verstuurd.some((v) => v.method === 'POST')).toBe(false);
+		expect(sync.message).toContain('e-mailadres');
+	});
+
+	/* Twee keer hetzelfde adres is geen fout om iemand mee lastig te vallen: het
+	   antwoord op zijn vraag is gewoon ja. */
+	it('zegt gewoon ja als het adres er al stond', async () => {
+		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+			if (String(url).includes('uitnodigingen') && init?.method === 'POST') {
+				return new Response(JSON.stringify({ code: '23505', message: 'duplicate key' }), { status: 409 });
+			}
+			return new Response('[]', { status: 200 });
+		}) as unknown as typeof fetch;
+		await sync.nodigUit('matthijs@voorbeeld.nl');
+		expect(sync.message).toContain('was al uitgenodigd');
+	});
+
+	it('trekt een uitnodiging weer in', async () => {
+		const verstuurd = metPloeg([]);
+		await sync.trekIn('i1');
+		expect(verstuurd.some((v) => v.method === 'DELETE' && v.url.includes('id=eq.i1'))).toBe(true);
+	});
+
+	it('haalt iemand er weer uit', async () => {
+		const verstuurd = metPloeg([]);
+		await sync.haalEruit('u2');
+		expect(
+			verstuurd.some((v) => v.method === 'DELETE' && v.url.includes('team_leden') && v.url.includes('gebruiker=eq.u2'))
+		).toBe(true);
+	});
+});
+
+describe('uitgenodigd worden', () => {
+	beforeEach(() => {
+		sync.uitgenodigdVoor = [];
+		sync.teamKeuze = [];
+		sync.message = '';
+	});
+
+	it('ziet een uitnodiging van een ander team staan, met de naam erbij', async () => {
+		globalThis.fetch = vi.fn(async (url: string) => {
+			const u = String(url);
+			if (u.includes('uitnodigingen')) {
+				return new Response(JSON.stringify([{ team_id: 'team-9' }]), { status: 200 });
+			}
+			if (u.includes('teams?select=id'))
+				return new Response(JSON.stringify([{ id: 'team-9', naam: 'JO15-2' }]), { status: 200 });
+			return new Response('[]', { status: 200 });
+		}) as unknown as typeof fetch;
+		await sync.kijkNaarUitnodigingen();
+		expect(sync.uitgenodigdVoor).toEqual([{ id: 'team-9', naam: 'JO15-2' }]);
+	});
+
+	/* De eigenaar ziet zijn eigen openstaande uitnodigingen ook; die horen hier
+	   niet als 'je bent uitgenodigd' te verschijnen. */
+	it('rekent je eigen openstaande uitnodiging niet mee', async () => {
+		globalThis.fetch = vi.fn(
+			async () => new Response(JSON.stringify([{ team_id: 'team-1' }]), { status: 200 })
+		) as unknown as typeof fetch;
+		await sync.kijkNaarUitnodigingen();
+		expect(sync.uitgenodigdVoor).toHaveLength(0);
+	});
+
+	it('neemt aan en vraagt daarna welk team dit toestel volgt', async () => {
+		globalThis.fetch = vi.fn(async (url: string) => {
+			const u = String(url);
+			if (u.includes('uitnodiging_aannemen')) return new Response(JSON.stringify(['team-9']), { status: 200 });
+			if (u.includes('teams?select=id'))
+				return new Response(
+					JSON.stringify([
+						{ id: 'team-1', naam: 'JO13-1' },
+						{ id: 'team-9', naam: 'JO15-2' }
+					]),
+					{ status: 200 }
+				);
+			return new Response('[]', { status: 200 });
+		}) as unknown as typeof fetch;
+		const teams = await sync.neemUitnodigingAan();
+		expect(teams).toEqual(['team-9']);
+		expect(sync.teamKeuze).toHaveLength(2);
+		expect(sync.uitgenodigdVoor).toHaveLength(0);
+	});
+
+	it('zegt het als er niets klaarstond', async () => {
+		globalThis.fetch = vi.fn(async () => new Response('[]', { status: 200 })) as unknown as typeof fetch;
+		await sync.neemUitnodigingAan();
+		expect(sync.message).toContain('geen uitnodiging');
+	});
+});

@@ -41,6 +41,13 @@
 	/* Local wins; the server gets it as soon as there is signal. */
 	app.afterSave = () => sync.merkVies();
 
+	/* Wie er tikt. De winkel weet niets van inloggen, dus de schil vertelt het.
+	   Bij de aftrap wordt dit op de wedstrijd gezet, zodat een tweede trainer ziet
+	   dat hij niet ook moet gaan tikken. */
+	$effect(() => {
+		app.whoIsKeeping = sync.sessie?.email ?? null;
+	});
+
 	let wakeLock: WakeLockSentinel | null = null;
 
 	async function pakWakeLock() {

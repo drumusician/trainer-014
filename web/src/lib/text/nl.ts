@@ -191,6 +191,7 @@ const match = {
 	conceded: 'Tegen',
 	undo: (what: string) => `↶ ${what} terug`,
 	whoIsThere: 'Wie is er?',
+	keptBy: (wie: string) => `${wie} houdt deze wedstrijd bij. Tik hier niet ook mee, anders raken jullie wissels zoek.`,
 	finish: 'Wedstrijd afsluiten',
 	confirmFinish: 'Wedstrijd afsluiten?\n\nDe klok stopt en je krijgt het overzicht met de speeltijden.',
 
@@ -467,6 +468,32 @@ const data = {
 	pull: 'Ophalen',
 	signOut: 'Uitloggen',
 	forcePush: 'Toch dit toestel opsturen',
+
+	/* ---------- wie kan erbij ---------- */
+	teamHeading: 'Wie kan hierbij',
+	teamHint:
+		'Zaterdag staat er soms een ander langs de lijn. Nodig hem uit met het e-mailadres waarmee hij inlogt; hij ziet het zodra hij dat doet. Jij blijft de enige die het team kan hernoemen of iemand kan toevoegen.',
+	teamOnlyOwner: 'Alleen de eigenaar kan hier iemand bij zetten.',
+	roleOwner: 'eigenaar',
+	roleTrainer: 'trainer',
+	you: 'jij',
+	inviteLabel: 'E-mailadres',
+	invitePlaceholder: 'naam@voorbeeld.nl',
+	invite: 'Uitnodigen',
+	invitePending: (email: string) => `${email} · uitgenodigd, nog niet ingelogd`,
+	withdraw: 'Intrekken',
+	removeMember: 'Eruit halen',
+	confirmRemoveMember: 'Deze trainer er weer uit halen?\n\nHij komt dan niet meer bij dit team.',
+
+	invitedHeading: 'Je bent uitgenodigd',
+	invitedFor: (naam: string) => `${naam} heeft je gevraagd om mee te kijken.`,
+	acceptInvite: 'Aannemen',
+
+	chooseTeamHeading: 'Welk team op dit toestel?',
+	chooseTeamHint:
+		'Je hoort bij meer dan één team. Kies welk team dit toestel bijhoudt; wat er nu in de app staat wordt vervangen door dat van het team dat je kiest.',
+	chooseTeam: (naam: string) => `Dit toestel volgt ${naam}`,
+	currentTeam: (naam: string) => `Dit toestel volgt ${naam}.`,
 
 	transferHeading: 'Overzetten en back-up',
 	onlyHereLead: 'Alles staat alleen op dit toestel.',

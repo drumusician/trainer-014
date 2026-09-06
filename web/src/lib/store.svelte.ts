@@ -212,8 +212,19 @@ class App {
 		klok.log(this.toestand.match, this.nu, type, extra);
 	}
 
+	/** Wie er tikt. Alleen bekend als je ingelogd bent; anders blijft het leeg. */
+	whoIsKeeping: string | null = null;
+
 	toggleRunning() {
-		if (!klok.toggleRunning(this.toestand.match, Date.now(), new Date().toISOString().slice(0, 10))) return;
+		if (
+			!klok.toggleRunning(
+				this.toestand.match,
+				Date.now(),
+				new Date().toISOString().slice(0, 10),
+				this.whoIsKeeping ?? undefined
+			)
+		)
+			return;
 		this.nu = Date.now();
 		this.save();
 	}

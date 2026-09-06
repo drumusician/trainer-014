@@ -257,6 +257,14 @@ begin
   select count(*) into n from public.uitnodigingen;
   if n <> 1 then raise exception 'de uitgenodigde ziet zijn eigen uitnodiging niet'; end if;
 
+  -- de naam wel, de gegevens niet: anders neem je iets aan zonder te weten wat
+  if (select naam from public.teams where id = 'aaaaaaaa-0000-0000-0000-000000000001')
+     is distinct from 'JO13-1' then
+    raise exception 'de uitgenodigde ziet niet voor welk team hij gevraagd wordt';
+  end if;
+  select count(*) into n from public.team_toestand;
+  if n <> 0 then raise exception 'de uitgenodigde komt al bij de gegevens voordat hij aanneemt'; end if;
+
   select count(*) into n from public.uitnodiging_aannemen();
   if n <> 1 then raise exception 'aannemen leverde % team(s) op in plaats van 1', n; end if;
 
