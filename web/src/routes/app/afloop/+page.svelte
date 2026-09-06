@@ -63,11 +63,11 @@
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
 				{#if w.archived}
-					<button disabled>Bewaard in archive</button>
+					<button disabled>Bewaard in archief</button>
 				{:else}
-					<button class="prim" onclick={bewaren}>Bewaren in archive</button>
+					<button class="prim" onclick={bewaren}>Bewaren in archief</button>
 				{/if}
-				<a class="knop" href="/app">Nieuwe match</a>
+				<a class="knop" href="/app">Nieuwe wedstrijd</a>
 			</div>
 		{/if}
 	</div>

@@ -98,7 +98,7 @@
 {:else if w.finished}
 	<main>
 		<div class="pad">
-			<h2>Wedstrijd finished</h2>
+			<h2>Wedstrijd afgelopen</h2>
 			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app/afloop">Naar het overzicht</a></div>
 		</div>
 	</main>

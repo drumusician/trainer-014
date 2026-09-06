@@ -77,7 +77,7 @@
 			{:else}
 				<button class="nu" style="width: 100%; text-align: left; border: 0" onclick={beginnen}>
 					<div class="wat">Zaterdag</div>
-					<div class="titel">Nieuwe match</div>
+					<div class="titel">Nieuwe wedstrijd</div>
 					<div class="erbij">
 						{t.formation} · {t.parts === 4 ? '4 kwarten' : '2 helften'} van {t.minutesPerPart} min
 					</div>

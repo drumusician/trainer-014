@@ -122,7 +122,7 @@
 							<b>{gekozenSpeler.name}</b> · {LINES[positionLine(app.chosenPosition, doel.formation)].toLowerCase()}. Tik
 							een andere plek om te ruilen, of iemand van de bank.
 						{:else}
-							<b>Lege position</b> · {LINES[positionLine(app.chosenPosition, doel.formation)].toLowerCase()}. Tik wie
+							<b>Lege plek</b> · {LINES[positionLine(app.chosenPosition, doel.formation)].toLowerCase()}. Tik wie
 							hier komt te staan.
 						{/if}
 					</span>
