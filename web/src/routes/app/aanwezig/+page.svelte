@@ -2,8 +2,9 @@
 	import { thinAttendance, attendanceOf } from '$lib/domain/attendance';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
+	import { text } from '$lib/text/nl';
 
-	$effect(() => zetKop('Wie is er?', '/app', 'Terug'));
+	$effect(() => zetKop(text.attendance.title, '/app', text.common.back));
 
 	const w = $derived(app.match);
 	const absent = $derived(new Set(w?.absent ?? []));
@@ -15,40 +16,34 @@
 <main>
 	<div class="pad">
 		{#if !w}
-			<p class="uitleg">Er is geen wedstrijd om spelers voor af te melden.</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Terug</a></div>
+			<p class="uitleg">{text.attendance.noMatch}</p>
+			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">{text.common.back}</a></div>
 		{:else}
-			<h2>Tegen wie</h2>
+			<h2>{text.attendance.opponentHeading}</h2>
 			<div class="tweekolom">
 				<label class="vak">
-					Tegenstander
+					{text.attendance.opponentLabel}
 					<input
 						value={w.opponent === 'Tegenstander' ? '' : w.opponent}
-						placeholder="bijv. Sparta JO11-2"
+						placeholder={text.attendance.opponentPlaceholder}
 						onchange={(e) => app.setOpponent(e.currentTarget.value)}
 					/>
 				</label>
 				<label class="vak">
-					Thuis of uit
+					{text.attendance.homeOrAwayLabel}
 					<select value={w.home ? 'thuis' : 'uit'} onchange={(e) => app.setHome(e.currentTarget.value === 'thuis')}>
-						<option value="thuis">Thuis</option>
-						<option value="uit">Uit</option>
+						<option value="thuis">{text.attendance.home}</option>
+						<option value="uit">{text.attendance.away}</option>
 					</select>
 				</label>
 			</div>
 
-			<h2>Wie is er vandaag</h2>
+			<h2>{text.attendance.heading}</h2>
 			<p class="uitleg">
-				{#if bezig}
-					De wedstrijd loopt. Wie in het veld staat haal je eruit met een wissel, niet hier — anders klopt zijn
-					speeltijd niet meer. Van de bank afmelden kan wel.
-				{:else}
-					Tik weg wie er niet is. Die staat dan niet op de bank, zodat je hem er langs de lijn niet per ongeluk in
-					brengt. Wie al opgesteld stond, laat zijn plek leeg.
-				{/if}
+				{bezig ? text.attendance.hintDuringMatch : text.attendance.hintBeforeMatch}
 			</p>
 			<p class="telling">
-				<span><b>{er}</b> van de {app.toestand.players.length} aanwezig</span>
+				<span><b>{er}</b> {text.attendance.countRest(app.toestand.players.length)}</span>
 			</p>
 
 			{#each app.toestand.players as p (p.id)}
@@ -57,13 +52,15 @@
 				<div class="sregel">
 					<span class="naam">
 						{p.name}
-						{#if thinAttendance(recent)}<span class="min mager"> {recent.er}/{recent.totaal} training</span>{/if}
+						{#if thinAttendance(recent)}<span class="min mager">
+								{text.attendance.sessions(recent.er, recent.totaal)}</span
+							>{/if}
 					</span>
 					{#if bezig && app.isOnPitch(p.id)}
-						<span class="presknop veld">In het veld</span>
+						<span class="presknop veld">{text.attendance.onPitch}</span>
 					{:else}
 						<button class="presknop {weg ? 'absent' : 'present'}" onclick={() => app.setAbsent(p.id, !weg)}>
-							{weg ? 'Er niet' : 'Er wel'}
+							{weg ? text.attendance.absent : text.attendance.present}
 						</button>
 					{/if}
 				</div>
@@ -71,9 +68,9 @@
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
 				{#if bezig}
-					<a class="knop prim" href="/app/wedstrijd">Terug naar de wedstrijd</a>
+					<a class="knop prim" href="/app/wedstrijd">{text.attendance.backToMatch}</a>
 				{:else}
-					<a class="knop prim" href="/app/opstelling/wedstrijd">Verder naar de opstelling</a>
+					<a class="knop prim" href="/app/opstelling/wedstrijd">{text.attendance.onToLineup}</a>
 				{/if}
 			</div>
 		{/if}
