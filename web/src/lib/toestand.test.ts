@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { app } from './toestand.svelte';
 import { legeToestand } from './domein/types';
 import { problemen, wisProblemen } from './problemen.svelte';
-import { speeltijden } from './domein/tijd';
+import { speeltijden, verstreken } from './domein/tijd';
 
 beforeEach(() => {
 	localStorage.clear();
@@ -874,5 +874,46 @@ describe('als de opslag het begeeft', () => {
 		app.laad();
 		expect(localStorage.getItem('o14-app-v1-onleesbaar')).toContain('geen json');
 		expect(problemen.lijst[0].wat).toContain('niet te lezen');
+	});
+});
+
+describe('de klok rechtstreeks zetten', () => {
+	/* ±1' is genoeg als de scheids er een minuut naast zit. Wie een wedstrijd
+	   achteraf invoert tikt daarmee een heel uur bij elkaar. */
+	it('zet de klok op de opgegeven minuut', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.loopToggle();
+		app.zetKlok(23);
+		expect(Math.round(verstreken(app.wedstrijd!, Date.now()))).toBe(23 * 60);
+	});
+
+	it('telt de tijd sinds de laatste start er niet nog eens bovenop', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.loopToggle();
+		const w = app.wedstrijd!;
+		w.sinds = Date.now() - 300_000; /* vijf minuten geleden gestart */
+		app.zetKlok(10);
+		expect(Math.round(verstreken(w, Date.now()) / 60)).toBe(10);
+	});
+
+	it('gaat nooit onder nul en laat een afgelopen wedstrijd met rust', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.loopToggle();
+		app.zetKlok(-5);
+		expect(app.wedstrijd!.verstreken).toBe(0);
+
+		app.zetKlok(20);
+		app.beeindig();
+		const eind = app.wedstrijd!.verstreken;
+		app.zetKlok(99);
+		expect(app.wedstrijd!.verstreken).toBe(eind);
+	});
+
+	it('negeert wat geen getal is', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.loopToggle();
+		app.zetKlok(12);
+		app.zetKlok(Number.NaN);
+		expect(app.wedstrijd!.verstreken).toBe(12 * 60);
 	});
 });

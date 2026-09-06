@@ -171,6 +171,13 @@ class App {
 		if (wedstrijd.zetAfwezig(this.toestand, spelerId, afwezig)) this.bewaar();
 	}
 
+	/** De klok rechtstreeks op een minuut zetten, voor als je achteraf invoert. */
+	zetKlok(minuten: number) {
+		if (!klok.zetOp(this.toestand.wedstrijd, Date.now(), minuten)) return;
+		this.nu = Date.now();
+		this.bewaar();
+	}
+
 	verschuifKlok(seconden: number) {
 		if (!klok.verschuif(this.toestand.wedstrijd, seconden)) return;
 		this.nu = Date.now();

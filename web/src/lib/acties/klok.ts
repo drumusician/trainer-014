@@ -72,6 +72,21 @@ export function deelToggle(w: Wedstrijd | null, nu: number, vandaag: string): bo
 	return true;
 }
 
+/**
+ * De klok op een bepaalde minuut zetten.
+ *
+ * Bestond alleen als ±1′, en dat is prima als de scheidsrechter er een minuut
+ * naast zit. Het werkt niet als je een wedstrijd achteraf invoert: dan tik je
+ * een heel uur bij elkaar. Loopt de klok, dan verzetten we ook het ijkpunt,
+ * anders telt de tijd sinds de laatste start er nog eens bovenop.
+ */
+export function zetOp(w: Wedstrijd | null, nu: number, minuten: number): boolean {
+	if (!w || w.afgelopen || !Number.isFinite(minuten)) return false;
+	w.verstreken = Math.max(0, Math.round(minuten * 60));
+	if (w.loopt) w.sinds = nu;
+	return true;
+}
+
 /** Kan er nog een deel bij, of is dit het laatste? */
 export function magVolgendDeel(w: Wedstrijd | null): boolean {
 	return !!w && !w.afgelopen && (w.pauze || w.deel < w.delen);

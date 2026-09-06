@@ -110,20 +110,38 @@
 				{#if w.pauze}
 					{pauzeNaam(w.deel, w.delen)} · {deelNaam(w.deel, w.delen)} voorbij
 				{:else}
-					{deelNaam(w.deel, w.delen)} · tik om bij te stellen
+					{deelNaam(w.deel, w.delen)} · tik om de tijd te zetten
 				{/if}
 			</div>
 		</button>
 		<div style="flex: 1"></div>
-		{#if klokBijstellen}
-			<button onclick={() => app.verschuifKlok(-60)}>−1′</button>
-			<button onclick={() => app.verschuifKlok(60)}>+1′</button>
-		{/if}
 		<button onclick={() => app.loopToggle()}>{w.loopt ? 'Pauze' : 'Start'}</button>
 		<button onclick={() => app.deelToggle()} disabled={!app.magVolgendDeel}>
 			{w.pauze ? deelNaam(w.deel + 1, w.delen) : pauzeNaam(w.deel, w.delen)}
 		</button>
 	</div>
+
+	{#if klokBijstellen}
+		<!-- Eigen rij: naast de klok en twee knoppen paste dit niet op een telefoon,
+		     en dan liep de balk over de rand heen. -->
+		<div class="klokzetrij">
+			<label class="klokzet">
+				<span>Minuut</span>
+				<input
+					type="number"
+					min="0"
+					max="200"
+					inputmode="numeric"
+					aria-label="Minuut"
+					value={Math.floor(verstreken(w, app.nu) / 60)}
+					onchange={(e) => app.zetKlok(Number(e.currentTarget.value))}
+				/>
+			</label>
+			<button onclick={() => app.verschuifKlok(-60)}>−1′</button>
+			<button onclick={() => app.verschuifKlok(60)}>+1′</button>
+			<button class="klein" onclick={() => (klokBijstellen = false)}>Klaar</button>
+		</div>
+	{/if}
 
 	<main>
 		<div class="veldscherm">

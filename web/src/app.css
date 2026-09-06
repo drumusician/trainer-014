@@ -58,6 +58,27 @@ button:disabled { opacity: 0.4; }
 .helft { font-size: 12px; opacity: 0.8; }
 .klokbalk button { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
 .klokbalk button:active { background: rgba(255, 255, 255, 0.28); }
+/* Eigen rij onder de klok. Naast de klok en de twee knoppen paste dit niet op
+   een telefoon; de balk liep dan over de rand. */
+.klokzetrij {
+	flex: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+	padding: 8px 12px; background: var(--groen-diep); color: #fff;
+}
+.klokzetrij button {
+	background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); color: #fff;
+}
+.klokzetrij button:active { background: rgba(255, 255, 255, 0.28); }
+.klokzetrij .klein { margin-left: auto; }
+
+/* Het minuutveld: even smal als een knop, zelfde vormtaal. */
+.klokzet { display: flex; align-items: center; gap: 6px; color: rgba(255, 255, 255, 0.85); font-size: 13px; }
+.klokzet input {
+	width: 54px; font: inherit; font-size: 15px; text-align: center;
+	padding: 8px 4px; border-radius: 9px;
+	border: 1px solid rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.14); color: #fff;
+	font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield;
+}
+.klokzet input::-webkit-outer-spin-button, .klokzet input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; }
 .pad { padding: 12px; max-width: 620px; margin: 0 auto; }
