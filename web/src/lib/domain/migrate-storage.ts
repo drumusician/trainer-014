@@ -1,22 +1,22 @@
 /**
- * Oude opslag naar het nieuwe formaat brengen.
+ * Bringing older storage up to the current format.
  *
- * De veldnamen in de opslag waren Nederlands. Ze staan in de localStorage van
- * elke gebruiker, in de kolom van Supabase, en in elk back-upbestand dat iemand
- * ooit heeft geëxporteerd. Dat laatste is de reden dat deze code nooit meer weg
- * kan: een back-up van vandaag moet over drie seizoenen nog te openen zijn.
+ * The field names in storage used to be Dutch. They sit in every user's
+ * localStorage, in the Supabase column, and in every backup file anyone ever
+ * exported. That last one is why this code can never be removed: a backup made
+ * today must still open three seasons from now.
  *
- * De omzetting is eenrichtingsverkeer. Wat binnenkomt wordt omgezet; wat we
- * opslaan is voortaan Engels. Er is dus geen laag die bij elk opslaan heen en
- * weer vertaalt — dat zou een tweede plek zijn waar het mis kan gaan.
+ * The conversion runs one way. What comes in is converted; what we store is
+ * English from here on. So there is no layer translating back and forth on every
+ * save — that would be a second place where things can go wrong.
  *
- * Herkennen doen we aan de velden zelf en niet aan een versienummer, want de
- * bestanden die er al zijn hebben dat nummer niet.
+ * We recognise the old format by the fields themselves rather than a version
+ * number, because the files already out there do not carry one.
  */
 
-/** Veldnamen, per soort object. Wat er niet in staat blijft zoals het is. */
+/** Field names, grouped by kind of object. Anything absent stays as it is. */
 const VELDEN: Record<string, string> = {
-	/* de toestand als geheel */
+	/* the state as a whole */
 	teamnaam: 'teamName',
 	spelers: 'players',
 	formatie: 'formation',
@@ -74,7 +74,7 @@ const VELDEN: Record<string, string> = {
 	message: 'message'
 };
 
-/** Soorten gebeurtenissen: die staan als tekst in de opslag. */
+/** Event kinds: those are stored as text. */
 const GEBEURTENISSEN: Record<string, string> = {
 	rust: 'break',
 	eind: 'end',
@@ -83,24 +83,24 @@ const GEBEURTENISSEN: Record<string, string> = {
 	ruil: 'swap'
 };
 
-/** Aanwezigheid op een training. */
+/** Attendance at a training session. */
 const AANWEZIGHEID: Record<string, string> = {
 	ja: 'present',
 	af: 'excused',
 	nee: 'absent'
 };
 
-/** De enige plek waarvan de code Nederlands was; de rest is voetbalnotatie. */
+/** The only position whose code was Dutch; the rest is football notation. */
 const PLEKKEN: Record<string, string> = { TIEN: 'TEN' };
 
-/** Formaties met een Nederlands woord erin. */
+/** Formations with a Dutch word in them. */
 const FORMATIES: Record<string, string> = { '4-4-2 ruit': '4-4-2 diamond' };
 
 function nieuwePlek(position: string): string {
 	return PLEKKEN[position] ?? position;
 }
 
-/** Is dit nog het oude formaat? Eén onmiskenbaar veld is genoeg. */
+/** Is this still the old format? One unmistakable field is enough. */
 export function isOudFormaat(d: unknown): boolean {
 	if (!d || typeof d !== 'object') return false;
 	const o = d as Record<string, unknown>;
@@ -108,11 +108,11 @@ export function isOudFormaat(d: unknown): boolean {
 }
 
 /**
- * Alles omzetten wat we tegenkomen.
+ * Convert everything we come across.
  *
- * Loopt door de hele boom in plaats van per type te werken. Dat is met opzet:
- * de velden hebben overal dezelfde betekenis, en een omzetting die per type
- * werkt vergeet vroeg of laat een plek waar hetzelfde object ook staat.
+ * Walks the whole tree rather than working per type. That is deliberate: the
+ * fields mean the same thing everywhere, and a per-type conversion sooner or
+ * later forgets a place where the same object also appears.
  */
 export function migreerOpslag(waarde: unknown, sleutel?: string): unknown {
 	if (Array.isArray(waarde)) return waarde.map((x) => migreerOpslag(x, sleutel));
@@ -120,8 +120,8 @@ export function migreerOpslag(waarde: unknown, sleutel?: string): unknown {
 	if (waarde && typeof waarde === 'object') {
 		const uit: Record<string, unknown> = {};
 		for (const [k, v] of Object.entries(waarde as Record<string, unknown>)) {
-			/* Een opstelling en de gespeelde minuten per plek hebben plekcodes als
-			   sleutel, geen veldnamen. */
+			/* A lineup and the minutes played per position use position codes as keys,
+			   not field names. */
 			const opPlek = sleutel === 'lineup' || sleutel === 'positions';
 			const nieuweSleutel = opPlek ? nieuwePlek(k) : (VELDEN[k] ?? k);
 			uit[nieuweSleutel] = migreerOpslag(v, nieuweSleutel);
@@ -133,7 +133,7 @@ export function migreerOpslag(waarde: unknown, sleutel?: string): unknown {
 		if (sleutel === 'type') return GEBEURTENISSEN[waarde] ?? waarde;
 		if (sleutel === 'formation') return FORMATIES[waarde] ?? waarde;
 		if (sleutel === 'position' || sleutel === 'positionA' || sleutel === 'positionB') return nieuwePlek(waarde);
-		/* De status per speler op een training staat onder zijn eigen id. */
+		/* Attendance per player is keyed by that player's own id. */
 		if (waarde in AANWEZIGHEID && (sleutel === 'status' || sleutel === undefined)) return AANWEZIGHEID[waarde];
 	}
 
@@ -141,8 +141,8 @@ export function migreerOpslag(waarde: unknown, sleutel?: string): unknown {
 }
 
 /**
- * De status van een training staat als {spelerId: 'ja'} in de opslag, dus de
- * sleutel is een id en zegt niets. Daarom apart.
+ * A session's attendance is stored as {playerId: 'ja'}, so the key is an id and
+ * says nothing. Hence handled separately.
  */
 export function migreerTrainingstatus(waarde: unknown): unknown {
 	if (!waarde || typeof waarde !== 'object') return waarde;
@@ -153,7 +153,7 @@ export function migreerTrainingstatus(waarde: unknown): unknown {
 	return uit;
 }
 
-/** Een hele bewaarde toestand omzetten, met de trainingen erbij. */
+/** Convert a whole stored state, sessions included. */
 export function migreerToestand(d: unknown): unknown {
 	if (!isOudFormaat(d)) return d;
 	const uit = migreerOpslag(d) as Record<string, unknown>;

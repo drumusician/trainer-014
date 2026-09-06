@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
 
-	/* Vier plekken, meer heeft deze app niet nodig. Tijdens een wedstrijd en bij
-	   het opstellen is de balk weg: daar telt elke pixel en ben je met één ding
-	   bezig. */
-	/* Vijf plekken, gekozen op hoe vaak je er bent: zaterdag de wedstrijd, twee
-	   keer per week de training, af en toe de rest. Wat verder weg ligt staat op
-	   het beginscherm als kaart. */
-	/* Vier plekken, elk een eigen onderwerp. De wedstrijd die nu loopt en de
-	   wedstrijden die je gespeeld hebt horen bij elkaar, dus die staan samen. */
+	/* Four places; this app needs no more. During a match and while picking a
+	   lineup the bar is gone: there every pixel counts and you are doing one
+	   thing. */
+	/* Five places, chosen by how often you are there: the match on Saturday,
+	   training twice a week, the rest now and then. What lies further away sits on
+	   the start screen as a card. */
+	/* Four places, each its own subject. The match running now and the matches you
+	   have played belong together, so they sit together. */
 	const TABS = [
 		{ pad: '/app', name: 'Wedstrijden', icoon: 'bal' },
 		{ pad: '/app/trainingen', name: 'Training', icoon: 'fluit' },
@@ -16,11 +16,11 @@
 		{ pad: '/app/meer', name: 'Gegevens', icoon: 'gegevens' }
 	];
 
-	/* Alles wat met een wedstrijd te maken heeft telt mee voor het eerste tabblad. */
+	/* Anything to do with a match counts towards the first tab. */
 	const BIJ_WEDSTRIJDEN = ['/app/wedstrijd', '/app/archief', '/app/afloop', '/app/aanwezig', '/app/opstelling'];
 
-	/* De echte hoogte van de balk doorgeven, inclusief de veilige zone eronder.
-	   Schatten gaat mis op toestellen die ik niet in handen heb. */
+	/* Pass on the real height of the bar, safe area below it included. Guessing
+	   goes wrong on devices I do not have in my hands. */
 	let hoogte = $state(0);
 	$effect(() => {
 		document.documentElement.style.setProperty('--balk', hoogte + 'px');
@@ -46,7 +46,7 @@
 					<path d="M14 13h6.5M14 10.4h4.5" />
 					<path d="M9.5 8.5V5.5h4" />
 				{:else if tab.icoon === 'bal'}
-					<!-- een veldje: dat is waar dit tabblad over gaat -->
+					<!-- a little pitch: that is what this tab is about -->
 					<rect x="3.5" y="4.5" width="17" height="15" rx="1.6" />
 					<path d="M3.5 12h17" />
 					<circle cx="12" cy="12" r="2.6" />
@@ -60,7 +60,7 @@
 					<rect x="4" y="4.5" width="16" height="15" rx="2" />
 					<path d="M8 9h8M8 12.5h8M8 16h4" />
 				{:else}
-					<!-- een schijf met een pijl omhoog: bewaren en versturen -->
+					<!-- a disk with an arrow up: saving and sending -->
 					<ellipse cx="12" cy="6.8" rx="6.8" ry="2.6" />
 					<path d="M5.2 6.8v5.4c0 1.4 3 2.6 6.8 2.6" />
 					<path d="M18.8 6.8v4.2" />
@@ -73,11 +73,11 @@
 </nav>
 
 <style>
-	/* De balk zelf. Wat de balk aan ruimte opeist staat wél in app.css, want dat
-	   is padding op main en die staat buiten dit component. */
-	/* Vast aan de onderkant van het scherm, wat de browser ook van de paginahoogte
-	   vindt. De ruimte eronder is de plek van de home-indicator; die hoort leeg te
-	   blijven maar krijgt wel de achtergrond van de balk. */
+	/* The bar itself. The space the bar claims does live in app.css, because that
+	   is padding on main, which sits outside this component. */
+	/* Pinned to the bottom of the screen, whatever the browser thinks of the page
+	   height. The space below it belongs to the home indicator; it must stay empty
+	   but does take the bar's background. */
 	.tabs {
 		position: fixed;
 		bottom: 0;
@@ -88,10 +88,10 @@
 		z-index: 5;
 		display: flex;
 		border-top: 1px solid var(--lijn);
-		/* Doorschijnend met een waas erachter, zoals iOS het zelf doet. Onder de
-		   labels ligt de strook van de home-indicator, en die kunnen we niet gebruiken:
-		   daar zit de veeggreep van het toestel. Wit op wit las die strook als lege
-		   app-ruimte. Zo zie je er de pagina doorheen schuiven en is het één balk. */
+		/* Translucent with a blur behind it, the way iOS does it. Below the labels
+		   lies the home indicator strip, which we cannot use: that is the device's
+		   swipe area. White on white made that strip read as empty app space. This
+		   way you see the page slide underneath and it reads as one bar. */
 		background: rgba(255, 255, 255, 0.82);
 		backdrop-filter: saturate(180%) blur(16px);
 		-webkit-backdrop-filter: saturate(180%) blur(16px);

@@ -100,13 +100,12 @@ export interface ArchivedMatch {
 	absent?: string[];
 	playingTime: PlayingTimeRow[];
 	/**
-	 * De opstelling zoals hij aan het eind stond, plus wie er toen op de bank zat.
+	 * The lineup as it stood at the end, plus who was on the bench then.
 	 *
-	 * Staat hier niet omdat een scherm het nodig heeft, maar omdat de speeltijd
-	 * wordt teruggerekend vanaf de eindopstelling. Zonder dit is een bewaarde
-	 * wedstrijd niet opnieuw uit te rekenen en dus nooit meer te repareren, ook
-	 * niet als we dat later zouden willen. Bewaren kost een regel; niet bewaren
-	 * is onomkeerbaar.
+	 * Stored not because a screen needs it, but because playing time is wound back
+	 * from the final lineup. Without this an archived match cannot be recalculated
+	 * and is therefore beyond repair forever, even if we wanted to later. Storing
+	 * it costs one field; not storing it is irreversible.
 	 */
 	lineup?: Lineup;
 	bench?: string[];
@@ -115,7 +114,7 @@ export interface ArchivedMatch {
 export type Attendance = 'present' | 'excused' | 'absent';
 
 export interface Training {
-	/** eigen id, zodat een adres blijft kloppen als de volgorde verandert */
+	/** its own id, so an address stays valid when the order changes */
 	id: string;
 	date: string;
 	status: Record<string, Attendance>;

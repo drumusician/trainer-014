@@ -2,8 +2,8 @@ import { LINES, positionsOf } from './formations';
 import type { Line, Lineup, Player } from './types';
 
 /**
- * De opstelling als tekst, om naar een mede-trainer te sturen. Per linie op één
- * regel, met de plek erachter waar dat iets toevoegt.
+ * The lineup as text, to send to a fellow coach. One line per line of the pitch,
+ * with the position appended where that adds something.
  */
 export function opstellingTekst(formation: string, lineup: Lineup, bench: string[], players: Player[]): string {
 	const name = (id?: string | null) => players.find((p) => p.id === id)?.name;
@@ -28,17 +28,17 @@ export function opstellingTekst(formation: string, lineup: Lineup, bench: string
 export interface Omgezet {
 	lineup: Lineup;
 	bench: string[];
-	/** wie er niet meer paste en naar de bank ging */
+	/** who no longer fitted and went to the bench */
 	afgevallen: string[];
 }
 
 /**
- * Een opstelling meenemen naar een andere formatie. Eerst blijft iedereen staan
- * op een plek die in beide formaties bestaat; daarna vullen we de resterende
- * plekken met spelers uit dezelfde linie. Wie dan nog over is, gaat naar de bank.
+ * Carry a lineup over to another formation. First everyone stays in a position
+ * that exists in both formations; then we fill the remaining positions with
+ * players from the same line. Whoever is left over goes to the bench.
  *
- * Van 4-3-3 naar 4-4-2 betekent dat je vier verdedigers en je keeper gewoon
- * blijven staan, en dat er van je drie aanvallers eentje op de bank komt.
+ * From 4-3-3 to 4-4-2 that means your four defenders and your keeper simply stay
+ * put, and one of your three forwards ends up on the bench.
  */
 export function convertLineup(
 	lineup: Lineup,
@@ -51,7 +51,7 @@ export function convertLineup(
 	const nieuw: Lineup = {};
 	const vrij: { player: string; line: string }[] = [];
 
-	/* stap 1: plekken die in beide formaties bestaan houden hun speler */
+	/* step 1: positions that exist in both formations keep their player */
 	const nieuweIds = new Set(nieuwePlekken.map((p) => p[0]));
 	oudePlekken.forEach(([plekId, , , , line]) => {
 		const player = lineup[plekId];
@@ -60,7 +60,7 @@ export function convertLineup(
 		else vrij.push({ player, line });
 	});
 
-	/* stap 2: de rest verdelen over lege plekken van dezelfde linie */
+	/* step 2: spread the rest over empty positions in the same line */
 	nieuwePlekken.forEach(([plekId, , , , line]) => {
 		if (nieuw[plekId]) return;
 		const i = vrij.findIndex((v) => v.line === line);
