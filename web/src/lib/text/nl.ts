@@ -407,6 +407,82 @@ const setup = {
 	later: 'Later'
 } as const;
 
+/** Gegevens: inloggen, synchroniseren, overzetten en back-up. */
+const data = {
+	title: 'Gegevens',
+
+	syncHeading: 'Synchroniseren',
+	signInHint:
+		'Log in met je e-mailadres, dan staat je seizoen veilig en heb je het op al je toestellen. Je krijgt een mail met een link en een code; geen wachtwoord om te onthouden.',
+	/* De link uit de mail komt terug waar je hem opvroeg; op localhost is dat een
+	   andere opslag dan de echte site. */
+	localWarningLead: 'Let op:',
+	localWarning: (host: string) =>
+		`je draait dit op ${host}. De link in de mail komt hier terug, niet op de echte site, en dit is een aparte opslag. Wil je inloggen voor je telefoon, doe dat dan op de echte site.`,
+	emailLabel: 'E-mailadres',
+	emailPlaceholder: 'jij@voorbeeld.nl',
+	sendCode: 'Stuur inlog',
+	codeHintBefore: 'Op een telefoon: vul de',
+	codeHintWord: 'code',
+	codeHintMiddle:
+		'uit de mail hieronder in. Je mag gerust even naar je mail-app; dit scherm staat er straks nog. Op een laptop kun je ook gewoon de',
+	codeHintLinkWord: 'link',
+	codeHintAfter: 'in de mail aanklikken.',
+	codeLabel: 'Code uit de mail',
+	codePlaceholder: '123456',
+	signIn: 'Inloggen',
+	otherAddress: 'Ander adres',
+
+	signedInAs: 'Ingelogd als',
+	unknownEmail: 'onbekend',
+	signedInHint:
+		'De app werkt gewoon zonder bereik en stuurt vanzelf op zodra er weer internet is. Een wedstrijd die je klaarzet gaat mee, dus je stelt thuis op en pakt hem op het veld op je telefoon op. Een wedstrijd die al loopt wordt wel opgestuurd, maar nooit overschreven door een ander toestel.',
+	statusConflict: 'Er staat iets nieuwers op de server.',
+	statusOffline: 'Nog niet opgestuurd, geen verbinding.',
+	statusPending: 'Nog niet opgestuurd.',
+	statusUpdated: (when: string) => `Bijgewerkt ${when}.`,
+	statusNever: 'Nog niets uitgewisseld.',
+	pushNow: 'Nu opsturen',
+	pull: 'Ophalen',
+	signOut: 'Uitloggen',
+	forcePush: 'Toch dit toestel opsturen',
+
+	transferHeading: 'Overzetten en back-up',
+	onlyHereLead: 'Alles staat alleen op dit toestel.',
+	onlyHere:
+		'Raakt het kwijt of gaat het stuk, dan is je seizoen weg. Maak af en toe een back-up, of log hierboven in en het gaat vanzelf.',
+	transferHint:
+		'Alles wat de app onthoudt: selectie, standaardopstelling, trainingen en het hele archief. Als bestand om te bewaren, of als code om op je andere toestel in te voeren. Een wedstrijd die nu loopt gaat nooit mee.',
+	saveFile: 'Bestand opslaan',
+	openFile: 'Bestand openen',
+	makeCode: 'Code maken',
+	enter: 'Invoeren',
+	savedAndCopied: 'Opgeslagen als bestand, en gekopieerd.',
+	copiedBefore: 'Gekopieerd. Stuur hem naar je andere toestel en tik daar op',
+	copiedAfter: '.',
+	pasteHint: 'Plak hier een code of de inhoud van een bestand; allebei werkt.',
+	pastePlaceholder: 'Plak de code of de back-up',
+	adopt: 'Overnemen',
+	confirmAdopt: (what: string) =>
+		`Dit overnemen op dit toestel?\n\n${what}.\n\nWat hierin zit vervangt wat je nu hebt. Een wedstrijd die nu loopt blijft staan.`,
+	confirmRestore: (what: string) =>
+		`Dit terugzetten op dit toestel?\n\n${what}.\n\nWat hierin zit vervangt wat je nu hebt. Een wedstrijd die nu loopt blijft staan.`,
+	adopted: 'Overgenomen.',
+	restored: 'Teruggezet.',
+	unreadable: (why: string) => `Dit kon ik niet lezen: ${why}`,
+	unreadableFile: (why: string) => `Dit bestand kon ik niet lezen: ${why}`,
+
+	mayCleanLead: 'Deze browser mag je gegevens opruimen',
+	mayClean: 'als hij plaats nodig heeft. Zet de app op je beginscherm en log in, of maak af en toe een back-up.',
+
+	issuesHeading: 'Wat er misging',
+	issuesHint:
+		'De app gaat door als er iets hapert — een volle opslag mag de klok niet stoppen. Maar dan moet je het achteraf wel kunnen zien. Dit blijft op je toestel.',
+	clearIssues: 'Lijst wissen',
+
+	footer: 'Blaadje · het scherm blijft wakker zolang de klok loopt'
+} as const;
+
 export const text = {
 	common,
 	attendance,
@@ -421,5 +497,6 @@ export const text = {
 	season,
 	players,
 	lineupScreen,
-	setup
+	setup,
+	data
 } as const;

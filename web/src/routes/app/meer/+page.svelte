@@ -6,6 +6,7 @@
 	import { zetKop } from '$lib/header.svelte';
 	import { opslagstand } from '$lib/storage.svelte';
 	import { issues, clearIssues } from '$lib/issues.svelte';
+	import { text } from '$lib/text/nl';
 
 	$effect(() => zetKop('Gegevens'));
 
@@ -59,20 +60,14 @@
 		if (!bestand) return;
 		try {
 			const pakket = readBackup(await bestand.text());
-			if (
-				confirm(
-					'Dit terugzetten op dit toestel?\n\n' +
-						describePackage(pakket) +
-						'.\n\nWat hierin zit vervangt wat je nu hebt. Een wedstrijd die nu loopt blijft staan.'
-				)
-			) {
+			if (confirm(text.data.confirmRestore(describePackage(pakket)))) {
 				app.adoptPackage(pakket);
 				backup = 'geen';
 				overzet = 'geen';
-				alert('Teruggezet.');
+				alert(text.data.restored);
 			}
 		} catch (fout) {
-			alert('Dit bestand kon ik niet lezen: ' + (fout as Error).message);
+			alert(text.data.unreadableFile((fout as Error).message));
 		}
 		/* Clear it, otherwise you cannot pick the same file twice. */
 		invoer.value = '';
@@ -82,20 +77,13 @@
 	function overnemen() {
 		try {
 			const pakket = readTransferCode(code);
-			if (
-				!confirm(
-					'Dit overnemen op dit toestel?\n\n' +
-						describePackage(pakket) +
-						'.\n\nWat hierin zit vervangt wat je nu hebt. Een wedstrijd die nu loopt blijft staan.'
-				)
-			)
-				return;
+			if (!confirm(text.data.confirmAdopt(describePackage(pakket)))) return;
 			app.adoptPackage(pakket);
 			overzet = 'geen';
 			code = '';
-			alert('Overgenomen.');
+			alert(text.data.adopted);
 		} catch (e) {
-			alert('Dit kon ik niet lezen: ' + (e as Error).message);
+			alert(text.data.unreadable((e as Error).message));
 		}
 	}
 </script>
@@ -248,12 +236,12 @@
 				{/each}
 			</div>
 			<div class="knoprij" style="padding-left: 0; margin-top: 12px">
-				<button class="klein" onclick={clearIssues}>Lijst wissen</button>
+				<button class="klein" onclick={clearIssues}>{text.data.clearIssues}</button>
 			</div>
 		{/if}
 
 		<p class="uitleg" style="margin-top: 24px; font-size: 11px; opacity: 0.75">
-			Blaadje · het scherm blijft wakker zolang de klok loopt
+			{text.data.footer}
 		</p>
 	</div>
 </main>
