@@ -99,6 +99,57 @@ describe('het gegevensscherm', () => {
 		expect(screen.queryByRole('button', { name: 'Lijst wissen' })).toBeNull();
 	});
 
+	/*
+	 * Doorsturen naar Tjaco. De belofte is niet 'wij sturen niets' maar 'er gaat
+	 * niets weg tenzij jij het stuurt, en dan zonder namen'. Beide helften horen
+	 * hier zichtbaar te zijn: de trainer ziet de tekst voordat hij hem verstuurt,
+	 * en er staat geen naam in.
+	 */
+	it('zet het logboekje pas klaar als je erom vraagt', async () => {
+		reportIssue('Opslaan lukte niet.', new Error('QuotaExceededError'));
+		render(Meer);
+		expect(document.querySelectorAll('textarea')).toHaveLength(0);
+
+		screen.getByRole('button', { name: 'Stuur dit naar Tjaco' }).click();
+		await tick();
+		const vak = document.querySelector('textarea') as HTMLTextAreaElement;
+		expect(vak.value).toContain('QuotaExceededError');
+	});
+
+	it('haalt de namen eruit voordat je iets kunt versturen', async () => {
+		metSelectie();
+		reportIssue('Opslaan lukte niet voor Bram van O14-3.');
+		render(Meer);
+		screen.getByRole('button', { name: 'Stuur dit naar Tjaco' }).click();
+		await tick();
+		const vak = document.querySelector('textarea') as HTMLTextAreaElement;
+		expect(vak.value).not.toContain('Bram');
+		expect(vak.value).not.toContain('O14-3');
+		expect(vak.value).toContain('[naam]');
+	});
+
+	/* De mailknop verstuurt niets: hij opent het mailprogramma van de trainer,
+	   met de tekst erin. Versturen doet hij zelf. */
+	it('opent de mail met de tekst erin, en verstuurt zelf niets', async () => {
+		reportIssue('Opslaan lukte niet.');
+		render(Meer);
+		screen.getByRole('button', { name: 'Stuur dit naar Tjaco' }).click();
+		await tick();
+		const link = screen.getByRole('link', { name: 'Openen in mail' }).getAttribute('href') ?? '';
+		expect(link.startsWith('mailto:tjaco@blaadje.app')).toBe(true);
+		expect(decodeURIComponent(link)).toContain('Opslaan lukte niet.');
+	});
+
+	it('laat je het weer wegklappen', async () => {
+		reportIssue('Opslaan lukte niet.');
+		render(Meer);
+		screen.getByRole('button', { name: 'Stuur dit naar Tjaco' }).click();
+		await tick();
+		screen.getByRole('button', { name: 'Sluiten' }).click();
+		await tick();
+		expect(document.querySelectorAll('textarea')).toHaveLength(0);
+	});
+
 	it('toont een gemeld probleem en laat je de lijst wissen', async () => {
 		reportIssue('De opgeslagen gegevens hadden een vorm die deze versie niet kent.');
 		render(Meer);

@@ -12,7 +12,8 @@ export default ts.config(
 	...svelte.configs.recommended,
 	{
 		languageOptions: {
-			globals: { ...globals.browser, ...globals.node }
+			/* __VERSIE__ wordt bij het bouwen ingevuld door Vite; zie vite.config.ts. */
+			globals: { ...globals.browser, ...globals.node, __VERSIE__: 'readonly' }
 		},
 		rules: {
 			/* Een naam die met _ begint is een bewuste weglating, meestal bij het

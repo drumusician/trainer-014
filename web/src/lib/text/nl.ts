@@ -500,6 +500,13 @@ const data = {
 	issuesHint:
 		'De app gaat door als er iets hapert — een volle opslag mag de klok niet stoppen. Maar dan moet je het achteraf wel kunnen zien. Dit blijft op je toestel.',
 	clearIssues: 'Lijst wissen',
+	sendIssues: 'Stuur dit naar Tjaco',
+	sendIssuesHint:
+		'Hieronder staat precies wat er verstuurd wordt. Namen van kinderen zitten er niet in; die zijn eruit gehaald voordat deze tekst bestond. Er gaat pas iets weg als je hem zelf verstuurt.',
+	sendIssuesMail: 'Openen in mail',
+	sendIssuesCopied: 'Gekopieerd. Lukt de mail niet, plak hem dan zelf in een bericht aan',
+	sendIssuesSubject: 'Blaadje — wat er misging',
+	closeIssues: 'Sluiten',
 
 	footer: 'Blaadje · het scherm blijft wakker zolang de klok loopt'
 } as const;

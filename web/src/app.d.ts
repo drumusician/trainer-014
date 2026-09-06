@@ -9,6 +9,9 @@ declare global {
 		// interface Platform {}
 	}
 
+	/** Door Vite ingevuld bij het bouwen; zie vite.config.ts. */
+	const __VERSIE__: string;
+
 	interface Window {
 		/** Plausible, alleen geladen op de landingspagina. Zie src/lib/meten.ts. */
 		plausible?: ((name: string) => void) & {

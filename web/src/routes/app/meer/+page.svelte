@@ -6,6 +6,7 @@
 	import { zetKop } from '$lib/header.svelte';
 	import { opslagstand } from '$lib/storage.svelte';
 	import { issues, clearIssues } from '$lib/issues.svelte';
+	import { issueReport, mailInhoud, omgevingsregel } from '$lib/domain/issue-report';
 	import { text } from '$lib/text/nl';
 
 	$effect(() => zetKop(text.data.title));
@@ -19,6 +20,8 @@
 	   machine that is localhost, which is a different store from the real site. */
 	const opLokaal = $derived(typeof location !== 'undefined' && /^(localhost|127\.|\[::1\])/.test(location.hostname));
 	let backuptekst = $state('');
+	/* Het logboekje doorsturen: pas nadat je het gezien hebt. */
+	let melden = $state('');
 
 	async function codeMaken() {
 		code = makeTransferCode(t);
@@ -71,6 +74,26 @@
 		}
 		/* Clear it, otherwise you cannot pick the same file twice. */
 		invoer.value = '';
+	}
+
+	/**
+	 * Het logboekje klaarzetten om door te sturen.
+	 *
+	 * Niet versturen — klaarzetten. De trainer leest de tekst en beslist. Dat is
+	 * de belofte van de landingspagina: er gaat niets naar een server tenzij je
+	 * dat wilt. Namen zitten er al niet meer in als deze tekst bestaat.
+	 */
+	async function meldenKlaarzetten() {
+		melden = issueReport(
+			issues.lijst,
+			t,
+			omgevingsregel(typeof navigator === 'undefined' ? '' : navigator.userAgent, __VERSIE__)
+		);
+		try {
+			await navigator.clipboard.writeText(melden);
+		} catch {
+			/* dan leest hij hem hieronder */
+		}
 	}
 
 	/** One button for both: a code and a backup hold the same thing. */
@@ -235,8 +258,26 @@
 				{/each}
 			</div>
 			<div class="knoprij" style="padding-left: 0; margin-top: 12px">
+				<button class="klein prim" onclick={meldenKlaarzetten}>{text.data.sendIssues}</button>
 				<button class="klein" onclick={clearIssues}>{text.data.clearIssues}</button>
 			</div>
+			{#if melden}
+				<p class="uitleg" style="margin-top: 12px">{text.data.sendIssuesHint}</p>
+				<textarea readonly value={melden} style="min-height: 140px"></textarea>
+				<div class="knoprij" style="padding-left: 0; margin-top: 10px">
+					<a
+						class="knop prim"
+						href="mailto:{text.landing.email}?subject={encodeURIComponent(
+							text.data.sendIssuesSubject
+						)}&body={encodeURIComponent(mailInhoud(melden))}">{text.data.sendIssuesMail}</a
+					>
+					<button class="klein" onclick={() => (melden = '')}>{text.data.closeIssues}</button>
+				</div>
+				<p class="uitleg" style="margin-top: 8px; font-size: 13px">
+					{text.data.sendIssuesCopied}
+					<a href="mailto:{text.landing.email}">{text.landing.email}</a>.
+				</p>
+			{/if}
 		{/if}
 
 		<p class="uitleg" style="margin-top: 24px; font-size: 11px; opacity: 0.75">

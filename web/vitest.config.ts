@@ -21,6 +21,9 @@ export default defineConfig({
 		   willen de browserbouw. */
 		conditions: ['browser']
 	},
+	/* Dezelfde vervanging als in de echte bouw; anders is __VERSIE__ in een test
+	   een onbekende naam. */
+	define: { __VERSIE__: JSON.stringify('test') },
 	test: {
 		environment: 'jsdom',
 		setupFiles: ['src/test/setup.ts'],
