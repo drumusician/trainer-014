@@ -216,6 +216,57 @@ const errorPage = {
 	forReporting: 'Voor als je het doorgeeft:'
 } as const;
 
+/** Het beginscherm: wat er nu speelt, hoe jullie spelen, en wat je gespeeld hebt. */
+const home = {
+	title: 'Wedstrijden',
+
+	welcomeHeading: 'Welkom bij Blaadje',
+	welcomeHint:
+		'In drie stappen sta je klaar: de naam van je team, wie erin zitten, en hoe jullie spelen. Duurt een minuut.',
+	getStarted: 'Aan de slag',
+
+	/* Het blok bovenaan zegt in twee woorden wat er nu aan de hand is. */
+	nowBusy: 'Bezig',
+	nowBusyClock: (time: string, part: string, running: boolean) =>
+		`${time} · ${part} · ${running ? 'klok loopt' : 'klok staat stil'}`,
+	nowReady: 'Klaar om te beginnen',
+	nowReadyHint: 'De opstelling staat. De klok begint als jij op Start drukt.',
+	nowTodo: 'Nog te doen',
+	nowTodoTitle: 'Opstelling maken',
+	nowJustPlayed: 'Net gespeeld',
+	nowNotArchived: 'Nog niet bewaard',
+	versus: (opponent: string) => `Tegen ${opponent}`,
+	nowSaturday: 'Zaterdag',
+	nowNewMatch: 'Nieuwe wedstrijd',
+	nowSetup: (formation: string, parts: number, minutes: number) =>
+		`${formation} · ${parts === 4 ? '4 kwarten' : '2 helften'} van ${minutes} min`,
+
+	whoIsThere: 'Wie is er?',
+	lineup: 'Opstelling',
+	discard: 'Weggooien',
+	confirmDiscard: (opponent: string) =>
+		`Deze wedstrijd tegen ${opponent} weggooien?\n\nWat je in het archief bewaarde blijft staan.`,
+
+	howYouPlayHeading: 'Zo spelen jullie',
+	formationLabel: 'Formatie',
+	partsLabel: 'Speelwijze',
+	halves: '2 helften',
+	quarters: '4 kwarten',
+	minutesLabel: (parts: number) => `Minuten per ${parts === 4 ? 'kwart' : 'helft'}`,
+	durationLabel: 'Speelduur',
+	durationValue: (minutes: number) => `${minutes} minuten`,
+	editDefaultLineup: 'Vaste opstelling wijzigen',
+	makeDefaultLineup: 'Vaste opstelling maken',
+
+	playedHeading: 'Gespeeld',
+	nothingArchived:
+		'Nog niets bewaard. Sluit een wedstrijd af en bewaar hem, dan staat hij hier met uitslag, speeltijden en het hele verloop.',
+	seasonLine: (won: number, drew: number, lost: number, forGoals: number, against: number, minutes: number) =>
+		`${won}W ${drew}G ${lost}V · ${forGoals} voor, ${against} tegen · ${minutes} minuten voetbal`,
+	matchLine: (home: boolean, opponent: string) => `${home ? 'thuis' : 'uit'} tegen ${opponent}`,
+	toSeason: 'Seizoen en topscorers'
+} as const;
+
 export const text = {
 	common,
 	attendance,
@@ -224,5 +275,6 @@ export const text = {
 	team,
 	match,
 	shell,
-	errorPage
+	errorPage,
+	home
 } as const;
