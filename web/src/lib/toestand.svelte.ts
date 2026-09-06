@@ -1,9 +1,6 @@
-import { FORMATIES, kentFormatie } from './domein/formaties';
-import { zetOpstellingOm } from './domein/opstelling';
+import { kentFormatie } from './domein/formaties';
 import { eindTijd, keepertijden, positietijden, speeltijden, stand, verstreken } from './domein/tijd';
-import { sorteerTrainingen } from './domein/presentie';
 import type {
-	Aanwezigheid,
 	ArchiefWedstrijd,
 	Gebeurtenis,
 	GebeurtenisType,
@@ -15,15 +12,15 @@ import type {
 	Wedstrijd
 } from './domein/types';
 import { legeToestand } from './domein/types';
+import * as archief from './acties/archief';
+import * as opstellen from './acties/opstellen';
+import * as selectie from './acties/selectie';
+import * as trainingen from './acties/trainingen';
 
 const SLEUTEL = 'o14-app-v1';
 
 /** Draaien we ergens met opslag? Op de server niet, in een test wel. */
 const opslag = () => (typeof localStorage === 'undefined' ? null : localStorage);
-
-function nieuwId(voorvoegsel = 'p'): string {
-	return voorvoegsel + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-}
 
 /** Oude opslag: 'K' was een linie. Nu staat keepen daarnaast. */
 function migreer(t: Toestand): Toestand {
@@ -93,37 +90,31 @@ class App {
 
 	/* ---------- selectie ---------- */
 	spelerVan(id: string | null | undefined): Speler | undefined {
-		return id ? this.toestand.spelers.find((p) => p.id === id) : undefined;
+		return selectie.spelerVan(this.toestand, id);
 	}
 
 	namenErbij(tekst: string) {
-		tekst
-			.split('\n')
-			.map((x) => x.trim())
-			.filter(Boolean)
-			.forEach((naam) => {
-				this.toestand.spelers.push({ id: nieuwId(), naam, linie: '' });
-			});
+		selectie.namenErbij(this.toestand, tekst);
 		this.bewaar();
 	}
 
 	hernoem(p: Speler, naam: string) {
-		p.naam = naam.trim();
+		selectie.hernoem(p, naam);
 		this.bewaar();
 	}
 
 	verwijderSpeler(p: Speler) {
-		this.toestand.spelers = this.toestand.spelers.filter((x) => x.id !== p.id);
+		selectie.verwijderSpeler(this.toestand, p);
 		this.bewaar();
 	}
 
 	zetLinie(p: Speler, linie: Veldlinie) {
-		p.linie = p.linie === linie ? '' : linie;
+		selectie.zetLinie(p, linie);
 		this.bewaar();
 	}
 
 	zetKeept(p: Speler) {
-		p.keept = !p.keept;
+		selectie.zetKeept(p);
 		this.bewaar();
 	}
 
@@ -319,10 +310,7 @@ class App {
 	}
 
 	zetArchiefNotitie(i: number, tekst: string) {
-		const a = this.toestand.archief[i];
-		if (!a) return;
-		a.notitie = tekst;
-		this.bewaar();
+		if (archief.zetNotitie(this.toestand, i, tekst)) this.bewaar();
 	}
 
 	/** Iemand van de bank op de gekozen plek zetten. Tijdens een wedstrijd is dat een wissel. */
@@ -473,170 +461,84 @@ class App {
 	}
 
 	verwijderUitArchief(i: number) {
-		this.toestand.archief.splice(i, 1);
+		archief.verwijderWedstrijd(this.toestand, i);
 		this.bewaar();
 	}
 
 	/* ---------- een bewaarde wedstrijd bijwerken ---------- */
-	/** Datum, tegenstander, thuis of uit. De cijfers blijven zoals ze waren. */
 	wijzigArchief(i: number, velden: Partial<Pick<ArchiefWedstrijd, 'datum' | 'tegenstander' | 'thuis'>>) {
-		const a = this.toestand.archief[i];
-		if (!a) return;
-		Object.assign(a, velden);
-		this.bewaar();
+		if (archief.wijzig(this.toestand, i, velden)) this.bewaar();
 	}
 
-	/** De stand volgt uit de doelpunten, dus na elke wijziging opnieuw tellen. */
-	private telStand(a: ArchiefWedstrijd) {
-		a.stand = [
-			a.gebeurtenissen.filter((g) => g.type === 'goal').length,
-			a.gebeurtenissen.filter((g) => g.type === 'tegen').length
-		];
-	}
-
-	/**
-	 * Een doelpunt weghalen dat er niet was. Wissels blijven staan: daar hangt de
-	 * speeltijd aan, en die is bij het bewaren uitgerekend.
-	 */
 	verwijderDoelpunt(i: number, index: number) {
-		const a = this.toestand.archief[i];
-		const g = a?.gebeurtenissen[index];
-		if (!a || !g || (g.type !== 'goal' && g.type !== 'tegen')) return;
-		a.gebeurtenissen.splice(index, 1);
-		this.telStand(a);
-		this.bewaar();
+		if (archief.verwijderDoelpunt(this.toestand, i, index)) this.bewaar();
 	}
 
-	/** Een doelpunt dat je miste, op de goede minuut ertussen. */
 	voegDoelpuntToe(i: number, minuut: number, spelerId: string | null, tegen = false) {
-		const a = this.toestand.archief[i];
-		if (!a) return;
-		const gebeurtenis: Gebeurtenis = tegen
-			? { type: 'tegen', t: Math.max(0, Math.round(minuut * 60)) }
-			: { type: 'goal', t: Math.max(0, Math.round(minuut * 60)), speler: spelerId };
-		a.gebeurtenissen = [...a.gebeurtenissen, gebeurtenis].sort((x, y) => (x.t ?? 0) - (y.t ?? 0));
-		this.telStand(a);
-		this.bewaar();
+		if (archief.voegDoelpuntToe(this.toestand, i, minuut, spelerId, tegen)) this.bewaar();
 	}
 
 	/* ---------- standaardopstelling ---------- */
-	/** Zorgt dat er een standaard is die klopt met de huidige selectie en formatie. */
 	zorgVoorStandaard() {
-		const t = this.toestand;
-		if (!t.standaard) t.standaard = { formatie: t.formatie, opstelling: {}, bank: [] };
-		const st = t.standaard;
-		if (!FORMATIES[st.formatie]) st.formatie = t.formatie;
-		this.zetStandaardInFormatie(t.formatie);
-		const ids = t.spelers.map((p) => p.id);
-		for (const plek of Object.keys(st.opstelling)) {
-			if (!ids.includes(st.opstelling[plek] as string)) delete st.opstelling[plek];
-		}
-		const inVeld = Object.values(st.opstelling).filter(Boolean) as string[];
-		st.bank = ids.filter((id) => !inVeld.includes(id));
+		const st = opstellen.zorgVoorStandaard(this.toestand);
 		this.bewaar();
 		return st;
 	}
 
-	/** Twee plekken omwisselen. Is er een leeg, dan verhuist die ene ernaartoe. */
-	ruilPlekken(bron: 'wedstrijd' | 'standaard', plekA: string, plekB: string) {
-		const doel = bron === 'standaard' ? this.toestand.standaard : this.toestand.wedstrijd;
-		if (!doel || plekA === plekB) return;
-		const a = doel.opstelling[plekA] ?? null;
-		const b = doel.opstelling[plekB] ?? null;
-		if (!a && !b) return;
-		doel.opstelling[plekA] = b;
-		doel.opstelling[plekB] = a;
+	ruilPlekken(bron: opstellen.Bron, plekA: string, plekB: string) {
+		if (!opstellen.ruilPlekken(this.toestand, bron, plekA, plekB)) return;
 		this.gekozenPlek = null;
 		this.bewaar();
 	}
 
-	/** Iemand van het veld halen zonder dat er meteen een ander in komt. */
-	haalVanVeld(bron: 'wedstrijd' | 'standaard', plek: string) {
-		const doel = bron === 'standaard' ? this.toestand.standaard : this.toestand.wedstrijd;
-		const id = doel?.opstelling[plek];
-		if (!doel || !id) return;
-		doel.opstelling[plek] = null;
-		if (!doel.bank.includes(id)) doel.bank.push(id);
+	haalVanVeld(bron: opstellen.Bron, plek: string) {
+		if (!opstellen.haalVanVeld(this.toestand, bron, plek)) return;
 		this.gekozenPlek = null;
 		this.bewaar();
 	}
 
-	/** Opstellen vóór de aftrap: gewoon ruilen, dit is geen wissel. */
-	/**
-	 * De standaardopstelling meenemen naar een andere formatie. Wie op een plek
-	 * staat die ook in de nieuwe formatie bestaat blijft staan; de rest schuift
-	 * door binnen zijn eigen linie. Wat niet past gaat naar de bank, en plekken
-	 * die overblijven laten we leeg: die vult de trainer zelf.
-	 */
 	zetStandaardInFormatie(formatie: string) {
-		const st = this.toestand.standaard;
-		if (!st || st.formatie === formatie || !FORMATIES[formatie]) return;
-		const uit = zetOpstellingOm(st.opstelling, st.formatie, formatie, st.bank);
-		st.formatie = formatie;
-		st.opstelling = uit.opstelling;
-		st.bank = uit.bank;
-		this.bewaar();
+		if (opstellen.zetStandaardInFormatie(this.toestand, formatie)) this.bewaar();
 	}
 
-	/**
-	 * De formatie van het team. Er is er maar één: je standaardopstelling staat
-	 * erin en je volgende wedstrijd begint ermee. Waar je hem ook omzet, hij
-	 * verhuist overal mee.
-	 */
 	kiesFormatie(formatie: string) {
-		if (!FORMATIES[formatie]) return;
-		this.toestand.formatie = formatie;
-		this.zetStandaardInFormatie(formatie);
-		this.bewaar();
+		if (opstellen.kiesFormatie(this.toestand, formatie)) this.bewaar();
 	}
 
-	zetInOpzet(bron: 'wedstrijd' | 'standaard', spelerId: string) {
-		const doel = bron === 'standaard' ? this.toestand.standaard : this.toestand.wedstrijd;
-		if (!doel || !this.gekozenPlek) return;
-		const oud = doel.opstelling[this.gekozenPlek];
-		doel.opstelling[this.gekozenPlek] = spelerId;
-		doel.bank = doel.bank.filter((x) => x !== spelerId);
-		if (oud) doel.bank.push(oud);
+	zetInOpzet(bron: opstellen.Bron, spelerId: string) {
+		if (!this.gekozenPlek) return;
+		if (!opstellen.zetOpPlekInOpzet(this.toestand, bron, this.gekozenPlek, spelerId)) return;
 		this.gekozenPlek = null;
 		this.bewaar();
 	}
 
 	wisStandaard() {
-		this.toestand.standaard = null;
+		opstellen.wisStandaard(this.toestand);
 		this.bewaar();
 	}
 
 	/* ---------- trainingen ---------- */
 	nieuweTraining(): Training {
-		const t = this.toestand;
-		const status: Record<string, Aanwezigheid> = {};
-		t.spelers.forEach((p) => (status[p.id] = 'ja'));
-		const training: Training = { id: nieuwId('t'), datum: new Date().toISOString().slice(0, 10), status };
-		t.trainingen = sorteerTrainingen([training, ...t.trainingen]);
+		const training = trainingen.nieuweTraining(this.toestand, new Date().toISOString().slice(0, 10));
 		this.bewaar();
 		return training;
 	}
 
 	trainingMetId(id: string | undefined): Training | undefined {
-		return this.toestand.trainingen.find((t) => t.id === id);
+		return trainingen.trainingMetId(this.toestand, id);
 	}
 
 	tikPresentie(training: Training, spelerId: string) {
-		const volgorde: Aanwezigheid[] = ['ja', 'af', 'nee'];
-		const nu = training.status[spelerId] ?? 'ja';
-		training.status[spelerId] = volgorde[(volgorde.indexOf(nu) + 1) % volgorde.length];
+		trainingen.tikPresentie(training, spelerId);
 		this.bewaar();
 	}
 
 	zetTrainingDatum(training: Training, datum: string) {
-		if (!datum) return;
-		training.datum = datum;
-		this.toestand.trainingen = sorteerTrainingen(this.toestand.trainingen);
-		this.bewaar();
+		if (trainingen.zetTrainingDatum(this.toestand, training, datum)) this.bewaar();
 	}
 
 	verwijderTraining(training: Training) {
-		this.toestand.trainingen = this.toestand.trainingen.filter((t) => t.id !== training.id);
+		trainingen.verwijderTraining(this.toestand, training);
 		this.bewaar();
 	}
 
