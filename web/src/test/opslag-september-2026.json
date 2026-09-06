@@ -1,0 +1,544 @@
+{
+ "teamnaam": "JO13-1",
+ "spelers": [
+  {
+   "id": "p17883651205600ni06",
+   "naam": "Bram",
+   "keept": true,
+   "linie": "M"
+  },
+  {
+   "id": "p1788365120560rscao",
+   "naam": "Cas",
+   "keept": true,
+   "linie": "V"
+  },
+  {
+   "id": "p1788365120560z4yn6",
+   "naam": "Dirk",
+   "keept": true,
+   "linie": "V"
+  },
+  {
+   "id": "p1788365120560wrmp1",
+   "naam": "Elias",
+   "linie": "A"
+  },
+  {
+   "id": "p17883651205607p8ye",
+   "naam": "Finn",
+   "keept": true,
+   "linie": "M"
+  },
+  {
+   "id": "p17883651205602fdtf",
+   "naam": "Gideon",
+   "linie": "M"
+  },
+  {
+   "id": "p178836512056015yej",
+   "naam": "Hidde",
+   "linie": "A"
+  },
+  {
+   "id": "p1788365120560g0m71",
+   "naam": "Ivar",
+   "linie": "M"
+  },
+  {
+   "id": "p17883651205609klm9",
+   "naam": "Joep",
+   "linie": "M"
+  },
+  {
+   "id": "p17883651205602gohm",
+   "naam": "Koen",
+   "keept": false,
+   "linie": "V"
+  },
+  {
+   "id": "p1788365120560jy2q0",
+   "naam": "Luuk",
+   "linie": "A"
+  },
+  {
+   "id": "p1788365120560euxrf",
+   "naam": "Milan",
+   "linie": "A"
+  },
+  {
+   "id": "p1788365120560z6iog",
+   "naam": "Noud",
+   "linie": "M"
+  },
+  {
+   "id": "p17883651205600rhwp",
+   "naam": "Olivier",
+   "linie": "M"
+  },
+  {
+   "id": "p17883651205603b1md",
+   "naam": "Pepijn",
+   "linie": "V"
+  },
+  {
+   "id": "p17883651205609jeo2",
+   "naam": "Quinten",
+   "keept": false,
+   "linie": "V"
+  }
+ ],
+ "formatie": "4-4-2 ruit",
+ "helftMinuten": 35,
+ "delen": 2,
+ "standaard": {
+  "bank": [
+   "p17883651205600ni06",
+   "p17883651205602fdtf",
+   "p178836512056015yej",
+   "p1788365120560jy2q0",
+   "p17883651205600rhwp"
+  ],
+  "formatie": "4-4-2 ruit",
+  "opstelling": {
+   "K": "p1788365120560rscao",
+   "LV": "p17883651205609jeo2",
+   "ML": "p1788365120560g0m71",
+   "MR": "p1788365120560z6iog",
+   "RV": "p17883651205603b1md",
+   "VM": "p17883651205607p8ye",
+   "CVl": "p17883651205602gohm",
+   "CVr": "p1788365120560z4yn6",
+   "SPl": "p1788365120560wrmp1",
+   "SPr": "p1788365120560euxrf",
+   "TIEN": "p17883651205609klm9"
+  }
+ },
+ "archief": [
+  {
+   "duur": 4199,
+   "datum": "2026-09-06",
+   "delen": 2,
+   "namen": {
+    "p17883651205600ni06": "Bram",
+    "p17883651205600rhwp": "Olivier",
+    "p178836512056015yej": "Hidde",
+    "p17883651205602fdtf": "Gideon",
+    "p17883651205602gohm": "Koen",
+    "p17883651205603b1md": "Pepijn",
+    "p17883651205607p8ye": "Finn",
+    "p17883651205609jeo2": "Quinten",
+    "p17883651205609klm9": "Joep",
+    "p1788365120560euxrf": "Milan",
+    "p1788365120560g0m71": "Ivar",
+    "p1788365120560jy2q0": "Luuk",
+    "p1788365120560rscao": "Cas",
+    "p1788365120560wrmp1": "Elias",
+    "p1788365120560z4yn6": "Dirk",
+    "p1788365120560z6iog": "Noud"
+   },
+   "stand": [
+    9,
+    0
+   ],
+   "thuis": true,
+   "afwezig": [
+    "p1788365120560z4yn6",
+    "p1788365120560jy2q0"
+   ],
+   "formatie": "4-4-2 ruit",
+   "teamnaam": "O14-02",
+   "speeltijd": [
+    {
+     "id": "p17883651205600ni06",
+     "naam": "Bram",
+     "seconden": 2758,
+     "keeper": 0,
+     "posities": {
+      "ML": 2758
+     }
+    },
+    {
+     "id": "p17883651205600rhwp",
+     "naam": "Olivier",
+     "seconden": 2880,
+     "keeper": 0,
+     "posities": {
+      "ML": 1441,
+      "TIEN": 1117,
+      "VM": 322
+     }
+    },
+    {
+     "id": "p178836512056015yej",
+     "naam": "Hidde",
+     "seconden": 2089,
+     "keeper": 0,
+     "posities": {
+      "SPr": 2089
+     }
+    },
+    {
+     "id": "p17883651205602fdtf",
+     "naam": "Gideon",
+     "seconden": 2089,
+     "keeper": 0,
+     "posities": {
+      "MR": 2089
+     }
+    },
+    {
+     "id": "p17883651205602gohm",
+     "naam": "Koen",
+     "seconden": 3877,
+     "keeper": 0,
+     "posities": {
+      "CVl": 3877
+     }
+    },
+    {
+     "id": "p17883651205603b1md",
+     "naam": "Pepijn",
+     "seconden": 4199,
+     "keeper": 0,
+     "posities": {
+      "CVr": 2110,
+      "RV": 2089
+     }
+    },
+    {
+     "id": "p17883651205607p8ye",
+     "naam": "Finn",
+     "seconden": 4199,
+     "keeper": 2089,
+     "posities": {
+      "VM": 2110,
+      "K": 2089
+     }
+    },
+    {
+     "id": "p17883651205609jeo2",
+     "naam": "Quinten",
+     "seconden": 3018,
+     "keeper": 0,
+     "posities": {
+      "LV": 3018
+     }
+    },
+    {
+     "id": "p17883651205609klm9",
+     "naam": "Joep",
+     "seconden": 3082,
+     "keeper": 0,
+     "posities": {
+      "TIEN": 3082
+     }
+    },
+    {
+     "id": "p1788365120560euxrf",
+     "naam": "Milan",
+     "seconden": 3298,
+     "keeper": 0,
+     "posities": {
+      "SPr": 2110,
+      "SPl": 1188
+     }
+    },
+    {
+     "id": "p1788365120560g0m71",
+     "naam": "Ivar",
+     "seconden": 4199,
+     "keeper": 0,
+     "posities": {
+      "RV": 2110,
+      "VM": 1767,
+      "CVl": 322
+     }
+    },
+    {
+     "id": "p1788365120560jy2q0",
+     "naam": "Luuk",
+     "seconden": 0,
+     "keeper": 0,
+     "posities": {}
+    },
+    {
+     "id": "p1788365120560rscao",
+     "naam": "Cas",
+     "seconden": 4199,
+     "keeper": 2110,
+     "posities": {
+      "K": 2110,
+      "CVr": 2089
+     }
+    },
+    {
+     "id": "p1788365120560wrmp1",
+     "naam": "Elias",
+     "seconden": 3011,
+     "keeper": 0,
+     "posities": {
+      "SPl": 3011
+     }
+    },
+    {
+     "id": "p1788365120560z4yn6",
+     "naam": "Dirk",
+     "seconden": 0,
+     "keeper": 0,
+     "posities": {}
+    },
+    {
+     "id": "p1788365120560z6iog",
+     "naam": "Noud",
+     "seconden": 3291,
+     "keeper": 0,
+     "posities": {
+      "MR": 2110,
+      "LV": 1181
+     }
+    }
+   ],
+   "tegenstander": "Testclub",
+   "gebeurtenissen": [
+    {
+     "type": "start",
+     "t": 0
+    },
+    {
+     "t": 177,
+     "type": "goal",
+     "speler": "p1788365120560wrmp1"
+    },
+    {
+     "t": 268,
+     "type": "goal",
+     "speler": "p17883651205609klm9"
+    },
+    {
+     "t": 379,
+     "type": "goal",
+     "assist": "p17883651205600rhwp",
+     "speler": "p1788365120560wrmp1"
+    },
+    {
+     "t": 825,
+     "type": "goal",
+     "assist": "p17883651205600rhwp",
+     "speler": "p17883651205609klm9"
+    },
+    {
+     "t": 910,
+     "type": "goal",
+     "speler": "p1788365120560wrmp1"
+    },
+    {
+     "t": 1441,
+     "erin": "p17883651205600ni06",
+     "plek": "ML",
+     "type": "wissel",
+     "eruit": "p17883651205600rhwp"
+    },
+    {
+     "t": 2032,
+     "type": "goal",
+     "speler": "p1788365120560wrmp1"
+    },
+    {
+     "t": 2110,
+     "deel": 1,
+     "type": "rust"
+    },
+    {
+     "type": "ruil",
+     "t": 2110,
+     "plekA": "K",
+     "plekB": "VM",
+     "spelerA": "p1788365120560rscao",
+     "spelerB": "p17883651205607p8ye"
+    },
+    {
+     "type": "ruil",
+     "t": 2110,
+     "plekA": "CVr",
+     "plekB": "RV",
+     "spelerA": "p17883651205603b1md",
+     "spelerB": "p1788365120560g0m71"
+    },
+    {
+     "type": "ruil",
+     "t": 2110,
+     "plekA": "VM",
+     "plekB": "CVr",
+     "spelerA": "p1788365120560rscao",
+     "spelerB": "p1788365120560g0m71"
+    },
+    {
+     "t": 2110,
+     "erin": "p17883651205602fdtf",
+     "plek": "MR",
+     "type": "wissel",
+     "eruit": "p1788365120560z6iog"
+    },
+    {
+     "t": 2110,
+     "erin": "p178836512056015yej",
+     "plek": "SPr",
+     "type": "wissel",
+     "eruit": "p1788365120560euxrf"
+    },
+    {
+     "t": 2178,
+     "type": "goal",
+     "speler": "p17883651205609klm9"
+    },
+    {
+     "t": 2719,
+     "type": "goal",
+     "speler": "p17883651205609klm9"
+    },
+    {
+     "t": 2760,
+     "erin": "p17883651205600rhwp",
+     "plek": "TIEN",
+     "type": "wissel",
+     "eruit": "p17883651205609klm9"
+    },
+    {
+     "t": 3011,
+     "erin": "p1788365120560euxrf",
+     "plek": "SPl",
+     "type": "wissel",
+     "eruit": "p1788365120560wrmp1"
+    },
+    {
+     "t": 3018,
+     "erin": "p1788365120560z6iog",
+     "plek": "LV",
+     "type": "wissel",
+     "eruit": "p17883651205609jeo2"
+    },
+    {
+     "t": 3877,
+     "erin": "p17883651205609klm9",
+     "plek": "CVl",
+     "type": "wissel",
+     "eruit": "p17883651205602gohm"
+    },
+    {
+     "type": "ruil",
+     "t": 3877,
+     "plekA": "CVl",
+     "plekB": "VM",
+     "spelerA": "p17883651205609klm9",
+     "spelerB": "p1788365120560g0m71"
+    },
+    {
+     "type": "ruil",
+     "t": 3877,
+     "plekA": "VM",
+     "plekB": "TIEN",
+     "spelerA": "p17883651205609klm9",
+     "spelerB": "p17883651205600rhwp"
+    },
+    {
+     "t": 4123,
+     "type": "goal",
+     "assist": "p17883651205600ni06",
+     "speler": "p17883651205609klm9"
+    },
+    {
+     "t": 4199,
+     "type": "eind"
+    }
+   ],
+   "opstelling": {
+    "K": "p17883651205607p8ye",
+    "LV": "p1788365120560z6iog",
+    "CVl": "p1788365120560g0m71",
+    "CVr": "p1788365120560rscao",
+    "RV": "p17883651205603b1md",
+    "VM": "p17883651205600rhwp",
+    "ML": "p17883651205600ni06",
+    "MR": "p17883651205602fdtf",
+    "TIEN": "p17883651205609klm9",
+    "SPl": "p1788365120560euxrf",
+    "SPr": "p178836512056015yej"
+   },
+   "bank": [
+    "p17883651205602gohm",
+    "p17883651205609jeo2",
+    "p1788365120560wrmp1"
+   ]
+  }
+ ],
+ "trainingen": [
+  {
+   "id": "tmtnq50jhc2owb",
+   "datum": "2026-09-05",
+   "status": {
+    "p17883651205600ni06": "ja",
+    "p17883651205600rhwp": "ja",
+    "p178836512056015yej": "ja",
+    "p17883651205602fdtf": "ja",
+    "p17883651205602gohm": "ja",
+    "p17883651205603b1md": "ja",
+    "p17883651205607p8ye": "ja",
+    "p17883651205609jeo2": "ja",
+    "p17883651205609klm9": "ja",
+    "p1788365120560euxrf": "ja",
+    "p1788365120560g0m71": "ja",
+    "p1788365120560jy2q0": "ja",
+    "p1788365120560rscao": "ja",
+    "p1788365120560wrmp1": "ja",
+    "p1788365120560z4yn6": "ja",
+    "p1788365120560z6iog": "ja"
+   }
+  },
+  {
+   "id": "t2026-09-04-0",
+   "datum": "2026-09-04",
+   "status": {
+    "p17883651205600ni06": "ja",
+    "p17883651205600rhwp": "ja",
+    "p178836512056015yej": "af",
+    "p17883651205602fdtf": "af",
+    "p17883651205602gohm": "ja",
+    "p17883651205603b1md": "ja",
+    "p17883651205607p8ye": "ja",
+    "p17883651205609jeo2": "ja",
+    "p17883651205609klm9": "ja",
+    "p1788365120560euxrf": "ja",
+    "p1788365120560g0m71": "ja",
+    "p1788365120560jy2q0": "af",
+    "p1788365120560rscao": "ja",
+    "p1788365120560wrmp1": "ja",
+    "p1788365120560z4yn6": "af",
+    "p1788365120560z6iog": "ja"
+   }
+  },
+  {
+   "id": "t2026-08-28-1",
+   "datum": "2026-08-28",
+   "status": {
+    "p17883651205600ni06": "nee",
+    "p17883651205600rhwp": "ja",
+    "p178836512056015yej": "nee",
+    "p17883651205602fdtf": "ja",
+    "p17883651205602gohm": "af",
+    "p17883651205603b1md": "ja",
+    "p17883651205607p8ye": "ja",
+    "p17883651205609jeo2": "af",
+    "p17883651205609klm9": "ja",
+    "p1788365120560euxrf": "af",
+    "p1788365120560g0m71": "nee",
+    "p1788365120560jy2q0": "ja",
+    "p1788365120560rscao": "ja",
+    "p1788365120560wrmp1": "ja",
+    "p1788365120560z4yn6": "ja",
+    "p1788365120560z6iog": "ja"
+   }
+  }
+ ],
+ "verslagWissels": false
+}
