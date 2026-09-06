@@ -4,6 +4,7 @@ import { emptyState } from './domain/types';
 import { playingTimes, keeperTimes, elapsed } from './domain/time';
 import { readBackup } from './domain/backup';
 import { readTransferCode } from './domain/transfer';
+import { clearIssues, issues } from './issues.svelte';
 import opgeslagen from '../test/opslag-september-2026.json';
 
 /**
@@ -147,5 +148,32 @@ describe('oude gegevens die van buiten binnenkomen', () => {
 		expect(opnieuw).toHaveProperty('teamName');
 		expect(opnieuw).not.toHaveProperty('teamnaam');
 		expect(opnieuw.archive[0]).toHaveProperty('duration');
+	});
+});
+
+describe('opslag die we niet kunnen lezen', () => {
+	/*
+	 * Dit is de gevaarlijkste weg die er is, en hij is niet theoretisch: een
+	 * toestel dat nog oudere code draait leest de omgezette opslag niet, start
+	 * leeg, en schrijft die lege staat bij de eerste tik over het seizoen heen.
+	 * Onleesbaar mag nooit betekenen: overschrijven.
+	 */
+	it('gooit een seizoen niet weg als het formaat onbekend is', () => {
+		localStorage.setItem('o14-app-v1', JSON.stringify({ eenNieuwerFormaat: true, spullen: [1, 2, 3] }));
+		app.toestand = emptyState();
+		app.load();
+
+		/* De app start leeg — dat mag — maar wat er stond moet te redden zijn. */
+		app.setTeamName('Iets anders'); /* een gewone actie, die bewaart */
+		const apart = localStorage.getItem('o14-app-v1-onleesbaar');
+		expect(apart).toContain('eenNieuwerFormaat');
+	});
+
+	it('meldt het ook, zodat je het achteraf kunt zien', () => {
+		clearIssues();
+		localStorage.setItem('o14-app-v1', JSON.stringify({ eenNieuwerFormaat: true }));
+		app.toestand = emptyState();
+		app.load();
+		expect(issues.lijst.some((p) => p.what.includes('apart gezet'))).toBe(true);
 	});
 });

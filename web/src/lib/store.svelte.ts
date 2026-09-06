@@ -77,7 +77,17 @@ class App {
 			if (d && Array.isArray(d.players)) {
 				this.toestand = migrate({ ...emptyState(), ...d });
 				this.save(); /* record whatever the migration added, straight away */
+				return;
 			}
+			/*
+			 * Readable JSON, but not a shape we know. The dangerous case is a device
+			 * running older code against storage a newer version already converted:
+			 * it starts empty, and the first tap writes that empty state over a whole
+			 * season. Unreadable must never mean overwritten, so we set the original
+			 * aside before anything else can save.
+			 */
+			this.zetApart(bak, ruw);
+			reportIssue('De opgeslagen gegevens hadden een vorm die deze versie niet kent. Wat erin stond is apart gezet.');
 		} catch (fout) {
 			/*
 			 * An empty app beats a broken one — but not silently. Without a notice
@@ -85,13 +95,17 @@ class App {
 			 * back. We set the unreadable data aside and record it, so there is
 			 * something to salvage instead of nothing.
 			 */
-			try {
-				const ruw = bak.getItem(SLEUTEL);
-				if (ruw) bak.setItem(SLEUTEL + '-onleesbaar', ruw);
-			} catch {
-				/* then not */
-			}
+			this.zetApart(bak, bak.getItem(SLEUTEL));
 			reportIssue('De opgeslagen gegevens waren niet te lezen. Wat erin stond is apart gezet.', fout);
+		}
+	}
+
+	/** Het origineel opzij zetten, zodat er iets te redden valt. */
+	private zetApart(bak: Storage, ruw: string | null) {
+		try {
+			if (ruw) bak.setItem(SLEUTEL + '-onleesbaar', ruw);
+		} catch {
+			/* then not */
 		}
 	}
 
