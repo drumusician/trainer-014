@@ -119,9 +119,48 @@ const trainings = {
 	remove: 'Verwijderen'
 } as const;
 
+/** Team: de selectie, de verdeling over de linies, en de teamnaam. */
+const team = {
+	title: 'Team',
+
+	statsHeading: 'Speeltijd en presentie',
+	statsHint: 'Gespeelde minuten per speler, hoe vaak ze op de training waren, en wie er scoorden.',
+	toStats: 'Spelersoverzicht',
+
+	squadHeading: 'Selectie',
+	emptyHint:
+		'Plak hier de namen, één per regel. Ze blijven op dit toestel en komen nergens anders terecht. Liever stap voor stap?',
+	emptyHintLink: 'Loop het opzetten door.',
+	namesPlaceholder: 'Casper\nMaher\nDaan',
+	add: 'Toevoegen',
+	lineHint:
+		'Zet per speler de linie: V verdediging, M middenveld, A aanval. K staat los: dat is iedereen die kan keepen, ook als hij verder in het veld speelt. Alleen K aan en de rest uit betekent: keept en verder niets. Tik een naam aan om te wijzigen of te verwijderen.',
+	addPlayer: 'Speler toevoegen',
+	askName: 'Naam van de speler',
+	askRename: 'Naam wijzigen. Laat leeg om deze speler te verwijderen.',
+	confirmRemove: (name: string) => `${name} verwijderen uit de selectie?`,
+
+	coverageHeading: (formation: string) => `Verdeling in ${formation}`,
+	canKeep: (n: number) => `${n} ${n === 1 ? 'kan' : 'kunnen'} keepen`,
+	forPositions: (players: number, positions: number) =>
+		`${players} voor ${positions} ${positions === 1 ? 'plek' : 'plekken'}`,
+	coverageShort: 'Een linie is niet vol te krijgen met de spelers die je zo gemarkeerd hebt.',
+	coverageThinKeepers: 'Er kan er maar één keepen. Is hij er niet, dan moet je ter plekke iemand aanwijzen.',
+	coverageCrowded:
+		'Waar meer dan twee keer zoveel spelers als plekken staan, zit er elke wedstrijd iemand op de bank die zichzelf daar ziet. Een andere formatie kan schelen.',
+	coverageFine: 'De letters zijn een hint bij het wisselen, geen regel: je kunt altijd iedereen kiezen.',
+
+	nameHeading: 'Naam van je team',
+	nameHint: 'Staat boven de wedstrijd en in het verslag dat je deelt.',
+	nameWarning: 'Vul hem in, anders staat er straks "Ons team" in je verslag.',
+	nameLabel: 'Teamnaam',
+	namePlaceholder: 'bijv. JO11-2'
+} as const;
+
 export const text = {
 	common,
 	attendance,
 	afterMatch,
-	trainings
+	trainings,
+	team
 } as const;

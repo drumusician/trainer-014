@@ -4,8 +4,9 @@
 	import { thinAttendance, attendanceOf } from '$lib/domain/attendance';
 	import { bezetting, dunneKeepersbezetting, gedrang, tekort } from '$lib/domain/coverage';
 	import type { Player, FieldLine } from '$lib/domain/types';
+	import { text } from '$lib/text/nl';
 
-	$effect(() => zetKop('Team'));
+	$effect(() => zetKop(text.team.title));
 
 	const t = $derived(app.toestand);
 	const verdeling = $derived(bezetting(t.players, t.formation));
@@ -14,10 +15,10 @@
 	const LINIEKNOPPEN: FieldLine[] = ['V', 'M', 'A'];
 
 	function wijzig(p: Player) {
-		const name = prompt('Naam wijzigen. Laat leeg om deze speler te verwijderen.', p.name);
+		const name = prompt(text.team.askRename, p.name);
 		if (name === null) return;
 		if (!name.trim()) {
-			if (confirm(p.name + ' verwijderen uit de selectie?')) app.removePlayer(p);
+			if (confirm(text.team.confirmRemove(p.name))) app.removePlayer(p);
 		} else {
 			app.renamePlayer(p, name);
 		}
@@ -27,27 +28,26 @@
 <main>
 	<div class="pad">
 		{#if t.players.length}
-			<h2>Speeltijd en presentie</h2>
-			<p class="uitleg">Gespeelde minuten per speler, hoe vaak ze op de training waren, en wie er scoorden.</p>
+			<h2>{text.team.statsHeading}</h2>
+			<p class="uitleg">{text.team.statsHint}</p>
 			<div class="knoprij" style="padding-left: 0">
-				<a class="knop prim" href="/app/team/spelers">Spelersoverzicht</a>
+				<a class="knop prim" href="/app/team/spelers">{text.team.toStats}</a>
 			</div>
 		{/if}
 
-		<h2>Selectie</h2>
+		<h2>{text.team.squadHeading}</h2>
 		{#if !t.players.length}
 			<p class="uitleg">
-				Plak hier de namen, één per regel. Ze blijven op dit toestel en komen nergens anders terecht. Liever stap voor
-				stap? <a href="/app/opzetten">Loop het opzetten door.</a>
+				{text.team.emptyHint} <a href="/app/opzetten">{text.team.emptyHintLink}</a>
 			</p>
-			<textarea bind:value={namenVak} placeholder="Casper&#10;Maher&#10;Daan"></textarea>
+			<textarea bind:value={namenVak} placeholder={text.team.namesPlaceholder}></textarea>
 			<div class="knoprij" style="padding-left: 0; margin-top: 10px">
 				<button
 					class="prim"
 					onclick={() => {
 						app.addPlayerNames(namenVak);
 						namenVak = '';
-					}}>Toevoegen</button
+					}}>{text.team.add}</button
 				>
 			</div>
 		{:else}
@@ -73,26 +73,20 @@
 			<div class="knoprij" style="padding-left: 0; margin-top: 12px">
 				<button
 					onclick={() => {
-						const name = prompt('Naam van de speler');
+						const name = prompt(text.team.askName);
 						if (name?.trim()) app.addPlayerNames(name);
-					}}>Speler toevoegen</button
+					}}>{text.team.addPlayer}</button
 				>
 			</div>
 
-			<h2>Verdeling in {t.formation}</h2>
+			<h2>{text.team.coverageHeading(t.formation)}</h2>
 			<table class="uitslag">
 				<tbody>
 					{#each verdeling as b (b.line)}
 						<tr>
 							<td>{b.name}</td>
 							<td class="m" class:mager={tekort(b) || gedrang(b)}>
-								{#if b.line === 'K'}
-									{b.players}
-									{b.players === 1 ? 'kan keepen' : 'kunnen keepen'}
-								{:else}
-									{b.players} voor {b.positionsOf}
-									{b.positionsOf === 1 ? 'plek' : 'plekken'}
-								{/if}
+								{b.line === 'K' ? text.team.canKeep(b.players) : text.team.forPositions(b.players, b.positionsOf)}
 							</td>
 						</tr>
 					{/each}
@@ -100,26 +94,29 @@
 			</table>
 			<p class="uitleg" style="margin-top: 8px">
 				{#if verdeling.some(tekort)}
-					Een linie is niet vol te krijgen met de spelers die je zo gemarkeerd hebt.
+					{text.team.coverageShort}
 				{:else if dunneKeepersbezetting(verdeling)}
-					Er kan er maar één keepen. Is hij er niet, dan moet je ter plekke iemand aanwijzen.
+					{text.team.coverageThinKeepers}
 				{:else if verdeling.some(gedrang)}
-					Waar meer dan twee keer zoveel spelers als plekken staan, zit er elke wedstrijd iemand op de bank die zichzelf
-					daar ziet. Een andere formatie kan schelen.
+					{text.team.coverageCrowded}
 				{:else}
-					De letters zijn een hint bij het wisselen, geen regel: je kunt altijd iedereen kiezen.
+					{text.team.coverageFine}
 				{/if}
 			</p>
 		{/if}
 
-		<h2>Naam van je team</h2>
+		<h2>{text.team.nameHeading}</h2>
 		<p class="uitleg">
-			Staat boven de wedstrijd en in het verslag dat je deelt.
-			{#if !ingevuld}<b class="mager">Vul hem in, anders staat er straks "Ons team" in je verslag.</b>{/if}
+			{text.team.nameHint}
+			{#if !ingevuld}<b class="mager">{text.team.nameWarning}</b>{/if}
 		</p>
 		<label class="vak">
-			Teamnaam
-			<input value={t.teamName} placeholder="bijv. JO11-2" onchange={(e) => app.setTeamName(e.currentTarget.value)} />
+			{text.team.nameLabel}
+			<input
+				value={t.teamName}
+				placeholder={text.team.namePlaceholder}
+				onchange={(e) => app.setTeamName(e.currentTarget.value)}
+			/>
 		</label>
 	</div>
 </main>
