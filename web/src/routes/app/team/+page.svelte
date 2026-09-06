@@ -53,8 +53,8 @@
 		{:else}
 			<p class="uitleg">
 				Zet per speler de linie: V verdediging, M middenveld, A aanval. <b>K</b> staat los: dat is iedereen die kan keepen,
-				ook als hij verder in het veld speelt. Alleen K aan en de rest uit betekent: keeper en verder niets. Tik een name
-				aan om te wijzigen of te verwijderen.
+				ook als hij verder in het veld speelt. Alleen K aan en de rest uit betekent: keept en verder niets. Tik een naam aan
+				om te wijzigen of te verwijderen.
 			</p>
 			{#each t.players as p (p.id)}
 				{@const recent = attendanceOf(t.trainings, p.id, 4)}
@@ -85,7 +85,7 @@
 					{#each verdeling as b (b.line)}
 						<tr>
 							<td>{b.name}</td>
-							<td class="m" class:thinAttendance={tekort(b) || gedrang(b)}>
+							<td class="m" class:mager={tekort(b) || gedrang(b)}>
 								{#if b.line === 'K'}
 									{b.players}
 									{b.players === 1 ? 'kan keepen' : 'kunnen keepen'}
@@ -100,12 +100,12 @@
 			</table>
 			<p class="uitleg" style="margin-top: 8px">
 				{#if verdeling.some(tekort)}
-					Een line is niet vol te krijgen met de players die je zo gemarkeerd hebt.
+					Een linie is niet vol te krijgen met de spelers die je zo gemarkeerd hebt.
 				{:else if dunneKeepersbezetting(verdeling)}
 					Er kan er maar één keepen. Is hij er niet, dan moet je ter plekke iemand aanwijzen.
 				{:else if verdeling.some(gedrang)}
-					Waar meer dan twee keer zoveel players als plekken staan, zit er elke match iemand op de bench die zichzelf
-					daar ziet. Een andere formation kan schelen.
+					Waar meer dan twee keer zoveel spelers als plekken staan, zit er elke wedstrijd iemand op de bank die zichzelf
+					daar ziet. Een andere formatie kan schelen.
 				{:else}
 					De letters zijn een hint bij het wisselen, geen regel: je kunt altijd iedereen kiezen.
 				{/if}
@@ -114,7 +114,7 @@
 
 		<h2>Naam van je team</h2>
 		<p class="uitleg">
-			Staat boven de match en in het verslag dat je deelt.
+			Staat boven de wedstrijd en in het verslag dat je deelt.
 			{#if !ingevuld}<b class="mager">Vul hem in, anders staat er straks "Ons team" in je verslag.</b>{/if}
 		</p>
 		<label class="vak">

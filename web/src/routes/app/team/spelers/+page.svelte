@@ -65,7 +65,7 @@
 							</td>
 							<td class="m">
 								{Math.round(r.seconds / 60)} min
-								<span class="sub" class:thinAttendance={thinAttendance(r.recent)}>
+								<span class="sub" class:mager={thinAttendance(r.recent)}>
 									{#if pct === null}geen training{:else}{pct}% · {r.attendance.er}/{r.attendance.totaal}{/if}
 								</span>
 							</td>

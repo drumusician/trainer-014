@@ -205,10 +205,10 @@
 				<div class="melding">
 					<span>
 						<b>{uit ? uit.name : 'Lege plek'}</b> ·
-						{LINES[positionLine(app.chosenPosition, w.formation)].toLowerCase()}. Tik wie on komt, of een andere
-						position om te ruilen.
+						{LINES[positionLine(app.chosenPosition, w.formation)].toLowerCase()}. Tik wie erin komt, of een andere plek
+						om te ruilen.
 						{#if keeperMin > 0 && positionLine(app.chosenPosition, w.formation) !== 'K'}
-							Hij keepte deze match al {keeperMin} minuten.
+							Hij keepte deze wedstrijd al {keeperMin} minuten.
 						{/if}
 					</span>
 					<!-- At the touchline your hand goes to the player first and only then to what

@@ -151,8 +151,9 @@
 		{:else}
 			<p class="uitleg">
 				Ingelogd als <b>{sync.sessie.email ?? 'onbekend'}</b>. De app werkt gewoon zonder bereik en stuurt vanzelf op
-				zodra er weer internet is. Een match die je klaarzet gaat mee, dus je stelt home op en pakt hem op het veld op
-				je telefoon op. Een match die al running wordt wel opgestuurd, maar nooit overschreven door een ander toestel.
+				zodra er weer internet is. Een wedstrijd die je klaarzet gaat mee, dus je stelt thuis op en pakt hem op het veld
+				op je telefoon op. Een wedstrijd die al loopt wordt wel opgestuurd, maar nooit overschreven door een ander
+				toestel.
 			</p>
 			<p class="uitleg">
 				<b>
@@ -190,8 +191,8 @@
 			</p>
 		{/if}
 		<p class="uitleg">
-			Alles what de app onthoudt: selectie, standaardopstelling, trainings en het hele archive. Als bestand om te
-			bewaren, of als code om op je andere toestel in te voeren. Een match die nu running gaat nooit mee.
+			Alles wat de app onthoudt: selectie, standaardopstelling, trainingen en het hele archief. Als bestand om te
+			bewaren, of als code om op je andere toestel in te voeren. Een wedstrijd die nu loopt gaat nooit mee.
 		</p>
 		<div class="knoprij" style="padding-left: 0">
 			<button onclick={backupMaken}>Bestand opslaan</button>

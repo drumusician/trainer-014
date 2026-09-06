@@ -87,7 +87,7 @@
 					{aantalNamen}
 					{aantalNamen === 1 ? 'naam' : 'namen'} ingevuld.
 				{:else}
-					Later players toevoegen kan altijd.
+					Later spelers toevoegen kan altijd.
 				{/if}
 			</p>
 			<div class="knoprij" style="padding-left: 0">

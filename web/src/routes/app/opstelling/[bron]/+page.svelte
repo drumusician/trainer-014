@@ -89,9 +89,9 @@
 		<div class="pad">
 			<p class="uitleg">
 				{#if !app.toestand.players.length}
-					Zet eerst je selectie on, dan valt er what op te stellen.
+					Zet eerst je selectie erin, dan valt er wat op te stellen.
 				{:else}
-					Er is geen match om op te stellen. Begin er een op het startscherm.
+					Er is geen wedstrijd om op te stellen. Begin er een op het startscherm.
 				{/if}
 			</p>
 			<div class="knoprij" style="padding-left: 0">
@@ -120,7 +120,7 @@
 					<span>
 						{#if gekozenSpeler}
 							<b>{gekozenSpeler.name}</b> · {LINES[positionLine(app.chosenPosition, doel.formation)].toLowerCase()}. Tik
-							een andere position om te ruilen, of iemand van de bench.
+							een andere plek om te ruilen, of iemand van de bank.
 						{:else}
 							<b>Lege position</b> · {LINES[positionLine(app.chosenPosition, doel.formation)].toLowerCase()}. Tik wie
 							hier komt te staan.

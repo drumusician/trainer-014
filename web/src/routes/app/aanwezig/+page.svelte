@@ -40,11 +40,11 @@
 			<h2>Wie is er vandaag</h2>
 			<p class="uitleg">
 				{#if bezig}
-					De match running. Wie in het veld staat haal je off met een wissel, niet hier — anders klopt zijn playingTime
-					niet meer. Van de bench afmelden kan wel.
+					De wedstrijd loopt. Wie in het veld staat haal je eruit met een wissel, niet hier — anders klopt zijn
+					speeltijd niet meer. Van de bank afmelden kan wel.
 				{:else}
-					Tik weg wie er niet is. Die staat dan niet op de bench, zodat je hem er langs de lijn niet per ongeluk in
-					brengt. Wie al opgesteld stond, laat zijn position leeg.
+					Tik weg wie er niet is. Die staat dan niet op de bank, zodat je hem er langs de lijn niet per ongeluk in
+					brengt. Wie al opgesteld stond, laat zijn plek leeg.
 				{/if}
 			</p>
 			<p class="telling">
