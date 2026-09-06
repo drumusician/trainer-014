@@ -171,6 +171,17 @@ export function speelvormVan(formatie: string): string {
 	return SPEELVORMEN.find((s) => s.formaties.some((f) => f.sleutel === formatie))?.naam ?? '';
 }
 
+/**
+ * Kennen we deze formatie?
+ *
+ * Niet te vervangen door plekken(): die valt altijd terug op 4-3-3 en geeft dus
+ * nooit iets leegs terug. Een controle daarmee doet niets, en dan glipt een
+ * onbekende naam ongemerkt de toestand in.
+ */
+export function kentFormatie(naam: string | undefined | null): boolean {
+	return !!naam && naam in FORMATIES;
+}
+
 /** De leesbare naam van een plek: CVl heet CV, TIEN heet 10. */
 export function plekLabel(plekId: string, formatie: string): string {
 	return plekken(formatie).find((p) => p[0] === plekId)?.[1] ?? plekId;

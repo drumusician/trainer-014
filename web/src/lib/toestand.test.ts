@@ -614,3 +614,228 @@ describe('een bewaarde wedstrijd op eigen benen', () => {
 		}
 	});
 });
+
+describe('de selectie beheren', () => {
+	it('zet namen uit een plakblok erbij, één per regel, en slaat lege regels over', () => {
+		app.toestand.spelers = [];
+		app.namenErbij('  Bram \n\n Cas\n   \nDirk  ');
+		expect(app.toestand.spelers.map((p) => p.naam)).toEqual(['Bram', 'Cas', 'Dirk']);
+		expect(new Set(app.toestand.spelers.map((p) => p.id)).size).toBe(3);
+	});
+
+	it('vindt een speler op id, en niets bij een onbekende', () => {
+		expect(app.spelerVan('p1')?.naam).toBe('Daanish');
+		expect(app.spelerVan('bestaat-niet')).toBeUndefined();
+		expect(app.spelerVan(null)).toBeUndefined();
+	});
+
+	it('hernoemt zonder spaties eromheen', () => {
+		app.hernoem(app.toestand.spelers[0], '  Daan  ');
+		expect(app.toestand.spelers[0].naam).toBe('Daan');
+	});
+
+	it('verwijdert alleen de aangewezen speler', () => {
+		app.verwijderSpeler(app.toestand.spelers[0]);
+		expect(app.toestand.spelers.map((p) => p.id)).toEqual(['p2']);
+	});
+
+	it('tikt een linie aan en weer uit', () => {
+		const p = app.toestand.spelers[0];
+		app.zetLinie(p, 'A');
+		expect(p.linie).toBe('A');
+		app.zetLinie(p, 'A');
+		expect(p.linie).toBe('');
+		app.zetLinie(p, 'V');
+		expect(p.linie).toBe('V');
+	});
+
+	it('zet keepen los van de linie aan en uit', () => {
+		const p = app.toestand.spelers[0];
+		app.zetKeept(p);
+		expect(p.keept).toBe(true);
+		expect(p.linie).toBe('M'); /* blijft staan: keepen is geen linie */
+		app.zetKeept(p);
+		expect(p.keept).toBe(false);
+	});
+});
+
+describe('doelpunten en het terugnemen van je laatste tik', () => {
+	function lopend() {
+		app.nieuweWedstrijd('Sparta', true);
+		const w = app.toestand.wedstrijd!;
+		w.opstelling = { K: 'p2', SP: 'p1' };
+		app.herzetBank();
+		app.loopToggle();
+		return w;
+	}
+
+	it('legt een doelpunt vast, met of zonder maker', () => {
+		lopend();
+		app.doelpunt('p1');
+		app.doelpunt(null);
+		const g = app.toestand.wedstrijd!.gebeurtenissen.filter((x) => x.type === 'goal');
+		expect(g).toHaveLength(2);
+		expect(g[0].speler).toBe('p1');
+		expect(g[1].speler).toBeNull();
+	});
+
+	it('hangt de assist aan het laatste doelpunt, ook als er daarna iets anders gebeurde', () => {
+		lopend();
+		app.doelpunt('p1');
+		app.tegendoelpunt();
+		app.zetAssist('p2');
+		const goals = app.toestand.wedstrijd!.gebeurtenissen.filter((x) => x.type === 'goal');
+		expect(goals.at(-1)!.assist).toBe('p2');
+	});
+
+	it('telt een tegendoelpunt zonder maker', () => {
+		lopend();
+		app.tegendoelpunt();
+		expect(app.toestand.wedstrijd!.gebeurtenissen.at(-1)!.type).toBe('tegen');
+	});
+
+	it('noemt wat er terug kan, en niets als er niets te herstellen valt', () => {
+		lopend();
+		expect(app.herstelbaar()).toBeNull(); /* alleen de aftrap */
+		app.doelpunt('p1');
+		expect(app.herstelbaar()).toBe('Doelpunt');
+		app.tegendoelpunt();
+		expect(app.herstelbaar()).toBe('Tegendoelpunt');
+	});
+
+	it('neemt een doelpunt terug', () => {
+		lopend();
+		app.doelpunt('p1');
+		const voor = app.toestand.wedstrijd!.gebeurtenissen.length;
+		app.herstelLaatste();
+		expect(app.toestand.wedstrijd!.gebeurtenissen).toHaveLength(voor - 1);
+	});
+
+	/* Dit kon niet, en het is precies de misser die langs de lijn gebeurt: je tikt
+	   de speler aan die scoorde en daarna zijn aangever, en hebt een ruil gemaakt. */
+	it('neemt ook een positiewissel terug', () => {
+		const w = lopend();
+		app.ruilInWedstrijd('K', 'SP');
+		expect(w.opstelling).toMatchObject({ K: 'p1', SP: 'p2' });
+
+		expect(app.herstelbaar()).toBe('Positiewissel');
+		app.herstelLaatste();
+		expect(w.opstelling).toMatchObject({ K: 'p2', SP: 'p1' });
+		expect(w.gebeurtenissen.filter((g) => g.type === 'ruil')).toHaveLength(0);
+	});
+
+	it('draait een wissel helemaal terug, veld en bank', () => {
+		const w = lopend();
+		app.gekozenPlek = 'SP';
+		app.zetOpPlek('p2'); /* p2 uit het doel naar de spits, p1 naar de bank */
+		expect(w.opstelling.SP).toBe('p2');
+		expect(w.bank).toContain('p1');
+
+		expect(app.herstelbaar()).toBe('Wissel');
+		app.herstelLaatste();
+		expect(w.opstelling.SP).toBe('p1');
+		expect(w.bank).not.toContain('p1');
+		expect(w.gebeurtenissen.filter((g) => g.type === 'wissel')).toHaveLength(0);
+	});
+});
+
+describe('opstellen, opruimen en overnemen', () => {
+	it('zet iemand op de gekozen plek en stuurt wie daar stond naar de bank', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		const w = app.toestand.wedstrijd!;
+		w.opstelling = { K: 'p2', SP: null };
+		app.herzetBank();
+
+		app.gekozenPlek = 'K';
+		app.zetInOpzet('wedstrijd', 'p1');
+		expect(w.opstelling.K).toBe('p1');
+		expect(w.bank).toContain('p2');
+		expect(app.gekozenPlek).toBeNull();
+	});
+
+	it('doet hetzelfde voor de standaardopstelling', () => {
+		app.zorgVoorStandaard();
+		app.gekozenPlek = Object.keys(app.toestand.standaard!.opstelling)[0] ?? 'K';
+		app.zetInOpzet('standaard', 'p1');
+		expect(Object.values(app.toestand.standaard!.opstelling)).toContain('p1');
+	});
+
+	it('wist de standaardopstelling', () => {
+		app.zorgVoorStandaard();
+		expect(app.toestand.standaard).not.toBeNull();
+		app.wisStandaard();
+		expect(app.toestand.standaard).toBeNull();
+	});
+
+	it('gooit een wedstrijd weg zonder het archief te raken', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.archief = [{ datum: '2026-01-01' } as never];
+		app.gooiWedstrijdWeg();
+		expect(app.wedstrijd).toBeNull();
+		expect(app.toestand.archief).toHaveLength(1);
+	});
+
+	it('verwijdert precies één wedstrijd uit het archief', () => {
+		app.toestand.archief = [{ tegenstander: 'A' }, { tegenstander: 'B' }, { tegenstander: 'C' }] as never[];
+		app.verwijderUitArchief(1);
+		expect(app.toestand.archief.map((a) => a.tegenstander)).toEqual(['A', 'C']);
+	});
+
+	it('wijzigt tegenstander, thuis of uit, en de notitie', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.zetTegenstander('  SV de Meer  ');
+		app.zetThuis(false);
+		app.zetNotitie('Sterk begin.');
+		const w = app.toestand.wedstrijd!;
+		expect(w.tegenstander).toBe('SV de Meer');
+		expect(w.thuis).toBe(false);
+		expect(w.notitie).toBe('Sterk begin.');
+	});
+
+	it('schrijft een notitie bij een bewaarde wedstrijd', () => {
+		app.toestand.archief = [{ tegenstander: 'A' }] as never[];
+		app.zetArchiefNotitie(0, 'Achteraf bedacht.');
+		expect(app.toestand.archief[0].notitie).toBe('Achteraf bedacht.');
+	});
+
+	/* Overnemen komt van een overzetcode of een teruggezet bestand. Wat er niet in
+	   staat, blijft staan; een lopende wedstrijd hoort bij dit toestel. */
+	it('neemt alleen over wat er in het pakket zit', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.teamnaam = 'Oud';
+		app.neemOver({ teamnaam: 'JO13-1', spelers: [{ id: 'x', naam: 'Nieuw', linie: '' }] });
+		expect(app.toestand.teamnaam).toBe('JO13-1');
+		expect(app.toestand.spelers.map((p) => p.naam)).toEqual(['Nieuw']);
+		expect(app.wedstrijd).not.toBeNull();
+	});
+
+	it('laat een lege teamnaam of een onbekende formatie met rust', () => {
+		app.toestand.teamnaam = 'JO13-1';
+		app.toestand.formatie = '4-3-3';
+		app.neemOver({ teamnaam: '   ', formatie: 'bestaat-niet', spelers: app.toestand.spelers });
+		expect(app.toestand.teamnaam).toBe('JO13-1');
+		expect(app.toestand.formatie).toBe('4-3-3');
+	});
+});
+
+describe('wat er van de server binnenkomt', () => {
+	/* De controle op de formatie was dood: plekken() valt altijd terug op 4-3-3
+	   en geeft dus nooit iets leegs. Elke naam kwam er zo doorheen. */
+	it('weigert een formatie die we niet kennen', () => {
+		app.toestand.formatie = '4-3-3';
+		app.neemSyncOver({
+			spelers: app.toestand.spelers,
+			formatie: 'bestaat-niet'
+		} as unknown as ReturnType<(typeof app)['syncPakket']>);
+		expect(app.toestand.formatie).toBe('4-3-3');
+	});
+
+	it('neemt een formatie die we wel kennen gewoon over', () => {
+		app.toestand.formatie = '4-3-3';
+		app.neemSyncOver({
+			spelers: app.toestand.spelers,
+			formatie: '4-4-2'
+		} as unknown as ReturnType<(typeof app)['syncPakket']>);
+		expect(app.toestand.formatie).toBe('4-4-2');
+	});
+});

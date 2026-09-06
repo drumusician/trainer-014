@@ -1,4 +1,4 @@
-import { FORMATIES, plekken } from './domein/formaties';
+import { FORMATIES, kentFormatie } from './domein/formaties';
 import { zetOpstellingOm } from './domein/opstelling';
 import { eindTijd, keepertijden, positietijden, speeltijden, stand, verstreken } from './domein/tijd';
 import { sorteerTrainingen } from './domein/presentie';
@@ -389,6 +389,9 @@ class App {
 		if (laatste.type === 'goal') return 'Doelpunt';
 		if (laatste.type === 'tegen') return 'Tegendoelpunt';
 		if (laatste.type === 'wissel') return 'Wissel';
+		/* Ook een positieruil. Wie de speler aantikt die scoorde en daarna zijn
+		   aangever, maakt per ongeluk een ruil — dat moet je terug kunnen draaien. */
+		if (laatste.type === 'ruil') return 'Positiewissel';
 		return null;
 	}
 
@@ -400,6 +403,11 @@ class App {
 			w.opstelling[laatste.plek] = laatste.eruit ?? null;
 			w.bank = w.bank.filter((x) => x !== laatste.eruit);
 			if (laatste.erin && !w.bank.includes(laatste.erin)) w.bank.push(laatste.erin);
+		}
+		if (laatste.type === 'ruil' && laatste.plekA && laatste.plekB) {
+			const a = w.opstelling[laatste.plekA] ?? null;
+			w.opstelling[laatste.plekA] = w.opstelling[laatste.plekB] ?? null;
+			w.opstelling[laatste.plekB] = a;
 		}
 		w.gebeurtenissen.pop();
 		this.gekozenPlek = null;
@@ -642,7 +650,7 @@ class App {
 		const t = this.toestand;
 		if (pakket.teamnaam?.trim()) t.teamnaam = pakket.teamnaam;
 		if (Array.isArray(pakket.spelers)) t.spelers = pakket.spelers;
-		if (pakket.formatie && plekken(pakket.formatie)) t.formatie = pakket.formatie;
+		if (kentFormatie(pakket.formatie)) t.formatie = pakket.formatie!;
 		if (pakket.helftMinuten) t.helftMinuten = pakket.helftMinuten;
 		if (pakket.delen === 2 || pakket.delen === 4) t.delen = pakket.delen;
 		if ('standaard' in pakket) t.standaard = pakket.standaard ?? null;
@@ -684,7 +692,7 @@ class App {
 		const t = this.toestand;
 		t.spelers = d.spelers;
 		if (d.teamnaam?.trim()) t.teamnaam = d.teamnaam;
-		if (d.formatie && plekken(d.formatie)) t.formatie = d.formatie;
+		if (kentFormatie(d.formatie)) t.formatie = d.formatie;
 		if (d.helftMinuten) t.helftMinuten = d.helftMinuten;
 		if (d.delen === 2 || d.delen === 4) t.delen = d.delen;
 		t.standaard = d.standaard ?? null;
