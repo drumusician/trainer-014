@@ -12,6 +12,15 @@ export default defineConfig({
 	test: {
 		environment: 'jsdom',
 		setupFiles: ['src/test/opzet.ts'],
-		include: ['src/**/*.test.ts']
+		include: ['src/**/*.test.ts'],
+		coverage: {
+			provider: 'v8',
+			reporter: ['text', 'html'],
+			/* Alleen de logica meten. De componenten worden niet getest, dus die
+			   zouden het beeld vertroebelen met een grote rode nul in plaats van
+			   te laten zien hoe goed de rekenkern is afgedekt. */
+			include: ['src/lib/**/*.ts'],
+			exclude: ['src/lib/**/*.test.ts', 'src/lib/supabase/config.ts']
+		}
 	}
 });
