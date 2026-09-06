@@ -514,6 +514,15 @@ describe('de aftrap vastleggen', () => {
 		expect(app.toestand.wedstrijd!.gebeurtenissen).toEqual([]);
 	});
 
+	/* Je zet 's avonds de opstelling klaar en speelt de volgende dag. Dan hoort er
+	   niet de datum van gisteren op de wedstrijd te staan. */
+	it('stempelt de speeldag bij de aftrap, niet bij het aanmaken', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.datum = '2020-01-01';
+		app.loopToggle();
+		expect(app.toestand.wedstrijd!.datum).toBe(new Date().toISOString().slice(0, 10));
+	});
+
 	it('legt een positieruil wel vast zodra er is afgetrapt', () => {
 		app.nieuweWedstrijd('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
@@ -572,7 +581,8 @@ describe('een bewaarde wedstrijd op eigen benen', () => {
 
 		const opnieuw = speeltijden(herbouwd, app.toestand.spelers);
 		for (const regel of a.speeltijd) {
-			expect(Math.round(opnieuw[regel.id])).toBe(regel.seconden);
+			expect(regel.id).toBeTruthy();
+			expect(Math.round(opnieuw[regel.id!])).toBe(regel.seconden);
 		}
 	});
 });

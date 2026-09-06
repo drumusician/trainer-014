@@ -241,7 +241,12 @@ class App {
 			   en dan werd 'start' nooit vastgelegd. De app dacht de hele wedstrijd dat
 			   er nog niet was afgetrapt: positiewissels werden niet meer bewaard, de
 			   tabbalk bleef staan en de wedstrijd was niet beschermd tegen ophalen. */
-			if (!this.gestart) this.log('start');
+			if (!this.gestart) {
+				/* De datum pas nu vastleggen. Sinds je een wedstrijd vooruit kunt
+				   klaarzetten is de dag waarop je hem aanmaakte niet de speeldag. */
+				w.datum = new Date().toISOString().slice(0, 10);
+				this.log('start');
+			}
 			w.loopt = true;
 			w.sinds = Date.now();
 		}
