@@ -15,7 +15,7 @@
 <main>
 	<div class="pad">
 		{#if !w}
-			<p class="uitleg">Er is geen match om players voor af te melden.</p>
+			<p class="uitleg">Er is geen wedstrijd om spelers voor af te melden.</p>
 			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Terug</a></div>
 		{:else}
 			<h2>Tegen wie</h2>
@@ -71,9 +71,9 @@
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
 				{#if bezig}
-					<a class="knop prim" href="/app/wedstrijd">Terug naar de match</a>
+					<a class="knop prim" href="/app/wedstrijd">Terug naar de wedstrijd</a>
 				{:else}
-					<a class="knop prim" href="/app/opstelling/wedstrijd">Verder naar de lineup</a>
+					<a class="knop prim" href="/app/opstelling/wedstrijd">Verder naar de opstelling</a>
 				{/if}
 			</div>
 		{/if}

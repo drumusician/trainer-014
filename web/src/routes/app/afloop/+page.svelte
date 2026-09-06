@@ -25,7 +25,7 @@
 <main>
 	<div class="pad">
 		{#if !w}
-			<p class="uitleg">Nog geen match.</p>
+			<p class="uitleg">Nog geen wedstrijd.</p>
 		{:else}
 			{@const [v, t] = score(w)}
 			<h2>Uitslag</h2>
@@ -58,7 +58,7 @@
 				oninput={(e) => app.setNote(e.currentTarget.value)}></textarea>
 
 			<h2>Delen</h2>
-			<p class="uitleg">Voor de groepsapp. De wissels laat ik er defaultLineup uit.</p>
+			<p class="uitleg">Voor de groepsapp. De wissels laat ik er standaard uit.</p>
 			<Verslag bron={bronVanWedstrijd(w, app.toestand.teamName)} />
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">

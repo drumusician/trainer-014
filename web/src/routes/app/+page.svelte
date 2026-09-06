@@ -35,7 +35,7 @@
 		{#if !t.players.length}
 			<h2>Welkom bij Blaadje</h2>
 			<p class="uitleg">
-				In drie stappen sta je klaar: de name van je team, wie on zitten, en hoe jullie spelen. Duurt een minuut.
+				In drie stappen sta je klaar: de naam van je team, wie erin zitten, en hoe jullie spelen. Duurt een minuut.
 			</p>
 			<div class="knoprij" style="padding-left: 0">
 				<a class="knop prim" href="/app/opzetten">Aan de slag</a>
@@ -60,7 +60,7 @@
 					<div class="titel">
 						{w!.home ? t.teamName + ' – ' + w!.opponent : w!.opponent + ' – ' + t.teamName}
 					</div>
-					<div class="erbij">De lineup staat. De klok begint als jij op Start drukt.</div>
+					<div class="erbij">De opstelling staat. De klok begint als jij op Start drukt.</div>
 				</a>
 			{:else if opgezet}
 				<a class="nu" href="/app/opstelling/wedstrijd">
@@ -71,7 +71,7 @@
 			{:else if teBewaren}
 				<a class="nu" href="/app/afloop">
 					<div class="wat">Net gespeeld</div>
-					<div class="titel">Nog niet archived</div>
+					<div class="titel">Nog niet bewaard</div>
 					<div class="erbij">Tegen {w!.opponent}</div>
 				</a>
 			{:else}
@@ -143,8 +143,8 @@
 			<h2>Gespeeld</h2>
 			{#if !t.archive.length}
 				<p class="uitleg">
-					Nog niets archived. Sluit een match af en bewaar hem, dan staat hij hier met uitslag, speeltijden en het hele
-					verloop.
+					Nog niets bewaard. Sluit een wedstrijd af en bewaar hem, dan staat hij hier met uitslag, speeltijden en het
+					hele verloop.
 				</p>
 			{:else}
 				<p class="uitleg">

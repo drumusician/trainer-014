@@ -48,7 +48,7 @@
 					>{telling.absent} niet gekomen</span
 				>
 			</p>
-			<p class="uitleg">Tik op de knop achter een name om hem langs aanwezig, afgemeld en niet gekomen te zetten.</p>
+			<p class="uitleg">Tik op de knop achter een naam om hem langs aanwezig, afgemeld en niet gekomen te zetten.</p>
 
 			{#each app.toestand.players as p (p.id)}
 				{@const st = t.status[p.id] ?? 'present'}

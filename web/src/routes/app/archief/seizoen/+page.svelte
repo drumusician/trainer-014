@@ -23,7 +23,7 @@
 		<h2>Seizoen</h2>
 		{#if !t.archive.length && !t.trainings.length}
 			<p class="uitleg">
-				Nog geen bewaarde wedstrijden en geen trainings. Sluit een match af en bewaar hem, dan telt hij hier mee.
+				Nog geen bewaarde wedstrijden en geen trainingen. Sluit een wedstrijd af en bewaar hem, dan telt hij hier mee.
 			</p>
 		{:else if t.archive.length}
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
@@ -53,7 +53,7 @@
 			{/if}
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
-				<a class="knop prim" href="/app/team/spelers">Speeltijd en presentie per player</a>
+				<a class="knop prim" href="/app/team/spelers">Speeltijd en presentie per speler</a>
 			</div>
 		{:else}
 			<p class="uitleg">Nog geen bewaarde wedstrijden.</p>

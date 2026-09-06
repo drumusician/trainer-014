@@ -35,14 +35,14 @@
 	<div class="pad">
 		<h2>Trainingen</h2>
 		{#if !app.toestand.players.length}
-			<p class="uitleg">Zet eerst je selectie on, dan kun je afvinken wie er was.</p>
+			<p class="uitleg">Zet eerst je selectie erin, dan kun je afvinken wie er was.</p>
 		{:else if !trainings.length}
 			<p class="uitleg">
-				Nog geen trainings. Maak er een aan; iedereen staat dan op aanwezig en je tikt alleen wie er niet is.
+				Nog geen trainingen. Maak er een aan; iedereen staat dan op aanwezig en je tikt alleen wie er niet is.
 			</p>
 		{:else}
 			<p class="uitleg">
-				Tik een training aan om hem bij te werken. De date kun je daar aanpassen, dus een gemiste week vul je later
+				Tik een training aan om hem bij te werken. De datum kun je daar aanpassen, dus een gemiste week vul je later
 				gewoon in.
 			</p>
 			<ul class="log">
@@ -68,7 +68,7 @@
 
 		{#if mageren.length}
 			<h2>Weinig geweest</h2>
-			<p class="uitleg">Over de laatste vier trainings. Je ziet het ook terug als je je lineup maakt.</p>
+			<p class="uitleg">Over de laatste vier trainingen. Je ziet het ook terug als je je opstelling maakt.</p>
 			<table class="uitslag">
 				<tbody>
 					{#each mageren as p (p.id)}

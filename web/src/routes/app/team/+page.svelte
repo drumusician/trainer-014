@@ -28,7 +28,7 @@
 	<div class="pad">
 		{#if t.players.length}
 			<h2>Speeltijd en presentie</h2>
-			<p class="uitleg">Gespeelde minuten per player, hoe vaak ze op de training waren, en wie er scoorden.</p>
+			<p class="uitleg">Gespeelde minuten per speler, hoe vaak ze op de training waren, en wie er scoorden.</p>
 			<div class="knoprij" style="padding-left: 0">
 				<a class="knop prim" href="/app/team/spelers">Spelersoverzicht</a>
 			</div>
@@ -37,7 +37,7 @@
 		<h2>Selectie</h2>
 		{#if !t.players.length}
 			<p class="uitleg">
-				Plak hier de names, één per regel. Ze blijven op dit toestel en komen nergens anders terecht. Liever stap voor
+				Plak hier de namen, één per regel. Ze blijven op dit toestel en komen nergens anders terecht. Liever stap voor
 				stap? <a href="/app/opzetten">Loop het opzetten door.</a>
 			</p>
 			<textarea bind:value={namenVak} placeholder="Casper&#10;Maher&#10;Daan"></textarea>
@@ -52,7 +52,7 @@
 			</div>
 		{:else}
 			<p class="uitleg">
-				Zet per player de line: V verdediging, M middenveld, A aanval. <b>K</b> staat los: dat is iedereen die kan keepen,
+				Zet per speler de linie: V verdediging, M middenveld, A aanval. <b>K</b> staat los: dat is iedereen die kan keepen,
 				ook als hij verder in het veld speelt. Alleen K aan en de rest uit betekent: keeper en verder niets. Tik een name
 				aan om te wijzigen of te verwijderen.
 			</p>

@@ -127,7 +127,7 @@
 						{/if}
 					</span>
 					{#if gekozenSpeler}
-						<button class="klein" onclick={() => app.takeOffPitch(bron, app.chosenPosition!)}>Naar de bench</button>
+						<button class="klein" onclick={() => app.takeOffPitch(bron, app.chosenPosition!)}>Naar de bank</button>
 					{/if}
 					<button class="klein" onclick={() => (app.chosenPosition = null)}>Annuleren</button>
 				</div>

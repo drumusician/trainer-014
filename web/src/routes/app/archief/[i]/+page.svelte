@@ -57,7 +57,7 @@
 <main>
 	<div class="pad">
 		{#if !a}
-			<p class="uitleg">Deze match staat er niet meer.</p>
+			<p class="uitleg">Deze wedstrijd staat er niet meer.</p>
 			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Terug</a></div>
 		{:else}
 			{@const home = a.home !== false}
@@ -117,8 +117,8 @@
 				<Verloop events={a.events ?? []} names={a.names} parts={a.parts} formation={a.formation} />
 			{:else}
 				<p class="uitleg">
-					Een doelpunt dat er niet was kun je weghalen; de score telt vanzelf opnieuw. Wissels blijven staan, want daar
-					hangt de playingTime aan.
+					Een doelpunt dat er niet was kun je weghalen; de stand telt vanzelf opnieuw. Wissels blijven staan, want daar
+					hangt de speeltijd aan.
 				</p>
 				<ul class="log">
 					{#each regels as r (r.index)}

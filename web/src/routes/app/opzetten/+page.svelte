@@ -62,8 +62,8 @@
 		{#if stap === 1}
 			<h2>Hoe heet je team?</h2>
 			<p class="uitleg">
-				Die name staat boven je match en in het verslag dat je na afloop deelt. Iets als JO11-2, MO13-1 of gewoon de
-				name die iedereen gebruikt.
+				Die naam staat boven je wedstrijd en in het verslag dat je na afloop deelt. Iets als JO11-2, MO13-1 of gewoon de
+				naam die iedereen gebruikt.
 			</p>
 			<label class="vak">
 				Teamnaam
@@ -73,9 +73,9 @@
 				<button class="prim" onclick={naarTwee}>Verder</button>
 			</div>
 		{:else if stap === 2}
-			<h2>Wie zitten on?</h2>
+			<h2>Wie zitten erin?</h2>
 			<p class="uitleg">
-				Plak of typ de names, één per regel. Alleen voornamen is genoeg. Ze blijven op dit toestel staan en gaan nergens
+				Plak of typ de namen, één per regel. Alleen voornamen is genoeg. Ze blijven op dit toestel staan en gaan nergens
 				anders heen.
 			</p>
 			<textarea bind:value={namenVak} placeholder="Sem&#10;Noah&#10;Luuk"></textarea>
@@ -97,8 +97,8 @@
 		{:else}
 			<h2>Hoe spelen jullie?</h2>
 			<p class="uitleg">
-				Dit bepaalt hoeveel plekken er op het veld staan en hoe de klok running. Je kunt het later altijd omzetten; je
-				lineup verhuist dan mee.
+				Dit bepaalt hoeveel plekken er op het veld staan en hoe de klok loopt. Je kunt het later altijd omzetten; je
+				opstelling verhuist dan mee.
 			</p>
 			<div class="tweekolom">
 				<label class="vak">
@@ -133,8 +133,8 @@
 				{t.parts === 4 ? 'vier kwarten' : 'twee helften'} van {t.minutesPerPart} minuten.
 			</p>
 			<p class="uitleg">
-				Wil je nu meteen je vaste lineup neerzetten? Dan begint elke match daarmee en hoef je langs de lijn alleen nog
-				te wisselen.
+				Wil je nu meteen je vaste opstelling neerzetten? Dan begint elke wedstrijd daarmee en hoef je langs de lijn
+				alleen nog te wisselen.
 			</p>
 			<div class="knoprij" style="padding-left: 0">
 				<button class="prim" onclick={() => klaar(true)}>Opstelling maken</button>

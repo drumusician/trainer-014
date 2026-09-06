@@ -82,16 +82,16 @@
 {#if !app.toestand.players.length}
 	<main>
 		<div class="pad">
-			<h2>Nog geen players</h2>
-			<p class="uitleg">Zet eerst je selectie on, dan valt er what op te stellen.</p>
+			<h2>Nog geen spelers</h2>
+			<p class="uitleg">Zet eerst je selectie erin, dan valt er wat op te stellen.</p>
 			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app/opzetten">Aan de slag</a></div>
 		</div>
 	</main>
 {:else if !w || !Object.keys(w.lineup).length}
 	<main>
 		<div class="pad">
-			<h2>Nog geen match</h2>
-			<p class="uitleg">Begin er een op het startscherm, dan zet je hier je lineup neer.</p>
+			<h2>Nog geen wedstrijd</h2>
+			<p class="uitleg">Begin er een op het startscherm, dan zet je hier je opstelling neer.</p>
 			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Naar start</a></div>
 		</div>
 	</main>

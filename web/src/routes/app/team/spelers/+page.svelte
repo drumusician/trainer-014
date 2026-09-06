@@ -24,7 +24,7 @@
 	<div class="pad">
 		{#if !t.players.length}
 			<h2>Spelers</h2>
-			<p class="uitleg">Nog geen selectie. Zet je names on bij Team.</p>
+			<p class="uitleg">Nog geen selectie. Zet je namen erin bij Team.</p>
 		{:else}
 			<h2>Spelers</h2>
 			<p class="uitleg">
@@ -74,8 +74,8 @@
 				</tbody>
 			</table>
 			<p class="uitleg" style="margin-top: 12px">
-				Speeltijd telt alleen wedstrijden die je archived hebt. Een match waarin iemand niet in het veld kwam telt bij
-				hem niet mee, dus zijn gemiddelde blijft eerlijk.
+				Speeltijd telt alleen wedstrijden die je bewaard hebt. Een wedstrijd waarin iemand niet in het veld kwam telt
+				bij hem niet mee, dus zijn gemiddelde blijft eerlijk.
 			</p>
 		{/if}
 	</div>

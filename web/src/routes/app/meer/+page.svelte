@@ -252,7 +252,7 @@
 		{/if}
 
 		<p class="uitleg" style="margin-top: 24px; font-size: 11px; opacity: 0.75">
-			Blaadje · het scherm blijft wakker zolang de klok running
+			Blaadje · het scherm blijft wakker zolang de klok loopt
 		</p>
 	</div>
 </main>

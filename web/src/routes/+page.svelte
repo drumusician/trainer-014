@@ -34,7 +34,7 @@
 	<section class="hero">
 		<h1>Het blaadje in je hand,<br />maar dan op je telefoon</h1>
 		<p class="groot">
-			Blaadje houdt je lineup, je wissels en de playingTime bij terwijl jij coacht. Een wissel kost twee tikken, en na
+			Blaadje houdt je opstelling, je wissels en de speeltijd bij terwijl jij coacht. Een wissel kost twee tikken, en na
 			afloop weet je precies wie hoe lang heeft gespeeld.
 		</p>
 		<div class="knoprij">
@@ -72,7 +72,7 @@
 		<div>
 			<h2>Helften of kwarten</h2>
 			<p>
-				Van 11 tegen 11 tot 4 tegen 4, in twee helften of in vier kwarten. Het aantal players ligt nergens vast, dus bij
+				Van 11 tegen 11 tot 4 tegen 4, in twee helften of in vier kwarten. Het aantal spelers ligt nergens vast, dus bij
 				de kleinsten werkt het net zo goed als bij de grote elftallen.
 			</p>
 		</div>
@@ -93,7 +93,7 @@
 		<div>
 			<h2>Langs de lijn, niet achter een bureau</h2>
 			<p>
-				Het scherm blijft aan zolang de klok running, je hoeft nergens te scrollen, en zonder bereik gaat alles gewoon
+				Het scherm blijft aan zolang de klok loopt, je hoeft nergens te scrollen, en zonder bereik gaat alles gewoon
 				door. Wat je invult blijft op je eigen telefoon staan.
 			</p>
 		</div>
@@ -108,7 +108,7 @@
 			alt="Het spelersoverzicht met speeltijd en presentie per speler"
 		/>
 		<p class="onderschrift">
-			Na een paar weken staat het allemaal in één lijst: gespeelde minuten per player, en hoe vaak ze op de training
+			Na een paar weken staat het allemaal in één lijst: gespeelde minuten per speler, en hoe vaak ze op de training
 			waren.
 		</p>
 	</section>
