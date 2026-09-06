@@ -522,6 +522,96 @@ const install = {
 	}
 } as const;
 
+/**
+ * De landingspagina.
+ *
+ * Dit is verkooptekst en geen interface, maar hij staat hier om dezelfde reden:
+ * bij de vertaalslag zijn er ook hier Engelse woorden midden in de zinnen
+ * beland. Wat één alinea is, staat als één sleutel — behalve waar er vet of een
+ * link middenin zit; dat zijn de enige stukjes die opgeknipt zijn.
+ */
+const landing = {
+	openShort: 'Openen',
+	openLong: 'Blaadje openen',
+	getStarted: 'Aan de slag',
+
+	heroLine1: 'Het blaadje in je hand,',
+	heroLine2: 'maar dan op je telefoon',
+	heroLead:
+		'Blaadje houdt je opstelling, je wissels en de speeltijd bij terwijl jij coacht. Een wissel kost twee tikken, en na afloop weet je precies wie hoe lang heeft gespeeld.',
+	heroSmall: 'Gratis proberen · geen account nodig · werkt zonder bereik',
+
+	shotMatchAlt: 'Het wedstrijdscherm met de opstelling op een veld en de bank ernaast',
+	shotPlayersAlt: 'Het spelersoverzicht met speeltijd en presentie per speler',
+	shotPlayersCaption:
+		'Na een paar weken staat het allemaal in één lijst: gespeelde minuten per speler, en hoe vaak ze op de training waren.',
+
+	blocks: {
+		substitutions: {
+			heading: 'Wisselen in twee tikken',
+			body: 'Tik wie eruit gaat, tik wie erin komt. De bank staat naast het veld, in dezelfde volgorde als de linies, en bovenaan staat wie tot nu toe het minst heeft gespeeld. Twee spelers van plek laten ruilen kan ook, zonder dat er iemand van de bank hoeft te komen.'
+		},
+		playingTime: {
+			heading: 'Speeltijd zonder invoeren',
+			body: 'De minuten volgen uit je wissels, dus je hoeft niets bij te houden. Onder elke naam op het veld staat de speeltijd tot nu toe. Minuten in het doel tellen apart, want een helft keepen is geen halve wedstrijd voetballen.'
+		},
+		parts: {
+			heading: 'Helften of kwarten',
+			body: 'Van 11 tegen 11 tot 4 tegen 4, in twee helften of in vier kwarten. Het aantal spelers ligt nergens vast, dus bij de kleinsten werkt het net zo goed als bij de grote elftallen.'
+		},
+		attendance: {
+			heading: 'Presentie op de training',
+			body: 'Aanwezig, afgemeld of niet gekomen: één tik per speler. Wie de laatste keren weinig kwam, zie je terug op het moment dat je je opstelling maakt. De app zet het er alleen bij; wat je ermee doet is aan jou.'
+		},
+		report: {
+			heading: 'Een verslagje voor de groepsapp',
+			body: 'Na afloop ligt er een kant-en-klaar bericht: de uitslag, wie er scoorden, en de paar regels die je er zelf bij schrijft. De wissels blijven eruit, want daar hoeven de ouders niets van te vinden.'
+		},
+		touchline: {
+			heading: 'Langs de lijn, niet achter een bureau',
+			body: 'Het scherm blijft aan zolang de klok loopt, je hoeft nergens te scrollen, en zonder bereik gaat alles gewoon door. Wat je invult blijft op je eigen telefoon staan.'
+		}
+	},
+
+	privacyHeading: 'Waar je gegevens blijven',
+	privacy1:
+		'Alles staat op je eigen toestel. Inloggen hoeft niet, en zolang jij dat niet wilt gaat er niets naar een server. Neem je wel een account, dan gaan je gegevens over een beveiligde verbinding en ben jij de enige die bij je eigen team kan.',
+	privacy2:
+		'Namen van kinderen zijn geen bijzaak. Daarom bewaart Blaadje alleen wat het echt nodig heeft: een voornaam, een linie, en de minuten die uit je wissels volgen. Geen beoordelingen, geen dossier.',
+	privacy3: {
+		bold: 'Daar zit ook een keerzijde aan.',
+		after:
+			'Staat je seizoen alleen op je telefoon, dan is het weg zodra die telefoon weg is: gestolen, in het water, of een browser die opruimt omdat je een tijd niet hebt gekeken. Maak dus af en toe een back-up — dat is één knop en één bestand — of neem een account, dan gebeurt het vanzelf.'
+	},
+
+	priceHeading: 'Wat het kost',
+	price1:
+		'Zonder account is Blaadje gratis, en dat blijft zo. Alles werkt: opstellen, wisselen, speeltijd, presentie, het archief. Het enige wat je mist is een vangnet, want alles staat alleen op dat ene toestel. Zo kun je een paar wedstrijden uitproberen zonder ergens aan vast te zitten.',
+	price2:
+		"Wordt het je vaste gereedschap, dan wil je een account. Je seizoen staat dan veilig als je telefoon kwijtraakt, en je werkt op meer dan één toestel: thuis de opstelling maken, langs de lijn wisselen. Dat kost € 30 per seizoen, zo'n zeventig cent per speelweek.",
+	price3:
+		'Zolang Blaadje in ontwikkeling is hoeft dat nog helemaal niet. Wie er nu bij komt, gebruikt dit seizoen alles gratis.',
+	price4: {
+		before:
+			'Clubs kunnen het in één keer voor al hun jeugdtrainers regelen. Eén factuur, en de trainers hoeven zelf niets te doen. Neem contact op via',
+		after: '.'
+	},
+
+	originHeading: 'Waar het vandaan komt',
+	origin1:
+		'Blaadje is gemaakt door een ouder-trainer voor zijn eigen O14. Alles wat er al was bleek een tactiekbord, terwijl je langs de lijn juist een wisselschriftje nodig hebt. Het wordt elke week bij een echte wedstrijd gebruikt, en dat verklaart waarom het doet wat het doet en niet meer dan dat.',
+	origin2: {
+		before:
+			'Het is nog volop in ontwikkeling en op dit moment gratis te gebruiken. Loop je ergens tegenaan of mis je iets, mail dan naar',
+		after: '. Ik lees alles.'
+	},
+
+	email: 'tjaco@blaadje.app',
+	footerBefore: 'Blaadje · gemaakt in Nederland ·',
+	footerLink: 'naar de app',
+	footerDot: '·'
+} as const;
+
 export const text = {
 	common,
 	attendance,
@@ -538,5 +628,6 @@ export const text = {
 	lineupScreen,
 	setup,
 	data,
-	install
+	install,
+	landing
 } as const;
