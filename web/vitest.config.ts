@@ -7,7 +7,19 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
 	plugins: [svelte({ compilerOptions: { runes: true } })],
 	resolve: {
-		alias: { $lib: fileURLToPath(new URL('./src/lib', import.meta.url)) }
+		alias: {
+			$lib: fileURLToPath(new URL('./src/lib', import.meta.url)),
+			/* SvelteKit levert deze modules pas als hij zelf draait. Voor tests staan
+			   er stand-ins tegenover, zodat een scherm gerenderd kan worden zonder de
+			   halve router erbij te halen. */
+			'$app/navigation': fileURLToPath(new URL('./src/test/sveltekit/navigation.ts', import.meta.url)),
+			'$app/state': fileURLToPath(new URL('./src/test/sveltekit/state.svelte.ts', import.meta.url)),
+			'$app/environment': fileURLToPath(new URL('./src/test/sveltekit/environment.ts', import.meta.url))
+		},
+		/* Zonder dit pakt Svelte zijn serverbouw en gaan componenten stuk op
+		   lifecycle_function_unavailable. Componenttests draaien in jsdom, dus die
+		   willen de browserbouw. */
+		conditions: ['browser']
 	},
 	test: {
 		environment: 'jsdom',
@@ -16,11 +28,17 @@ export default defineConfig({
 		coverage: {
 			provider: 'v8',
 			reporter: ['text', 'html'],
-			/* Alleen de logica meten. De componenten worden niet getest, dus die
-			   zouden het beeld vertroebelen met een grote rode nul in plaats van
-			   te laten zien hoe goed de rekenkern is afgedekt. */
-			include: ['src/lib/**/*.ts'],
-			exclude: ['src/lib/**/*.test.ts', 'src/lib/supabase/config.ts']
+			/* Sinds er componenttests zijn, tellen de schermen mee. Wat je op het veld
+			   in handen hebt is net zo goed code die stuk kan. */
+			include: ['src/lib/**/*.ts', 'src/lib/**/*.svelte', 'src/routes/**/*.svelte'],
+			exclude: ['src/lib/**/*.test.ts', 'src/lib/supabase/config.ts', 'src/test/**'],
+			/*
+			 * Een ondergrens, geen doel. Hij staat net onder waar we nu staan, zodat
+			 * een enkele nieuwe regel zonder test niets afkeurt, maar een scherm dat
+			 * er ongetest bij komt wél. Zakt dit getal, dan is dat een besluit dat
+			 * iemand met de hand maakt.
+			 */
+			thresholds: { statements: 90, lines: 92, functions: 90, branches: 73 }
 		}
 	}
 });

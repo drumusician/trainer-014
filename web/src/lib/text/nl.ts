@@ -177,7 +177,11 @@ const match = {
 	/* De klokregel. Tijdens een pauze staat er welk deel voorbij is. */
 	clockInBreak: (breakName: string, partName: string) => `${breakName} · ${partName} voorbij`,
 	clockRunning: (partName: string) => `${partName} · tik om de tijd te zetten`,
-	pause: 'Pauze',
+	/* 'Stop', niet 'Pauze': bij vier kwarten heet de knop ernaast in het eerste
+	   kwart óók 'Pauze', en dan staan er twee dezelfde knoppen naast elkaar die
+	   iets heel anders doen — de een zet de klok stil, de ander beëindigt het
+	   kwart. Start/Stop hoort bij een klok en botst nergens mee. */
+	pause: 'Stop',
 	start: 'Start',
 	minuteLabel: 'Minuut',
 	minuteBack: '−1′',

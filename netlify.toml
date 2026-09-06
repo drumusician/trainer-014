@@ -5,7 +5,7 @@
   # Niet alleen bouwen: eerst controleren. Zo kan een typefout of een omgevallen
   # test niet meer ongemerkt live komen. Dezelfde stappen staan in
   # .github/workflows/ci.yml, die geeft alleen sneller uitsluitsel.
-  command = "npx prettier --check \"src/**/*.{ts,svelte,css}\" && npx eslint . && npm run check && npm test && npm run build"
+  command = "npx prettier --check \"src/**/*.{ts,svelte,css}\" && npx eslint . && npm run check && npm run dekking && npm run build"
   publish = "build"
 
 [build.environment]

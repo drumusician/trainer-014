@@ -222,3 +222,186 @@ describe('niet blijven hameren', () => {
 		expect(Math.max(...wachten)).toBeLessThanOrEqual(300_000);
 	});
 });
+
+/*
+ * Inloggen.
+ *
+ * Dit is het enige stuk van de app dat met een e-mailadres werkt, en het gaat op
+ * twee manieren: een code overtypen of op de link in de mail klikken. Die tweede
+ * weg brengt de sleutels achter een # in het adres mee, en die moeten daar meteen
+ * weer uit — anders blijft je toegangstoken in de geschiedenis van de browser
+ * staan.
+ */
+describe('inloggen', () => {
+	beforeEach(() => {
+		sync.sessie = null;
+		sync.fase = 'email';
+		sync.email = '';
+		sync.message = '';
+	});
+
+	it('vraagt om een adres als je er geen invult', async () => {
+		nepFetch();
+		await sync.stuurCode('   ');
+		expect(sync.message).toContain('e-mailadres');
+		expect(sync.fase).toBe('email');
+	});
+
+	it('verstuurt de mail en gaat wachten op de code', async () => {
+		const { f } = nepFetch();
+		await sync.stuurCode(' trainer@voorbeeld.nl ');
+		expect(f.mock.calls[0][0]).toContain('/auth/v1/otp');
+		expect(sync.email).toBe('trainer@voorbeeld.nl');
+		expect(sync.fase).toBe('code');
+		expect(sync.message).toContain('trainer@voorbeeld.nl');
+	});
+
+	it('zegt het als versturen niet lukt', async () => {
+		nepFetch({ stuk: true });
+		await sync.stuurCode('trainer@voorbeeld.nl');
+		expect(sync.message).toContain('lukte niet');
+		expect(sync.fase).toBe('email');
+	});
+
+	it('vraagt om de code als je er geen invult', async () => {
+		nepFetch();
+		await sync.controleerCode('  ');
+		expect(sync.message).toContain('code uit de mail');
+	});
+
+	it('logt in met een kloppende code', async () => {
+		globalThis.fetch = vi.fn(async (url: string) => {
+			if (String(url).includes('/auth/v1/verify')) {
+				return new Response(JSON.stringify({ access_token: 'nieuw', refresh_token: 'r2', expires_in: 3600 }), {
+					status: 200
+				});
+			}
+			return new Response('{}', { status: 200 });
+		}) as unknown as typeof fetch;
+		sync.email = 'trainer@voorbeeld.nl';
+		await sync.controleerCode(' 123456 ');
+		expect(sync.sessie?.access_token).toBe('nieuw');
+		expect(sync.fase).toBe('email');
+		expect(sync.message).toBe('Ingelogd.');
+	});
+
+	it('zegt het als de code niet klopt', async () => {
+		nepFetch({ stuk: true });
+		sync.email = 'trainer@voorbeeld.nl';
+		await sync.controleerCode('000000');
+		expect(sync.message).toContain('klopt niet');
+		expect(sync.sessie).toBeNull();
+	});
+
+	it('logt je uit en laat niets achter', async () => {
+		nepFetch();
+		sync.sessie = { access_token: 'x', refresh_token: 'y' } as never;
+		sync.vies = true;
+		sync.botsing = true;
+		sync.uitloggen();
+		expect(sync.sessie).toBeNull();
+		expect(sync.vies).toBe(false);
+		expect(sync.botsing).toBe(false);
+		expect(localStorage.getItem('o14-sessie-v1')).toBeFalsy();
+	});
+});
+
+describe('terugkomen uit de mail', () => {
+	function metHash(h: string) {
+		Object.defineProperty(window, 'location', {
+			value: { ...window.location, hash: h, pathname: '/app/meer', search: '', origin: 'http://localhost' },
+			writable: true,
+			configurable: true
+		});
+		history.replaceState = vi.fn();
+	}
+
+	beforeEach(() => {
+		sync.sessie = null;
+		sync.message = '';
+	});
+
+	it('doet niets als er niets in het adres staat', async () => {
+		metHash('');
+		nepFetch();
+		await sync.pakInlogUitLink();
+		expect(sync.sessie).toBeNull();
+	});
+
+	it('neemt de sleutels uit het adres over', async () => {
+		metHash('#access_token=abc&refresh_token=def&expires_in=3600');
+		globalThis.fetch = vi.fn(
+			async () => new Response(JSON.stringify({ id: 'u9', email: 'trainer@voorbeeld.nl' }), { status: 200 })
+		) as unknown as typeof fetch;
+		await sync.pakInlogUitLink();
+		expect(sync.sessie?.access_token).toBe('abc');
+		expect(sync.sessie?.email).toBe('trainer@voorbeeld.nl');
+		expect(sync.message).toContain('via de link');
+	});
+
+	/* Het token mag niet in de adresbalk blijven staan. */
+	it('veegt het adres schoon', async () => {
+		metHash('#access_token=abc&refresh_token=def');
+		nepFetch();
+		await sync.pakInlogUitLink();
+		expect(history.replaceState).toHaveBeenCalled();
+	});
+
+	it('logt toch in als het opzoeken van het adres mislukt', async () => {
+		metHash('#access_token=abc&refresh_token=def');
+		nepFetch({ stuk: true });
+		await sync.pakInlogUitLink();
+		expect(sync.sessie?.access_token).toBe('abc');
+	});
+
+	it('vertelt wat er misging als de link niet meer geldig is', async () => {
+		metHash('#error=access_denied&error_description=Email+link+is+invalid+or+has+expired');
+		nepFetch();
+		await sync.pakInlogUitLink();
+		expect(sync.message).toContain('invalid');
+		expect(sync.sessie).toBeNull();
+	});
+});
+
+/*
+ * Een team aanmaken.
+ *
+ * De eerste keer synchroniseren is er nog geen team op de server. Dat moet dan
+ * ontstaan, en precies één keer: twee teams voor dezelfde trainer betekent dat de
+ * ene telefoon de ene helft van het seizoen bijhoudt en de andere de andere.
+ */
+describe('het team op de server', () => {
+	it('neemt een bestaand team over', async () => {
+		const { f } = nepFetch();
+		sync.sessie!.teamId = undefined;
+		await sync.opsturen();
+		expect(sync.sessie!.teamId).toBe('team-1');
+		expect(f.mock.calls.some((c) => String(c[0]).includes('teams?select=id'))).toBe(true);
+	});
+
+	it('maakt er een aan als er nog geen is', async () => {
+		const gemaakt: unknown[] = [];
+		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+			const u = String(url);
+			if (u.includes('teams?select=id')) return new Response('[]', { status: 200 });
+			if (u.includes('/rest/v1/teams')) {
+				gemaakt.push(JSON.parse(String(init?.body)));
+				return new Response(JSON.stringify([{ id: 'nieuw-team' }]), { status: 200 });
+			}
+			return new Response(JSON.stringify({ versie: 2 }), { status: 200 });
+		}) as unknown as typeof fetch;
+
+		app.toestand.teamName = 'JO14-3';
+		sync.sessie!.teamId = undefined;
+		await sync.opsturen();
+		expect(sync.sessie!.teamId).toBe('nieuw-team');
+		expect(gemaakt[0]).toMatchObject({ naam: 'JO14-3', eigenaar: 'u1' });
+	});
+
+	it('vraagt het bij de tweede keer niet opnieuw', async () => {
+		const { f } = nepFetch();
+		await sync.opsturen();
+		await sync.opsturen();
+		expect(f.mock.calls.filter((c) => String(c[0]).includes('teams?select=id'))).toHaveLength(0);
+	});
+});

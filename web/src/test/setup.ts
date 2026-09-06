@@ -28,3 +28,26 @@ Object.defineProperty(globalThis, 'localStorage', {
 		}
 	}
 });
+
+/*
+ * Na elke test het gerenderde component weer opruimen. Zonder dit stapelen de
+ * renders zich op in hetzelfde document en vind je bij de tweede test twee keer
+ * dezelfde knop — een fout die eruitziet als een bug in het component.
+ */
+import { cleanup } from '@testing-library/svelte';
+import { afterEach } from 'vitest';
+
+afterEach(cleanup);
+
+/*
+ * jsdom kent geen ResizeObserver, en Svelte gebruikt die voor bind:clientHeight.
+ * De tabbalk meet zo zijn eigen hoogte. Voor een test is één meting bij het
+ * aanzetten genoeg; de hoogte verandert daarna toch niet.
+ */
+if (!('ResizeObserver' in globalThis)) {
+	(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+}

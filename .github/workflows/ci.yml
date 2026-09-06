@@ -37,8 +37,8 @@ jobs:
       - name: Typen
         run: npm run check
 
-      - name: Tests
-        run: npm test
+      - name: Tests en dekking
+        run: npm run dekking
 
       - name: Bouwen
         run: npm run build
