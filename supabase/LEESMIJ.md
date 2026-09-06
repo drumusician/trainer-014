@@ -4,15 +4,45 @@ Doel: op je laptop voorbereiden, langs de lijn op je telefoon gebruiken, en niet
 
 ## Wat er nu staat
 
-`schema.sql` — twee tabellen en één functie. Draai hem één keer in de SQL editor van je project.
+`schema.sql` — vier tabellen en een handvol functies. Draai hem in de SQL editor
+van je project; hij is te herhalen, dus bij een wijziging plak je hem er gewoon
+opnieuw in.
 
 - `teams` — naam en eigenaar. Meer niet.
 - `team_toestand` — de hele app-toestand als één JSON-document, met een versienummer.
+- `team_leden` — wie er bij een team kan, en met welke rol.
+- `uitnodigingen` — wie er gevraagd is, op e-mailadres.
 - `toestand_opslaan(team_id, data, verwachte_versie)` — opslaan met versiecontrole.
+- `uitnodiging_aannemen()` — een uitnodiging op jouw adres omzetten in lidmaatschap.
+
+Een team is van één iemand. Die eigenaar kan anderen uitnodigen op hun
+e-mailadres; zij mogen daarna alles bijhouden, maar het team niet hernoemen,
+verwijderen of er nog iemand bij zetten. Uitnodigen gaat bewust niet met een
+deelbare code: een code die in een groepsapp rondslingert is een sleutel die je
+niet meer terugkrijgt.
+
+`is_lid()`, `is_eigenaar()` en `is_uitgenodigd()` zijn `security definer`. Dat
+moet: een regel op `team_leden` die zelf `team_leden` bevraagt roept zichzelf aan,
+en Postgres kapt dat af met een recursiefout.
+
+## De regels bewijzen
+
+```
+./supabase/test/draai.sh
+```
+
+Draait de echte `schema.sql` op een verse Postgres en gaat na dat een trainer niet
+bij het team van een ander kan — lezen niet, schrijven niet, en ook niet via een
+uitnodiging die niet voor hem is. Dit draait in CI. De proef is met opzet zeven
+keer gesloopt om te zien of hij bijt; alle zeven werden gevangen. Verander je iets
+aan de regels, doe dat dan ook: maak de regel expres te ruim en kijk of de proef
+omvalt.
 
 Waarom één document en geen tabel per ding: de app bewaart nu al precies dit ene JSON-blok in de browser. Zo is synchroniseren letterlijk opsturen en terughalen. Zodra iemand anders dan de trainer moet meekijken (een assistent, of ouders die een verslag lezen), splitsen we het uit elkaar. Dat is dan een migratie van een uur, geen herbouw.
 
 Het versienummer lost het enige echte probleem op: je zet zaterdagochtend een opstelling klaar op je laptop terwijl je telefoon nog de wedstrijd van vorige week heeft. Zonder versiecontrole wint wie het laatst opslaat en ben je stil je werk kwijt. Nu krijgt de app een foutmelding en kan hij vragen wat je wilt.
+
+Uitrollen, terugrollen en gegevens terughalen staat in [UITROLLEN.md](../UITROLLEN.md).
 
 ## Instellen
 

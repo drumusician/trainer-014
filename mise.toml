@@ -19,9 +19,18 @@ dir = "web"
 run = "npm run preview -- --port 4173"
 
 [tasks.test]
-description = "De rekenkern testen: speeltijd, seizoen, verslag, overzetten"
+description = "Alle tests: de rekenkern en elk scherm"
 dir = "web"
 run = "npm run test"
+
+[tasks.controle]
+description = "Het hele hek: opmaak, lint, typen, tests en de dekkingsdrempel"
+dir = "web"
+run = "npm run controle"
+
+[tasks.scheiding]
+description = "Bewijzen dat trainers niet bij elkaars team kunnen (echte Postgres)"
+run = "./supabase/test/draai.sh"
 
 [tasks.check]
 description = "Types en Svelte-code nakijken"

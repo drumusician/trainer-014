@@ -2,16 +2,34 @@
 
 De wedstrijdapp. SvelteKit met TypeScript, gebouwd naar statische bestanden: geen server, werkt zonder bereik, staat meteen op het scherm.
 
+Uitrollen, terugrollen en gegevens terughalen staat in [UITROLLEN.md](../UITROLLEN.md).
+
 ## Draaien
 
 Vanaf de repo-root:
 
 ```
 mise run dev      # http://localhost:5173
-mise run test     # de rekenkern
+mise run test     # alle tests
 mise run check    # types en Svelte-code
 mise run build    # naar web/build
 mise run preview  # de gebouwde versie op http://localhost:4173
+```
+
+Het hele hek in één keer, vanuit `web/`:
+
+```
+npm run controle  # opmaak, lint, typen, tests én de dekkingsdrempel
+```
+
+Dat is precies wat Netlify draait voordat er iets live gaat. De drempel staat in
+`vitest.config.ts` en ligt net onder waar we nu staan: één regel zonder test keurt
+niets af, een heel scherm zonder test wel.
+
+De regels van de database worden apart bewezen, op een echte Postgres:
+
+```
+./supabase/test/draai.sh
 ```
 
 ## Waar wat staat
@@ -35,13 +53,21 @@ bewaren uitgerekend en die zou dan niet meer kloppen.
 ## Hoe het in elkaar zit
 
 ```
-src/lib/domein/     de rekenkern: pure functies, geen Svelte, wel tests
+src/lib/domain/     de rekenkern: pure functies, geen Svelte, wel tests
+src/lib/actions/    wat een handeling met de toestand doet: klok, wissels, archief
+src/lib/text/nl.ts  alle vaste tekst op het scherm, op één plek
 src/lib/            toestand (runes), synchronisatie met Supabase, wat er in de kopbalk staat
-src/lib/componenten veld, bank, speeltijdtabel, verloop, verslag
+src/lib/components/ veld, bank, speeltijdtabel, verloop, verslag
 src/routes/         één map per scherm
+src/test/           de opzet voor de tests: opslag, stand-ins voor SvelteKit
 ```
 
-`domein/` weet niets van schermen. Daar zit alles wat fout kán gaan: speeltijd
+De code is Engels, de tekst op het scherm is Nederlands. Waarom en met welke
+woorden staat in `src/lib/domain/GLOSSARY.md`. Elke zin die een trainer te zien
+krijgt staat in `src/lib/text/nl.ts`, zodat er geen Engels tussen kan glippen —
+en er is een test die daarop let.
+
+`domain/` weet niets van schermen. Daar zit alles wat fout kán gaan: speeltijd
 terugrekenen uit de wissels, keeperminuten apart houden, seizoenstotalen, het
 verslag, de overzetcode. Dat is getest, en die tests draaien in seconden.
 
@@ -53,7 +79,7 @@ scherm bookmarken. Wat er in de balk bovenaan staat, zet elk scherm zelf via
 
 11 tegen 11, 8 tegen 8, 6 tegen 6 en 4 tegen 4 (zonder keeper). De app rekent
 nergens met een vast aantal spelers: hoeveel er op het veld staan volgt uit de
-lijst plekken in `domein/formaties.ts`. Een nieuwe formatie toevoegen is dus een
+lijst plekken in `domain/formations.ts`. Een nieuwe formatie toevoegen is dus een
 regel in dat bestand, verder niets.
 
 De notatie volgt wat trainers zeggen: bij 11 tegen 11 zonder keeper (4-3-3), in
@@ -113,7 +139,7 @@ beschikbare hoogte × 0,625)`. Daardoor past het op elk scherm in één beeld en
 hoef je tijdens een wedstrijd nergens te scrollen. De namen schalen mee met
 container queries, met een onder- en bovengrens.
 
-De x-posities in `domein/formaties.ts` staan zo ver uit elkaar dat de
+De x-posities in `domain/formations.ts` staan zo ver uit elkaar dat de
 naambolletjes elkaar niet raken, ook niet op een iPhone SE. Verander je die, kijk
 dan of vier verdedigers naast elkaar nog passen.
 
