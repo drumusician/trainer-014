@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { mmss, verstreken } from '$lib/domein/tijd';
-	import { deelNaam, pauzeNaam } from '$lib/domein/delen';
-	import { datumKort } from '$lib/domein/datum';
+	import { mmss, elapsed } from '$lib/domein/tijd';
+	import { partName, breakName } from '$lib/domein/delen';
+	import { shortDate } from '$lib/domein/datum';
 	import { seizoenStand } from '$lib/domein/seizoen';
-	import { SPEELVORMEN } from '$lib/domein/formaties';
+	import { FORMATS } from '$lib/domein/formaties';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 
@@ -13,7 +13,7 @@
 	const t = $derived(app.toestand);
 	const w = $derived(app.wedstrijd);
 	const staatKlaar = $derived(!!w && !w.afgelopen && Object.values(w.opstelling).some(Boolean));
-	const bezig = $derived(staatKlaar && app.gestart);
+	const bezig = $derived(staatKlaar && app.kickedOff);
 	const opgezet = $derived(!!w && !w.afgelopen && !Object.values(w.opstelling).some(Boolean));
 	const teBewaren = $derived(!!w && w.afgelopen && !w.bewaard);
 	const loopt = $derived(staatKlaar || opgezet || teBewaren);
@@ -25,7 +25,7 @@
 			goto('/app/opzetten');
 			return;
 		}
-		app.nieuweWedstrijd('', true);
+		app.newMatch('', true);
 		goto('/app/aanwezig');
 	}
 </script>
@@ -49,8 +49,8 @@
 						{w!.thuis ? t.teamnaam + ' – ' + w!.tegenstander : w!.tegenstander + ' – ' + t.teamnaam}
 					</div>
 					<div class="erbij">
-						{mmss(verstreken(w, app.nu))} ·
-						{w!.pauze ? pauzeNaam(w!.deel, w!.delen).toLowerCase() : deelNaam(w!.deel, w!.delen)} ·
+						{mmss(elapsed(w, app.nu))} ·
+						{w!.pauze ? breakName(w!.deel, w!.delen).toLowerCase() : partName(w!.deel, w!.delen)} ·
 						{w!.loopt ? 'klok loopt' : 'klok staat stil'}
 					</div>
 				</a>
@@ -98,7 +98,7 @@
 										' weggooien?\n\nWat je in het archief bewaarde blijft staan.'
 								)
 							)
-								app.gooiWedstrijdWeg();
+								app.discardMatch();
 						}}>Weggooien</button
 					>
 				</div>
@@ -107,8 +107,8 @@
 				<div class="tweekolom">
 					<label class="vak">
 						Formatie
-						<select value={t.formatie} onchange={(e) => app.kiesFormatie(e.currentTarget.value)}>
-							{#each SPEELVORMEN as vorm (vorm.naam)}
+						<select value={t.formatie} onchange={(e) => app.chooseFormation(e.currentTarget.value)}>
+							{#each FORMATS as vorm (vorm.naam)}
 								<optgroup label={vorm.naam + (vorm.uitleg ? ' · ' + vorm.uitleg : '')}>
 									{#each vorm.formaties as f (f.sleutel)}
 										<option value={f.sleutel}>{f.sleutel}{f.uitleg ? ' · ' + f.uitleg : ''}</option>
@@ -119,7 +119,7 @@
 					</label>
 					<label class="vak">
 						Speelwijze
-						<select bind:value={t.delen} onchange={() => app.bewaar()}>
+						<select bind:value={t.delen} onchange={() => app.save()}>
 							<option value={2}>2 helften</option>
 							<option value={4}>4 kwarten</option>
 						</select>
@@ -128,7 +128,7 @@
 				<div class="tweekolom">
 					<label class="vak">
 						Minuten per {t.delen === 4 ? 'kwart' : 'helft'}
-						<input type="number" inputmode="numeric" bind:value={t.helftMinuten} onchange={() => app.bewaar()} />
+						<input type="number" inputmode="numeric" bind:value={t.helftMinuten} onchange={() => app.save()} />
 					</label>
 					<label class="vak">
 						Speelduur
@@ -157,7 +157,7 @@
 					{#each t.archief as a, i (a)}
 						<li class="klikbaar">
 							<a href="/app/archief/{i}">
-								<b>{datumKort(a.datum)}</b>
+								<b>{shortDate(a.datum)}</b>
 								<span>{a.thuis !== false ? 'thuis' : 'uit'} tegen {a.tegenstander}</span>
 								<span style="flex: none; font-weight: 700; font-variant-numeric: tabular-nums">
 									{a.stand?.[0] ?? 0}–{a.stand?.[1] ?? 0}

@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { makers, seizoenStand, seizoenTotalen, topscorers } from './seizoen';
-import type { ArchiefWedstrijd, Speler } from './types';
+import { makers, seizoenStand, seasonTotals, topscorers } from './seizoen';
+import type { ArchivedMatch, Player } from './types';
 
-const spelers: Speler[] = [
+const spelers: Player[] = [
 	{ id: 'p1', naam: 'Aad', linie: 'A' },
 	{ id: 'p2', naam: 'Bram', linie: 'V' }
 ];
 
-const archief: ArchiefWedstrijd[] = [
+const archief: ArchivedMatch[] = [
 	{
 		datum: '2026-09-05',
 		tegenstander: 'Ajax',
@@ -48,7 +48,7 @@ describe('seizoen', () => {
 	});
 
 	it('telt speeltijd op en houdt keeperminuten apart', () => {
-		const rijen = seizoenTotalen(archief, spelers);
+		const rijen = seasonTotals(archief, spelers);
 		const aad = rijen.find((r) => r.naam === 'Aad')!;
 		expect(aad.seconden).toBe(4200);
 		expect(aad.keeper).toBe(2100);
@@ -56,8 +56,8 @@ describe('seizoen', () => {
 	});
 
 	it('houdt iemand die hernoemd is als één speler', () => {
-		const hernoemd: Speler[] = [{ ...spelers[0], naam: 'Aad de Jong' }, spelers[1]];
-		const rijen = seizoenTotalen(archief, hernoemd);
+		const hernoemd: Player[] = [{ ...spelers[0], naam: 'Aad de Jong' }, spelers[1]];
+		const rijen = seasonTotals(archief, hernoemd);
 		expect(rijen.filter((r) => r.naam.startsWith('Aad'))).toHaveLength(1);
 		expect(rijen.find((r) => r.naam === 'Aad de Jong')!.seconden).toBe(4200);
 	});
@@ -71,7 +71,7 @@ describe('seizoen', () => {
 	});
 
 	it('zet de topscorer bovenaan en laat onbekende makers weg', () => {
-		const t = topscorers(seizoenTotalen(archief, spelers));
+		const t = topscorers(seasonTotals(archief, spelers));
 		/* gelijk aantal doelpunten: dan telt de speeltijd, en Bram speelde meer */
 		expect(t.map((r) => r.naam)).toEqual(['Bram', 'Aad']);
 		expect(t.reduce((a, r) => a + r.doelpunten, 0)).toBe(2); /* van de 3 doelpunten */

@@ -3,22 +3,22 @@
 	import Speeltijd from '$lib/componenten/Speeltijd.svelte';
 	import Verloop from '$lib/componenten/Verloop.svelte';
 	import Verslag from '$lib/componenten/Verslag.svelte';
-	import { eindTijd, mmss, positieTekst, positietijden, speeltijden, stand } from '$lib/domein/tijd';
+	import { endTime, mmss, positionText, positionTimes, playingTimes, score } from '$lib/domein/tijd';
 	import { bronVanWedstrijd } from '$lib/domein/verslag';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 	import { datumMetJaar } from '$lib/domein/datum';
 
 	const w = $derived(app.wedstrijd);
-	const tijden = $derived(speeltijden(w, app.toestand.spelers, app.nu));
-	const posities = $derived(positietijden(w, app.nu));
+	const tijden = $derived(playingTimes(w, app.toestand.spelers, app.nu));
+	const posities = $derived(positionTimes(w, app.nu));
 
 	/* Geen terugknop maar een uitgang: terug het afgelopen wedstrijdscherm in
 	   heeft niemand wat aan. */
 	$effect(() => zetKop('Uitslag', '/app', 'Naar start', null, true));
 
 	function bewaren() {
-		if (app.bewaarInArchief()) goto('/app');
+		if (app.archiveMatch()) goto('/app');
 	}
 </script>
 
@@ -27,14 +27,14 @@
 		{#if !w}
 			<p class="uitleg">Nog geen wedstrijd.</p>
 		{:else}
-			{@const [v, t] = stand(w)}
+			{@const [v, t] = score(w)}
 			<h2>Uitslag</h2>
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
 				{w.thuis ? app.toestand.teamnaam : w.tegenstander}
 				{v} – {t}
 				{w.thuis ? w.tegenstander : app.toestand.teamnaam}
 			</p>
-			<p class="uitleg">{datumMetJaar(w.datum)} · {mmss(eindTijd(w))} gespeeld · {w.formatie}</p>
+			<p class="uitleg">{datumMetJaar(w.datum)} · {mmss(endTime(w))} gespeeld · {w.formatie}</p>
 
 			<h2>Speeltijd</h2>
 			<Speeltijd
@@ -43,7 +43,7 @@
 					.map((p) => ({
 						naam: p.naam,
 						seconden: tijden[p.id] ?? 0,
-						sub: positieTekst(posities[p.id], w!.formatie)
+						sub: positionText(posities[p.id], w!.formatie)
 					}))}
 			/>
 
@@ -55,7 +55,7 @@
 			<textarea
 				value={w.notitie ?? ''}
 				placeholder="Sterk begin, na rust wegge&#10;zakt. Achterin stond het goed."
-				oninput={(e) => app.zetNotitie(e.currentTarget.value)}></textarea>
+				oninput={(e) => app.setNote(e.currentTarget.value)}></textarea>
 
 			<h2>Delen</h2>
 			<p class="uitleg">Voor de groepsapp. De wissels laat ik er standaard uit.</p>

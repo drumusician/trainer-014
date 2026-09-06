@@ -36,7 +36,7 @@ self.addEventListener('fetch', (event) => {
 	e.respondWith(
 		(async () => {
 			const cache = await caches.open(CACHE);
-			const uitCache = await cache.match(e.request);
+			const uitCache = await cache.wedstrijd(e.request);
 			if (uitCache && BESTANDEN.includes(url.pathname)) return uitCache;
 
 			try {
@@ -48,9 +48,9 @@ self.addEventListener('fetch', (event) => {
 				   want dat is sinds het voorrenderen de landingspagina; wie langs de
 				   lijn offline een diep adres opent wil de app zien. */
 				return (
-					(await cache.match(e.request)) ??
-					(await cache.match('/app')) ??
-					(await cache.match('/200.html')) ??
+					(await cache.wedstrijd(e.request)) ??
+					(await cache.wedstrijd('/app')) ??
+					(await cache.wedstrijd('/200.html')) ??
 					Response.error()
 				);
 			}

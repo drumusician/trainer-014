@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { app } from './toestand.svelte';
-import { legeToestand } from './domein/types';
-import { problemen, wisProblemen } from './problemen.svelte';
-import { speeltijden, verstreken } from './domein/tijd';
+import { emptyState } from './domein/types';
+import { issues, clearIssues } from './problemen.svelte';
+import { playingTimes, elapsed } from './domein/tijd';
 
 beforeEach(() => {
 	localStorage.clear();
-	app.toestand = legeToestand();
+	app.toestand = emptyState();
 	app.toestand.spelers = [
 		{ id: 'p1', naam: 'Daanish', linie: 'M' },
 		{ id: 'p2', naam: 'Gijs', linie: '', keept: true }
@@ -18,66 +18,66 @@ describe('trainingen', () => {
 	   staat een proxy. indexOf() vond hem dus niet en je landde op een leeg
 	   scherm. Sindsdien zoeken we op id. */
 	it('geeft een nieuwe training terug die je meteen kunt opzoeken', () => {
-		const t = app.nieuweTraining();
+		const t = app.newTraining();
 		expect(t.id).toBeTruthy();
-		expect(app.trainingMetId(t.id)).toBeDefined();
-		expect(app.trainingMetId(t.id)!.datum).toBe(t.datum);
+		expect(app.trainingById(t.id)).toBeDefined();
+		expect(app.trainingById(t.id)!.datum).toBe(t.datum);
 	});
 
 	it('zet iedereen op aanwezig en laat je langs de standen tikken', () => {
-		const t = app.trainingMetId(app.nieuweTraining().id)!;
+		const t = app.trainingById(app.newTraining().id)!;
 		expect(t.status.p1).toBe('ja');
-		app.tikPresentie(t, 'p1');
-		expect(app.trainingMetId(t.id)!.status.p1).toBe('af');
-		app.tikPresentie(t, 'p1');
-		expect(app.trainingMetId(t.id)!.status.p1).toBe('nee');
-		app.tikPresentie(t, 'p1');
-		expect(app.trainingMetId(t.id)!.status.p1).toBe('ja');
+		app.cycleAttendance(t, 'p1');
+		expect(app.trainingById(t.id)!.status.p1).toBe('af');
+		app.cycleAttendance(t, 'p1');
+		expect(app.trainingById(t.id)!.status.p1).toBe('nee');
+		app.cycleAttendance(t, 'p1');
+		expect(app.trainingById(t.id)!.status.p1).toBe('ja');
 	});
 
 	it('houdt het adres kloppend als een datum de volgorde omgooit', () => {
-		const eerste = app.nieuweTraining();
-		const tweede = app.nieuweTraining();
-		app.zetTrainingDatum(app.trainingMetId(tweede.id)!, '2020-01-01');
+		const eerste = app.newTraining();
+		const tweede = app.newTraining();
+		app.setTrainingDate(app.trainingById(tweede.id)!, '2020-01-01');
 		expect(app.toestand.trainingen[1].id).toBe(tweede.id); /* naar achteren gesorteerd */
-		expect(app.trainingMetId(eerste.id)).toBeDefined();
-		expect(app.trainingMetId(tweede.id)!.datum).toBe('2020-01-01');
+		expect(app.trainingById(eerste.id)).toBeDefined();
+		expect(app.trainingById(tweede.id)!.datum).toBe('2020-01-01');
 	});
 
 	it('verwijdert alleen de training die je aanwijst', () => {
-		const eerste = app.nieuweTraining();
-		const tweede = app.nieuweTraining();
-		app.verwijderTraining(app.trainingMetId(eerste.id)!);
-		expect(app.trainingMetId(eerste.id)).toBeUndefined();
-		expect(app.trainingMetId(tweede.id)).toBeDefined();
+		const eerste = app.newTraining();
+		const tweede = app.newTraining();
+		app.removeTraining(app.trainingById(eerste.id)!);
+		expect(app.trainingById(eerste.id)).toBeUndefined();
+		expect(app.trainingById(tweede.id)).toBeDefined();
 	});
 
 	it('geeft oude trainingen zonder id er alsnog een bij het laden', () => {
 		localStorage.setItem(
 			'o14-app-v1',
 			JSON.stringify({
-				...legeToestand(),
+				...emptyState(),
 				spelers: app.toestand.spelers,
 				trainingen: [{ datum: '2026-09-02', status: {} }]
 			})
 		);
-		app.laad();
+		app.load();
 		expect(app.toestand.trainingen[0].id).toBeTruthy();
 	});
 });
 
 describe('wie is er vandaag', () => {
 	it('haalt een afwezige uit veld en bank, en zet hem daarna op de bank', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
-		app.herzetBank();
+		app.rebuildBench();
 		expect(app.toestand.wedstrijd!.bank).toEqual([]);
 
-		app.zetAfwezig('p2', true);
+		app.setAbsent('p2', true);
 		expect(app.toestand.wedstrijd!.opstelling.K).toBeNull();
 		expect(app.toestand.wedstrijd!.bank).not.toContain('p2');
 
-		app.zetAfwezig('p2', false);
+		app.setAbsent('p2', false);
 		expect(app.toestand.wedstrijd!.bank).toContain('p2');
 	});
 
@@ -85,24 +85,24 @@ describe('wie is er vandaag', () => {
 	   dus wie je daar tijdens de wedstrijd uithaalt heeft volgens die berekening
 	   nooit gespeeld. Een hele wedstrijd werd stilletjes nul minuten. */
 	it('laat het veld met rust zodra de wedstrijd loopt', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
-		app.herzetBank();
+		app.rebuildBench();
 		app.toestand.wedstrijd!.gebeurtenissen = [{ type: 'start', t: 0 }];
 
-		app.zetAfwezig('p2', true);
+		app.setAbsent('p2', true);
 		expect(app.toestand.wedstrijd!.opstelling.K).toBe('p2');
 		expect(app.toestand.wedstrijd!.afwezig ?? []).not.toContain('p2');
 	});
 
 	it('laat wie op de bank zit ook na de aftrap afmelden', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p2' };
-		app.herzetBank();
+		app.rebuildBench();
 		app.toestand.wedstrijd!.gebeurtenissen = [{ type: 'start', t: 0 }];
 		expect(app.toestand.wedstrijd!.bank).toContain('p1');
 
-		app.zetAfwezig('p1', true);
+		app.setAbsent('p1', true);
 		expect(app.toestand.wedstrijd!.bank).not.toContain('p1');
 		expect(app.toestand.wedstrijd!.afwezig).toContain('p1');
 	});
@@ -110,11 +110,11 @@ describe('wie is er vandaag', () => {
 
 describe('de klok', () => {
 	it('schuift met minuten maar nooit onder nul', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.verstreken = 100;
-		app.verschuifKlok(60);
+		app.shiftClock(60);
 		expect(app.toestand.wedstrijd!.verstreken).toBe(160);
-		app.verschuifKlok(-600);
+		app.shiftClock(-600);
 		expect(app.toestand.wedstrijd!.verstreken).toBe(0);
 	});
 });
@@ -144,31 +144,31 @@ describe('een bewaarde wedstrijd bijwerken', () => {
 
 	it('verbetert de naam van de tegenstander', () => {
 		metArchief();
-		app.wijzigArchief(0, { tegenstander: 'Ajax', thuis: false });
+		app.updateArchived(0, { tegenstander: 'Ajax', thuis: false });
 		expect(app.toestand.archief[0].tegenstander).toBe('Ajax');
 		expect(app.toestand.archief[0].thuis).toBe(false);
 	});
 
 	it('haalt een doelpunt weg en telt de stand opnieuw', () => {
 		metArchief();
-		app.verwijderDoelpunt(0, 1);
+		app.removeGoal(0, 1);
 		expect(app.toestand.archief[0].stand).toEqual([0, 1]);
 		expect(app.toestand.archief[0].gebeurtenissen).toHaveLength(4);
 	});
 
 	it('laat wissels met rust, want daar hangt de speeltijd aan', () => {
 		metArchief();
-		app.verwijderDoelpunt(0, 2); /* de wissel */
+		app.removeGoal(0, 2); /* de wissel */
 		expect(app.toestand.archief[0].gebeurtenissen).toHaveLength(5);
 	});
 
 	it('zet een vergeten doelpunt op de goede plek in het verloop', () => {
 		metArchief();
-		app.voegDoelpuntToe(0, 20, 'p2');
+		app.addGoal(0, 20, 'p2');
 		const g = app.toestand.archief[0].gebeurtenissen;
 		expect(g.map((x) => x.t)).toEqual([0, 900, 1200, 1200, 1800, 4200]);
 		expect(app.toestand.archief[0].stand).toEqual([2, 1]);
-		app.voegDoelpuntToe(0, 55, null, true);
+		app.addGoal(0, 55, null, true);
 		expect(app.toestand.archief[0].stand).toEqual([2, 2]);
 	});
 });
@@ -183,41 +183,41 @@ describe('schuiven in de opstelling', () => {
 	});
 
 	it('wisselt twee spelers van plek', () => {
-		app.ruilPlekken('standaard', 'K', 'SP');
+		app.swapPositions('standaard', 'K', 'SP');
 		expect(app.toestand.standaard!.opstelling).toMatchObject({ K: 'p1', SP: 'p2' });
 	});
 
 	it('verhuist iemand naar een lege plek', () => {
-		app.ruilPlekken('standaard', 'SP', 'LV');
+		app.swapPositions('standaard', 'SP', 'LV');
 		expect(app.toestand.standaard!.opstelling.SP).toBeNull();
 		expect(app.toestand.standaard!.opstelling.LV).toBe('p1');
 	});
 
 	it('doet niets als je twee lege plekken ruilt', () => {
 		app.toestand.standaard!.opstelling = { LV: null, RV: null };
-		app.ruilPlekken('standaard', 'LV', 'RV');
+		app.swapPositions('standaard', 'LV', 'RV');
 		expect(app.toestand.standaard!.opstelling).toMatchObject({ LV: null, RV: null });
 	});
 
 	it('haalt iemand van het veld naar de bank en laat de plek leeg', () => {
-		app.haalVanVeld('standaard', 'SP');
+		app.takeOffPitch('standaard', 'SP');
 		expect(app.toestand.standaard!.opstelling.SP).toBeNull();
 		expect(app.toestand.standaard!.bank).toContain('p1');
 	});
 
 	it('zet niemand dubbel op de bank', () => {
 		app.toestand.standaard!.bank = ['p1'];
-		app.haalVanVeld('standaard', 'SP');
+		app.takeOffPitch('standaard', 'SP');
 		expect(app.toestand.standaard!.bank.filter((id) => id === 'p1')).toHaveLength(1);
 	});
 });
 
 describe('ruilen tijdens de wedstrijd', () => {
 	it('legt de ruil vast in het verloop', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
 		app.toestand.wedstrijd!.gebeurtenissen = [{ type: 'start', t: 0 }];
-		app.ruilInWedstrijd('K', 'SP');
+		app.swapDuringMatch('K', 'SP');
 		const w = app.toestand.wedstrijd!;
 		expect(w.opstelling).toMatchObject({ K: 'p1', SP: 'p2' });
 		expect(w.gebeurtenissen.at(-1)).toMatchObject({ type: 'ruil', plekA: 'K', plekB: 'SP' });
@@ -226,37 +226,37 @@ describe('ruilen tijdens de wedstrijd', () => {
 
 describe('klaarstaan of bezig', () => {
 	it('is pas begonnen als de klok gelopen heeft', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
-		expect(app.gestart).toBe(false);
-		app.loopToggle();
-		expect(app.gestart).toBe(true);
+		expect(app.kickedOff).toBe(false);
+		app.toggleRunning();
+		expect(app.kickedOff).toBe(true);
 	});
 
 	it('legt een ruil voor de aftrap niet vast als gebeurtenis', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
-		app.ruilInWedstrijd('K', 'SP');
+		app.swapDuringMatch('K', 'SP');
 		expect(app.toestand.wedstrijd!.gebeurtenissen).toHaveLength(0);
 		expect(app.toestand.wedstrijd!.opstelling).toMatchObject({ K: 'p1', SP: 'p2' });
 	});
 
 	it('legt een ruil ná de aftrap wel vast', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
-		app.loopToggle();
-		app.ruilInWedstrijd('K', 'SP');
+		app.toggleRunning();
+		app.swapDuringMatch('K', 'SP');
 		expect(app.toestand.wedstrijd!.gebeurtenissen.at(-1)).toMatchObject({ type: 'ruil' });
 	});
 });
 
 describe('wie er die dag was, bewaren', () => {
 	it('legt de afwezigen vast bij de wedstrijd', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p1' };
-		app.zetAfwezig('p2', true);
-		app.beeindig();
-		app.bewaarInArchief();
+		app.setAbsent('p2', true);
+		app.finish();
+		app.archiveMatch();
 		const a = app.toestand.archief[0];
 		expect(a.afwezig).toEqual(['p2']);
 		/* nul minuten betekent nu iets anders voor wie er wel was */
@@ -264,10 +264,10 @@ describe('wie er die dag was, bewaren', () => {
 	});
 
 	it('bewaart een lege lijst als iedereen er was', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p1' };
-		app.beeindig();
-		app.bewaarInArchief();
+		app.finish();
+		app.archiveMatch();
 		expect(app.toestand.archief[0].afwezig).toEqual([]);
 	});
 });
@@ -275,7 +275,7 @@ describe('wie er die dag was, bewaren', () => {
 describe('kwarten spelen', () => {
 	function metKwarten() {
 		app.toestand.delen = 4;
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p1' };
 		return app.toestand.wedstrijd!;
 	}
@@ -286,44 +286,44 @@ describe('kwarten spelen', () => {
 
 	it('loopt door vier kwarten met een pauze ertussen', () => {
 		const w = metKwarten();
-		app.loopToggle();
+		app.toggleRunning();
 		expect(w.deel).toBe(1);
 
-		app.deelToggle(); /* einde 1e kwart */
+		app.togglePart(); /* einde 1e kwart */
 		expect(w.pauze).toBe(true);
 		expect(w.loopt).toBe(false);
 		expect(w.gebeurtenissen.at(-1)).toMatchObject({ type: 'rust', deel: 1 });
 
-		app.deelToggle(); /* 2e kwart begint */
+		app.togglePart(); /* 2e kwart begint */
 		expect(w.deel).toBe(2);
 		expect(w.pauze).toBe(false);
 		expect(w.loopt).toBe(true);
 
-		app.deelToggle();
-		app.deelToggle();
-		app.deelToggle();
-		app.deelToggle();
+		app.togglePart();
+		app.togglePart();
+		app.togglePart();
+		app.togglePart();
 		expect(w.deel).toBe(4);
-		expect(app.magVolgendDeel).toBe(false); /* na het laatste kwart houdt het op */
+		expect(app.canStartNextPart).toBe(false); /* na het laatste kwart houdt het op */
 	});
 
 	it('houdt twee helften gewoon zoals het was', () => {
 		app.toestand.delen = 2;
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		const w = app.toestand.wedstrijd!;
-		app.loopToggle();
-		app.deelToggle();
+		app.toggleRunning();
+		app.togglePart();
 		expect(w.pauze).toBe(true);
-		app.deelToggle();
+		app.togglePart();
 		expect(w.deel).toBe(2);
-		expect(app.magVolgendDeel).toBe(false);
+		expect(app.canStartNextPart).toBe(false);
 	});
 
 	it('bewaart de speelwijze en de notitie in het archief', () => {
 		metKwarten();
-		app.zetNotitie('Sterk begin, na rust weggezakt.');
-		app.beeindig();
-		app.bewaarInArchief();
+		app.setNote('Sterk begin, na rust weggezakt.');
+		app.finish();
+		app.archiveMatch();
 		expect(app.toestand.archief[0].delen).toBe(4);
 		expect(app.toestand.archief[0].notitie).toBe('Sterk begin, na rust weggezakt.');
 	});
@@ -332,7 +332,7 @@ describe('kwarten spelen', () => {
 		localStorage.setItem(
 			'o14-app-v1',
 			JSON.stringify({
-				...legeToestand(),
+				...emptyState(),
 				spelers: app.toestand.spelers,
 				wedstrijd: {
 					datum: '2026-09-06',
@@ -350,7 +350,7 @@ describe('kwarten spelen', () => {
 				}
 			})
 		);
-		app.laad();
+		app.load();
 		expect(app.toestand.wedstrijd).toMatchObject({ delen: 2, deel: 2, pauze: false });
 	});
 });
@@ -384,7 +384,7 @@ describe('van formatie wisselen met een standaardopstelling', () => {
 	});
 
 	it('neemt de opstelling mee naar de nieuwe formatie', () => {
-		app.zetStandaardInFormatie('4-4-2');
+		app.moveDefaultToFormation('4-4-2');
 		const st = app.toestand.standaard!;
 		expect(st.formatie).toBe('4-4-2');
 		expect(st.opstelling.K).toBe('pa');
@@ -394,7 +394,7 @@ describe('van formatie wisselen met een standaardopstelling', () => {
 	});
 
 	it('raakt niemand kwijt', () => {
-		app.zetStandaardInFormatie('1-3-3-1');
+		app.moveDefaultToFormation('1-3-3-1');
 		const st = app.toestand.standaard!;
 		const inVeld = Object.values(st.opstelling).filter(Boolean) as string[];
 		expect(new Set([...inVeld, ...st.bank]).size).toBe(12);
@@ -402,13 +402,13 @@ describe('van formatie wisselen met een standaardopstelling', () => {
 
 	it('doet niets als de formatie al klopt', () => {
 		const voor = JSON.stringify(app.toestand.standaard);
-		app.zetStandaardInFormatie('4-3-3');
+		app.moveDefaultToFormation('4-3-3');
 		expect(JSON.stringify(app.toestand.standaard)).toBe(voor);
 	});
 
 	it('zet hem ook om als je het standaardscherm opent', () => {
 		app.toestand.formatie = '4-4-2 ruit';
-		app.zorgVoorStandaard();
+		app.ensureDefaultLineup();
 		expect(app.toestand.standaard!.formatie).toBe('4-4-2 ruit');
 	});
 });
@@ -421,7 +421,7 @@ describe('één formatie voor het team', () => {
 			opstelling: { K: 'p1', SP: 'p2' },
 			bank: []
 		};
-		app.kiesFormatie('4-4-2 ruit');
+		app.chooseFormation('4-4-2 ruit');
 		expect(app.toestand.formatie).toBe('4-4-2 ruit');
 		expect(app.toestand.standaard!.formatie).toBe('4-4-2 ruit');
 		expect(app.toestand.standaard!.opstelling.K).toBe('p1');
@@ -429,44 +429,44 @@ describe('één formatie voor het team', () => {
 
 	it('negeert een formatie die niet bestaat', () => {
 		app.toestand.formatie = '4-3-3';
-		app.kiesFormatie('bestaat-niet');
+		app.chooseFormation('bestaat-niet');
 		expect(app.toestand.formatie).toBe('4-3-3');
 	});
 
 	it('werkt ook zonder standaardopstelling', () => {
 		app.toestand.standaard = null;
-		app.kiesFormatie('1-2-2-1');
+		app.chooseFormation('1-2-2-1');
 		expect(app.toestand.formatie).toBe('1-2-2-1');
 	});
 });
 
 describe('de naam van je team', () => {
 	it('begint neutraal en niet met het team van de maker', () => {
-		expect(legeToestand().teamnaam).toBe('Ons team');
+		expect(emptyState().teamnaam).toBe('Ons team');
 	});
 
 	it('onthoudt wat je invult, en weigert leeg', () => {
-		app.zetTeamnaam('JO11-2');
+		app.setTeamName('JO11-2');
 		expect(app.toestand.teamnaam).toBe('JO11-2');
-		app.zetTeamnaam('   ');
+		app.setTeamName('   ');
 		expect(app.toestand.teamnaam).toBe('Ons team');
 	});
 
 	it('bewaart de naam bij de wedstrijd, zodat een hernoeming het archief niet omschrijft', () => {
-		app.zetTeamnaam('JO11-2');
-		app.nieuweWedstrijd('Sparta', true);
+		app.setTeamName('JO11-2');
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p1' };
-		app.beeindig();
-		app.bewaarInArchief();
-		app.zetTeamnaam('JO12-1');
+		app.finish();
+		app.archiveMatch();
+		app.setTeamName('JO12-1');
 		expect(app.toestand.archief[0].teamnaam).toBe('JO11-2');
 	});
 
 	it('geeft oude opslag zonder teamnaam er alsnog een', () => {
-		const oud = { ...legeToestand(), spelers: app.toestand.spelers } as Record<string, unknown>;
+		const oud = { ...emptyState(), spelers: app.toestand.spelers } as Record<string, unknown>;
 		delete oud.teamnaam;
 		localStorage.setItem('o14-app-v1', JSON.stringify(oud));
-		app.laad();
+		app.load();
 		expect(app.toestand.teamnaam).toBe('Ons team');
 	});
 });
@@ -474,17 +474,17 @@ describe('de naam van je team', () => {
 describe('wat er tussen je toestellen heen en weer gaat', () => {
 	/* Dit ontbrak: je zette thuis de opstelling klaar en op je telefoon stond niets. */
 	it('neemt een wedstrijd die klaarstaat mee', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
-		app.zetAfwezig('p1', true);
+		app.setAbsent('p1', true);
 
-		const pakket = JSON.parse(JSON.stringify(app.syncPakket()));
-		app.toestand = legeToestand();
+		const pakket = JSON.parse(JSON.stringify(app.syncPayload()));
+		app.toestand = emptyState();
 		app.toestand.spelers = [
 			{ id: 'p1', naam: 'Daanish', linie: 'M' },
 			{ id: 'p2', naam: 'Gijs', linie: '', keept: true }
 		];
-		expect(app.neemSyncOver(pakket)).toBe(true);
+		expect(app.adoptSyncPayload(pakket)).toBe(true);
 		expect(app.wedstrijd?.tegenstander).toBe('Sparta');
 		expect(app.wedstrijd?.opstelling.K).toBe('p2');
 		expect(app.wedstrijd?.afwezig).toContain('p1');
@@ -492,23 +492,23 @@ describe('wat er tussen je toestellen heen en weer gaat', () => {
 
 	/* Een opstelling maak je opnieuw, wissels zijn weg. Dus: nooit overschrijven. */
 	it('laat een wedstrijd die hier loopt met rust', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p2' };
 		app.toestand.wedstrijd!.gebeurtenissen = [{ type: 'start', t: 0 }];
 
-		const vanElders = { ...app.syncPakket(), wedstrijd: null };
-		expect(app.neemSyncOver(JSON.parse(JSON.stringify(vanElders)))).toBe(true);
+		const vanElders = { ...app.syncPayload(), wedstrijd: null };
+		expect(app.adoptSyncPayload(JSON.parse(JSON.stringify(vanElders)))).toBe(true);
 		expect(app.wedstrijd?.tegenstander).toBe('Sparta');
-		expect(app.gestart).toBe(true);
+		expect(app.kickedOff).toBe(true);
 	});
 
 	it('ruimt de wedstrijd wel op als hij afgelopen is', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.gebeurtenissen = [{ type: 'start', t: 0 }];
 		app.toestand.wedstrijd!.afgelopen = true;
 
-		const vanElders = { ...app.syncPakket(), wedstrijd: null };
-		expect(app.neemSyncOver(JSON.parse(JSON.stringify(vanElders)))).toBe(true);
+		const vanElders = { ...app.syncPayload(), wedstrijd: null };
+		expect(app.adoptSyncPayload(JSON.parse(JSON.stringify(vanElders)))).toBe(true);
 		expect(app.wedstrijd).toBeNull();
 	});
 });
@@ -520,57 +520,57 @@ describe('de aftrap vastleggen', () => {
 	   hele wedstrijd dat er nog niet was afgetrapt — en dan worden positiewissels
 	   niet meer bewaard. */
 	it('legt de aftrap ook vast als je vooraf nog geschoven hebt', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
-		app.herzetBank();
+		app.rebuildBench();
 
-		app.gekozenPlek = 'SP';
-		app.zetOpPlek('p2'); /* nog even schuiven voor de aftrap */
-		expect(app.gestart).toBe(false);
+		app.chosenPosition = 'SP';
+		app.putOnPosition('p2'); /* nog even schuiven voor de aftrap */
+		expect(app.kickedOff).toBe(false);
 
-		app.loopToggle();
-		expect(app.gestart).toBe(true);
+		app.toggleRunning();
+		expect(app.kickedOff).toBe(true);
 		expect(app.toestand.wedstrijd!.gebeurtenissen.some((g) => g.type === 'start')).toBe(true);
 	});
 
 	it('houdt schuiven voor de aftrap uit het verloop', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: null };
-		app.herzetBank();
+		app.rebuildBench();
 
-		app.gekozenPlek = 'K';
-		app.zetOpPlek('p1');
+		app.chosenPosition = 'K';
+		app.putOnPosition('p1');
 		expect(app.toestand.wedstrijd!.gebeurtenissen).toEqual([]);
 	});
 
 	/* Je zet 's avonds de opstelling klaar en speelt de volgende dag. Dan hoort er
 	   niet de datum van gisteren op de wedstrijd te staan. */
 	it('stempelt de speeldag bij de aftrap, niet bij het aanmaken', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.datum = '2020-01-01';
-		app.loopToggle();
+		app.toggleRunning();
 		expect(app.toestand.wedstrijd!.datum).toBe(new Date().toISOString().slice(0, 10));
 	});
 
 	it('legt een positieruil wel vast zodra er is afgetrapt', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
-		app.herzetBank();
-		app.gekozenPlek = 'SP';
-		app.zetOpPlek('p2');
-		app.loopToggle();
+		app.rebuildBench();
+		app.chosenPosition = 'SP';
+		app.putOnPosition('p2');
+		app.toggleRunning();
 
-		app.ruilInWedstrijd('K', 'SP');
+		app.swapDuringMatch('K', 'SP');
 		expect(app.toestand.wedstrijd!.gebeurtenissen.filter((g) => g.type === 'ruil')).toHaveLength(1);
 	});
 
 	it('repareert een wedstrijd die zonder aftrap is opgeslagen', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.wedstrijd!.gebeurtenissen = [{ type: 'wissel', t: 0, eruit: 'p1', erin: 'p2', plek: 'SP' }];
-		app.bewaar();
-		app.toestand = legeToestand();
-		app.laad();
-		expect(app.gestart).toBe(true);
+		app.save();
+		app.toestand = emptyState();
+		app.load();
+		expect(app.kickedOff).toBe(true);
 		expect(app.toestand.wedstrijd!.gebeurtenissen[0].type).toBe('start');
 	});
 });
@@ -581,17 +581,17 @@ describe('een bewaarde wedstrijd op eigen benen', () => {
 	   bewaarde wedstrijd niet opnieuw uit te rekenen en dus nooit te repareren.
 	   Deze test bewijst dat dat nu wel kan. */
 	it('is uit zijn eigen gegevens opnieuw uit te rekenen', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		const w = app.toestand.wedstrijd!;
 		w.opstelling = { K: 'p2', SP: 'p1' };
-		app.herzetBank();
-		app.loopToggle();
+		app.rebuildBench();
+		app.toggleRunning();
 		w.verstreken = 600;
-		app.gekozenPlek = 'SP';
-		app.zetOpPlek('p2'); /* wissel onderweg */
+		app.chosenPosition = 'SP';
+		app.putOnPosition('p2'); /* wissel onderweg */
 		w.verstreken = 1200;
-		app.beeindig();
-		app.bewaarInArchief();
+		app.finish();
+		app.archiveMatch();
 
 		const a = app.toestand.archief[0];
 		expect(a.opstelling).toBeDefined();
@@ -606,9 +606,9 @@ describe('een bewaarde wedstrijd op eigen benen', () => {
 			deel: 2,
 			pauze: false,
 			afgelopen: true
-		} as unknown as Parameters<typeof speeltijden>[0];
+		} as unknown as Parameters<typeof playingTimes>[0];
 
-		const opnieuw = speeltijden(herbouwd, app.toestand.spelers);
+		const opnieuw = playingTimes(herbouwd, app.toestand.spelers);
 		for (const regel of a.speeltijd) {
 			expect(regel.id).toBeTruthy();
 			expect(Math.round(opnieuw[regel.id!])).toBe(regel.seconden);
@@ -619,61 +619,61 @@ describe('een bewaarde wedstrijd op eigen benen', () => {
 describe('de selectie beheren', () => {
 	it('zet namen uit een plakblok erbij, één per regel, en slaat lege regels over', () => {
 		app.toestand.spelers = [];
-		app.namenErbij('  Bram \n\n Cas\n   \nDirk  ');
+		app.addPlayerNames('  Bram \n\n Cas\n   \nDirk  ');
 		expect(app.toestand.spelers.map((p) => p.naam)).toEqual(['Bram', 'Cas', 'Dirk']);
 		expect(new Set(app.toestand.spelers.map((p) => p.id)).size).toBe(3);
 	});
 
 	it('vindt een speler op id, en niets bij een onbekende', () => {
-		expect(app.spelerVan('p1')?.naam).toBe('Daanish');
-		expect(app.spelerVan('bestaat-niet')).toBeUndefined();
-		expect(app.spelerVan(null)).toBeUndefined();
+		expect(app.playerById('p1')?.naam).toBe('Daanish');
+		expect(app.playerById('bestaat-niet')).toBeUndefined();
+		expect(app.playerById(null)).toBeUndefined();
 	});
 
 	it('hernoemt zonder spaties eromheen', () => {
-		app.hernoem(app.toestand.spelers[0], '  Daan  ');
+		app.renamePlayer(app.toestand.spelers[0], '  Daan  ');
 		expect(app.toestand.spelers[0].naam).toBe('Daan');
 	});
 
 	it('verwijdert alleen de aangewezen speler', () => {
-		app.verwijderSpeler(app.toestand.spelers[0]);
+		app.removePlayer(app.toestand.spelers[0]);
 		expect(app.toestand.spelers.map((p) => p.id)).toEqual(['p2']);
 	});
 
 	it('tikt een linie aan en weer uit', () => {
 		const p = app.toestand.spelers[0];
-		app.zetLinie(p, 'A');
+		app.setLine(p, 'A');
 		expect(p.linie).toBe('A');
-		app.zetLinie(p, 'A');
+		app.setLine(p, 'A');
 		expect(p.linie).toBe('');
-		app.zetLinie(p, 'V');
+		app.setLine(p, 'V');
 		expect(p.linie).toBe('V');
 	});
 
 	it('zet keepen los van de linie aan en uit', () => {
 		const p = app.toestand.spelers[0];
-		app.zetKeept(p);
+		app.toggleKeeper(p);
 		expect(p.keept).toBe(true);
 		expect(p.linie).toBe('M'); /* blijft staan: keepen is geen linie */
-		app.zetKeept(p);
+		app.toggleKeeper(p);
 		expect(p.keept).toBe(false);
 	});
 });
 
 describe('doelpunten en het terugnemen van je laatste tik', () => {
 	function lopend() {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		const w = app.toestand.wedstrijd!;
 		w.opstelling = { K: 'p2', SP: 'p1' };
-		app.herzetBank();
-		app.loopToggle();
+		app.rebuildBench();
+		app.toggleRunning();
 		return w;
 	}
 
 	it('legt een doelpunt vast, met of zonder maker', () => {
 		lopend();
-		app.doelpunt('p1');
-		app.doelpunt(null);
+		app.goal('p1');
+		app.goal(null);
 		const g = app.toestand.wedstrijd!.gebeurtenissen.filter((x) => x.type === 'goal');
 		expect(g).toHaveLength(2);
 		expect(g[0].speler).toBe('p1');
@@ -682,33 +682,33 @@ describe('doelpunten en het terugnemen van je laatste tik', () => {
 
 	it('hangt de assist aan het laatste doelpunt, ook als er daarna iets anders gebeurde', () => {
 		lopend();
-		app.doelpunt('p1');
-		app.tegendoelpunt();
-		app.zetAssist('p2');
+		app.goal('p1');
+		app.concede();
+		app.setAssist('p2');
 		const goals = app.toestand.wedstrijd!.gebeurtenissen.filter((x) => x.type === 'goal');
 		expect(goals.at(-1)!.assist).toBe('p2');
 	});
 
 	it('telt een tegendoelpunt zonder maker', () => {
 		lopend();
-		app.tegendoelpunt();
+		app.concede();
 		expect(app.toestand.wedstrijd!.gebeurtenissen.at(-1)!.type).toBe('tegen');
 	});
 
 	it('noemt wat er terug kan, en niets als er niets te herstellen valt', () => {
 		lopend();
-		expect(app.herstelbaar()).toBeNull(); /* alleen de aftrap */
-		app.doelpunt('p1');
-		expect(app.herstelbaar()).toBe('Doelpunt');
-		app.tegendoelpunt();
-		expect(app.herstelbaar()).toBe('Tegendoelpunt');
+		expect(app.undoable()).toBeNull(); /* alleen de aftrap */
+		app.goal('p1');
+		expect(app.undoable()).toBe('Doelpunt');
+		app.concede();
+		expect(app.undoable()).toBe('Tegendoelpunt');
 	});
 
 	it('neemt een doelpunt terug', () => {
 		lopend();
-		app.doelpunt('p1');
+		app.goal('p1');
 		const voor = app.toestand.wedstrijd!.gebeurtenissen.length;
-		app.herstelLaatste();
+		app.undoLast();
 		expect(app.toestand.wedstrijd!.gebeurtenissen).toHaveLength(voor - 1);
 	});
 
@@ -716,24 +716,24 @@ describe('doelpunten en het terugnemen van je laatste tik', () => {
 	   de speler aan die scoorde en daarna zijn aangever, en hebt een ruil gemaakt. */
 	it('neemt ook een positiewissel terug', () => {
 		const w = lopend();
-		app.ruilInWedstrijd('K', 'SP');
+		app.swapDuringMatch('K', 'SP');
 		expect(w.opstelling).toMatchObject({ K: 'p1', SP: 'p2' });
 
-		expect(app.herstelbaar()).toBe('Positiewissel');
-		app.herstelLaatste();
+		expect(app.undoable()).toBe('Positiewissel');
+		app.undoLast();
 		expect(w.opstelling).toMatchObject({ K: 'p2', SP: 'p1' });
 		expect(w.gebeurtenissen.filter((g) => g.type === 'ruil')).toHaveLength(0);
 	});
 
 	it('draait een wissel helemaal terug, veld en bank', () => {
 		const w = lopend();
-		app.gekozenPlek = 'SP';
-		app.zetOpPlek('p2'); /* p2 uit het doel naar de spits, p1 naar de bank */
+		app.chosenPosition = 'SP';
+		app.putOnPosition('p2'); /* p2 uit het doel naar de spits, p1 naar de bank */
 		expect(w.opstelling.SP).toBe('p2');
 		expect(w.bank).toContain('p1');
 
-		expect(app.herstelbaar()).toBe('Wissel');
-		app.herstelLaatste();
+		expect(app.undoable()).toBe('Wissel');
+		app.undoLast();
 		expect(w.opstelling.SP).toBe('p1');
 		expect(w.bank).not.toContain('p1');
 		expect(w.gebeurtenissen.filter((g) => g.type === 'wissel')).toHaveLength(0);
@@ -742,51 +742,51 @@ describe('doelpunten en het terugnemen van je laatste tik', () => {
 
 describe('opstellen, opruimen en overnemen', () => {
 	it('zet iemand op de gekozen plek en stuurt wie daar stond naar de bank', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		const w = app.toestand.wedstrijd!;
 		w.opstelling = { K: 'p2', SP: null };
-		app.herzetBank();
+		app.rebuildBench();
 
-		app.gekozenPlek = 'K';
-		app.zetInOpzet('wedstrijd', 'p1');
+		app.chosenPosition = 'K';
+		app.putOnPositionWhileSettingUp('wedstrijd', 'p1');
 		expect(w.opstelling.K).toBe('p1');
 		expect(w.bank).toContain('p2');
-		expect(app.gekozenPlek).toBeNull();
+		expect(app.chosenPosition).toBeNull();
 	});
 
 	it('doet hetzelfde voor de standaardopstelling', () => {
-		app.zorgVoorStandaard();
-		app.gekozenPlek = Object.keys(app.toestand.standaard!.opstelling)[0] ?? 'K';
-		app.zetInOpzet('standaard', 'p1');
+		app.ensureDefaultLineup();
+		app.chosenPosition = Object.keys(app.toestand.standaard!.opstelling)[0] ?? 'K';
+		app.putOnPositionWhileSettingUp('standaard', 'p1');
 		expect(Object.values(app.toestand.standaard!.opstelling)).toContain('p1');
 	});
 
 	it('wist de standaardopstelling', () => {
-		app.zorgVoorStandaard();
+		app.ensureDefaultLineup();
 		expect(app.toestand.standaard).not.toBeNull();
-		app.wisStandaard();
+		app.clearDefaultLineup();
 		expect(app.toestand.standaard).toBeNull();
 	});
 
 	it('gooit een wedstrijd weg zonder het archief te raken', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.archief = [{ datum: '2026-01-01' } as never];
-		app.gooiWedstrijdWeg();
+		app.discardMatch();
 		expect(app.wedstrijd).toBeNull();
 		expect(app.toestand.archief).toHaveLength(1);
 	});
 
 	it('verwijdert precies één wedstrijd uit het archief', () => {
 		app.toestand.archief = [{ tegenstander: 'A' }, { tegenstander: 'B' }, { tegenstander: 'C' }] as never[];
-		app.verwijderUitArchief(1);
+		app.removeFromArchive(1);
 		expect(app.toestand.archief.map((a) => a.tegenstander)).toEqual(['A', 'C']);
 	});
 
 	it('wijzigt tegenstander, thuis of uit, en de notitie', () => {
-		app.nieuweWedstrijd('Sparta', true);
-		app.zetTegenstander('  SV de Meer  ');
-		app.zetThuis(false);
-		app.zetNotitie('Sterk begin.');
+		app.newMatch('Sparta', true);
+		app.setOpponent('  SV de Meer  ');
+		app.setHome(false);
+		app.setNote('Sterk begin.');
 		const w = app.toestand.wedstrijd!;
 		expect(w.tegenstander).toBe('SV de Meer');
 		expect(w.thuis).toBe(false);
@@ -795,16 +795,16 @@ describe('opstellen, opruimen en overnemen', () => {
 
 	it('schrijft een notitie bij een bewaarde wedstrijd', () => {
 		app.toestand.archief = [{ tegenstander: 'A' }] as never[];
-		app.zetArchiefNotitie(0, 'Achteraf bedacht.');
+		app.setArchiveNote(0, 'Achteraf bedacht.');
 		expect(app.toestand.archief[0].notitie).toBe('Achteraf bedacht.');
 	});
 
 	/* Overnemen komt van een overzetcode of een teruggezet bestand. Wat er niet in
 	   staat, blijft staan; een lopende wedstrijd hoort bij dit toestel. */
 	it('neemt alleen over wat er in het pakket zit', () => {
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		app.toestand.teamnaam = 'Oud';
-		app.neemOver({ teamnaam: 'JO13-1', spelers: [{ id: 'x', naam: 'Nieuw', linie: '' }] });
+		app.adoptPackage({ teamnaam: 'JO13-1', spelers: [{ id: 'x', naam: 'Nieuw', linie: '' }] });
 		expect(app.toestand.teamnaam).toBe('JO13-1');
 		expect(app.toestand.spelers.map((p) => p.naam)).toEqual(['Nieuw']);
 		expect(app.wedstrijd).not.toBeNull();
@@ -813,7 +813,7 @@ describe('opstellen, opruimen en overnemen', () => {
 	it('laat een lege teamnaam of een onbekende formatie met rust', () => {
 		app.toestand.teamnaam = 'JO13-1';
 		app.toestand.formatie = '4-3-3';
-		app.neemOver({ teamnaam: '   ', formatie: 'bestaat-niet', spelers: app.toestand.spelers });
+		app.adoptPackage({ teamnaam: '   ', formatie: 'bestaat-niet', spelers: app.toestand.spelers });
 		expect(app.toestand.teamnaam).toBe('JO13-1');
 		expect(app.toestand.formatie).toBe('4-3-3');
 	});
@@ -824,19 +824,19 @@ describe('wat er van de server binnenkomt', () => {
 	   en geeft dus nooit iets leegs. Elke naam kwam er zo doorheen. */
 	it('weigert een formatie die we niet kennen', () => {
 		app.toestand.formatie = '4-3-3';
-		app.neemSyncOver({
+		app.adoptSyncPayload({
 			spelers: app.toestand.spelers,
 			formatie: 'bestaat-niet'
-		} as unknown as ReturnType<(typeof app)['syncPakket']>);
+		} as unknown as ReturnType<(typeof app)['syncPayload']>);
 		expect(app.toestand.formatie).toBe('4-3-3');
 	});
 
 	it('neemt een formatie die we wel kennen gewoon over', () => {
 		app.toestand.formatie = '4-3-3';
-		app.neemSyncOver({
+		app.adoptSyncPayload({
 			spelers: app.toestand.spelers,
 			formatie: '4-4-2'
-		} as unknown as ReturnType<(typeof app)['syncPakket']>);
+		} as unknown as ReturnType<(typeof app)['syncPayload']>);
 		expect(app.toestand.formatie).toBe('4-4-2');
 	});
 });
@@ -846,34 +846,34 @@ describe('als de opslag het begeeft', () => {
 	   is alles wat je daarna doet weg zodra je afsluit, en dat mag je niet pas
 	   thuis ontdekken. */
 	it('gaat door met de wedstrijd maar zet de vlag en noteert het', () => {
-		wisProblemen();
-		app.nieuweWedstrijd('Sparta', true);
+		clearIssues();
+		app.newMatch('Sparta', true);
 		const echt = localStorage.setItem;
 		localStorage.setItem = () => {
 			throw new Error('QuotaExceededError');
 		};
-		expect(() => app.zetTegenstander('SV de Meer')).not.toThrow();
+		expect(() => app.setOpponent('SV de Meer')).not.toThrow();
 		localStorage.setItem = echt;
 
 		expect(app.toestand.wedstrijd!.tegenstander).toBe('SV de Meer'); /* de app werkt door */
-		expect(problemen.opslaanHapert).toBe(true);
-		expect(problemen.lijst[0].wat).toContain('Opslaan lukte niet');
+		expect(issues.savingFails).toBe(true);
+		expect(issues.lijst[0].wat).toContain('Opslaan lukte niet');
 	});
 
 	it('zet de vlag weer uit zodra opslaan wel lukt', () => {
-		problemen.opslaanHapert = true;
-		app.nieuweWedstrijd('Sparta', true);
-		expect(problemen.opslaanHapert).toBe(false);
+		issues.savingFails = true;
+		app.newMatch('Sparta', true);
+		expect(issues.savingFails).toBe(false);
 	});
 
 	/* Zonder dit lijkt onleesbare opslag op alles kwijt zijn, zonder uitleg. */
 	it('zet onleesbare gegevens apart in plaats van ze te laten vallen', () => {
-		wisProblemen();
+		clearIssues();
 		localStorage.setItem('o14-app-v1', '{"spelers":[ dit is geen json');
-		app.toestand = legeToestand();
-		app.laad();
+		app.toestand = emptyState();
+		app.load();
 		expect(localStorage.getItem('o14-app-v1-onleesbaar')).toContain('geen json');
-		expect(problemen.lijst[0].wat).toContain('niet te lezen');
+		expect(issues.lijst[0].wat).toContain('niet te lezen');
 	});
 });
 
@@ -881,39 +881,39 @@ describe('de klok rechtstreeks zetten', () => {
 	/* ±1' is genoeg als de scheids er een minuut naast zit. Wie een wedstrijd
 	   achteraf invoert tikt daarmee een heel uur bij elkaar. */
 	it('zet de klok op de opgegeven minuut', () => {
-		app.nieuweWedstrijd('Sparta', true);
-		app.loopToggle();
-		app.zetKlok(23);
-		expect(Math.round(verstreken(app.wedstrijd!, Date.now()))).toBe(23 * 60);
+		app.newMatch('Sparta', true);
+		app.toggleRunning();
+		app.setClock(23);
+		expect(Math.round(elapsed(app.wedstrijd!, Date.now()))).toBe(23 * 60);
 	});
 
 	it('telt de tijd sinds de laatste start er niet nog eens bovenop', () => {
-		app.nieuweWedstrijd('Sparta', true);
-		app.loopToggle();
+		app.newMatch('Sparta', true);
+		app.toggleRunning();
 		const w = app.wedstrijd!;
 		w.sinds = Date.now() - 300_000; /* vijf minuten geleden gestart */
-		app.zetKlok(10);
-		expect(Math.round(verstreken(w, Date.now()) / 60)).toBe(10);
+		app.setClock(10);
+		expect(Math.round(elapsed(w, Date.now()) / 60)).toBe(10);
 	});
 
 	it('gaat nooit onder nul en laat een afgelopen wedstrijd met rust', () => {
-		app.nieuweWedstrijd('Sparta', true);
-		app.loopToggle();
-		app.zetKlok(-5);
+		app.newMatch('Sparta', true);
+		app.toggleRunning();
+		app.setClock(-5);
 		expect(app.wedstrijd!.verstreken).toBe(0);
 
-		app.zetKlok(20);
-		app.beeindig();
+		app.setClock(20);
+		app.finish();
 		const eind = app.wedstrijd!.verstreken;
-		app.zetKlok(99);
+		app.setClock(99);
 		expect(app.wedstrijd!.verstreken).toBe(eind);
 	});
 
 	it('negeert wat geen getal is', () => {
-		app.nieuweWedstrijd('Sparta', true);
-		app.loopToggle();
-		app.zetKlok(12);
-		app.zetKlok(Number.NaN);
+		app.newMatch('Sparta', true);
+		app.toggleRunning();
+		app.setClock(12);
+		app.setClock(Number.NaN);
 		expect(app.wedstrijd!.verstreken).toBe(12 * 60);
 	});
 });

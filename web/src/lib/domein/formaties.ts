@@ -1,7 +1,7 @@
-import type { Linie, Speler } from './types';
+import type { Line, Player } from './types';
 
 /** [plek-id, label op het veld, x in %, y in %, linie] */
-export type Plek = [string, string, number, number, Linie];
+export type PositionSlot = [string, string, number, number, Line];
 
 /**
  * Formaties per speelvorm. De app rekent nergens met een vast aantal spelers:
@@ -16,7 +16,7 @@ export type Plek = [string, string, number, number, Linie];
    middenveld, aanval. Dat is te lezen als een opstelling en dat willen we houden,
    dus Prettier blijft eraf. */
 // prettier-ignore
-export const FORMATIES: Record<string, Plek[]> = {
+export const FORMATIONS: Record<string, PositionSlot[]> = {
 	/* ---------- 11 tegen 11 ---------- */
 	'4-3-3': [
 		['K', 'K', 50, 92, 'K'],
@@ -107,7 +107,7 @@ export const FORMATIES: Record<string, Plek[]> = {
  * bij 11 tegen 11 doe je dat niet (4-3-3). Dat is verwarrend, maar het is hoe
  * trainers het zeggen, dus houden we het aan.
  */
-export const SPEELVORMEN: { naam: string; uitleg?: string; formaties: { sleutel: string; uitleg?: string }[] }[] = [
+export const FORMATS: { naam: string; uitleg?: string; formaties: { sleutel: string; uitleg?: string }[] }[] = [
 	{
 		naam: '11 tegen 11',
 		formaties: [
@@ -137,10 +137,10 @@ export const SPEELVORMEN: { naam: string; uitleg?: string; formaties: { sleutel:
 
 /** Alle formatienamen, in menuvolgorde. */
 export function alleFormaties(): string[] {
-	return SPEELVORMEN.flatMap((s) => s.formaties.map((f) => f.sleutel));
+	return FORMATS.flatMap((s) => s.formaties.map((f) => f.sleutel));
 }
 
-export const LINIES: Record<Linie, string> = {
+export const LINES: Record<Line, string> = {
 	A: 'Aanval',
 	M: 'Middenveld',
 	V: 'Verdediging',
@@ -149,26 +149,26 @@ export const LINIES: Record<Linie, string> = {
 };
 
 /** Van boven naar beneden, net als op het veld. */
-export const LINIEVOLGORDE: Linie[] = ['A', 'M', 'V', 'K', ''];
+export const LINE_ORDER: Line[] = ['A', 'M', 'V', 'K', ''];
 
-export function plekken(formatie: string): Plek[] {
-	return FORMATIES[formatie] ?? FORMATIES['4-3-3'];
+export function positionsOf(formatie: string): PositionSlot[] {
+	return FORMATIONS[formatie] ?? FORMATIONS['4-3-3'];
 }
 
 /** Hoeveel spelers er in deze formatie op het veld staan. */
-export function aantalPlekken(formatie: string): number {
-	return plekken(formatie).length;
+export function positionCount(formatie: string): number {
+	return positionsOf(formatie).length;
 }
 
 /** Welke linies in deze formatie voorkomen. Bij 4 tegen 4 is dat geen keeper. */
-export function liniesIn(formatie: string): Linie[] {
-	const gevonden = new Set(plekken(formatie).map((p) => p[4]));
-	return LINIEVOLGORDE.filter((l) => l && gevonden.has(l));
+export function linesIn(formatie: string): Line[] {
+	const gevonden = new Set(positionsOf(formatie).map((p) => p[4]));
+	return LINE_ORDER.filter((l) => l && gevonden.has(l));
 }
 
 /** Bij welke speelvorm hoort deze formatie. */
-export function speelvormVan(formatie: string): string {
-	return SPEELVORMEN.find((s) => s.formaties.some((f) => f.sleutel === formatie))?.naam ?? '';
+export function formatOf(formatie: string): string {
+	return FORMATS.find((s) => s.formaties.some((f) => f.sleutel === formatie))?.naam ?? '';
 }
 
 /**
@@ -178,25 +178,25 @@ export function speelvormVan(formatie: string): string {
  * nooit iets leegs terug. Een controle daarmee doet niets, en dan glipt een
  * onbekende naam ongemerkt de toestand in.
  */
-export function kentFormatie(naam: string | undefined | null): boolean {
-	return !!naam && naam in FORMATIES;
+export function knowsFormation(naam: string | undefined | null): boolean {
+	return !!naam && naam in FORMATIONS;
 }
 
 /** De leesbare naam van een plek: CVl heet CV, TIEN heet 10. */
-export function plekLabel(plekId: string, formatie: string): string {
-	return plekken(formatie).find((p) => p[0] === plekId)?.[1] ?? plekId;
+export function positionLabel(plekId: string, formatie: string): string {
+	return positionsOf(formatie).find((p) => p[0] === plekId)?.[1] ?? plekId;
 }
 
-export function plekLinie(plekId: string, formatie: string): Linie {
-	return plekken(formatie).find((p) => p[0] === plekId)?.[4] ?? '';
+export function positionLine(plekId: string, formatie: string): Line {
+	return positionsOf(formatie).find((p) => p[0] === plekId)?.[4] ?? '';
 }
 
-export function kanKeepen(p: Speler): boolean {
+export function canKeep(p: Player): boolean {
 	return !!p.keept;
 }
 
 /** In welk bankgroepje hoort iemand: zijn veldlinie, of Keeper als hij alleen keept. */
-export function groepVan(p: Speler): Linie {
+export function groupOf(p: Player): Line {
 	if (p.linie === 'V' || p.linie === 'M' || p.linie === 'A') return p.linie;
 	return p.keept ? 'K' : '';
 }

@@ -1,5 +1,5 @@
-import { plekLinie, plekLabel } from './formaties';
-import type { Gebeurtenis, Speler, Wedstrijd } from './types';
+import { positionLine, positionLabel } from './formaties';
+import type { MatchEvent, Player, Match } from './types';
 
 export function mmss(sec: number): string {
 	const m = Math.floor(sec / 60);
@@ -8,14 +8,14 @@ export function mmss(sec: number): string {
 }
 
 /** Hoeveel er gespeeld is, inclusief de periode die nu loopt. */
-export function verstreken(w: Wedstrijd | null, nu = Date.now()): number {
+export function elapsed(w: Match | null, nu = Date.now()): number {
 	if (!w) return 0;
 	let t = w.verstreken;
 	if (w.loopt && w.sinds) t += (nu - w.sinds) / 1000;
 	return Math.floor(t);
 }
 
-export function eindTijd(w: Wedstrijd): number {
+export function endTime(w: Match): number {
 	const e = w.gebeurtenissen.filter((g) => g.type === 'eind').pop();
 	return e ? e.t : w.verstreken;
 }
@@ -34,9 +34,9 @@ export interface Interval {
  * De opstelling die we bewaren is die van NU, dus we rekenen eerst terug naar
  * de aftrap door de wissels in omgekeerde volgorde ongedaan te maken.
  */
-export function veldIntervallen(w: Wedstrijd | null, nu = Date.now()): Interval[] {
+export function fieldIntervals(w: Match | null, nu = Date.now()): Interval[] {
 	if (!w) return [];
-	const eind = w.afgelopen ? eindTijd(w) : verstreken(w, nu);
+	const eind = w.afgelopen ? endTime(w) : elapsed(w, nu);
 	/* Wissels en ruilen samen: allebei veranderen ze wie waar staat. */
 	const beurten = w.gebeurtenissen.filter((g) => g.type === 'wissel' || g.type === 'ruil');
 
@@ -98,21 +98,21 @@ export function veldIntervallen(w: Wedstrijd | null, nu = Date.now()): Interval[
 }
 
 /** Seconden per speler. Iedereen uit de selectie komt erin, ook met nul. */
-export function speeltijden(w: Wedstrijd | null, spelers: Speler[], nu = Date.now()): Record<string, number> {
+export function playingTimes(w: Match | null, spelers: Player[], nu = Date.now()): Record<string, number> {
 	const totaal: Record<string, number> = {};
 	spelers.forEach((p) => (totaal[p.id] = 0));
-	veldIntervallen(w, nu).forEach((i) => {
+	fieldIntervals(w, nu).forEach((i) => {
 		totaal[i.speler] = (totaal[i.speler] ?? 0) + (i.tot - i.van);
 	});
 	return totaal;
 }
 
 /** Seconden in het doel. Een helft keepen is geen halve wedstrijd voetballen. */
-export function keepertijden(w: Wedstrijd | null, nu = Date.now()): Record<string, number> {
+export function keeperTimes(w: Match | null, nu = Date.now()): Record<string, number> {
 	const uit: Record<string, number> = {};
 	if (!w) return uit;
-	veldIntervallen(w, nu).forEach((i) => {
-		if (plekLinie(i.plek, w.formatie) === 'K') {
+	fieldIntervals(w, nu).forEach((i) => {
+		if (positionLine(i.plek, w.formatie) === 'K') {
 			uit[i.speler] = (uit[i.speler] ?? 0) + (i.tot - i.van);
 		}
 	});
@@ -120,9 +120,9 @@ export function keepertijden(w: Wedstrijd | null, nu = Date.now()): Record<strin
 }
 
 /** Seconden per speler per plek. Wie waar stond, en hoe lang. */
-export function positietijden(w: Wedstrijd | null, nu = Date.now()): Record<string, Record<string, number>> {
+export function positionTimes(w: Match | null, nu = Date.now()): Record<string, Record<string, number>> {
 	const uit: Record<string, Record<string, number>> = {};
-	veldIntervallen(w, nu).forEach((i) => {
+	fieldIntervals(w, nu).forEach((i) => {
 		const perPlek = (uit[i.speler] ??= {});
 		perPlek[i.plek] = (perPlek[i.plek] ?? 0) + (i.tot - i.van);
 	});
@@ -134,9 +134,9 @@ export function positietijden(w: Wedstrijd | null, nu = Date.now()): Record<stri
  * "35 min K · 35 min LV". Meer dan drie plekken wordt onleesbaar, dus die
  * vallen weg onder "overig".
  */
-export function positieTekst(perPlek: Record<string, number> | undefined, formatie: string): string {
+export function positionText(perPlek: Record<string, number> | undefined, formatie: string): string {
 	if (!perPlek) return '';
-	const label = (plek: string) => plekLabel(plek, formatie);
+	const label = (plek: string) => positionLabel(plek, formatie);
 	const rijen = Object.entries(perPlek)
 		.filter(([, sec]) => sec > 0)
 		.sort((a, b) => b[1] - a[1]);
@@ -147,8 +147,8 @@ export function positieTekst(perPlek: Record<string, number> | undefined, format
 	return eerste.join(' · ');
 }
 
-export function stand(w: Wedstrijd | null): [number, number] {
+export function score(w: Match | null): [number, number] {
 	if (!w) return [0, 0];
-	const g: Gebeurtenis[] = w.gebeurtenissen;
+	const g: MatchEvent[] = w.gebeurtenissen;
 	return [g.filter((x) => x.type === 'goal').length, g.filter((x) => x.type === 'tegen').length];
 }

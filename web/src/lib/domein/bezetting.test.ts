@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { bezetting, dunneKeepersbezetting, gedrang, tekort } from './bezetting';
-import { groepVan, kanKeepen } from './formaties';
-import type { Speler } from './types';
+import { groupOf, canKeep } from './formaties';
+import type { Player } from './types';
 
 /** De selectie zoals die op 4 september 2026 in de app stond. */
-const selectie: Speler[] = [
+const selectie: Player[] = [
 	{ id: '1', naam: 'Casper', linie: 'M', keept: true },
 	{ id: '2', naam: 'Maher', linie: 'V', keept: true },
 	{ id: '3', naam: 'Daan', linie: 'V', keept: true },
@@ -26,7 +26,7 @@ const selectie: Speler[] = [
 describe('bezetting per linie', () => {
 	it('telt spelers tegen plekken in 4-3-3', () => {
 		const b = bezetting(selectie, '4-3-3');
-		expect(b.map((x) => [x.naam, x.spelers, x.plekken])).toEqual([
+		expect(b.map((x) => [x.naam, x.spelers, x.positionsOf])).toEqual([
 			['Aanval', 4, 3],
 			['Middenveld', 7, 3],
 			['Verdediging', 5, 4],
@@ -65,7 +65,7 @@ describe('bezetting per linie', () => {
 });
 
 describe('iemand die alleen keeper is', () => {
-	const alleenKeeper: Speler = { id: '99', naam: 'Vaste keeper', linie: '', keept: true };
+	const alleenKeeper: Player = { id: '99', naam: 'Vaste keeper', linie: '', keept: true };
 	const metVaste = [...selectie, alleenKeeper];
 
 	it('telt alleen mee bij de keepers, niet in een veldlinie', () => {
@@ -77,15 +77,15 @@ describe('iemand die alleen keeper is', () => {
 	});
 
 	it('staat op de bank in het keepersgroepje', () => {
-		expect(groepVan(alleenKeeper)).toBe('K');
+		expect(groupOf(alleenKeeper)).toBe('K');
 	});
 
 	it('licht op bij de keeperplek en niet bij een veldplek', () => {
-		expect(kanKeepen(alleenKeeper)).toBe(true);
+		expect(canKeep(alleenKeeper)).toBe(true);
 		expect(alleenKeeper.linie).toBe(''); /* dus geen enkele veldlinie claimt hem */
 	});
 
 	it('valt zonder K-vinkje in "zonder linie", niet stilletjes ergens anders', () => {
-		expect(groepVan({ id: 'x', naam: 'Nieuw', linie: '' })).toBe('');
+		expect(groupOf({ id: 'x', naam: 'Nieuw', linie: '' })).toBe('');
 	});
 });

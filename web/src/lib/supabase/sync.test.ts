@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sync } from './sync.svelte';
 import { app } from '$lib/toestand.svelte';
-import { legeToestand } from '$lib/domein/types';
+import { emptyState } from '$lib/domein/types';
 
 /** Een nepserver: genoeg om de beslissingen te testen, niet het netwerk. */
 function nepFetch(opties: { versie?: number; data?: unknown; botsing?: boolean; stuk?: boolean } = {}) {
@@ -32,7 +32,7 @@ function nepFetch(opties: { versie?: number; data?: unknown; botsing?: boolean; 
 
 beforeEach(() => {
 	localStorage.clear();
-	app.toestand = legeToestand();
+	app.toestand = emptyState();
 	app.toestand.spelers = [{ id: 'p1', naam: 'Daanish', linie: 'M' }];
 	sync.sessie = {
 		access_token: 'token',
@@ -68,7 +68,7 @@ describe('vanzelf bijwerken', () => {
 		await sync.duwAlsNodig();
 		expect(sync.vies).toBe(false);
 
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		sync.merkVies();
 		expect(sync.vies).toBe(true);
 		await sync.duwAlsNodig();
@@ -120,7 +120,7 @@ describe('inloggen op een telefoon', () => {
 		sync.sessie = null;
 		sync.fase = 'email';
 		sync.email = '';
-		sync.laad();
+		sync.load();
 		expect(sync.fase).toBe('code');
 		expect(sync.email).toBe('trainer@voorbeeld.nl');
 	});
@@ -144,7 +144,7 @@ describe('inloggen op een telefoon', () => {
 		expect(sync.sessie?.email).toBe('trainer@voorbeeld.nl');
 		sync.sessie = null;
 		sync.fase = 'email';
-		sync.laad();
+		sync.load();
 		expect(sync.fase).toBe('email');
 	});
 });
@@ -156,7 +156,7 @@ describe('bij het openen', () => {
 	it('merkt dat er hier iets staat wat de server nog niet heeft', async () => {
 		const { verstuurd } = nepFetch({ versie: 1, data: { spelers: app.toestand.spelers } });
 		sync.sessie!.afdruk = 'iets ouds';
-		app.nieuweWedstrijd('Sparta', true);
+		app.newMatch('Sparta', true);
 		sync.vies = false;
 
 		await sync.kijkEven();

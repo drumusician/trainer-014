@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { verloopRegels } from '$lib/domein/verslag';
+	import { timelineRows } from '$lib/domein/verslag';
 	import { mmss } from '$lib/domein/tijd';
 	import { app } from '$lib/toestand.svelte';
-	import type { Gebeurtenis } from '$lib/domein/types';
+	import type { MatchEvent } from '$lib/domein/types';
 
 	let {
 		gebeurtenissen,
@@ -10,14 +10,14 @@
 		delen = 2,
 		formatie
 	}: {
-		gebeurtenissen: Gebeurtenis[];
+		gebeurtenissen: MatchEvent[];
 		namen?: Record<string, string>;
 		delen?: 2 | 4;
 		/** om een plek zijn leesbare naam te geven: CVl heet CV, TIEN heet 10 */
 		formatie?: string;
 	} = $props();
 
-	const regels = $derived(verloopRegels(gebeurtenissen, app.toestand.spelers, namen, delen, formatie));
+	const regels = $derived(timelineRows(gebeurtenissen, app.toestand.spelers, namen, delen, formatie));
 </script>
 
 <ul class="log">

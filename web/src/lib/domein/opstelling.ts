@@ -1,23 +1,23 @@
-import { LINIES, plekken } from './formaties';
-import type { Linie, Opstelling, Speler } from './types';
+import { LINES, positionsOf } from './formaties';
+import type { Line, Lineup, Player } from './types';
 
 /**
  * De opstelling als tekst, om naar een mede-trainer te sturen. Per linie op één
  * regel, met de plek erachter waar dat iets toevoegt.
  */
-export function opstellingTekst(formatie: string, opstelling: Opstelling, bank: string[], spelers: Speler[]): string {
+export function opstellingTekst(formatie: string, opstelling: Lineup, bank: string[], spelers: Player[]): string {
 	const naam = (id?: string | null) => spelers.find((p) => p.id === id)?.naam;
 	const regels: string[] = ['Opstelling ' + formatie];
 
-	(['K', 'V', 'M', 'A'] as Linie[]).forEach((linie) => {
-		const namen = plekken(formatie)
+	(['K', 'V', 'M', 'A'] as Line[]).forEach((linie) => {
+		const namen = positionsOf(formatie)
 			.filter((p) => p[4] === linie)
 			.map((p) => {
 				const n = naam(opstelling[p[0]]);
 				return n ? (linie === 'K' ? n : n + ' (' + p[1] + ')') : null;
 			})
 			.filter(Boolean);
-		if (namen.length) regels.push(LINIES[linie] + ': ' + namen.join(', '));
+		if (namen.length) regels.push(LINES[linie] + ': ' + namen.join(', '));
 	});
 
 	const opDeBank = bank.map((id) => naam(id)).filter(Boolean);
@@ -26,7 +26,7 @@ export function opstellingTekst(formatie: string, opstelling: Opstelling, bank: 
 }
 
 export interface Omgezet {
-	opstelling: Opstelling;
+	opstelling: Lineup;
 	bank: string[];
 	/** wie er niet meer paste en naar de bank ging */
 	afgevallen: string[];
@@ -40,15 +40,15 @@ export interface Omgezet {
  * Van 4-3-3 naar 4-4-2 betekent dat je vier verdedigers en je keeper gewoon
  * blijven staan, en dat er van je drie aanvallers eentje op de bank komt.
  */
-export function zetOpstellingOm(
-	opstelling: Opstelling,
+export function convertLineup(
+	opstelling: Lineup,
 	vanFormatie: string,
 	naarFormatie: string,
 	bank: string[] = []
 ): Omgezet {
-	const oudePlekken = plekken(vanFormatie);
-	const nieuwePlekken = plekken(naarFormatie);
-	const nieuw: Opstelling = {};
+	const oudePlekken = positionsOf(vanFormatie);
+	const nieuwePlekken = positionsOf(naarFormatie);
+	const nieuw: Lineup = {};
 	const vrij: { speler: string; linie: string }[] = [];
 
 	/* stap 1: plekken die in beide formaties bestaan houden hun speler */

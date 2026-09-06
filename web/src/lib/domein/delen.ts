@@ -4,13 +4,13 @@
  */
 const RANGTELWOORD = ['', '1e', '2e', '3e', '4e'];
 
-export function deelNaam(deel: number, delen: number): string {
+export function partName(deel: number, delen: number): string {
 	const soort = delen === 4 ? 'kwart' : 'helft';
 	return (RANGTELWOORD[deel] ?? deel + 'e') + ' ' + soort;
 }
 
 /** De pauze halverwege heet rust; de andere onderbrekingen zijn gewoon pauzes. */
-export function pauzeNaam(naDeel: number, delen: number): string {
+export function breakName(naDeel: number, delen: number): string {
 	return naDeel === Math.floor(delen / 2) ? 'Rust' : 'Pauze';
 }
 

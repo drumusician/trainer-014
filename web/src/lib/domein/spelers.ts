@@ -1,8 +1,8 @@
-import { presentie, type Presentie } from './presentie';
-import { seizoenTotalen } from './seizoen';
-import type { ArchiefWedstrijd, Speler, Training } from './types';
+import { attendanceOf, type AttendanceSummary } from './presentie';
+import { seasonTotals } from './seizoen';
+import type { ArchivedMatch, Player, Training } from './types';
 
-export interface SpelerRegel {
+export interface PlayerRow {
 	id: string;
 	naam: string;
 	linie: string;
@@ -14,20 +14,16 @@ export interface SpelerRegel {
 	keeper: number;
 	wedstrijden: number;
 	doelpunten: number;
-	presentie: Presentie;
+	attendanceOf: AttendanceSummary;
 	/** presentie over de laatste vier trainingen */
-	recent: Presentie;
+	recent: AttendanceSummary;
 }
 
 export type Sortering = 'naam' | 'minuten' | 'presentie' | 'doelpunten';
 
 /** Alles wat je van een speler weet, op één regel. */
-export function spelersOverzicht(
-	spelers: Speler[],
-	archief: ArchiefWedstrijd[],
-	trainingen: Training[]
-): SpelerRegel[] {
-	const totalen = seizoenTotalen(archief, spelers);
+export function spelersOverzicht(spelers: Player[], archief: ArchivedMatch[], trainingen: Training[]): PlayerRow[] {
+	const totalen = seasonTotals(archief, spelers);
 	const assists: Record<string, number> = {};
 	archief.forEach((a) =>
 		(a.gebeurtenissen ?? []).forEach((g) => {
@@ -46,27 +42,27 @@ export function spelersOverzicht(
 			wedstrijden: rij?.wedstrijden ?? 0,
 			doelpunten: rij?.doelpunten ?? 0,
 			assists: assists[p.id] ?? 0,
-			presentie: presentie(trainingen, p.id, 0),
-			recent: presentie(trainingen, p.id, 4)
+			attendanceOf: attendanceOf(trainingen, p.id, 0),
+			recent: attendanceOf(trainingen, p.id, 4)
 		};
 	});
 }
 
-export function sorteer(rijen: SpelerRegel[], hoe: Sortering): SpelerRegel[] {
+export function sorteer(rijen: PlayerRow[], hoe: Sortering): PlayerRow[] {
 	/* Wie nog geen training had, hoort niet bovenaan een lijstje over presentie. */
-	const deel = (p: Presentie) => (p.totaal ? p.er / p.totaal : 2);
+	const deel = (p: AttendanceSummary) => (p.totaal ? p.er / p.totaal : 2);
 	return [...rijen].sort((a, b) => {
 		if (hoe === 'minuten') return b.seconden - a.seconden || a.naam.localeCompare(b.naam);
 		if (hoe === 'doelpunten')
 			return (
 				b.doelpunten - a.doelpunten || b.assists - a.assists || b.seconden - a.seconden || a.naam.localeCompare(b.naam)
 			);
-		if (hoe === 'presentie') return deel(a.presentie) - deel(b.presentie) || a.naam.localeCompare(b.naam);
+		if (hoe === 'presentie') return deel(a.attendanceOf) - deel(b.attendanceOf) || a.naam.localeCompare(b.naam);
 		return a.naam.localeCompare(b.naam);
 	});
 }
 
 /** Percentage aanwezig, of null als er nog geen training geweest is. */
-export function percentage(p: Presentie): number | null {
+export function percentage(p: AttendanceSummary): number | null {
 	return p.totaal ? Math.round((p.er / p.totaal) * 100) : null;
 }

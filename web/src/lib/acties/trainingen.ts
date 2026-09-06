@@ -1,5 +1,5 @@
-import { sorteerTrainingen } from '$lib/domein/presentie';
-import type { Aanwezigheid, Toestand, Training } from '$lib/domein/types';
+import { sortTrainings } from '$lib/domein/presentie';
+import type { Attendance, State, Training } from '$lib/domein/types';
 
 /**
  * Alles wat een training verandert.
@@ -10,38 +10,38 @@ import type { Aanwezigheid, Toestand, Training } from '$lib/domein/types';
  */
 
 /** Kort, uniek genoeg, en te lezen als er ooit iets misgaat. */
-function nieuwId(): string {
+function newId(): string {
 	return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
 /** Iedereen staat op aanwezig; afmelden doe je bij uitzondering. */
-export function nieuweTraining(t: Toestand, vandaag: string): Training {
-	const status: Record<string, Aanwezigheid> = {};
+export function newTraining(t: State, vandaag: string): Training {
+	const status: Record<string, Attendance> = {};
 	t.spelers.forEach((p) => (status[p.id] = 'ja'));
-	const training: Training = { id: nieuwId(), datum: vandaag, status };
-	t.trainingen = sorteerTrainingen([training, ...t.trainingen]);
+	const training: Training = { id: newId(), datum: vandaag, status };
+	t.trainingen = sortTrainings([training, ...t.trainingen]);
 	return training;
 }
 
-export function trainingMetId(t: Toestand, id: string | undefined): Training | undefined {
+export function trainingById(t: State, id: string | undefined): Training | undefined {
 	return t.trainingen.find((x) => x.id === id);
 }
 
 /** Eén tik verder: aanwezig, afgemeld, niet gekomen, en weer aanwezig. */
-export function tikPresentie(training: Training, spelerId: string) {
-	const volgorde: Aanwezigheid[] = ['ja', 'af', 'nee'];
+export function cycleAttendance(training: Training, spelerId: string) {
+	const volgorde: Attendance[] = ['ja', 'af', 'nee'];
 	const nu = training.status[spelerId] ?? 'ja';
 	training.status[spelerId] = volgorde[(volgorde.indexOf(nu) + 1) % volgorde.length];
 }
 
 /** Een datum kan de volgorde omgooien, dus daarna opnieuw sorteren. */
-export function zetTrainingDatum(t: Toestand, training: Training, datum: string): boolean {
+export function setTrainingDate(t: State, training: Training, datum: string): boolean {
 	if (!datum) return false;
 	training.datum = datum;
-	t.trainingen = sorteerTrainingen(t.trainingen);
+	t.trainingen = sortTrainings(t.trainingen);
 	return true;
 }
 
-export function verwijderTraining(t: Toestand, training: Training) {
+export function removeTraining(t: State, training: Training) {
 	t.trainingen = t.trainingen.filter((x) => x.id !== training.id);
 }

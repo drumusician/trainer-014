@@ -1,6 +1,6 @@
 import type { Training } from './types';
 
-export interface Presentie {
+export interface AttendanceSummary {
 	/** hoe vaak aanwezig */
 	er: number;
 	/** hoeveel trainingen meetellen */
@@ -8,7 +8,7 @@ export interface Presentie {
 }
 
 /** Trainingen staan op datum, nieuwste eerst. */
-export function sorteerTrainingen(trainingen: Training[]): Training[] {
+export function sortTrainings(trainingen: Training[]): Training[] {
 	return [...trainingen].sort((a, b) => (b.datum ?? '').localeCompare(a.datum ?? ''));
 }
 
@@ -16,7 +16,7 @@ export function sorteerTrainingen(trainingen: Training[]): Training[] {
  * Presentie over de laatste n trainingen waar deze speler in stond.
  * n = 0 betekent alles.
  */
-export function presentie(trainingen: Training[], spelerId: string, n = 0): Presentie {
+export function attendanceOf(trainingen: Training[], spelerId: string, n = 0): AttendanceSummary {
 	let er = 0;
 	let totaal = 0;
 	for (const t of trainingen) {
@@ -30,6 +30,6 @@ export function presentie(trainingen: Training[], spelerId: string, n = 0): Pres
 }
 
 /** Minder dan de helft van de laatste keren: dat is het gesprek waard. */
-export function mager(p: Presentie): boolean {
+export function thinAttendance(p: AttendanceSummary): boolean {
 	return p.totaal >= 2 && p.er * 2 < p.totaal;
 }

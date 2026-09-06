@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { percentage, sorteer, spelersOverzicht } from './spelers';
-import type { ArchiefWedstrijd, Speler, Training } from './types';
+import type { ArchivedMatch, Player, Training } from './types';
 
-const spelers: Speler[] = [
+const spelers: Player[] = [
 	{ id: 'p1', naam: 'Daanish', linie: 'M' },
 	{ id: 'p2', naam: 'Gijs', linie: '', keept: true },
 	{ id: 'p3', naam: 'Nieuw', linie: 'A' }
 ];
 
-const archief: ArchiefWedstrijd[] = [
+const archief: ArchivedMatch[] = [
 	{
 		datum: '2026-08-30',
 		tegenstander: 'Ajax',
@@ -35,16 +35,16 @@ describe('spelersoverzicht', () => {
 		const rijen = spelersOverzicht(spelers, archief, trainingen);
 		const daanish = rijen.find((r) => r.naam === 'Daanish')!;
 		expect(daanish).toMatchObject({ seconden: 4200, wedstrijden: 1, doelpunten: 1 });
-		expect(daanish.presentie).toEqual({ er: 2, totaal: 2 });
+		expect(daanish.attendanceOf).toEqual({ er: 2, totaal: 2 });
 		const gijs = rijen.find((r) => r.naam === 'Gijs')!;
 		expect(gijs.keeper).toBe(2100);
-		expect(percentage(gijs.presentie)).toBe(50);
+		expect(percentage(gijs.attendanceOf)).toBe(50);
 	});
 
 	it('laat iemand die nog niets deed gewoon op nul staan', () => {
 		const nieuw = spelersOverzicht(spelers, archief, trainingen).find((r) => r.naam === 'Nieuw')!;
 		expect(nieuw.seconden).toBe(0);
-		expect(percentage(nieuw.presentie)).toBeNull();
+		expect(percentage(nieuw.attendanceOf)).toBeNull();
 	});
 
 	it('zet de makers bovenaan als je op doelpunten sorteert', () => {
@@ -63,7 +63,7 @@ describe('spelersoverzicht', () => {
 
 describe('assists', () => {
 	it('telt ze mee per speler', () => {
-		const metAssist: ArchiefWedstrijd[] = [
+		const metAssist: ArchivedMatch[] = [
 			{
 				...archief[0],
 				gebeurtenissen: [{ type: 'goal', t: 900, speler: 'p1', assist: 'p2' }]

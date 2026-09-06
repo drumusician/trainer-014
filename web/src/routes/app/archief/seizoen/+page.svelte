@@ -9,7 +9,7 @@
 	const st = $derived(seizoenStand(t.archief));
 	const scorers = $derived(makers(t.archief, t.spelers));
 
-	function datumKort(d: string) {
+	function shortDate(d: string) {
 		try {
 			return new Date(d + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
 		} catch {
@@ -44,7 +44,7 @@
 								{r.naam}
 								<span class="sub">
 									{r.wedstrijden
-										.map((w) => datumKort(w.datum) + (w.aantal > 1 ? ' ' + w.aantal + '×' : ''))
+										.map((w) => shortDate(w.datum) + (w.aantal > 1 ? ' ' + w.aantal + '×' : ''))
 										.join(' · ')}
 								</span>
 							</span>

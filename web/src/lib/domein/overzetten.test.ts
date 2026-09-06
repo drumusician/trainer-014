@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { beschrijf, leesCode, maakCode } from './overzetten';
-import { legeToestand, type Toestand } from './types';
+import { describePackage, readTransferCode, makeTransferCode } from './overzetten';
+import { emptyState, type State } from './types';
 
-function volleToestand(): Toestand {
-	const t = legeToestand();
+function volleToestand(): State {
+	const t = emptyState();
 	t.spelers = [
 		{ id: 'p1', naam: 'Daanish', linie: 'M' },
 		{ id: 'p2', naam: 'Zoë', linie: '', keept: true }
@@ -43,7 +43,7 @@ function volleToestand(): Toestand {
 
 describe('overzetten', () => {
 	it('neemt alles mee behalve de wedstrijd die loopt', () => {
-		const p = leesCode(maakCode(volleToestand()));
+		const p = readTransferCode(makeTransferCode(volleToestand()));
 		expect(p.spelers).toHaveLength(2);
 		expect(p.trainingen).toHaveLength(1);
 		expect(p.archief).toHaveLength(1);
@@ -52,29 +52,29 @@ describe('overzetten', () => {
 	});
 
 	it('overleeft accenten in namen', () => {
-		expect(leesCode(maakCode(volleToestand())).spelers![1].naam).toBe('Zoë');
+		expect(readTransferCode(makeTransferCode(volleToestand())).spelers![1].naam).toBe('Zoë');
 	});
 
 	it('slikt ook een back-up, die is immers hetzelfde', () => {
 		const backup = JSON.stringify({ blaadje: 1, toestand: { spelers: [{ id: 'p1', naam: 'Aad', linie: 'V' }] } });
-		expect(leesCode(backup).spelers![0].naam).toBe('Aad');
+		expect(readTransferCode(backup).spelers![0].naam).toBe('Aad');
 	});
 
 	it('laat weg wat er niet in staat, in plaats van het te wissen', () => {
 		const oud = btoa(JSON.stringify({ v: 1, spelers: [{ id: 'p1', naam: 'Aad', linie: 'V' }], formatie: '4-4-2' }));
-		const p = leesCode(oud);
+		const p = readTransferCode(oud);
 		expect(p.trainingen).toBeUndefined();
 		expect(p.archief).toBeUndefined();
 	});
 
 	it('vertelt wat erin zit', () => {
-		expect(beschrijf(leesCode(maakCode(volleToestand())))).toBe(
+		expect(describePackage(readTransferCode(makeTransferCode(volleToestand())))).toBe(
 			'2 spelers, 1 wedstrijd, 1 training, een standaardopstelling'
 		);
 	});
 
 	it('klaagt over een code zonder selectie', () => {
-		expect(() => leesCode('geen geldige code')).toThrow();
-		expect(() => leesCode(btoa(JSON.stringify({ v: 2, spelers: [] })))).toThrow();
+		expect(() => readTransferCode('geen geldige code')).toThrow();
+		expect(() => readTransferCode(btoa(JSON.stringify({ v: 2, spelers: [] })))).toThrow();
 	});
 });

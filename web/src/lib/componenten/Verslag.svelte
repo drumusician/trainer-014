@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { verslagTekst, type Verslagbron } from '$lib/domein/verslag';
+	import { reportText, type ReportSource } from '$lib/domein/verslag';
 	import { app } from '$lib/toestand.svelte';
 
-	let { bron }: { bron: Verslagbron } = $props();
+	let { bron }: { bron: ReportSource } = $props();
 	let tekst = $state('');
 
 	async function kopieer() {
-		tekst = verslagTekst(bron, app.toestand.spelers, app.toestand.verslagWissels);
+		tekst = reportText(bron, app.toestand.spelers, app.toestand.verslagWissels);
 		try {
 			await navigator.clipboard.writeText(tekst);
 		} catch {
@@ -20,7 +20,7 @@
 	<button
 		onclick={() => {
 			app.toestand.verslagWissels = !app.toestand.verslagWissels;
-			app.bewaar();
+			app.save();
 			if (tekst) kopieer();
 		}}
 	>

@@ -4,9 +4,9 @@
 	import Speeltijd from '$lib/componenten/Speeltijd.svelte';
 	import Verloop from '$lib/componenten/Verloop.svelte';
 	import Verslag from '$lib/componenten/Verslag.svelte';
-	import { mmss, positieTekst } from '$lib/domein/tijd';
-	import { datumKort, datumMetJaar } from '$lib/domein/datum';
-	import { verloopRegels } from '$lib/domein/verslag';
+	import { mmss, positionText } from '$lib/domein/tijd';
+	import { shortDate, datumMetJaar } from '$lib/domein/datum';
+	import { timelineRows } from '$lib/domein/verslag';
 	import { bronVanArchief } from '$lib/domein/verslag';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
@@ -15,14 +15,14 @@
 	const a = $derived(app.toestand.archief[i]);
 	/* Afgeleid, niet in de template aangeroepen: dat rekent bij elke render opnieuw. */
 	const regels = $derived(
-		a ? verloopRegels(a.gebeurtenissen ?? [], app.toestand.spelers, a.namen, a.delen, a.formatie) : []
+		a ? timelineRows(a.gebeurtenissen ?? [], app.toestand.spelers, a.namen, a.delen, a.formatie) : []
 	);
 
-	$effect(() => zetKop(a ? datumKort(a.datum) + ' · ' + a.tegenstander : 'Wedstrijd', '/app', 'Terug'));
+	$effect(() => zetKop(a ? shortDate(a.datum) + ' · ' + a.tegenstander : 'Wedstrijd', '/app', 'Terug'));
 
 	/** De naam van nu, ook als iemand na de wedstrijd hernoemd is. */
 	function naamNu(r: { id?: string; naam: string }) {
-		return (r.id && app.spelerVan(r.id)?.naam) || r.naam;
+		return (r.id && app.playerById(r.id)?.naam) || r.naam;
 	}
 
 	let bewerken = $state(false);
@@ -44,14 +44,14 @@
 			alert('Vul een minuut in.');
 			return;
 		}
-		app.voegDoelpuntToe(i, m, nieuwTegen ? null : nieuwMaker || null, nieuwTegen);
+		app.addGoal(i, m, nieuwTegen ? null : nieuwMaker || null, nieuwTegen);
 		nieuwMinuut = '';
 		nieuwMaker = '';
 	}
 
 	function verwijder() {
 		if (!confirm('De wedstrijd tegen ' + a.tegenstander + ' van ' + a.datum + ' uit het archief verwijderen?')) return;
-		app.verwijderUitArchief(i);
+		app.removeFromArchive(i);
 		goto('/app');
 	}
 </script>
@@ -82,14 +82,14 @@
 						<input
 							type="date"
 							value={a.datum}
-							onchange={(e) => app.wijzigArchief(i, { datum: e.currentTarget.value })}
+							onchange={(e) => app.updateArchived(i, { datum: e.currentTarget.value })}
 						/>
 					</label>
 					<label class="vak">
 						Thuis of uit
 						<select
 							value={a.thuis !== false ? 'thuis' : 'uit'}
-							onchange={(e) => app.wijzigArchief(i, { thuis: e.currentTarget.value === 'thuis' })}
+							onchange={(e) => app.updateArchived(i, { thuis: e.currentTarget.value === 'thuis' })}
 						>
 							<option value="thuis">Thuis</option>
 							<option value="uit">Uit</option>
@@ -100,7 +100,7 @@
 					Tegenstander
 					<input
 						value={a.tegenstander}
-						onchange={(e) => app.wijzigArchief(i, { tegenstander: e.currentTarget.value })}
+						onchange={(e) => app.updateArchived(i, { tegenstander: e.currentTarget.value })}
 					/>
 				</label>
 			{/if}
@@ -110,9 +110,9 @@
 				rijen={(a.speeltijd ?? []).map((r) => ({
 					naam: naamNu(r),
 					seconden: r.seconden ?? 0,
-					/* oudere wedstrijden hebben alleen keeperminuten, nieuwere alle plekken */
+					/* oudere wedstrijden hebben alleen keeperminuten, nieuwere alle positionsOf */
 					sub:
-						positieTekst(r.posities, a.formatie) ||
+						positionText(r.posities, a.formatie) ||
 						(r.keeper ? Math.round(r.keeper / 60) + ' min in het doel' : undefined)
 				}))}
 			/>
@@ -131,7 +131,7 @@
 							<b>{mmss(r.t)}</b>
 							<span>{r.tekst}</span>
 							{#if r.type === 'goal' || r.type === 'tegen'}
-								<button class="klein uit" onclick={() => app.verwijderDoelpunt(i, r.index)}>Weg</button>
+								<button class="klein uit" onclick={() => app.removeGoal(i, r.index)}>Weg</button>
 							{/if}
 						</li>
 					{/each}
@@ -169,7 +169,7 @@
 			<textarea
 				value={a.notitie ?? ''}
 				placeholder="Nog niets opgeschreven."
-				oninput={(e) => app.zetArchiefNotitie(i, e.currentTarget.value)}></textarea>
+				oninput={(e) => app.setArchiveNote(i, e.currentTarget.value)}></textarea>
 
 			<h2>Delen</h2>
 			<Verslag bron={bronVanArchief(a)} />

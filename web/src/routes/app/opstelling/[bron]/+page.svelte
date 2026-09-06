@@ -3,8 +3,8 @@
 	import { page } from '$app/state';
 	import Veld from '$lib/componenten/Veld.svelte';
 	import BankKolom from '$lib/componenten/BankKolom.svelte';
-	import { aantalPlekken, groepVan, liniesIn, LINIES, plekLinie, SPEELVORMEN } from '$lib/domein/formaties';
-	import { mager, presentie } from '$lib/domein/presentie';
+	import { positionCount, groupOf, linesIn, LINES, positionLine, FORMATS } from '$lib/domein/formaties';
+	import { thinAttendance, attendanceOf } from '$lib/domein/presentie';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 
@@ -20,7 +20,7 @@
 	   hem hier aan in plaats van een doodlopend scherm te tonen. */
 	$effect(() => {
 		if (bron === 'standaard' && !app.toestand.standaard && app.toestand.spelers.length) {
-			app.zorgVoorStandaard();
+			app.ensureDefaultLineup();
 		}
 	});
 
@@ -28,54 +28,58 @@
 	   teruggerekend uit de wissels, en ongemerkt ruilen zet die op scherp.
 	   Zolang de klok nog niet gelopen heeft mag je alles nog verzetten. */
 	$effect(() => {
-		if (bron === 'wedstrijd' && app.gestart) goto('/app/wedstrijd');
+		if (bron === 'wedstrijd' && app.kickedOff) goto('/app/wedstrijd');
 	});
 
 	const bezet = $derived(doel ? Object.values(doel.opstelling).filter(Boolean).length : 0);
-	const nodig = $derived(doel ? aantalPlekken(doel.formatie) : 0);
-	const gekozenSpeler = $derived(doel && app.gekozenPlek ? app.spelerVan(doel.opstelling[app.gekozenPlek]) : undefined);
+	const nodig = $derived(doel ? positionCount(doel.formatie) : 0);
+	const gekozenSpeler = $derived(
+		doel && app.chosenPosition ? app.playerById(doel.opstelling[app.chosenPosition]) : undefined
+	);
 
 	/* Eerste tik kiest een plek. Tweede tik op een andere plek ruilt ze om; staat
 	   daar niemand, dan verhuist hij ernaartoe. */
 	function tikPlek(plekId: string) {
-		if (!app.gekozenPlek) {
-			app.gekozenPlek = plekId;
+		if (!app.chosenPosition) {
+			app.chosenPosition = plekId;
 			return;
 		}
-		if (app.gekozenPlek === plekId) {
-			app.gekozenPlek = null;
+		if (app.chosenPosition === plekId) {
+			app.chosenPosition = null;
 			return;
 		}
-		app.ruilPlekken(bron, app.gekozenPlek, plekId);
+		app.swapPositions(bron, app.chosenPosition, plekId);
 	}
 
 	/* Linies zonder wissel: dat is een verrassing die je liever nu hebt. */
 	const zonderWissel = $derived.by(() => {
 		if (!doel) return [];
-		const bank = doel.bank.map((id) => app.spelerVan(id)).filter(Boolean);
+		const bank = doel.bank.map((id) => app.playerById(id)).filter(Boolean);
 		/* alleen de linies die in deze formatie voorkomen: bij 4 tegen 4 geen keeper */
-		return liniesIn(doel.formatie)
-			.filter((code) => !bank.some((p) => p && groepVan(p) === code))
-			.map((code) => LINIES[code].toLowerCase());
+		return linesIn(doel.formatie)
+			.filter((code) => !bank.some((p) => p && groupOf(p) === code))
+			.map((code) => LINES[code].toLowerCase());
 	});
 
-	const mageren = $derived(app.toestand.spelers.filter((p) => mager(presentie(app.toestand.trainingen, p.id, 4))));
+	const mageren = $derived(
+		app.toestand.spelers.filter((p) => thinAttendance(attendanceOf(app.toestand.trainingen, p.id, 4)))
+	);
 
 	function klaar() {
 		if (bron === 'standaard') {
-			app.bewaar();
+			app.save();
 			goto('/app');
 			return;
 		}
 		if (bezet < nodig && !confirm('Er staan er ' + bezet + ' op het veld in plaats van ' + nodig + '. Toch doorgaan?'))
 			return;
-		app.gekozenPlek = null;
+		app.chosenPosition = null;
 		goto('/app/wedstrijd');
 	}
 
 	function wissen() {
 		if (!confirm('De standaardopstelling weggooien?')) return;
-		app.wisStandaard();
+		app.clearDefaultLineup();
 		goto('/app');
 	}
 </script>
@@ -101,44 +105,44 @@
 	<main>
 		<div class="veldscherm zonderklok">
 			<div class="veldrij">
-				<Veld formatie={doel.formatie} opstelling={doel.opstelling} gekozen={app.gekozenPlek} onplek={tikPlek} />
+				<Veld formatie={doel.formatie} opstelling={doel.opstelling} gekozen={app.chosenPosition} onplek={tikPlek} />
 				<BankKolom
 					bank={doel.bank}
 					formatie={doel.formatie}
-					gekozen={app.gekozenPlek}
+					gekozen={app.chosenPosition}
 					leegtekst="Niemand over."
-					ontik={(id) => app.zetInOpzet(bron, id)}
+					ontik={(id) => app.putOnPositionWhileSettingUp(bron, id)}
 				/>
 			</div>
 
-			{#if app.gekozenPlek}
+			{#if app.chosenPosition}
 				<div class="melding">
 					<span>
 						{#if gekozenSpeler}
-							<b>{gekozenSpeler.naam}</b> · {LINIES[plekLinie(app.gekozenPlek, doel.formatie)].toLowerCase()}. Tik een
-							andere plek om te ruilen, of iemand van de bank.
+							<b>{gekozenSpeler.naam}</b> · {LINES[positionLine(app.chosenPosition, doel.formatie)].toLowerCase()}. Tik
+							een andere plek om te ruilen, of iemand van de bank.
 						{:else}
-							<b>Lege plek</b> · {LINIES[plekLinie(app.gekozenPlek, doel.formatie)].toLowerCase()}. Tik wie hier komt te
-							staan.
+							<b>Lege plek</b> · {LINES[positionLine(app.chosenPosition, doel.formatie)].toLowerCase()}. Tik wie hier
+							komt te staan.
 						{/if}
 					</span>
 					{#if gekozenSpeler}
-						<button class="klein" onclick={() => app.haalVanVeld(bron, app.gekozenPlek!)}>Naar de bank</button>
+						<button class="klein" onclick={() => app.takeOffPitch(bron, app.chosenPosition!)}>Naar de bank</button>
 					{/if}
-					<button class="klein" onclick={() => (app.gekozenPlek = null)}>Annuleren</button>
+					<button class="klein" onclick={() => (app.chosenPosition = null)}>Annuleren</button>
 				</div>
 			{/if}
 
-			{#if !app.gekozenPlek && zonderWissel.length}
+			{#if !app.chosenPosition && zonderWissel.length}
 				<p class="uitleg" style="padding: 0 12px; margin: 0 0 8px">
 					<b class="mager">Geen wissel voor {zonderWissel.join(', ')}.</b>
 				</p>
 			{/if}
-			{#if !app.gekozenPlek && mageren.length}
+			{#if !app.chosenPosition && mageren.length}
 				<p class="uitleg" style="padding: 0 12px">
 					Weinig getraind:
 					{#each mageren as p, i (p.id)}
-						{@const r = presentie(app.toestand.trainingen, p.id, 4)}
+						{@const r = attendanceOf(app.toestand.trainingen, p.id, 4)}
 						<b class="mager">{p.naam} {r.er}/{r.totaal}</b>{i < mageren.length - 1 ? ', ' : ''}
 					{/each}
 				</p>
@@ -148,8 +152,8 @@
 				{#if bron === 'standaard'}
 					<label class="formatiekeuze">
 						Formatie
-						<select value={doel.formatie} onchange={(e) => app.kiesFormatie(e.currentTarget.value)}>
-							{#each SPEELVORMEN as vorm (vorm.naam)}
+						<select value={doel.formatie} onchange={(e) => app.chooseFormation(e.currentTarget.value)}>
+							{#each FORMATS as vorm (vorm.naam)}
 								<optgroup label={vorm.naam + (vorm.uitleg ? ' · ' + vorm.uitleg : '')}>
 									{#each vorm.formaties as f (f.sleutel)}
 										<option value={f.sleutel}>{f.sleutel}{f.uitleg ? ' · ' + f.uitleg : ''}</option>

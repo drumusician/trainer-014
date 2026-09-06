@@ -1,4 +1,4 @@
-import type { ArchiefWedstrijd, Speler } from './types';
+import type { ArchivedMatch, Player } from './types';
 
 export interface SeizoenRegel {
 	naam: string;
@@ -18,7 +18,7 @@ export interface SeizoenStand {
 	seconden: number;
 }
 
-export function seizoenStand(archief: ArchiefWedstrijd[]): SeizoenStand {
+export function seizoenStand(archief: ArchivedMatch[]): SeizoenStand {
 	const uit: SeizoenStand = {
 		wedstrijden: archief.length,
 		gewonnen: 0,
@@ -44,7 +44,7 @@ export function seizoenStand(archief: ArchiefWedstrijd[]): SeizoenStand {
  * Alles uit het archief opgeteld. Op speler-id waar dat kan, zodat iemand
  * hernoemen geen twee rijen oplevert; op naam voor oude wedstrijden zonder id.
  */
-export function seizoenTotalen(archief: ArchiefWedstrijd[], spelers: Speler[]): SeizoenRegel[] {
+export function seasonTotals(archief: ArchivedMatch[], spelers: Player[]): SeizoenRegel[] {
 	const per: Record<string, SeizoenRegel> = {};
 	const speler = (id?: string | null) => (id ? spelers.find((p) => p.id === id) : undefined);
 
@@ -86,7 +86,7 @@ export interface MakerRegel {
  * Wie scoorde er, en wanneer. De stand telt alle doelpunten; deze lijst alleen
  * die met een maker erbij, want soms weet je het gewoon niet.
  */
-export function makers(archief: ArchiefWedstrijd[], spelers: Speler[]): MakerRegel[] {
+export function makers(archief: ArchivedMatch[], spelers: Player[]): MakerRegel[] {
 	const per: Record<string, MakerRegel> = {};
 	archief.forEach((a) => {
 		(a.gebeurtenissen ?? [])

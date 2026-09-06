@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { mager, presentie } from '$lib/domein/presentie';
+	import { thinAttendance, attendanceOf } from '$lib/domein/presentie';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 
@@ -9,7 +9,7 @@
 	const afwezig = $derived(new Set(w?.afwezig ?? []));
 	const er = $derived(app.toestand.spelers.filter((p) => !afwezig.has(p.id)).length);
 	/* Loopt de wedstrijd al, dan is dit geen opzetscherm meer maar een correctie. */
-	const bezig = $derived(app.gestart && !w?.afgelopen);
+	const bezig = $derived(app.kickedOff && !w?.afgelopen);
 </script>
 
 <main>
@@ -25,12 +25,12 @@
 					<input
 						value={w.tegenstander === 'Tegenstander' ? '' : w.tegenstander}
 						placeholder="bijv. Sparta JO11-2"
-						onchange={(e) => app.zetTegenstander(e.currentTarget.value)}
+						onchange={(e) => app.setOpponent(e.currentTarget.value)}
 					/>
 				</label>
 				<label class="vak">
 					Thuis of uit
-					<select value={w.thuis ? 'thuis' : 'uit'} onchange={(e) => app.zetThuis(e.currentTarget.value === 'thuis')}>
+					<select value={w.thuis ? 'thuis' : 'uit'} onchange={(e) => app.setHome(e.currentTarget.value === 'thuis')}>
 						<option value="thuis">Thuis</option>
 						<option value="uit">Uit</option>
 					</select>
@@ -53,16 +53,16 @@
 
 			{#each app.toestand.spelers as p (p.id)}
 				{@const weg = afwezig.has(p.id)}
-				{@const recent = presentie(app.toestand.trainingen, p.id, 4)}
+				{@const recent = attendanceOf(app.toestand.trainingen, p.id, 4)}
 				<div class="sregel">
 					<span class="naam">
 						{p.naam}
-						{#if mager(recent)}<span class="min mager"> {recent.er}/{recent.totaal} training</span>{/if}
+						{#if thinAttendance(recent)}<span class="min mager"> {recent.er}/{recent.totaal} training</span>{/if}
 					</span>
-					{#if bezig && app.staatInVeld(p.id)}
+					{#if bezig && app.isOnPitch(p.id)}
 						<span class="presknop veld">In het veld</span>
 					{:else}
-						<button class="presknop {weg ? 'nee' : 'ja'}" onclick={() => app.zetAfwezig(p.id, !weg)}>
+						<button class="presknop {weg ? 'nee' : 'ja'}" onclick={() => app.setAbsent(p.id, !weg)}>
 							{weg ? 'Er niet' : 'Er wel'}
 						</button>
 					{/if}

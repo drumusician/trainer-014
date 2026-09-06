@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { backupNaam, leesBackup, maakBackup } from './backup';
-import { beschrijf } from './overzetten';
-import { legeToestand } from './types';
+import { backupName, readBackup, makeBackup } from './backup';
+import { describePackage } from './overzetten';
+import { emptyState } from './types';
 
 function volleToestand() {
-	const t = legeToestand();
+	const t = emptyState();
 	t.spelers = [
 		{ id: 'p1', naam: 'Daanish', linie: 'M' },
 		{ id: 'p2', naam: 'Gijs', linie: '', keept: true }
@@ -43,7 +43,7 @@ function volleToestand() {
 
 describe('back-up', () => {
 	it('houdt selectie, trainingen en archief vast, maar niet de lopende wedstrijd', () => {
-		const terug = leesBackup(maakBackup(volleToestand(), '2026-09-03T10:00:00.000Z'));
+		const terug = readBackup(makeBackup(volleToestand(), '2026-09-03T10:00:00.000Z'));
 		expect(terug.spelers).toHaveLength(2);
 		expect(terug.trainingen[0].status.p2).toBe('nee');
 		expect(terug.archief[0].tegenstander).toBe('Ajax');
@@ -52,17 +52,17 @@ describe('back-up', () => {
 
 	it('slikt ook een kale toestand, zoals een oude export', () => {
 		const oud = JSON.stringify({ spelers: [{ id: 'p1', naam: 'Aad', linie: 'V' }], archief: [] });
-		expect(leesBackup(oud).spelers[0].naam).toBe('Aad');
+		expect(readBackup(oud).spelers[0].naam).toBe('Aad');
 	});
 
 	it('weigert wat geen back-up is', () => {
-		expect(() => leesBackup('{}')).toThrow();
-		expect(() => leesBackup('geen json')).toThrow();
-		expect(() => leesBackup(JSON.stringify({ spelers: [] }))).toThrow();
+		expect(() => readBackup('{}')).toThrow();
+		expect(() => readBackup('geen json')).toThrow();
+		expect(() => readBackup(JSON.stringify({ spelers: [] }))).toThrow();
 	});
 
 	it('noemt het bestand naar de dag', () => {
-		expect(backupNaam('2026-09-03T10:00:00.000Z')).toBe('blaadje-2026-09-03.json');
+		expect(backupName('2026-09-03T10:00:00.000Z')).toBe('blaadje-2026-09-03.json');
 	});
 });
 
@@ -70,15 +70,15 @@ describe('een bewaard bestand terugzetten', () => {
 	/* De knop 'Bestand openen' stond er niet, terwijl 'Bestand opslaan' er wel was.
 	   Wat je opslaat moet je ook terug kunnen zetten. */
 	it('leest terug wat maakBackup schreef, met archief en al', () => {
-		const heen = maakBackup(volleToestand(), '2026-09-06T10:00:00.000Z');
-		const terug = leesBackup(heen);
+		const heen = makeBackup(volleToestand(), '2026-09-06T10:00:00.000Z');
+		const terug = readBackup(heen);
 		expect(terug.spelers.length).toBe(volleToestand().spelers.length);
 		expect(terug.archief.length).toBe(volleToestand().archief.length);
 		expect(terug.teamnaam).toBe(volleToestand().teamnaam);
 	});
 
 	it('beschrijft zowel een back-up als een overzetcode', () => {
-		const uitBackup = leesBackup(maakBackup(volleToestand(), '2026-09-06T10:00:00.000Z'));
-		expect(beschrijf(uitBackup)).toContain('speler');
+		const uitBackup = readBackup(makeBackup(volleToestand(), '2026-09-06T10:00:00.000Z'));
+		expect(describePackage(uitBackup)).toContain('speler');
 	});
 });

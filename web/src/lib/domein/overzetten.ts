@@ -1,4 +1,4 @@
-import type { Toestand } from './types';
+import type { State } from './types';
 
 /**
  * Wat er meegaat naar een ander toestel: alles wat de app onthoudt, behalve de
@@ -7,40 +7,40 @@ import type { Toestand } from './types';
  * Precies dezelfde inhoud als een back-up en als wat er naar de server gaat, want
  * anders moet je onthouden welke knop wat meeneemt. Dat is precies wat er misging.
  */
-export type Overzetbaar = Partial<Omit<Toestand, 'wedstrijd'>>;
+export type Overzetbaar = Partial<Omit<State, 'wedstrijd'>>;
 
-export interface OpzetPakket extends Overzetbaar {
+export interface TransferPackage extends Overzetbaar {
 	v: 1 | 2;
 }
 
-function naarBase64(tekst: string): string {
+function toBase64(tekst: string): string {
 	const bytes = new TextEncoder().encode(tekst);
 	let ruw = '';
 	bytes.forEach((b) => (ruw += String.fromCharCode(b)));
 	return btoa(ruw);
 }
 
-function vanBase64(code: string): string {
+function fromBase64(code: string): string {
 	const ruw = atob(code.trim());
 	const bytes = Uint8Array.from(ruw, (c) => c.charCodeAt(0));
 	return new TextDecoder().decode(bytes);
 }
 
-export function maakCode(t: Toestand): string {
+export function makeTransferCode(t: State): string {
 	const { wedstrijd: _weg, ...rest } = t;
-	const pakket: OpzetPakket = { v: 2, ...rest };
-	return naarBase64(JSON.stringify(pakket));
+	const pakket: TransferPackage = { v: 2, ...rest };
+	return toBase64(JSON.stringify(pakket));
 }
 
 /**
  * Leest een code of een back-up; allebei mag. Wat er niet in staat blijft staan
  * zoals het was: een oude code zonder trainingen wist je trainingen dus niet.
  */
-export function leesCode(tekst: string): OpzetPakket {
+export function readTransferCode(tekst: string): TransferPackage {
 	const ruw = tekst.trim();
-	const json = ruw.startsWith('{') ? ruw : vanBase64(ruw);
+	const json = ruw.startsWith('{') ? ruw : fromBase64(ruw);
 	const d = JSON.parse(json);
-	const pakket: OpzetPakket = d?.toestand ? { v: 2, ...d.toestand } : d;
+	const pakket: TransferPackage = d?.toestand ? { v: 2, ...d.toestand } : d;
 	if (!pakket || !Array.isArray(pakket.spelers) || !pakket.spelers.length) {
 		throw new Error('hier staat geen selectie in');
 	}
@@ -54,7 +54,7 @@ export function leesCode(tekst: string): OpzetPakket {
  * Neemt alleen wat het leest, zodat zowel een overzetcode als een teruggezet
  * back-upbestand erdoorheen kan.
  */
-export function beschrijf(p: Partial<Pick<Toestand, 'spelers' | 'archief' | 'trainingen' | 'standaard'>>): string {
+export function describePackage(p: Partial<Pick<State, 'spelers' | 'archief' | 'trainingen' | 'standaard'>>): string {
 	const aantal = p.spelers?.length ?? 0;
 	const stukjes = [aantal + (aantal === 1 ? ' speler' : ' spelers')];
 	if (p.archief) stukjes.push(p.archief.length + (p.archief.length === 1 ? ' wedstrijd' : ' wedstrijden'));

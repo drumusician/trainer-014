@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { keepertijden, positieTekst, positietijden, speeltijden, veldIntervallen } from './tijd';
-import { FORMATIES } from './formaties';
-import type { Speler, Wedstrijd } from './types';
+import { keeperTimes, positionText, positionTimes, playingTimes, fieldIntervals } from './tijd';
+import { FORMATIONS } from './formaties';
+import type { Player, Match } from './types';
 
 const NAMEN = ['Gijs', 'Jack', 'Maher', 'Daan', 'Mirza', 'Siem', 'Kasper', 'Daanish', 'Mauro', 'Max', 'Simon', 'Amir'];
-const spelers: Speler[] = NAMEN.map((naam) => ({ id: 'p' + naam, naam, linie: '' }));
+const spelers: Player[] = NAMEN.map((naam) => ({ id: 'p' + naam, naam, linie: '' }));
 
-function wedstrijd(): Wedstrijd {
+function wedstrijd(): Match {
 	const opstelling: Record<string, string | null> = {};
-	FORMATIES['4-3-3'].forEach((p, i) => (opstelling[p[0]] = spelers[i].id));
+	FORMATIONS['4-3-3'].forEach((p, i) => (opstelling[p[0]] = spelers[i].id));
 	return {
 		datum: '2026-09-06',
 		tegenstander: 'Test',
@@ -31,7 +31,7 @@ describe('speeltijd', () => {
 	it('telt een wedstrijd zonder wissels als elf keer de speelduur', () => {
 		const w = wedstrijd();
 		w.gebeurtenissen.push({ type: 'eind', t: 4200 });
-		const t = speeltijden(w, spelers);
+		const t = playingTimes(w, spelers);
 		expect(t['pGijs']).toBe(4200);
 		expect(t['pAmir']).toBe(0);
 		expect(Object.values(t).reduce((a, b) => a + b, 0)).toBe(11 * 4200);
@@ -43,7 +43,7 @@ describe('speeltijd', () => {
 		w.bank = ['pMax'];
 		w.gebeurtenissen.push({ type: 'wissel', t: 1200, eruit: 'pMax', erin: 'pAmir', plek: 'SP' });
 		w.gebeurtenissen.push({ type: 'eind', t: 4200 });
-		const t = speeltijden(w, spelers);
+		const t = playingTimes(w, spelers);
 		expect(t['pMax']).toBe(1200);
 		expect(t['pAmir']).toBe(3000);
 		expect(Object.values(t).reduce((a, b) => a + b, 0)).toBe(11 * 4200);
@@ -62,8 +62,8 @@ describe('speeltijd', () => {
 			{ type: 'wissel', t: 2100, eruit: 'pMirza', erin: 'pGijs', plek: 'LV' },
 			{ type: 'eind', t: 4200 }
 		);
-		const t = speeltijden(w, spelers);
-		const k = keepertijden(w);
+		const t = playingTimes(w, spelers);
+		const k = keeperTimes(w);
 		expect(t['pGijs']).toBe(4200);
 		expect(k['pGijs']).toBe(2100);
 		expect(t['pAmir']).toBe(2100);
@@ -79,8 +79,8 @@ describe('speeltijd', () => {
 		w.bank = ['pMax'];
 		w.gebeurtenissen.push({ type: 'wissel', t: 2000, eruit: 'pMax', erin: 'pAmir' });
 		w.gebeurtenissen.push({ type: 'eind', t: 4200 });
-		expect(veldIntervallen(w)).toHaveLength(12);
-		expect(Object.values(speeltijden(w, spelers)).reduce((a, b) => a + b, 0)).toBe(11 * 4200);
+		expect(fieldIntervals(w)).toHaveLength(12);
+		expect(Object.values(playingTimes(w, spelers)).reduce((a, b) => a + b, 0)).toBe(11 * 4200);
 	});
 });
 
@@ -97,8 +97,8 @@ describe('van plek ruilen tijdens de wedstrijd', () => {
 			{ type: 'ruil', t: 2100, plekA: 'K', plekB: 'MC' },
 			{ type: 'eind', t: 4200 }
 		);
-		const t = speeltijden(w, spelers);
-		const k = keepertijden(w);
+		const t = playingTimes(w, spelers);
+		const k = keeperTimes(w);
 		expect(t['pGijs']).toBe(4200);
 		expect(t['pKasper']).toBe(4200);
 		expect(k['pGijs']).toBe(2100);
@@ -116,8 +116,8 @@ describe('van plek ruilen tijdens de wedstrijd', () => {
 			{ type: 'wissel', t: 3000, eruit: 'pGijs', erin: 'pAmir', plek: 'MC' },
 			{ type: 'eind', t: 4200 }
 		);
-		const t = speeltijden(w, spelers);
-		const k = keepertijden(w);
+		const t = playingTimes(w, spelers);
+		const k = keeperTimes(w);
 		expect(k['pGijs']).toBe(2100); /* eerste helft in het doel */
 		expect(t['pGijs']).toBe(3000); /* daarna middenveld tot minuut 50 */
 		expect(t['pAmir']).toBe(1200);
@@ -129,10 +129,10 @@ describe('van plek ruilen tijdens de wedstrijd', () => {
 describe('kleinere speelvormen', () => {
 	/* De rekenkern telt nergens tot elf: hij volgt de plekken uit de formatie. */
 	it('rekent 8 tegen 8 net zo goed door', () => {
-		const kort: Speler[] = NAMEN.slice(0, 10).map((naam) => ({ id: 'p' + naam, naam, linie: '' }));
+		const kort: Player[] = NAMEN.slice(0, 10).map((naam) => ({ id: 'p' + naam, naam, linie: '' }));
 		const opstelling: Record<string, string | null> = {};
-		FORMATIES['1-3-3-1'].forEach((p, i) => (opstelling[p[0]] = kort[i].id));
-		const w: Wedstrijd = {
+		FORMATIONS['1-3-3-1'].forEach((p, i) => (opstelling[p[0]] = kort[i].id));
+		const w: Match = {
 			datum: '2026-09-06',
 			tegenstander: 'Test',
 			thuis: true,
@@ -153,18 +153,18 @@ describe('kleinere speelvormen', () => {
 			pauze: false,
 			afgelopen: true
 		};
-		const t = speeltijden(w, kort);
-		const k = keepertijden(w);
+		const t = playingTimes(w, kort);
+		const k = keeperTimes(w);
 		expect(Object.values(t).reduce((a, b) => a + b, 0)).toBe(8 * 3600);
 		expect(t['p' + NAMEN[7]]).toBe(1200);
 		expect(k['p' + NAMEN[0]]).toBe(1800); /* keepte tot de ruil */
 	});
 
 	it('werkt ook zonder keeper, bij 4 tegen 4', () => {
-		const kort: Speler[] = NAMEN.slice(0, 5).map((naam) => ({ id: 'p' + naam, naam, linie: '' }));
+		const kort: Player[] = NAMEN.slice(0, 5).map((naam) => ({ id: 'p' + naam, naam, linie: '' }));
 		const opstelling: Record<string, string | null> = {};
-		FORMATIES['2-2'].forEach((p, i) => (opstelling[p[0]] = kort[i].id));
-		const w: Wedstrijd = {
+		FORMATIONS['2-2'].forEach((p, i) => (opstelling[p[0]] = kort[i].id));
+		const w: Match = {
 			datum: '2026-09-06',
 			tegenstander: 'Test',
 			thuis: true,
@@ -183,8 +183,8 @@ describe('kleinere speelvormen', () => {
 			pauze: false,
 			afgelopen: true
 		};
-		expect(Object.values(speeltijden(w, kort)).reduce((a, b) => a + b, 0)).toBe(4 * 1800);
-		expect(keepertijden(w)).toEqual({});
+		expect(Object.values(playingTimes(w, kort)).reduce((a, b) => a + b, 0)).toBe(4 * 1800);
+		expect(keeperTimes(w)).toEqual({});
 	});
 });
 
@@ -199,19 +199,19 @@ describe('wie waar stond', () => {
 			{ type: 'wissel', t: 2100, eruit: 'pMirza', erin: 'pGijs', plek: 'LV' },
 			{ type: 'eind', t: 4200 }
 		);
-		const p = positietijden(w);
+		const p = positionTimes(w);
 		expect(p['pGijs']).toEqual({ K: 2100, LV: 2100 });
 		expect(p['pMirza']).toEqual({ LV: 2100 });
 	});
 
 	it('schrijft het leesbaar op, langste plek eerst', () => {
-		expect(positieTekst({ LV: 2100, K: 900 }, '4-3-3')).toBe('35 min LV · 15 min K');
-		expect(positieTekst({}, '4-3-3')).toBe('');
-		expect(positieTekst(undefined, '4-3-3')).toBe('');
+		expect(positionText({ LV: 2100, K: 900 }, '4-3-3')).toBe('35 min LV · 15 min K');
+		expect(positionText({}, '4-3-3')).toBe('');
+		expect(positionText(undefined, '4-3-3')).toBe('');
 	});
 
 	it('vat samen als iemand overal gestaan heeft', () => {
-		const tekst = positieTekst({ K: 600, LV: 500, MC: 400, SP: 300, RV: 200 }, '4-3-3');
+		const tekst = positionText({ K: 600, LV: 500, MC: 400, SP: 300, RV: 200 }, '4-3-3');
 		expect(tekst).toBe('10 min K · 8 min LV · 7 min M · 8 min overig');
 	});
 });

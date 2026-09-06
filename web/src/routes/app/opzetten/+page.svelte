@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { SPEELVORMEN } from '$lib/domein/formaties';
+	import { FORMATS } from '$lib/domein/formaties';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 
@@ -29,12 +29,12 @@
 			alert('Vul de naam van je team in.');
 			return;
 		}
-		app.zetTeamnaam(naam);
+		app.setTeamName(naam);
 		stap = 2;
 	}
 
 	function naarDrie() {
-		if (aantalNamen) app.namenErbij(namenVak);
+		if (aantalNamen) app.addPlayerNames(namenVak);
 		namenVak = '';
 		if (!t.spelers.length) {
 			alert('Zet er minstens één speler in, anders valt er niets op te stellen.');
@@ -44,10 +44,10 @@
 	}
 
 	function klaar(naarOpstelling: boolean) {
-		app.bewaar();
+		app.save();
 		if (naarOpstelling) {
-			app.zorgVoorStandaard();
-			app.gekozenPlek = null;
+			app.ensureDefaultLineup();
+			app.chosenPosition = null;
 			goto('/app/opstelling/standaard');
 		} else {
 			goto('/app');
@@ -103,8 +103,8 @@
 			<div class="tweekolom">
 				<label class="vak">
 					Formatie
-					<select value={t.formatie} onchange={(e) => app.kiesFormatie(e.currentTarget.value)}>
-						{#each SPEELVORMEN as vorm (vorm.naam)}
+					<select value={t.formatie} onchange={(e) => app.chooseFormation(e.currentTarget.value)}>
+						{#each FORMATS as vorm (vorm.naam)}
 							<optgroup label={vorm.naam + (vorm.uitleg ? ' · ' + vorm.uitleg : '')}>
 								{#each vorm.formaties as f (f.sleutel)}
 									<option value={f.sleutel}>{f.sleutel}{f.uitleg ? ' · ' + f.uitleg : ''}</option>
@@ -115,7 +115,7 @@
 				</label>
 				<label class="vak">
 					Speelwijze
-					<select bind:value={t.delen} onchange={() => app.bewaar()}>
+					<select bind:value={t.delen} onchange={() => app.save()}>
 						<option value={2}>2 helften</option>
 						<option value={4}>4 kwarten</option>
 					</select>
@@ -123,7 +123,7 @@
 			</div>
 			<label class="vak">
 				Minuten per {t.delen === 4 ? 'kwart' : 'helft'}
-				<input type="number" inputmode="numeric" bind:value={t.helftMinuten} onchange={() => app.bewaar()} />
+				<input type="number" inputmode="numeric" bind:value={t.helftMinuten} onchange={() => app.save()} />
 			</label>
 
 			<h2>Klaar</h2>

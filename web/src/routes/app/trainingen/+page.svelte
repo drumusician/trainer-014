@@ -2,14 +2,16 @@
 	import { goto } from '$app/navigation';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
-	import { datumKort } from '$lib/domein/datum';
-	import { mager, presentie } from '$lib/domein/presentie';
+	import { shortDate } from '$lib/domein/datum';
+	import { thinAttendance, attendanceOf } from '$lib/domein/presentie';
 	import type { Training } from '$lib/domein/types';
 
 	$effect(() => zetKop('Trainingen'));
 
 	const trainingen = $derived(app.toestand.trainingen);
-	const mageren = $derived(app.toestand.spelers.filter((p) => mager(presentie(app.toestand.trainingen, p.id, 4))));
+	const mageren = $derived(
+		app.toestand.spelers.filter((p) => thinAttendance(attendanceOf(app.toestand.trainingen, p.id, 4)))
+	);
 
 	function telling(t: Training) {
 		const w = { ja: 0, af: 0, nee: 0 };
@@ -25,7 +27,7 @@
 			goto('/app/opzetten');
 			return;
 		}
-		goto('/app/trainingen/' + app.nieuweTraining().id);
+		goto('/app/trainingen/' + app.newTraining().id);
 	}
 </script>
 
@@ -48,7 +50,7 @@
 					{@const w = telling(t)}
 					<li class="klikbaar">
 						<a href="/app/trainingen/{t.id}">
-							<b>{datumKort(t.datum)}</b>
+							<b>{shortDate(t.datum)}</b>
 							<span>
 								{w.ja} aanwezig{w.af ? ', ' + w.af + ' afgemeld' : ''}{w.nee ? ', ' + w.nee + ' niet gekomen' : ''}
 							</span>
@@ -68,7 +70,7 @@
 			<table class="uitslag">
 				<tbody>
 					{#each mageren as p (p.id)}
-						{@const r = presentie(app.toestand.trainingen, p.id, 4)}
+						{@const r = attendanceOf(app.toestand.trainingen, p.id, 4)}
 						<tr>
 							<td>{p.naam}</td>
 							<td class="m mager">{r.er}/{r.totaal}</td>

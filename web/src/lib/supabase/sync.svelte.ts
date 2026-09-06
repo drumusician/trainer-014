@@ -6,7 +6,7 @@ const SESSIESLEUTEL = 'o14-sessie-v1';
    Daarom onthouden we voor wie we een code aanvroegen. */
 const INLOGSLEUTEL = 'o14-inlog-v1';
 
-const opslag = () => (typeof localStorage === 'undefined' ? null : localStorage);
+const storage = () => (typeof localStorage === 'undefined' ? null : localStorage);
 
 /** Goedkoop vingerafdrukje, om te zien of er echt iets veranderd is. */
 function vingerafdruk(waarde: unknown): string {
@@ -79,8 +79,8 @@ class Sync {
 	private wachter: ReturnType<typeof setTimeout> | null = null;
 	private bezigMetDuwen = false;
 
-	laad() {
-		const bak = opslag();
+	load() {
+		const bak = storage();
 		if (!bak) return;
 		try {
 			this.sessie = JSON.parse(bak.getItem(SESSIESLEUTEL) ?? 'null');
@@ -100,7 +100,7 @@ class Sync {
 	}
 
 	private bewaarInlogpoging(email: string | null) {
-		const bak = opslag();
+		const bak = storage();
 		if (!bak) return;
 		try {
 			if (email) bak.setItem(INLOGSLEUTEL, JSON.stringify({ email, sinds: Date.now() }));
@@ -110,8 +110,8 @@ class Sync {
 		}
 	}
 
-	private bewaar() {
-		const bak = opslag();
+	private save() {
+		const bak = storage();
 		if (!bak) return;
 		try {
 			bak.setItem(SESSIESLEUTEL, JSON.stringify(this.sessie));
@@ -137,7 +137,7 @@ class Sync {
 			versie: oud?.versie ?? 0,
 			laatst: oud?.laatst ?? null
 		};
-		this.bewaar();
+		this.save();
 	}
 
 	uitloggen() {
@@ -145,7 +145,7 @@ class Sync {
 		this.melding = '';
 		this.vies = false;
 		this.botsing = false;
-		opslag()?.removeItem(SESSIESLEUTEL);
+		storage()?.removeItem(SESSIESLEUTEL);
 		this.bewaarInlogpoging(null);
 	}
 
@@ -251,7 +251,7 @@ class Sync {
 			const u = (await sb('/auth/v1/user', {}, this.sessie!.access_token)) as { id: string; email: string };
 			this.sessie!.user_id = u.id;
 			this.sessie!.email = u.email;
-			this.bewaar();
+			this.save();
 		} catch {
 			/* dan vullen we het bij de eerste synchronisatie aan */
 		}
@@ -282,7 +282,7 @@ class Sync {
 			)) as { id: string }[];
 			s.teamId = nieuw[0].id;
 		}
-		this.bewaar();
+		this.save();
 		return s.teamId!;
 	}
 
@@ -308,7 +308,7 @@ class Sync {
 				}[];
 				verwacht = nu?.length ? nu[0].versie : null;
 			}
-			const pakket = app.syncPakket();
+			const pakket = app.syncPayload();
 			const r = (await sb(
 				'/rest/v1/rpc/toestand_opslaan',
 				{ method: 'POST', body: JSON.stringify({ p_team_id: team, p_data: pakket, p_verwachte_versie: verwacht }) },
@@ -317,7 +317,7 @@ class Sync {
 			this.sessie.versie = r?.versie ?? (this.sessie.versie ?? 0) + 1;
 			this.sessie.laatst = new Date().toISOString();
 			this.sessie.afdruk = vingerafdruk(pakket);
-			this.bewaar();
+			this.save();
 			this.vies = false;
 			this.botsing = false;
 			this.hapert = false;
@@ -356,7 +356,7 @@ class Sync {
 			}
 			const team = await this.zorgVoorTeam(token);
 			const rijen = (await sb('/rest/v1/team_toestand?select=data,versie&team_id=eq.' + team, {}, token)) as
-				{ data: ReturnType<typeof app.syncPakket>; versie: number }[] | null;
+				{ data: ReturnType<typeof app.syncPayload>; versie: number }[] | null;
 			if (!rijen?.length) {
 				/* nog niets op de server: dan is wat hier staat het begin */
 				if (stil) {
@@ -368,14 +368,14 @@ class Sync {
 				return;
 			}
 			if (stil && this.sessie.versie === rijen[0].versie) return; /* al gelijk */
-			if (!app.neemSyncOver(rijen[0].data)) {
+			if (!app.adoptSyncPayload(rijen[0].data)) {
 				this.melding = 'Wat er staat kon ik niet lezen.';
 				return;
 			}
 			this.sessie.versie = rijen[0].versie;
 			this.sessie.laatst = new Date().toISOString();
-			this.sessie.afdruk = vingerafdruk(app.syncPakket());
-			this.bewaar();
+			this.sessie.afdruk = vingerafdruk(app.syncPayload());
+			this.save();
 			this.vies = false;
 			this.botsing = false;
 			this.hapert = false;
@@ -402,7 +402,7 @@ class Sync {
 	/** Wordt na elke opslag geroepen. */
 	merkVies() {
 		if (!this.sessie) return;
-		const nu = vingerafdruk(app.syncPakket());
+		const nu = vingerafdruk(app.syncPayload());
 		if (nu === this.sessie.afdruk) return; /* niets veranderd wat de server aangaat */
 		this.vies = true;
 		this.plan();

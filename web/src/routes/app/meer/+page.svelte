@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { backupNaam, leesBackup, maakBackup } from '$lib/domein/backup';
-	import { beschrijf, leesCode, maakCode } from '$lib/domein/overzetten';
+	import { backupName, readBackup, makeBackup } from '$lib/domein/backup';
+	import { describePackage, readTransferCode, makeTransferCode } from '$lib/domein/overzetten';
 	import { app } from '$lib/toestand.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 	import { opslagstand } from '$lib/opslag.svelte';
-	import { problemen, wisProblemen } from '$lib/problemen.svelte';
+	import { issues, clearIssues } from '$lib/problemen.svelte';
 
 	$effect(() => zetKop('Gegevens'));
 
@@ -20,7 +20,7 @@
 	let backuptekst = $state('');
 
 	async function codeMaken() {
-		code = maakCode(t);
+		code = makeTransferCode(t);
 		overzet = 'maken';
 		try {
 			await navigator.clipboard.writeText(code);
@@ -31,7 +31,7 @@
 
 	async function backupMaken() {
 		const gemaakt = new Date().toISOString();
-		backuptekst = maakBackup(t, gemaakt);
+		backuptekst = makeBackup(t, gemaakt);
 		backup = 'maken';
 		try {
 			await navigator.clipboard.writeText(backuptekst);
@@ -41,7 +41,7 @@
 		const blob = new Blob([backuptekst], { type: 'application/json' });
 		const a = document.createElement('a');
 		a.href = URL.createObjectURL(blob);
-		a.download = backupNaam(gemaakt);
+		a.download = backupName(gemaakt);
 		a.click();
 		URL.revokeObjectURL(a.href);
 	}
@@ -58,15 +58,15 @@
 		const bestand = invoer.files?.[0];
 		if (!bestand) return;
 		try {
-			const pakket = leesBackup(await bestand.text());
+			const pakket = readBackup(await bestand.text());
 			if (
 				confirm(
 					'Dit terugzetten op dit toestel?\n\n' +
-						beschrijf(pakket) +
+						describePackage(pakket) +
 						'.\n\nWat hierin zit vervangt wat je nu hebt. Een wedstrijd die nu loopt blijft staan.'
 				)
 			) {
-				app.neemOver(pakket);
+				app.adoptPackage(pakket);
 				backup = 'geen';
 				overzet = 'geen';
 				alert('Teruggezet.');
@@ -81,16 +81,16 @@
 	/** Eén knop voor allebei: een code en een back-up bevatten hetzelfde. */
 	function overnemen() {
 		try {
-			const pakket = leesCode(code);
+			const pakket = readTransferCode(code);
 			if (
 				!confirm(
 					'Dit overnemen op dit toestel?\n\n' +
-						beschrijf(pakket) +
+						describePackage(pakket) +
 						'.\n\nWat hierin zit vervangt wat je nu hebt. Een wedstrijd die nu loopt blijft staan.'
 				)
 			)
 				return;
-			app.neemOver(pakket);
+			app.adoptPackage(pakket);
 			overzet = 'geen';
 			code = '';
 			alert('Overgenomen.');
@@ -232,14 +232,14 @@
 			</p>
 		{/if}
 
-		{#if problemen.lijst.length}
+		{#if issues.lijst.length}
 			<h2>Wat er misging</h2>
 			<p class="uitleg">
 				De app gaat door als er iets hapert — een volle opslag mag de klok niet stoppen. Maar dan moet je het achteraf
 				wel kunnen zien. Dit blijft op je toestel.
 			</p>
 			<div class="problemen">
-				{#each problemen.lijst as probleem (probleem.wanneer + probleem.wat)}
+				{#each issues.lijst as probleem (probleem.wanneer + probleem.wat)}
 					<div>
 						<b>{new Date(probleem.wanneer).toLocaleString('nl-NL')}</b>
 						<span>{probleem.wat}</span>
@@ -248,7 +248,7 @@
 				{/each}
 			</div>
 			<div class="knoprij" style="padding-left: 0; margin-top: 12px">
-				<button class="klein" onclick={wisProblemen}>Lijst wissen</button>
+				<button class="klein" onclick={clearIssues}>Lijst wissen</button>
 			</div>
 		{/if}
 

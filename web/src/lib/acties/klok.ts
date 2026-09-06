@@ -1,5 +1,5 @@
-import { verstreken } from '$lib/domein/tijd';
-import type { Gebeurtenis, GebeurtenisType, Wedstrijd } from '$lib/domein/types';
+import { elapsed } from '$lib/domein/tijd';
+import type { MatchEvent, MatchEventType, Match } from '$lib/domein/types';
 
 /**
  * De klok, en de gebeurtenissen die eraan hangen.
@@ -11,18 +11,18 @@ import type { Gebeurtenis, GebeurtenisType, Wedstrijd } from '$lib/domein/types'
  */
 
 /** Is er afgetrapt? Pas dan ligt de opstelling vast en gaat de klok tellen. */
-export function gestart(w: Wedstrijd | null): boolean {
+export function kickedOff(w: Match | null): boolean {
 	return !!w?.gebeurtenissen.some((g) => g.type === 'start');
 }
 
 /** Een gebeurtenis op de stand van de klok van dit moment. */
-export function log(w: Wedstrijd | null, nu: number, type: GebeurtenisType, extra: Partial<Gebeurtenis> = {}) {
+export function log(w: Match | null, nu: number, type: MatchEventType, extra: Partial<MatchEvent> = {}) {
 	if (!w) return;
-	w.gebeurtenissen.push({ type, t: verstreken(w, nu), ...extra } as Gebeurtenis);
+	w.gebeurtenissen.push({ type, t: elapsed(w, nu), ...extra } as MatchEvent);
 }
 
 /** Bijstellen als de scheidsrechter er anders over denkt. Nooit onder nul. */
-export function verschuif(w: Wedstrijd | null, seconden: number): boolean {
+export function verschuif(w: Match | null, seconden: number): boolean {
 	if (!w || w.afgelopen) return false;
 	w.verstreken = Math.max(0, w.verstreken + seconden);
 	return true;
@@ -37,14 +37,14 @@ export function verschuif(w: Wedstrijd | null, seconden: number): boolean {
  * is: wie voor het fluitsignaal nog schuift heeft die lijst al gevuld, en dan
  * werd de aftrap nooit vastgelegd.
  */
-export function loopToggle(w: Wedstrijd | null, nu: number, vandaag: string): boolean {
+export function toggleRunning(w: Match | null, nu: number, vandaag: string): boolean {
 	if (!w || w.afgelopen) return false;
 	if (w.loopt) {
 		w.verstreken += (nu - (w.sinds ?? nu)) / 1000;
 		w.loopt = false;
 		w.sinds = null;
 	} else {
-		if (!gestart(w)) {
+		if (!kickedOff(w)) {
 			w.datum = vandaag;
 			log(w, nu, 'start');
 		}
@@ -58,14 +58,14 @@ export function loopToggle(w: Wedstrijd | null, nu: number, vandaag: string): bo
  * Het huidige deel afsluiten, of het volgende beginnen. Werkt hetzelfde voor
  * twee helften als voor vier kwarten.
  */
-export function deelToggle(w: Wedstrijd | null, nu: number, vandaag: string): boolean {
+export function togglePart(w: Match | null, nu: number, vandaag: string): boolean {
 	if (!w || w.afgelopen) return false;
 	if (w.pauze) {
 		w.deel = Math.min(w.deel + 1, w.delen);
 		w.pauze = false;
-		if (!w.loopt) loopToggle(w, nu, vandaag);
+		if (!w.loopt) toggleRunning(w, nu, vandaag);
 	} else if (w.deel < w.delen) {
-		if (w.loopt) loopToggle(w, nu, vandaag);
+		if (w.loopt) toggleRunning(w, nu, vandaag);
 		log(w, nu, 'rust', { deel: w.deel });
 		w.pauze = true;
 	}
@@ -80,7 +80,7 @@ export function deelToggle(w: Wedstrijd | null, nu: number, vandaag: string): bo
  * een heel uur bij elkaar. Loopt de klok, dan verzetten we ook het ijkpunt,
  * anders telt de tijd sinds de laatste start er nog eens bovenop.
  */
-export function zetOp(w: Wedstrijd | null, nu: number, minuten: number): boolean {
+export function zetOp(w: Match | null, nu: number, minuten: number): boolean {
 	if (!w || w.afgelopen || !Number.isFinite(minuten)) return false;
 	w.verstreken = Math.max(0, Math.round(minuten * 60));
 	if (w.loopt) w.sinds = nu;
@@ -88,6 +88,6 @@ export function zetOp(w: Wedstrijd | null, nu: number, minuten: number): boolean
 }
 
 /** Kan er nog een deel bij, of is dit het laatste? */
-export function magVolgendDeel(w: Wedstrijd | null): boolean {
+export function canStartNextPart(w: Match | null): boolean {
 	return !!w && !w.afgelopen && (w.pauze || w.deel < w.delen);
 }

@@ -8,10 +8,10 @@
 	 * niet doet.
 	 */
 	import { page } from '$app/state';
-	import { meldProbleem } from '$lib/problemen.svelte';
+	import { reportIssue } from '$lib/problemen.svelte';
 
 	$effect(() => {
-		meldProbleem('Een scherm liep vast: ' + page.url.pathname, page.error?.message);
+		reportIssue('Een scherm liep vast: ' + page.url.pathname, page.error?.message);
 	});
 </script>
 

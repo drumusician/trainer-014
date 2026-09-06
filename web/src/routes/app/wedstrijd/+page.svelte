@@ -2,16 +2,16 @@
 	import { goto } from '$app/navigation';
 	import Veld from '$lib/componenten/Veld.svelte';
 	import BankKolom from '$lib/componenten/BankKolom.svelte';
-	import { LINIES, plekLinie } from '$lib/domein/formaties';
-	import { deelNaam, pauzeNaam } from '$lib/domein/delen';
-	import { keepertijden, mmss, speeltijden, stand, verstreken } from '$lib/domein/tijd';
+	import { LINES, positionLine } from '$lib/domein/formaties';
+	import { partName, breakName } from '$lib/domein/delen';
+	import { keeperTimes, mmss, playingTimes, score, elapsed } from '$lib/domein/tijd';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
 
 	const w = $derived(app.wedstrijd);
 	const klaar = $derived(!!w && !w.afgelopen && Object.keys(w.opstelling).length > 0);
-	const tijden = $derived(speeltijden(w, app.toestand.spelers, app.nu));
-	const uitslag = $derived(stand(w));
+	const tijden = $derived(playingTimes(w, app.toestand.spelers, app.nu));
+	const uitslag = $derived(score(w));
 
 	/* Wie scoorde? Dan wordt het veld even een keuzelijst. */
 	let doelpuntKiezen = $state(false);
@@ -41,7 +41,7 @@
 		if (doelpuntKiezen) {
 			const id = w.opstelling[plekId];
 			if (id) {
-				app.doelpunt(id);
+				app.goal(id);
 				maker = id;
 				doelpuntKiezen = false;
 				assistVragen = true;
@@ -51,32 +51,32 @@
 		if (assistVragen) {
 			const id = w.opstelling[plekId];
 			if (id && id !== maker) {
-				app.zetAssist(id);
+				app.setAssist(id);
 				assistVragen = false;
 			}
 			return;
 		}
-		if (!app.gekozenPlek) {
-			app.gekozenPlek = plekId;
+		if (!app.chosenPosition) {
+			app.chosenPosition = plekId;
 			return;
 		}
-		if (app.gekozenPlek === plekId) {
-			app.gekozenPlek = null;
+		if (app.chosenPosition === plekId) {
+			app.chosenPosition = null;
 			return;
 		}
 		/* Twee plekken achter elkaar: dan ruilen ze. Dat is geen wissel, er komt
 		   niemand van de bank; denk aan de keeper die na rust het veld in gaat. */
-		app.ruilInWedstrijd(app.gekozenPlek, plekId);
+		app.swapDuringMatch(app.chosenPosition, plekId);
 	}
 
 	function afsluiten() {
 		if (!confirm('Wedstrijd afsluiten?\n\nDe klok stopt en je krijgt het overzicht met de speeltijden.')) return;
-		app.beeindig();
+		app.finish();
 		goto('/app/afloop');
 	}
 
-	const uit = $derived(app.gekozenPlek && w ? app.spelerVan(w.opstelling[app.gekozenPlek]) : null);
-	const keeperMin = $derived(uit ? Math.round((keepertijden(w, app.nu)[uit.id] ?? 0) / 60) : 0);
+	const uit = $derived(app.chosenPosition && w ? app.playerById(w.opstelling[app.chosenPosition]) : null);
+	const keeperMin = $derived(uit ? Math.round((keeperTimes(w, app.nu)[uit.id] ?? 0) / 60) : 0);
 </script>
 
 {#if !app.toestand.spelers.length}
@@ -105,19 +105,19 @@
 {:else}
 	<div class="klokbalk">
 		<button type="button" class="kloktik" onclick={() => (klokBijstellen = !klokBijstellen)}>
-			<div class="klok">{mmss(verstreken(w, app.nu))}</div>
+			<div class="klok">{mmss(elapsed(w, app.nu))}</div>
 			<div class="helft">
 				{#if w.pauze}
-					{pauzeNaam(w.deel, w.delen)} · {deelNaam(w.deel, w.delen)} voorbij
+					{breakName(w.deel, w.delen)} · {partName(w.deel, w.delen)} voorbij
 				{:else}
-					{deelNaam(w.deel, w.delen)} · tik om de tijd te zetten
+					{partName(w.deel, w.delen)} · tik om de tijd te zetten
 				{/if}
 			</div>
 		</button>
 		<div style="flex: 1"></div>
-		<button onclick={() => app.loopToggle()}>{w.loopt ? 'Pauze' : 'Start'}</button>
-		<button onclick={() => app.deelToggle()} disabled={!app.magVolgendDeel}>
-			{w.pauze ? deelNaam(w.deel + 1, w.delen) : pauzeNaam(w.deel, w.delen)}
+		<button onclick={() => app.toggleRunning()}>{w.loopt ? 'Pauze' : 'Start'}</button>
+		<button onclick={() => app.togglePart()} disabled={!app.canStartNextPart}>
+			{w.pauze ? partName(w.deel + 1, w.delen) : breakName(w.deel, w.delen)}
 		</button>
 	</div>
 
@@ -133,12 +133,12 @@
 					max="200"
 					inputmode="numeric"
 					aria-label="Minuut"
-					value={Math.floor(verstreken(w, app.nu) / 60)}
-					onchange={(e) => app.zetKlok(Number(e.currentTarget.value))}
+					value={Math.floor(elapsed(w, app.nu) / 60)}
+					onchange={(e) => app.setClock(Number(e.currentTarget.value))}
 				/>
 			</label>
-			<button onclick={() => app.verschuifKlok(-60)}>−1′</button>
-			<button onclick={() => app.verschuifKlok(60)}>+1′</button>
+			<button onclick={() => app.shiftClock(-60)}>−1′</button>
+			<button onclick={() => app.shiftClock(60)}>+1′</button>
 			<button class="klein" onclick={() => (klokBijstellen = false)}>Klaar</button>
 		</div>
 	{/if}
@@ -146,13 +146,13 @@
 	<main>
 		<div class="veldscherm">
 			<div class="veldrij">
-				<Veld formatie={w.formatie} opstelling={w.opstelling} gekozen={app.gekozenPlek} {tijden} onplek={tikPlek} />
+				<Veld formatie={w.formatie} opstelling={w.opstelling} gekozen={app.chosenPosition} {tijden} onplek={tikPlek} />
 				<BankKolom
 					bank={w.bank}
 					formatie={w.formatie}
-					gekozen={app.gekozenPlek}
+					gekozen={app.chosenPosition}
 					{tijden}
-					ontik={(id) => app.zetOpPlek(id)}
+					ontik={(id) => app.putOnPosition(id)}
 				/>
 			</div>
 
@@ -167,16 +167,16 @@
 				<button
 					onclick={() => {
 						assistVragen = false;
-						app.tegendoelpunt();
+						app.concede();
 					}}>Tegen</button
 				>
-				{#if app.herstelbaar()}
-					<button onclick={() => app.herstelLaatste()}>↶ {app.herstelbaar()} terug</button>
+				{#if app.undoable()}
+					<button onclick={() => app.undoLast()}>↶ {app.undoable()} terug</button>
 				{/if}
 				<!-- Alleen zolang de klok stilstaat. Daarna zou dit een mistik zijn tijdens
 				     het coachen, en ligt er toch niets meer te wijzigen. Achteraan, zodat
 				     Doelpunt en Tegen niet verspringen als je op Start drukt. -->
-				{#if !app.gestart}
+				{#if !app.kickedOff}
 					<a class="knop" href="/app/aanwezig">Wie is er?</a>
 				{/if}
 				<button class="uit" onclick={afsluiten}>Wedstrijd afsluiten</button>
@@ -188,7 +188,7 @@
 					<button
 						class="klein"
 						onclick={() => {
-							app.doelpunt(null);
+							app.goal(null);
 							doelpuntKiezen = false;
 						}}>Weet ik niet</button
 					>
@@ -197,17 +197,17 @@
 			{:else if assistVragen}
 				<div class="melding">
 					<span>
-						<b>{app.spelerVan(maker)?.naam ?? 'Doelpunt'}</b> scoorde. Wie legde hem klaar? Tik hem aan, of sla dit over.
+						<b>{app.playerById(maker)?.naam ?? 'Doelpunt'}</b> scoorde. Wie legde hem klaar? Tik hem aan, of sla dit over.
 					</span>
 					<button class="klein" onclick={() => (assistVragen = false)}>Geen assist</button>
 				</div>
-			{:else if app.gekozenPlek}
+			{:else if app.chosenPosition}
 				<div class="melding">
 					<span>
 						<b>{uit ? uit.naam : 'Lege plek'}</b> ·
-						{LINIES[plekLinie(app.gekozenPlek, w.formatie)].toLowerCase()}. Tik wie erin komt, of een andere plek om te
-						ruilen.
-						{#if keeperMin > 0 && plekLinie(app.gekozenPlek, w.formatie) !== 'K'}
+						{LINES[positionLine(app.chosenPosition, w.formatie)].toLowerCase()}. Tik wie erin komt, of een andere plek
+						om te ruilen.
+						{#if keeperMin > 0 && positionLine(app.chosenPosition, w.formatie) !== 'K'}
 							Hij keepte deze wedstrijd al {keeperMin} minuten.
 						{/if}
 					</span>
@@ -219,14 +219,14 @@
 							class="klein"
 							onclick={() => {
 								const id = uit.id;
-								app.gekozenPlek = null;
-								app.doelpunt(id);
+								app.chosenPosition = null;
+								app.goal(id);
 								maker = id;
 								assistVragen = true;
 							}}>{uit.naam} scoorde</button
 						>
 					{/if}
-					<button class="klein" onclick={() => (app.gekozenPlek = null)}>Annuleren</button>
+					<button class="klein" onclick={() => (app.chosenPosition = null)}>Annuleren</button>
 				</div>
 			{/if}
 		</div>

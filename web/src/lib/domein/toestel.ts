@@ -1,11 +1,11 @@
-export type Toestel = 'ios' | 'android' | 'desktop';
+export type Device = 'ios' | 'android' | 'desktop';
 
 /**
  * Welk toestel iemand gebruikt, alleen om de juiste uitleg te tonen.
  * Er hangt geen functionaliteit vanaf; zit het ernaast, dan ziet iemand
  * instructies voor een ander toestel en verder niets.
  */
-export function bepaalToestel(ua: string, aanraakpunten = 0): Toestel {
+export function detectDevice(ua: string, aanraakpunten = 0): Device {
 	const s = ua.toLowerCase();
 	if (/iphone|ipod/.test(s)) return 'ios';
 	/* Een iPad doet zich sinds iPadOS 13 voor als een Mac. Het verschil is dat
@@ -16,7 +16,7 @@ export function bepaalToestel(ua: string, aanraakpunten = 0): Toestel {
 }
 
 /** Draait de app vanaf het beginscherm in plaats van in een tabblad? */
-export function staatOpBeginscherm(): boolean {
+export function isInstalled(): boolean {
 	if (typeof window === 'undefined') return false;
 	const alsApp = window.matchMedia?.('(display-mode: standalone)')?.matches;
 	const opIos = (navigator as { standalone?: boolean }).standalone;

@@ -2,14 +2,14 @@
 	import { onMount } from 'svelte';
 	import OpBeginscherm from '$lib/componenten/OpBeginscherm.svelte';
 	import { meld, startMeten } from '$lib/meten';
-	import { staatOpBeginscherm } from '$lib/domein/toestel';
+	import { isInstalled } from '$lib/domein/toestel';
 
 	onMount(() => {
 		/* "Zet op beginscherm" bewaart op iOS de pagina waar je op dat moment stond,
 		   niet wat er in het manifest staat. Wie het icoon vanaf deze pagina maakte
 		   opent dus de reclamefolder in plaats van de app. Dan sturen we hem door,
 		   en meten we niet: dit is een app die opent, geen bezoek aan de site. */
-		if (staatOpBeginscherm()) {
+		if (isInstalled()) {
 			location.replace('/app');
 			return;
 		}

@@ -1,5 +1,5 @@
 import * as klok from './klok';
-import type { Wedstrijd } from '$lib/domein/types';
+import type { Match } from '$lib/domein/types';
 
 /**
  * Wat er tijdens een wedstrijd gebeurt: wissels, ruilen, doelpunten.
@@ -15,14 +15,14 @@ import type { Wedstrijd } from '$lib/domein/types';
  */
 
 /** Iemand van de bank op een plek zetten. Tijdens een wedstrijd is dat een wissel. */
-export function zetOpPlek(w: Wedstrijd | null, nu: number, plek: string, spelerId: string): boolean {
+export function putOnPosition(w: Match | null, nu: number, plek: string, spelerId: string): boolean {
 	if (!w) return false;
 	const eruit = w.opstelling[plek];
 	w.opstelling[plek] = spelerId;
 	w.bank = w.bank.filter((x) => x !== spelerId);
 	if (eruit) {
 		w.bank.push(eruit);
-		if (klok.gestart(w)) klok.log(w, nu, 'wissel', { eruit, erin: spelerId, plek });
+		if (klok.kickedOff(w)) klok.log(w, nu, 'wissel', { eruit, erin: spelerId, plek });
 	}
 	return true;
 }
@@ -31,27 +31,27 @@ export function zetOpPlek(w: Wedstrijd | null, nu: number, plek: string, spelerI
  * Twee spelers op het veld wisselen van plek. Wordt vastgelegd, want anders
  * klopt straks de speeltijd per plek niet meer.
  */
-export function ruil(w: Wedstrijd | null, nu: number, plekA: string, plekB: string): boolean {
+export function ruil(w: Match | null, nu: number, plekA: string, plekB: string): boolean {
 	if (!w || plekA === plekB) return false;
 	const a = w.opstelling[plekA] ?? null;
 	const b = w.opstelling[plekB] ?? null;
 	if (!a && !b) return false;
 	w.opstelling[plekA] = b;
 	w.opstelling[plekB] = a;
-	if (klok.gestart(w)) klok.log(w, nu, 'ruil', { plekA, plekB, spelerA: a, spelerB: b });
+	if (klok.kickedOff(w)) klok.log(w, nu, 'ruil', { plekA, plekB, spelerA: a, spelerB: b });
 	return true;
 }
 
-export function doelpunt(w: Wedstrijd | null, nu: number, spelerId: string | null) {
+export function goal(w: Match | null, nu: number, spelerId: string | null) {
 	klok.log(w, nu, 'goal', { speler: spelerId });
 }
 
-export function tegendoelpunt(w: Wedstrijd | null, nu: number) {
+export function concede(w: Match | null, nu: number) {
 	klok.log(w, nu, 'tegen');
 }
 
 /** De assist bij het laatste doelpunt. Mag ook later, mag ook niet. */
-export function zetAssist(w: Wedstrijd | null, spelerId: string | null): boolean {
+export function setAssist(w: Match | null, spelerId: string | null): boolean {
 	if (!w) return false;
 	for (let i = w.gebeurtenissen.length - 1; i >= 0; i--) {
 		if (w.gebeurtenissen[i].type === 'goal') {
@@ -63,7 +63,7 @@ export function zetAssist(w: Wedstrijd | null, spelerId: string | null): boolean
 }
 
 /** Per ongeluk getikt? De laatste actie kan terug, zolang er niets overheen is gegaan. */
-export function herstelbaar(w: Wedstrijd | null): string | null {
+export function undoable(w: Match | null): string | null {
 	const laatste = w?.gebeurtenissen.at(-1);
 	if (!laatste) return null;
 	if (laatste.type === 'goal') return 'Doelpunt';
@@ -75,8 +75,8 @@ export function herstelbaar(w: Wedstrijd | null): string | null {
 	return null;
 }
 
-export function herstelLaatste(w: Wedstrijd | null): boolean {
-	if (!w || !herstelbaar(w)) return false;
+export function undoLast(w: Match | null): boolean {
+	if (!w || !undoable(w)) return false;
 	const laatste = w.gebeurtenissen[w.gebeurtenissen.length - 1];
 	if (laatste.type === 'wissel' && laatste.plek) {
 		w.opstelling[laatste.plek] = laatste.eruit ?? null;

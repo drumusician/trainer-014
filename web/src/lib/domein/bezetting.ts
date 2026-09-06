@@ -1,13 +1,13 @@
-import { groepVan, liniesIn, LINIES, plekken } from './formaties';
-import type { Linie, Speler } from './types';
+import { groupOf, linesIn, LINES, positionsOf } from './formaties';
+import type { Line, Player } from './types';
 
-export interface LinieBezetting {
-	linie: Linie;
+export interface LineCoverage {
+	linie: Line;
 	naam: string;
 	/** hoeveel spelers je voor deze linie hebt gemarkeerd */
 	spelers: number;
 	/** hoeveel plekken de formatie er heeft */
-	plekken: number;
+	positionsOf: number;
 }
 
 /**
@@ -16,24 +16,23 @@ export interface LinieBezetting {
  *
  * Keepers tellen apart: keepen is een kunnen, geen plek in het veld.
  */
-export function bezetting(spelers: Speler[], formatie: string): LinieBezetting[] {
+export function bezetting(spelers: Player[], formatie: string): LineCoverage[] {
 	const plekkenPerLinie: Record<string, number> = {};
-	plekken(formatie).forEach((p) => {
+	positionsOf(formatie).forEach((p) => {
 		plekkenPerLinie[p[4]] = (plekkenPerLinie[p[4]] ?? 0) + 1;
 	});
 
-	return liniesIn(formatie).map((linie) => ({
+	return linesIn(formatie).map((linie) => ({
 		linie,
-		naam: LINIES[linie],
-		spelers:
-			linie === 'K' ? spelers.filter((p) => p.keept).length : spelers.filter((p) => groepVan(p) === linie).length,
-		plekken: plekkenPerLinie[linie] ?? 0
+		naam: LINES[linie],
+		spelers: linie === 'K' ? spelers.filter((p) => p.keept).length : spelers.filter((p) => groupOf(p) === linie).length,
+		positionsOf: plekkenPerLinie[linie] ?? 0
 	}));
 }
 
 /** Te weinig voor deze linie: dan krijg je hem niet eens vol. */
-export function tekort(b: LinieBezetting): boolean {
-	return b.spelers < b.plekken;
+export function tekort(b: LineCoverage): boolean {
+	return b.spelers < b.positionsOf;
 }
 
 /**
@@ -44,12 +43,12 @@ export function tekort(b: LinieBezetting): boolean {
  * spelers die kunnen keepen is geen gedrang maar precies wat je wilt, want dan
  * kun je rouleren en sta je niet stil als er eentje ziek is.
  */
-export function gedrang(b: LinieBezetting): boolean {
-	return b.linie !== 'K' && b.plekken > 0 && b.spelers > b.plekken * 2;
+export function gedrang(b: LineCoverage): boolean {
+	return b.linie !== 'K' && b.positionsOf > 0 && b.spelers > b.positionsOf * 2;
 }
 
 /** Eén keeper is genoeg tot hij er een keer niet is. */
-export function dunneKeepersbezetting(rijen: LinieBezetting[]): boolean {
+export function dunneKeepersbezetting(rijen: LineCoverage[]): boolean {
 	const k = rijen.find((b) => b.linie === 'K');
 	return !!k && k.spelers === 1;
 }

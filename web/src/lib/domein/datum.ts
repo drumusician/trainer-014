@@ -6,7 +6,7 @@ function lees(datum: string): Date | null {
 }
 
 /** "4 sep". Kan de datum niet gelezen worden, dan blijft hij zoals hij was. */
-export function datumKort(datum: string): string {
+export function shortDate(datum: string): string {
 	return lees(datum)?.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }) ?? datum;
 }
 

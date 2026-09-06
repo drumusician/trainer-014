@@ -1,20 +1,20 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { bepaalToestel, staatOpBeginscherm, type Toestel } from '$lib/domein/toestel';
+	import { detectDevice, isInstalled, type Device } from '$lib/domein/toestel';
 
 	/** Chrome biedt zelf aan om te installeren; die gelegenheid vangen we op. */
 	interface InstallVraag extends Event {
 		prompt: () => Promise<void>;
 	}
 
-	let toestel = $state<Toestel>('desktop');
+	let toestel = $state<Device>('desktop');
 	let alGeinstalleerd = $state(false);
 	let vraag = $state<InstallVraag | null>(null);
-	let gekozen = $state<Toestel | null>(null);
+	let gekozen = $state<Device | null>(null);
 
 	onMount(() => {
-		toestel = bepaalToestel(navigator.userAgent, navigator.maxTouchPoints);
-		alGeinstalleerd = staatOpBeginscherm();
+		toestel = detectDevice(navigator.userAgent, navigator.maxTouchPoints);
+		alGeinstalleerd = isInstalled();
 		const opvangen = (e: Event) => {
 			e.preventDefault();
 			vraag = e as InstallVraag;
@@ -31,7 +31,7 @@
 
 	/* Alleen de twee toestellen waar je hem langs de lijn op gebruikt. Op een
 	   laptop bereid je voor, en dat gaat in een tabblad net zo goed. */
-	const TABS: { code: Toestel; naam: string }[] = [
+	const TABS: { code: Device; naam: string }[] = [
 		{ code: 'ios', naam: 'iPhone of iPad' },
 		{ code: 'android', naam: 'Android' }
 	];

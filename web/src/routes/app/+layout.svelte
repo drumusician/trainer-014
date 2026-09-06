@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import { app } from '$lib/toestand.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
-	import { laadProblemen, problemen } from '$lib/problemen.svelte';
+	import { loadIssues, issues } from '$lib/problemen.svelte';
 	import { kop } from '$lib/kop.svelte';
 	import { vraagBlijvendeOpslag } from '$lib/opslag.svelte';
 	import Tabs from '$lib/componenten/Tabs.svelte';
@@ -29,16 +29,16 @@
 
 	const inTaak = $derived(
 		page.url.pathname.startsWith('/app/opstelling') ||
-			(page.url.pathname.startsWith('/app/wedstrijd') && app.gestart && !app.wedstrijd?.afgelopen)
+			(page.url.pathname.startsWith('/app/wedstrijd') && app.kickedOff && !app.wedstrijd?.afgelopen)
 	);
 
 	let { children } = $props();
 
-	laadProblemen();
-	app.laad();
-	sync.laad();
+	loadIssues();
+	app.load();
+	sync.load();
 	/* Lokaal is leidend; de server krijgt het zodra er bereik is. */
-	app.naBewaren = () => sync.merkVies();
+	app.afterSave = () => sync.merkVies();
 
 	let wakeLock: WakeLockSentinel | null = null;
 
@@ -101,7 +101,7 @@
 
 <div class="app" class:zonderbalk={inTaak}>
 	<!-- Zwaarder dan een botsing: hier gaat vanaf nu alles verloren. -->
-	{#if problemen.opslaanHapert}
+	{#if issues.savingFails}
 		<div class="waarschuwing ernstig">
 			<span>Opslaan lukt niet. Wat je nu doet is weg zodra je de app sluit — maak ruimte op je toestel.</span>
 		</div>
@@ -115,7 +115,7 @@
 	{/if}
 	<header>
 		<h1>{kop.titel}</h1>
-		{#if kop.stand}<span class="stand">{kop.stand}</span>{/if}
+		{#if kop.score}<span class="stand">{kop.score}</span>{/if}
 		{#if kop.terug}
 			<a class="knop klein" href={kop.terug} onclick={terug}>{kop.terugTekst}</a>
 		{/if}

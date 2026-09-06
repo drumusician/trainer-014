@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { mager } from '$lib/domein/presentie';
+	import { thinAttendance } from '$lib/domein/presentie';
 	import { percentage, sorteer, spelersOverzicht, type Sortering } from '$lib/domein/spelers';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
@@ -45,7 +45,7 @@
 			<table class="uitslag spelers">
 				<tbody>
 					{#each rijen as r (r.id)}
-						{@const pct = percentage(r.presentie)}
+						{@const pct = percentage(r.attendanceOf)}
 						<tr>
 							<td>
 								{r.naam}
@@ -67,8 +67,8 @@
 							</td>
 							<td class="m">
 								{Math.round(r.seconden / 60)} min
-								<span class="sub" class:mager={mager(r.recent)}>
-									{#if pct === null}geen training{:else}{pct}% · {r.presentie.er}/{r.presentie.totaal}{/if}
+								<span class="sub" class:thinAttendance={thinAttendance(r.recent)}>
+									{#if pct === null}geen training{:else}{pct}% · {r.attendanceOf.er}/{r.attendanceOf.totaal}{/if}
 								</span>
 							</td>
 						</tr>

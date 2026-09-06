@@ -1,22 +1,22 @@
 /* De vorm van alles wat de app onthoudt. Deze namen komen letterlijk uit de
    oude versie, zodat wat er op je telefoon staat gewoon blijft werken. */
 
-export type Linie = 'K' | 'V' | 'M' | 'A' | '';
+export type Line = 'K' | 'V' | 'M' | 'A' | '';
 /** Een veldlinie: K staat er los van, want keepen kan naast je gewone plek. */
-export type Veldlinie = 'V' | 'M' | 'A' | '';
+export type FieldLine = 'V' | 'M' | 'A' | '';
 
-export interface Speler {
+export interface Player {
 	id: string;
 	naam: string;
-	linie: Veldlinie;
+	linie: FieldLine;
 	/** Kan keepen. Los van de veldlinie. */
 	keept?: boolean;
 }
 
-export type GebeurtenisType = 'start' | 'rust' | 'eind' | 'goal' | 'tegen' | 'wissel' | 'ruil';
+export type MatchEventType = 'start' | 'rust' | 'eind' | 'goal' | 'tegen' | 'wissel' | 'ruil';
 
-export interface Gebeurtenis {
-	type: GebeurtenisType;
+export interface MatchEvent {
+	type: MatchEventType;
 	/** seconden na de aftrap */
 	t: number;
 	/** bij een doelpunt: wie hem maakte, of null als je het niet weet */
@@ -36,16 +36,16 @@ export interface Gebeurtenis {
 }
 
 /** Een opstelling: plek-id uit de formatie -> speler-id. */
-export type Opstelling = Record<string, string | null>;
+export type Lineup = Record<string, string | null>;
 
-export interface Wedstrijd {
+export interface Match {
 	datum: string;
 	tegenstander: string;
 	thuis: boolean;
 	formatie: string;
-	opstelling: Opstelling;
+	opstelling: Lineup;
 	bank: string[];
-	gebeurtenissen: Gebeurtenis[];
+	gebeurtenissen: MatchEvent[];
 	/** seconden die al gelopen hebben, exclusief de lopende periode */
 	verstreken: number;
 	/** tijdstip waarop de klok voor het laatst is gestart, in ms */
@@ -65,13 +65,13 @@ export interface Wedstrijd {
 	afwezig?: string[];
 }
 
-export interface Standaard {
+export interface DefaultLineup {
 	formatie: string;
-	opstelling: Opstelling;
+	opstelling: Lineup;
 	bank: string[];
 }
 
-export interface SpeeltijdRegel {
+export interface PlayingTimeRow {
 	id?: string;
 	naam: string;
 	seconden: number;
@@ -81,7 +81,7 @@ export interface SpeeltijdRegel {
 	posities?: Record<string, number>;
 }
 
-export interface ArchiefWedstrijd {
+export interface ArchivedMatch {
 	datum: string;
 	tegenstander: string;
 	thuis: boolean;
@@ -92,13 +92,13 @@ export interface ArchiefWedstrijd {
 	teamnaam?: string;
 	delen?: 2 | 4;
 	notitie?: string;
-	gebeurtenissen: Gebeurtenis[];
+	gebeurtenissen: MatchEvent[];
 	/** de namen zoals ze waren toen je bewaarde */
 	namen?: Record<string, string>;
 	/** wie er die dag niet was. Zonder dit kun je nul minuten niet uit elkaar
 	    houden: was hij er niet, of stond hij de hele wedstrijd op de bank? */
 	afwezig?: string[];
-	speeltijd: SpeeltijdRegel[];
+	speeltijd: PlayingTimeRow[];
 	/**
 	 * De opstelling zoals hij aan het eind stond, plus wie er toen op de bank zat.
 	 *
@@ -108,35 +108,35 @@ export interface ArchiefWedstrijd {
 	 * niet als we dat later zouden willen. Bewaren kost een regel; niet bewaren
 	 * is onomkeerbaar.
 	 */
-	opstelling?: Opstelling;
+	opstelling?: Lineup;
 	bank?: string[];
 }
 
-export type Aanwezigheid = 'ja' | 'af' | 'nee';
+export type Attendance = 'ja' | 'af' | 'nee';
 
 export interface Training {
 	/** eigen id, zodat een adres blijft kloppen als de volgorde verandert */
 	id: string;
 	datum: string;
-	status: Record<string, Aanwezigheid>;
+	status: Record<string, Attendance>;
 }
 
-export interface Toestand {
+export interface State {
 	/** hoe jouw team heet; staat in de kop en in het verslag */
 	teamnaam: string;
-	spelers: Speler[];
+	spelers: Player[];
 	formatie: string;
 	/** minuten per deel; heet nog helftMinuten omdat het zo is opgeslagen */
 	helftMinuten: number;
 	delen: 2 | 4;
-	wedstrijd: Wedstrijd | null;
-	standaard: Standaard | null;
-	archief: ArchiefWedstrijd[];
+	wedstrijd: Match | null;
+	standaard: DefaultLineup | null;
+	archief: ArchivedMatch[];
 	trainingen: Training[];
 	verslagWissels: boolean;
 }
 
-export function legeToestand(): Toestand {
+export function emptyState(): State {
 	return {
 		teamnaam: 'Ons team',
 		spelers: [],

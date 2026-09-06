@@ -1,10 +1,10 @@
 import * as klok from './klok';
-import { eindTijd, keepertijden, positietijden, speeltijden, stand } from '$lib/domein/tijd';
-import type { ArchiefWedstrijd, Toestand, Wedstrijd } from '$lib/domein/types';
+import { endTime, keeperTimes, positionTimes, playingTimes, score } from '$lib/domein/tijd';
+import type { ArchivedMatch, State, Match } from '$lib/domein/types';
 
 /** Een wedstrijd opzetten, bijhouden wie er is, en hem afronden. */
 
-export function nieuwe(t: Toestand, tegenstander: string, thuis: boolean, vandaag: string) {
+export function nieuwe(t: State, tegenstander: string, thuis: boolean, vandaag: string) {
 	t.wedstrijd = {
 		datum: vandaag,
 		tegenstander: tegenstander || 'Tegenstander',
@@ -22,11 +22,11 @@ export function nieuwe(t: Toestand, tegenstander: string, thuis: boolean, vandaa
 		afgelopen: false,
 		afwezig: []
 	};
-	vulUitStandaard(t);
+	fillFromDefaultLineup(t);
 }
 
 /** De wedstrijd begint met de standaardopstelling, voor zover die nog klopt. */
-export function vulUitStandaard(t: Toestand) {
+export function fillFromDefaultLineup(t: State) {
 	const w = t.wedstrijd;
 	if (!w) return;
 	const st = t.standaard;
@@ -36,11 +36,11 @@ export function vulUitStandaard(t: Toestand) {
 			if (id && ids.has(id)) w.opstelling[plek] = id;
 		}
 	}
-	herzetBank(t);
+	rebuildBench(t);
 }
 
 /** De bank is iedereen die er is en niet in het veld staat. */
-export function herzetBank(t: Toestand) {
+export function rebuildBench(t: State) {
 	const w = t.wedstrijd;
 	if (!w) return;
 	const inVeld = Object.values(w.opstelling).filter(Boolean) as string[];
@@ -48,7 +48,7 @@ export function herzetBank(t: Toestand) {
 	w.bank = t.spelers.map((p) => p.id).filter((id) => !inVeld.includes(id) && !afwezig.includes(id));
 }
 
-export function staatInVeld(w: Wedstrijd | null, spelerId: string): boolean {
+export function isOnPitch(w: Match | null, spelerId: string): boolean {
 	return !!w && Object.values(w.opstelling).includes(spelerId);
 }
 
@@ -62,10 +62,10 @@ export function staatInVeld(w: Wedstrijd | null, spelerId: string): boolean {
  * met een wissel. Van de bank afmelden mag wel: dat raakt het veld niet, en
  * iemand kan nu eenmaal pas na de aftrap afhaken.
  */
-export function zetAfwezig(t: Toestand, spelerId: string, afwezig: boolean): boolean {
+export function setAbsent(t: State, spelerId: string, afwezig: boolean): boolean {
 	const w = t.wedstrijd;
 	if (!w) return false;
-	if (afwezig && klok.gestart(w) && staatInVeld(w, spelerId)) return false;
+	if (afwezig && klok.kickedOff(w) && isOnPitch(w, spelerId)) return false;
 	const lijst = (w.afwezig ?? []).filter((id) => id !== spelerId);
 	if (afwezig) {
 		lijst.push(spelerId);
@@ -74,11 +74,11 @@ export function zetAfwezig(t: Toestand, spelerId: string, afwezig: boolean): boo
 		}
 	}
 	w.afwezig = lijst;
-	herzetBank(t);
+	rebuildBench(t);
 	return true;
 }
 
-export function beeindig(w: Wedstrijd | null, nu: number): boolean {
+export function finish(w: Match | null, nu: number): boolean {
 	if (!w || w.afgelopen) return false;
 	if (w.loopt) {
 		w.verstreken += (nu - (w.sinds ?? nu)) / 1000;
@@ -97,22 +97,22 @@ export function beeindig(w: Wedstrijd | null, nu: number): boolean {
  * eindopstelling gaat mee: zonder die opstelling valt er niets meer terug te
  * rekenen en is een bewaarde wedstrijd voorgoed onherstelbaar.
  */
-export function bewaarInArchief(t: Toestand, nu: number): ArchiefWedstrijd | null {
+export function archiveMatch(t: State, nu: number): ArchivedMatch | null {
 	const w = t.wedstrijd;
 	if (!w || w.bewaard) return null;
-	const tijden = speeltijden(w, t.spelers, nu);
-	const keepers = keepertijden(w, nu);
-	const posities = positietijden(w, nu);
+	const tijden = playingTimes(w, t.spelers, nu);
+	const keepers = keeperTimes(w, nu);
+	const posities = positionTimes(w, nu);
 	const namen: Record<string, string> = {};
 	t.spelers.forEach((p) => (namen[p.id] = p.naam));
 
-	const regel: ArchiefWedstrijd = {
+	const regel: ArchivedMatch = {
 		datum: w.datum,
 		tegenstander: w.tegenstander,
 		thuis: w.thuis,
-		stand: stand(w),
+		stand: score(w),
 		formatie: w.formatie,
-		duur: eindTijd(w),
+		duur: endTime(w),
 		delen: w.delen,
 		notitie: w.notitie,
 		teamnaam: t.teamnaam,

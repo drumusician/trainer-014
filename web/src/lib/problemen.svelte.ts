@@ -12,7 +12,7 @@
 const SLEUTEL = 'o14-problemen-v1';
 const MAX = 20;
 
-export interface Probleem {
+export interface Issue {
 	/** wanneer, als ISO-tekst zodat het in de opslag leesbaar blijft */
 	wanneer: string;
 	/** wat er misging, in gewone taal */
@@ -21,11 +21,11 @@ export interface Probleem {
 	melding?: string;
 }
 
-const opslag = () => (typeof localStorage === 'undefined' ? null : localStorage);
+const storage = () => (typeof localStorage === 'undefined' ? null : localStorage);
 
-function lees(): Probleem[] {
+function lees(): Issue[] {
 	try {
-		const ruw = opslag()?.getItem(SLEUTEL);
+		const ruw = storage()?.getItem(SLEUTEL);
 		const d = ruw ? JSON.parse(ruw) : null;
 		return Array.isArray(d) ? d : [];
 	} catch {
@@ -33,36 +33,36 @@ function lees(): Probleem[] {
 	}
 }
 
-export const problemen = $state<{ lijst: Probleem[]; opslaanHapert: boolean }>({
+export const issues = $state<{ lijst: Issue[]; savingFails: boolean }>({
 	lijst: [],
 	/** Losse vlag: als opslaan niet lukt is alles wat je daarna doet weg. */
-	opslaanHapert: false
+	savingFails: false
 });
 
-export function laadProblemen() {
-	problemen.lijst = lees();
+export function loadIssues() {
+	issues.lijst = lees();
 }
 
 /**
  * Iets noteren. Mag nooit zelf stukgaan: dit wordt aangeroepen vanuit een catch,
  * en een logboek dat de app laat vallen is erger dan geen logboek.
  */
-export function meldProbleem(wat: string, fout?: unknown) {
+export function reportIssue(wat: string, fout?: unknown) {
 	try {
 		const melding = fout instanceof Error ? fout.message : fout ? String(fout) : undefined;
 		/* eslint-disable-next-line svelte/prefer-svelte-reactivity -- meteen omgezet naar tekst, niet bewaard */
 		const wanneer = new Date().toISOString();
-		problemen.lijst = [{ wanneer, wat, melding }, ...problemen.lijst].slice(0, MAX);
-		opslag()?.setItem(SLEUTEL, JSON.stringify(problemen.lijst));
+		issues.lijst = [{ wanneer, wat, melding }, ...issues.lijst].slice(0, MAX);
+		storage()?.setItem(SLEUTEL, JSON.stringify(issues.lijst));
 	} catch {
 		/* Dan houdt het op. Hier niets meer proberen. */
 	}
 }
 
-export function wisProblemen() {
-	problemen.lijst = [];
+export function clearIssues() {
+	issues.lijst = [];
 	try {
-		opslag()?.removeItem(SLEUTEL);
+		storage()?.removeItem(SLEUTEL);
 	} catch {
 		/* stil */
 	}

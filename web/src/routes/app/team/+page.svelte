@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
-	import { mager, presentie } from '$lib/domein/presentie';
+	import { thinAttendance, attendanceOf } from '$lib/domein/presentie';
 	import { bezetting, dunneKeepersbezetting, gedrang, tekort } from '$lib/domein/bezetting';
-	import type { Speler, Veldlinie } from '$lib/domein/types';
+	import type { Player, FieldLine } from '$lib/domein/types';
 
 	$effect(() => zetKop('Team'));
 
@@ -11,15 +11,15 @@
 	const verdeling = $derived(bezetting(t.spelers, t.formatie));
 	const ingevuld = $derived(t.teamnaam !== 'Ons team');
 	let namenVak = $state('');
-	const LINIEKNOPPEN: Veldlinie[] = ['V', 'M', 'A'];
+	const LINIEKNOPPEN: FieldLine[] = ['V', 'M', 'A'];
 
-	function wijzig(p: Speler) {
+	function wijzig(p: Player) {
 		const naam = prompt('Naam wijzigen. Laat leeg om deze speler te verwijderen.', p.naam);
 		if (naam === null) return;
 		if (!naam.trim()) {
-			if (confirm(p.naam + ' verwijderen uit de selectie?')) app.verwijderSpeler(p);
+			if (confirm(p.naam + ' verwijderen uit de selectie?')) app.removePlayer(p);
 		} else {
-			app.hernoem(p, naam);
+			app.renamePlayer(p, naam);
 		}
 	}
 </script>
@@ -45,7 +45,7 @@
 				<button
 					class="prim"
 					onclick={() => {
-						app.namenErbij(namenVak);
+						app.addPlayerNames(namenVak);
 						namenVak = '';
 					}}>Toevoegen</button
 				>
@@ -57,15 +57,15 @@
 				aan om te wijzigen of te verwijderen.
 			</p>
 			{#each t.spelers as p (p.id)}
-				{@const recent = presentie(t.trainingen, p.id, 4)}
+				{@const recent = attendanceOf(t.trainingen, p.id, 4)}
 				<div class="sregel">
 					<button type="button" class="naam" onclick={() => wijzig(p)}>
-						{p.naam}{#if mager(recent)}<span class="min mager"> {recent.er}/{recent.totaal}</span>{/if}
+						{p.naam}{#if thinAttendance(recent)}<span class="min mager"> {recent.er}/{recent.totaal}</span>{/if}
 					</button>
 					<div class="keuze">
-						<button class:aan={p.keept} onclick={() => app.zetKeept(p)}>K</button>
+						<button class:aan={p.keept} onclick={() => app.toggleKeeper(p)}>K</button>
 						{#each LINIEKNOPPEN as code (code)}
-							<button class:aan={p.linie === code} onclick={() => app.zetLinie(p, code)}>{code}</button>
+							<button class:aan={p.linie === code} onclick={() => app.setLine(p, code)}>{code}</button>
 						{/each}
 					</div>
 				</div>
@@ -74,7 +74,7 @@
 				<button
 					onclick={() => {
 						const naam = prompt('Naam van de speler');
-						if (naam?.trim()) app.namenErbij(naam);
+						if (naam?.trim()) app.addPlayerNames(naam);
 					}}>Speler toevoegen</button
 				>
 			</div>
@@ -85,13 +85,13 @@
 					{#each verdeling as b (b.linie)}
 						<tr>
 							<td>{b.naam}</td>
-							<td class="m" class:mager={tekort(b) || gedrang(b)}>
+							<td class="m" class:thinAttendance={tekort(b) || gedrang(b)}>
 								{#if b.linie === 'K'}
 									{b.spelers}
 									{b.spelers === 1 ? 'kan keepen' : 'kunnen keepen'}
 								{:else}
-									{b.spelers} voor {b.plekken}
-									{b.plekken === 1 ? 'plek' : 'plekken'}
+									{b.spelers} voor {b.positionsOf}
+									{b.positionsOf === 1 ? 'plek' : 'plekken'}
 								{/if}
 							</td>
 						</tr>
@@ -119,7 +119,7 @@
 		</p>
 		<label class="vak">
 			Teamnaam
-			<input value={t.teamnaam} placeholder="bijv. JO11-2" onchange={(e) => app.zetTeamnaam(e.currentTarget.value)} />
+			<input value={t.teamnaam} placeholder="bijv. JO11-2" onchange={(e) => app.setTeamName(e.currentTarget.value)} />
 		</label>
 	</div>
 </main>

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { opstellingTekst } from './opstelling';
-import type { Speler } from './types';
+import type { Player } from './types';
 
 const namen = ['Gijs', 'Jack', 'Maher', 'Daan', 'Mirza', 'Siem', 'Kasper', 'Daanish', 'Mauro', 'Max', 'Simon', 'Amir'];
-const spelers: Speler[] = namen.map((naam, i) => ({ id: 'p' + i, naam, linie: '' }));
+const spelers: Player[] = namen.map((naam, i) => ({ id: 'p' + i, naam, linie: '' }));
 const opstelling = {
 	K: 'p0',
 	RV: 'p1',

@@ -1,31 +1,31 @@
-import { plekLabel } from './formaties';
-import type { ArchiefWedstrijd, Gebeurtenis, Speler, Wedstrijd } from './types';
-import { eindTijd, stand } from './tijd';
-import { deelNaam, pauzeNaam } from './delen';
+import { positionLabel } from './formaties';
+import type { ArchivedMatch, MatchEvent, Player, Match } from './types';
+import { endTime, score } from './tijd';
+import { partName, breakName } from './delen';
 
 /** Alles wat je nodig hebt om een wedstrijd terug te lezen, live of uit het archief. */
-export interface Verslagbron {
+export interface ReportSource {
 	datum: string;
 	tegenstander: string;
 	thuis: boolean;
 	stand: [number, number];
 	formatie: string;
 	duur: number;
-	gebeurtenissen: Gebeurtenis[];
+	gebeurtenissen: MatchEvent[];
 	namen?: Record<string, string>;
 	delen?: 2 | 4;
 	notitie?: string;
 	teamnaam?: string;
 }
 
-export function bronVanWedstrijd(w: Wedstrijd, teamnaam: string): Verslagbron {
+export function bronVanWedstrijd(w: Match, teamnaam: string): ReportSource {
 	return {
 		datum: w.datum,
 		tegenstander: w.tegenstander,
 		thuis: w.thuis,
-		stand: stand(w),
+		stand: score(w),
 		formatie: w.formatie,
-		duur: eindTijd(w),
+		duur: endTime(w),
 		gebeurtenissen: w.gebeurtenissen,
 		delen: w.delen,
 		notitie: w.notitie,
@@ -33,7 +33,7 @@ export function bronVanWedstrijd(w: Wedstrijd, teamnaam: string): Verslagbron {
 	};
 }
 
-export function bronVanArchief(a: ArchiefWedstrijd): Verslagbron {
+export function bronVanArchief(a: ArchivedMatch): ReportSource {
 	return {
 		datum: a.datum,
 		tegenstander: a.tegenstander,
@@ -50,26 +50,26 @@ export function bronVanArchief(a: ArchiefWedstrijd): Verslagbron {
 }
 
 /** De naam van nu; valt terug op de naam zoals hij bij het bewaren was. */
-export function naamVan(id: string | null | undefined, spelers: Speler[], namen?: Record<string, string>): string {
+export function nameOf(id: string | null | undefined, spelers: Player[], namen?: Record<string, string>): string {
 	if (!id) return 'onbekend';
 	return spelers.find((p) => p.id === id)?.naam ?? namen?.[id] ?? 'onbekend';
 }
 
-export function gebeurtenisTekst(
-	g: Gebeurtenis,
-	spelers: Speler[],
+export function eventText(
+	g: MatchEvent,
+	spelers: Player[],
 	namen?: Record<string, string>,
 	delen: 2 | 4 = 2,
 	formatie?: string
 ): string {
-	const naam = (id?: string | null) => naamVan(id, spelers, namen);
+	const naam = (id?: string | null) => nameOf(id, spelers, namen);
 	/* Zonder formatie weten we de leesbare naam niet; dan maar de plek zelf. */
-	const plek = (id?: string | null) => (id ? (formatie ? plekLabel(id, formatie) : id) : '');
+	const plek = (id?: string | null) => (id ? (formatie ? positionLabel(id, formatie) : id) : '');
 	switch (g.type) {
 		case 'start':
 			return 'Aftrap';
 		case 'rust':
-			return g.deel ? pauzeNaam(g.deel, delen) + ' — ' + deelNaam(g.deel, delen) + ' voorbij' : 'Rust';
+			return g.deel ? breakName(g.deel, delen) + ' — ' + partName(g.deel, delen) + ' voorbij' : 'Rust';
 		case 'eind':
 			return 'Einde';
 		case 'tegen':
@@ -93,7 +93,7 @@ export function gebeurtenisTekst(
 	}
 }
 
-export function datumTekst(datum: string): string {
+export function dateText(datum: string): string {
 	try {
 		return new Date(datum + 'T12:00:00').toLocaleDateString('nl-NL', {
 			weekday: 'long',
@@ -109,7 +109,7 @@ export function datumTekst(datum: string): string {
  * Het verslag voor de groepsapp. Wissels blijven er standaard uit: de uitslag
  * is voor iedereen, de opstelling is van de trainer.
  */
-export function verslagTekst(bron: Verslagbron, spelers: Speler[], metWissels = false): string {
+export function reportText(bron: ReportSource, spelers: Player[], metWissels = false): string {
 	const [v, t] = bron.stand;
 	const thuis = bron.thuis !== false;
 	const ons = bron.teamnaam?.trim() || 'Ons team';
@@ -119,7 +119,7 @@ export function verslagTekst(bron: Verslagbron, spelers: Speler[], metWissels = 
 			' ' +
 			(thuis ? v + '–' + t : t + '–' + v)
 	);
-	regels.push(datumTekst(bron.datum));
+	regels.push(dateText(bron.datum));
 	regels.push('');
 
 	let voor = 0;
@@ -130,8 +130,8 @@ export function verslagTekst(bron: Verslagbron, spelers: Speler[], metWissels = 
 			const min = Math.floor((g.t ?? 0) / 60) + '′';
 			if (g.type === 'goal') {
 				voor++;
-				const naam = g.speler ? naamVan(g.speler, spelers, bron.namen) : null;
-				const assist = g.assist ? naamVan(g.assist, spelers, bron.namen) : null;
+				const naam = g.speler ? nameOf(g.speler, spelers, bron.namen) : null;
+				const assist = g.assist ? nameOf(g.assist, spelers, bron.namen) : null;
 				regels.push(
 					`${min}  ${voor}–${tegen}  ${naam && naam !== 'onbekend' ? naam : 'doelpunt'}` +
 						(assist && assist !== 'onbekend' ? ` (assist ${assist})` : '')
@@ -140,9 +140,7 @@ export function verslagTekst(bron: Verslagbron, spelers: Speler[], metWissels = 
 				tegen++;
 				regels.push(`${min}  ${voor}–${tegen}  tegendoelpunt`);
 			} else if (g.type === 'wissel' && metWissels) {
-				regels.push(
-					`${min}       ${naamVan(g.erin, spelers, bron.namen)} voor ${naamVan(g.eruit, spelers, bron.namen)}`
-				);
+				regels.push(`${min}       ${nameOf(g.erin, spelers, bron.namen)} voor ${nameOf(g.eruit, spelers, bron.namen)}`);
 			}
 		});
 	if (voor + tegen === 0) regels.push('Geen doelpunten.');
@@ -153,12 +151,12 @@ export function verslagTekst(bron: Verslagbron, spelers: Speler[], metWissels = 
 	return regels.join('\n');
 }
 
-export interface VerloopRegel {
+export interface TimelineRow {
 	t: number;
 	tekst: string;
 	/** plek in de oorspronkelijke lijst, zodat een doelpunt te verwijderen blijft */
 	index: number;
-	type: Gebeurtenis['type'];
+	type: MatchEvent['type'];
 }
 
 /**
@@ -169,21 +167,21 @@ export interface VerloopRegel {
  * anders lijkt iemand in dezelfde seconde twee keer te verhuizen. Wat je wilt
  * lezen is waar iedereen terechtkwam, niet hoe de administratie daar kwam.
  */
-export function verloopRegels(
-	gebeurtenissen: Gebeurtenis[],
-	spelers: Speler[],
+export function timelineRows(
+	gebeurtenissen: MatchEvent[],
+	spelers: Player[],
 	namen?: Record<string, string>,
 	delen: 2 | 4 = 2,
 	formatie?: string
-): VerloopRegel[] {
-	const naam = (id?: string | null) => naamVan(id, spelers, namen);
-	const plek = (id?: string | null) => (id ? (formatie ? plekLabel(id, formatie) : id) : '');
-	const uit: VerloopRegel[] = [];
+): TimelineRow[] {
+	const naam = (id?: string | null) => nameOf(id, spelers, namen);
+	const plek = (id?: string | null) => (id ? (formatie ? positionLabel(id, formatie) : id) : '');
+	const uit: TimelineRow[] = [];
 
 	for (let i = 0; i < gebeurtenissen.length; i++) {
 		const g = gebeurtenissen[i];
 		if (g.type !== 'ruil') {
-			uit.push({ t: g.t ?? 0, tekst: gebeurtenisTekst(g, spelers, namen, delen, formatie), index: i, type: g.type });
+			uit.push({ t: g.t ?? 0, tekst: eventText(g, spelers, namen, delen, formatie), index: i, type: g.type });
 			continue;
 		}
 
@@ -214,7 +212,7 @@ export function verloopRegels(
 		const verhuisd = volgorde.filter((sp) => vanaf[sp] !== naartoe[sp]);
 		if (!verhuisd.length) {
 			/* Geen namen vastgelegd, of alles kwam weer op zijn plek terug. */
-			uit.push({ t: g.t ?? 0, tekst: gebeurtenisTekst(g, spelers, namen, delen, formatie), index: i, type: g.type });
+			uit.push({ t: g.t ?? 0, tekst: eventText(g, spelers, namen, delen, formatie), index: i, type: g.type });
 			i = j - 1;
 			continue;
 		}

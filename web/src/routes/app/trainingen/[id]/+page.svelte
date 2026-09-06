@@ -3,14 +3,14 @@
 	import { page } from '$app/state';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
-	import { datumKort } from '$lib/domein/datum';
-	import type { Aanwezigheid } from '$lib/domein/types';
+	import { shortDate } from '$lib/domein/datum';
+	import type { Attendance } from '$lib/domein/types';
 
-	const WOORD: Record<Aanwezigheid, string> = { ja: 'Aanwezig', af: 'Afgemeld', nee: 'Niet gekomen' };
+	const WOORD: Record<Attendance, string> = { ja: 'Aanwezig', af: 'Afgemeld', nee: 'Niet gekomen' };
 
-	const t = $derived(app.trainingMetId(page.params.id));
+	const t = $derived(app.trainingById(page.params.id));
 
-	$effect(() => zetKop(t ? 'Training ' + datumKort(t.datum) : 'Training', '/app/trainingen', 'Terug'));
+	$effect(() => zetKop(t ? 'Training ' + shortDate(t.datum) : 'Training', '/app/trainingen', 'Terug'));
 
 	const telling = $derived.by(() => {
 		const w = { ja: 0, af: 0, nee: 0 };
@@ -26,8 +26,8 @@
 
 	function verwijder() {
 		if (!t) return;
-		if (!confirm('De training van ' + datumKort(t.datum) + ' verwijderen?')) return;
-		app.verwijderTraining(t);
+		if (!confirm('De training van ' + shortDate(t.datum) + ' verwijderen?')) return;
+		app.removeTraining(t);
 		goto('/app/trainingen');
 	}
 </script>
@@ -41,7 +41,7 @@
 			<h2>Training</h2>
 			<label class="vak">
 				Datum
-				<input type="date" value={t.datum} onchange={(e) => app.zetTrainingDatum(t, e.currentTarget.value)} />
+				<input type="date" value={t.datum} onchange={(e) => app.setTrainingDate(t, e.currentTarget.value)} />
 			</label>
 			<p class="telling">
 				<span>{telling.ja} aanwezig</span><span>{telling.af} afgemeld</span><span>{telling.nee} niet gekomen</span>
@@ -52,7 +52,7 @@
 				{@const st = t.status[p.id] ?? 'ja'}
 				<div class="sregel">
 					<span class="naam">{p.naam}</span>
-					<button class="presknop {st}" onclick={() => app.tikPresentie(t, p.id)}>{WOORD[st]}</button>
+					<button class="presknop {st}" onclick={() => app.cycleAttendance(t, p.id)}>{WOORD[st]}</button>
 				</div>
 			{/each}
 

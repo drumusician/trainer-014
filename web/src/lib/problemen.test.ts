@@ -1,30 +1,30 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { laadProblemen, meldProbleem, problemen, wisProblemen } from './problemen.svelte';
+import { loadIssues, reportIssue, issues, clearIssues } from './problemen.svelte';
 
 beforeEach(() => {
 	localStorage.clear();
-	wisProblemen();
+	clearIssues();
 });
 
 describe('het logboekje van wat er misging', () => {
 	it('noteert wat er gebeurde, nieuwste bovenaan', () => {
-		meldProbleem('Eerste');
-		meldProbleem('Tweede', new Error('kapot'));
-		expect(problemen.lijst.map((p) => p.wat)).toEqual(['Tweede', 'Eerste']);
-		expect(problemen.lijst[0].melding).toBe('kapot');
+		reportIssue('Eerste');
+		reportIssue('Tweede', new Error('kapot'));
+		expect(issues.lijst.map((p) => p.wat)).toEqual(['Tweede', 'Eerste']);
+		expect(issues.lijst[0].melding).toBe('kapot');
 	});
 
 	it('overleeft opnieuw laden', () => {
-		meldProbleem('Blijft staan');
-		problemen.lijst = [];
-		laadProblemen();
-		expect(problemen.lijst.map((p) => p.wat)).toEqual(['Blijft staan']);
+		reportIssue('Blijft staan');
+		issues.lijst = [];
+		loadIssues();
+		expect(issues.lijst.map((p) => p.wat)).toEqual(['Blijft staan']);
 	});
 
 	it('houdt er hoogstens twintig, zodat de opslag niet volloopt', () => {
-		for (let i = 0; i < 30; i++) meldProbleem('nummer ' + i);
-		expect(problemen.lijst).toHaveLength(20);
-		expect(problemen.lijst[0].wat).toBe('nummer 29');
+		for (let i = 0; i < 30; i++) reportIssue('nummer ' + i);
+		expect(issues.lijst).toHaveLength(20);
+		expect(issues.lijst[0].wat).toBe('nummer 29');
 	});
 
 	/* Dit wordt vanuit een catch aangeroepen. Een logboek dat zelf de app laat
@@ -34,15 +34,15 @@ describe('het logboekje van wat er misging', () => {
 		localStorage.setItem = () => {
 			throw new Error('vol');
 		};
-		expect(() => meldProbleem('Toch melden')).not.toThrow();
+		expect(() => reportIssue('Toch melden')).not.toThrow();
 		localStorage.setItem = echt;
 	});
 
 	it('wist de lijst als je erom vraagt', () => {
-		meldProbleem('Weg hiermee');
-		wisProblemen();
-		expect(problemen.lijst).toHaveLength(0);
-		laadProblemen();
-		expect(problemen.lijst).toHaveLength(0);
+		reportIssue('Weg hiermee');
+		clearIssues();
+		expect(issues.lijst).toHaveLength(0);
+		loadIssues();
+		expect(issues.lijst).toHaveLength(0);
 	});
 });

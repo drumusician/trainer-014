@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { plekken } from '$lib/domein/formaties';
+	import { positionsOf } from '$lib/domein/formaties';
 	import { app } from '$lib/toestand.svelte';
-	import type { Opstelling } from '$lib/domein/types';
+	import type { Lineup } from '$lib/domein/types';
 
 	let {
 		formatie,
@@ -11,7 +11,7 @@
 		onplek
 	}: {
 		formatie: string;
-		opstelling: Opstelling;
+		opstelling: Lineup;
 		gekozen?: string | null;
 		/** speelminuten per speler; tijdens een wedstrijd staan die onder de naam */
 		tijden?: Record<string, number> | null;
@@ -20,7 +20,7 @@
 
 	/* Afgeleid in plaats van in de template aangeroepen: anders rekent hij bij
 	   elke render opnieuw, en tijdens een wedstrijd is dat elke seconde. */
-	const vakken = $derived(plekken(formatie));
+	const vakken = $derived(positionsOf(formatie));
 </script>
 
 <div class="veld">
@@ -37,7 +37,7 @@
 	</svg>
 
 	{#each vakken as [plekId, label, x, y] (plekId)}
-		{@const p = app.spelerVan(opstelling[plekId])}
+		{@const p = app.playerById(opstelling[plekId])}
 		<!-- Een echte knop, geen div die zich als knop voordoet: spatiebalk, focus en
 		     schermlezer zijn dan meteen goed en het scheelt handwerk. -->
 		<button

@@ -1,17 +1,17 @@
-import { kentFormatie } from './domein/formaties';
+import { knowsFormation } from './domein/formaties';
 import type {
-	ArchiefWedstrijd,
-	Gebeurtenis,
-	GebeurtenisType,
-	Opstelling,
-	Speler,
-	Toestand,
+	ArchivedMatch,
+	MatchEvent,
+	MatchEventType,
+	Lineup,
+	Player,
+	State,
 	Training,
-	Veldlinie,
-	Wedstrijd
+	FieldLine,
+	Match
 } from './domein/types';
-import { legeToestand } from './domein/types';
-import { meldProbleem, problemen } from './problemen.svelte';
+import { emptyState } from './domein/types';
+import { reportIssue, issues } from './problemen.svelte';
 import * as archief from './acties/archief';
 import * as gebeurtenissen from './acties/gebeurtenissen';
 import * as klok from './acties/klok';
@@ -23,10 +23,10 @@ import * as trainingen from './acties/trainingen';
 const SLEUTEL = 'o14-app-v1';
 
 /** Draaien we ergens met opslag? Op de server niet, in een test wel. */
-const opslag = () => (typeof localStorage === 'undefined' ? null : localStorage);
+const storage = () => (typeof localStorage === 'undefined' ? null : localStorage);
 
 /** Oude opslag: 'K' was een linie. Nu staat keepen daarnaast. */
-function migreer(t: Toestand): Toestand {
+function migrate(t: State): State {
 	t.spelers.forEach((p) => {
 		if ((p.linie as string) === 'K') {
 			p.linie = '';
@@ -36,7 +36,7 @@ function migreer(t: Toestand): Toestand {
 	if (!Array.isArray(t.trainingen)) t.trainingen = [];
 	if (t.delen !== 4) t.delen = 2;
 	if (!t.teamnaam?.trim()) t.teamnaam = 'Ons team';
-	const w = t.wedstrijd as (Wedstrijd & { helft?: number }) | null;
+	const w = t.wedstrijd as (Match & { helft?: number }) | null;
 	if (w && w.deel === undefined) {
 		/* van vroeger: toen waren het altijd twee helften */
 		w.delen = 2;
@@ -56,24 +56,24 @@ function migreer(t: Toestand): Toestand {
 }
 
 class App {
-	toestand = $state<Toestand>(legeToestand());
+	toestand = $state<State>(emptyState());
 	/** loopt mee met de klok, zodat schermen vanzelf bijwerken */
 	nu = $state(Date.now());
 	/** de plek die je hebt aangetikt om te wisselen */
-	gekozenPlek = $state<string | null>(null);
+	chosenPosition = $state<string | null>(null);
 	/** wordt na elke opslag geroepen, zodat de synchronisatie het weet */
-	naBewaren: (() => void) | null = null;
+	afterSave: (() => void) | null = null;
 
-	laad() {
-		const bak = opslag();
+	load() {
+		const bak = storage();
 		if (!bak) return;
 		try {
 			const ruw = bak.getItem(SLEUTEL);
 			if (!ruw) return;
 			const d = JSON.parse(ruw);
 			if (d && Array.isArray(d.spelers)) {
-				this.toestand = migreer({ ...legeToestand(), ...d });
-				this.bewaar(); /* wat de migratie erbij zette, meteen vastleggen */
+				this.toestand = migrate({ ...emptyState(), ...d });
+				this.save(); /* wat de migratie erbij zette, meteen vastleggen */
 			}
 		} catch (fout) {
 			/*
@@ -88,290 +88,290 @@ class App {
 			} catch {
 				/* dan niet */
 			}
-			meldProbleem('De opgeslagen gegevens waren niet te lezen. Wat erin stond is apart gezet.', fout);
+			reportIssue('De opgeslagen gegevens waren niet te lezen. Wat erin stond is apart gezet.', fout);
 		}
 	}
 
-	bewaar() {
-		const bak = opslag();
+	save() {
+		const bak = storage();
 		if (!bak) return;
 		try {
 			bak.setItem(SLEUTEL, JSON.stringify(this.toestand));
-			problemen.opslaanHapert = false;
+			issues.savingFails = false;
 		} catch (fout) {
 			/*
 			 * Een volle opslag mag de wedstrijd niet stoppen, dus we gaan door. Maar
 			 * stil blijven mag hier niet: vanaf nu is alles wat je doet weg zodra je
 			 * de app sluit. Daarom een vlag die het scherm laat waarschuwen.
 			 */
-			if (!problemen.opslaanHapert) meldProbleem('Opslaan lukte niet. Nieuwe wijzigingen worden niet bewaard.', fout);
-			problemen.opslaanHapert = true;
+			if (!issues.savingFails) reportIssue('Opslaan lukte niet. Nieuwe wijzigingen worden niet bewaard.', fout);
+			issues.savingFails = true;
 		}
-		this.naBewaren?.();
+		this.afterSave?.();
 	}
 
 	/* ---------- selectie ---------- */
-	spelerVan(id: string | null | undefined): Speler | undefined {
-		return selectie.spelerVan(this.toestand, id);
+	playerById(id: string | null | undefined): Player | undefined {
+		return selectie.playerById(this.toestand, id);
 	}
 
-	namenErbij(tekst: string) {
-		selectie.namenErbij(this.toestand, tekst);
-		this.bewaar();
+	addPlayerNames(tekst: string) {
+		selectie.addPlayerNames(this.toestand, tekst);
+		this.save();
 	}
 
-	hernoem(p: Speler, naam: string) {
-		selectie.hernoem(p, naam);
-		this.bewaar();
+	renamePlayer(p: Player, naam: string) {
+		selectie.renamePlayer(p, naam);
+		this.save();
 	}
 
-	verwijderSpeler(p: Speler) {
-		selectie.verwijderSpeler(this.toestand, p);
-		this.bewaar();
+	removePlayer(p: Player) {
+		selectie.removePlayer(this.toestand, p);
+		this.save();
 	}
 
-	zetLinie(p: Speler, linie: Veldlinie) {
-		selectie.zetLinie(p, linie);
-		this.bewaar();
+	setLine(p: Player, linie: FieldLine) {
+		selectie.setLine(p, linie);
+		this.save();
 	}
 
-	zetKeept(p: Speler) {
-		selectie.zetKeept(p);
-		this.bewaar();
+	toggleKeeper(p: Player) {
+		selectie.toggleKeeper(p);
+		this.save();
 	}
 
 	/* ---------- wedstrijd ---------- */
-	get wedstrijd(): Wedstrijd | null {
+	get wedstrijd(): Match | null {
 		return this.toestand.wedstrijd;
 	}
 
 	/** Is er afgetrapt? Pas dan ligt de opstelling vast en gaat de klok tellen. */
-	get gestart(): boolean {
-		return klok.gestart(this.toestand.wedstrijd);
+	get kickedOff(): boolean {
+		return klok.kickedOff(this.toestand.wedstrijd);
 	}
 
-	nieuweWedstrijd(tegenstander: string, thuis: boolean) {
+	newMatch(tegenstander: string, thuis: boolean) {
 		wedstrijd.nieuwe(this.toestand, tegenstander, thuis, new Date().toISOString().slice(0, 10));
-		this.bewaar();
+		this.save();
 	}
 
-	vulUitStandaard() {
-		wedstrijd.vulUitStandaard(this.toestand);
+	fillFromDefaultLineup() {
+		wedstrijd.fillFromDefaultLineup(this.toestand);
 	}
 
-	herzetBank() {
-		wedstrijd.herzetBank(this.toestand);
+	rebuildBench() {
+		wedstrijd.rebuildBench(this.toestand);
 	}
 
-	staatInVeld(spelerId: string): boolean {
-		return wedstrijd.staatInVeld(this.toestand.wedstrijd, spelerId);
+	isOnPitch(spelerId: string): boolean {
+		return wedstrijd.isOnPitch(this.toestand.wedstrijd, spelerId);
 	}
 
-	zetAfwezig(spelerId: string, afwezig: boolean) {
-		if (wedstrijd.zetAfwezig(this.toestand, spelerId, afwezig)) this.bewaar();
+	setAbsent(spelerId: string, afwezig: boolean) {
+		if (wedstrijd.setAbsent(this.toestand, spelerId, afwezig)) this.save();
 	}
 
 	/** De klok rechtstreeks op een minuut zetten, voor als je achteraf invoert. */
-	zetKlok(minuten: number) {
+	setClock(minuten: number) {
 		if (!klok.zetOp(this.toestand.wedstrijd, Date.now(), minuten)) return;
 		this.nu = Date.now();
-		this.bewaar();
+		this.save();
 	}
 
-	verschuifKlok(seconden: number) {
+	shiftClock(seconden: number) {
 		if (!klok.verschuif(this.toestand.wedstrijd, seconden)) return;
 		this.nu = Date.now();
-		this.bewaar();
+		this.save();
 	}
 
 	/** Een proefwedstrijd of een misser weggooien. */
-	gooiWedstrijdWeg() {
+	discardMatch() {
 		this.toestand.wedstrijd = null;
-		this.gekozenPlek = null;
-		this.bewaar();
+		this.chosenPosition = null;
+		this.save();
 	}
 
-	log(type: GebeurtenisType, extra: Partial<Gebeurtenis> = {}) {
+	log(type: MatchEventType, extra: Partial<MatchEvent> = {}) {
 		klok.log(this.toestand.wedstrijd, this.nu, type, extra);
 	}
 
-	loopToggle() {
-		if (!klok.loopToggle(this.toestand.wedstrijd, Date.now(), new Date().toISOString().slice(0, 10))) return;
+	toggleRunning() {
+		if (!klok.toggleRunning(this.toestand.wedstrijd, Date.now(), new Date().toISOString().slice(0, 10))) return;
 		this.nu = Date.now();
-		this.bewaar();
+		this.save();
 	}
 
-	deelToggle() {
-		if (!klok.deelToggle(this.toestand.wedstrijd, Date.now(), new Date().toISOString().slice(0, 10))) return;
+	togglePart() {
+		if (!klok.togglePart(this.toestand.wedstrijd, Date.now(), new Date().toISOString().slice(0, 10))) return;
 		this.nu = Date.now();
-		this.bewaar();
+		this.save();
 	}
 
 	/** Kan er nog een deel bij, of is dit het laatste? */
-	get magVolgendDeel(): boolean {
-		return klok.magVolgendDeel(this.toestand.wedstrijd);
+	get canStartNextPart(): boolean {
+		return klok.canStartNextPart(this.toestand.wedstrijd);
 	}
 
-	zetTegenstander(naam: string) {
+	setOpponent(naam: string) {
 		const w = this.toestand.wedstrijd;
 		if (!w) return;
 		w.tegenstander = naam.trim() || 'Tegenstander';
-		this.bewaar();
+		this.save();
 	}
 
-	zetThuis(thuis: boolean) {
+	setHome(thuis: boolean) {
 		const w = this.toestand.wedstrijd;
 		if (!w) return;
 		w.thuis = thuis;
-		this.bewaar();
+		this.save();
 	}
 
-	zetTeamnaam(naam: string) {
+	setTeamName(naam: string) {
 		this.toestand.teamnaam = naam.trim() || 'Ons team';
-		this.bewaar();
+		this.save();
 	}
 
-	zetNotitie(tekst: string) {
+	setNote(tekst: string) {
 		const w = this.toestand.wedstrijd;
 		if (!w) return;
 		w.notitie = tekst;
-		this.bewaar();
+		this.save();
 	}
 
-	zetArchiefNotitie(i: number, tekst: string) {
-		if (archief.zetNotitie(this.toestand, i, tekst)) this.bewaar();
+	setArchiveNote(i: number, tekst: string) {
+		if (archief.setNote(this.toestand, i, tekst)) this.save();
 	}
 
 	/** Iemand van de bank op de gekozen plek zetten. Tijdens een wedstrijd is dat een wissel. */
-	zetOpPlek(spelerId: string) {
-		if (!this.gekozenPlek) return;
-		gebeurtenissen.zetOpPlek(this.toestand.wedstrijd, this.nu, this.gekozenPlek, spelerId);
-		this.gekozenPlek = null;
-		this.bewaar();
+	putOnPosition(spelerId: string) {
+		if (!this.chosenPosition) return;
+		gebeurtenissen.putOnPosition(this.toestand.wedstrijd, this.nu, this.chosenPosition, spelerId);
+		this.chosenPosition = null;
+		this.save();
 	}
 
-	ruilInWedstrijd(plekA: string, plekB: string) {
+	swapDuringMatch(plekA: string, plekB: string) {
 		if (!gebeurtenissen.ruil(this.toestand.wedstrijd, this.nu, plekA, plekB)) return;
-		this.gekozenPlek = null;
-		this.bewaar();
+		this.chosenPosition = null;
+		this.save();
 	}
 
-	doelpunt(spelerId: string | null) {
-		gebeurtenissen.doelpunt(this.toestand.wedstrijd, this.nu, spelerId);
-		this.bewaar();
+	goal(spelerId: string | null) {
+		gebeurtenissen.goal(this.toestand.wedstrijd, this.nu, spelerId);
+		this.save();
 	}
 
-	zetAssist(spelerId: string | null) {
-		if (gebeurtenissen.zetAssist(this.toestand.wedstrijd, spelerId)) this.bewaar();
+	setAssist(spelerId: string | null) {
+		if (gebeurtenissen.setAssist(this.toestand.wedstrijd, spelerId)) this.save();
 	}
 
-	tegendoelpunt() {
-		gebeurtenissen.tegendoelpunt(this.toestand.wedstrijd, this.nu);
-		this.bewaar();
+	concede() {
+		gebeurtenissen.concede(this.toestand.wedstrijd, this.nu);
+		this.save();
 	}
 
-	herstelbaar(): string | null {
-		return gebeurtenissen.herstelbaar(this.toestand.wedstrijd);
+	undoable(): string | null {
+		return gebeurtenissen.undoable(this.toestand.wedstrijd);
 	}
 
-	herstelLaatste() {
-		if (!gebeurtenissen.herstelLaatste(this.toestand.wedstrijd)) return;
-		this.gekozenPlek = null;
-		this.bewaar();
+	undoLast() {
+		if (!gebeurtenissen.undoLast(this.toestand.wedstrijd)) return;
+		this.chosenPosition = null;
+		this.save();
 	}
 
-	beeindig() {
-		if (!wedstrijd.beeindig(this.toestand.wedstrijd, this.nu)) return;
+	finish() {
+		if (!wedstrijd.finish(this.toestand.wedstrijd, this.nu)) return;
 		this.nu = Date.now();
-		this.bewaar();
+		this.save();
 	}
 
-	bewaarInArchief(): boolean {
-		if (!wedstrijd.bewaarInArchief(this.toestand, this.nu)) return false;
-		this.bewaar();
+	archiveMatch(): boolean {
+		if (!wedstrijd.archiveMatch(this.toestand, this.nu)) return false;
+		this.save();
 		return true;
 	}
 
-	verwijderUitArchief(i: number) {
+	removeFromArchive(i: number) {
 		archief.verwijderWedstrijd(this.toestand, i);
-		this.bewaar();
+		this.save();
 	}
 
 	/* ---------- een bewaarde wedstrijd bijwerken ---------- */
-	wijzigArchief(i: number, velden: Partial<Pick<ArchiefWedstrijd, 'datum' | 'tegenstander' | 'thuis'>>) {
-		if (archief.wijzig(this.toestand, i, velden)) this.bewaar();
+	updateArchived(i: number, velden: Partial<Pick<ArchivedMatch, 'datum' | 'tegenstander' | 'thuis'>>) {
+		if (archief.wijzig(this.toestand, i, velden)) this.save();
 	}
 
-	verwijderDoelpunt(i: number, index: number) {
-		if (archief.verwijderDoelpunt(this.toestand, i, index)) this.bewaar();
+	removeGoal(i: number, index: number) {
+		if (archief.removeGoal(this.toestand, i, index)) this.save();
 	}
 
-	voegDoelpuntToe(i: number, minuut: number, spelerId: string | null, tegen = false) {
-		if (archief.voegDoelpuntToe(this.toestand, i, minuut, spelerId, tegen)) this.bewaar();
+	addGoal(i: number, minuut: number, spelerId: string | null, tegen = false) {
+		if (archief.addGoal(this.toestand, i, minuut, spelerId, tegen)) this.save();
 	}
 
 	/* ---------- standaardopstelling ---------- */
-	zorgVoorStandaard() {
-		const st = opstellen.zorgVoorStandaard(this.toestand);
-		this.bewaar();
+	ensureDefaultLineup() {
+		const st = opstellen.ensureDefaultLineup(this.toestand);
+		this.save();
 		return st;
 	}
 
-	ruilPlekken(bron: opstellen.Bron, plekA: string, plekB: string) {
-		if (!opstellen.ruilPlekken(this.toestand, bron, plekA, plekB)) return;
-		this.gekozenPlek = null;
-		this.bewaar();
+	swapPositions(bron: opstellen.Bron, plekA: string, plekB: string) {
+		if (!opstellen.swapPositions(this.toestand, bron, plekA, plekB)) return;
+		this.chosenPosition = null;
+		this.save();
 	}
 
-	haalVanVeld(bron: opstellen.Bron, plek: string) {
-		if (!opstellen.haalVanVeld(this.toestand, bron, plek)) return;
-		this.gekozenPlek = null;
-		this.bewaar();
+	takeOffPitch(bron: opstellen.Bron, plek: string) {
+		if (!opstellen.takeOffPitch(this.toestand, bron, plek)) return;
+		this.chosenPosition = null;
+		this.save();
 	}
 
-	zetStandaardInFormatie(formatie: string) {
-		if (opstellen.zetStandaardInFormatie(this.toestand, formatie)) this.bewaar();
+	moveDefaultToFormation(formatie: string) {
+		if (opstellen.moveDefaultToFormation(this.toestand, formatie)) this.save();
 	}
 
-	kiesFormatie(formatie: string) {
-		if (opstellen.kiesFormatie(this.toestand, formatie)) this.bewaar();
+	chooseFormation(formatie: string) {
+		if (opstellen.chooseFormation(this.toestand, formatie)) this.save();
 	}
 
-	zetInOpzet(bron: opstellen.Bron, spelerId: string) {
-		if (!this.gekozenPlek) return;
-		if (!opstellen.zetOpPlekInOpzet(this.toestand, bron, this.gekozenPlek, spelerId)) return;
-		this.gekozenPlek = null;
-		this.bewaar();
+	putOnPositionWhileSettingUp(bron: opstellen.Bron, spelerId: string) {
+		if (!this.chosenPosition) return;
+		if (!opstellen.zetOpPlekInOpzet(this.toestand, bron, this.chosenPosition, spelerId)) return;
+		this.chosenPosition = null;
+		this.save();
 	}
 
-	wisStandaard() {
-		opstellen.wisStandaard(this.toestand);
-		this.bewaar();
+	clearDefaultLineup() {
+		opstellen.clearDefaultLineup(this.toestand);
+		this.save();
 	}
 
 	/* ---------- trainingen ---------- */
-	nieuweTraining(): Training {
-		const training = trainingen.nieuweTraining(this.toestand, new Date().toISOString().slice(0, 10));
-		this.bewaar();
+	newTraining(): Training {
+		const training = trainingen.newTraining(this.toestand, new Date().toISOString().slice(0, 10));
+		this.save();
 		return training;
 	}
 
-	trainingMetId(id: string | undefined): Training | undefined {
-		return trainingen.trainingMetId(this.toestand, id);
+	trainingById(id: string | undefined): Training | undefined {
+		return trainingen.trainingById(this.toestand, id);
 	}
 
-	tikPresentie(training: Training, spelerId: string) {
-		trainingen.tikPresentie(training, spelerId);
-		this.bewaar();
+	cycleAttendance(training: Training, spelerId: string) {
+		trainingen.cycleAttendance(training, spelerId);
+		this.save();
 	}
 
-	zetTrainingDatum(training: Training, datum: string) {
-		if (trainingen.zetTrainingDatum(this.toestand, training, datum)) this.bewaar();
+	setTrainingDate(training: Training, datum: string) {
+		if (trainingen.setTrainingDate(this.toestand, training, datum)) this.save();
 	}
 
-	verwijderTraining(training: Training) {
-		trainingen.verwijderTraining(this.toestand, training);
-		this.bewaar();
+	removeTraining(training: Training) {
+		trainingen.removeTraining(this.toestand, training);
+		this.save();
 	}
 
 	/* ---------- overzetten ---------- */
@@ -380,18 +380,18 @@ class App {
 	 * wat je had; wat er niet in staat blijft. Een lopende wedstrijd raakt het
 	 * nooit aan.
 	 */
-	neemOver(pakket: Partial<Omit<Toestand, 'wedstrijd'>>) {
+	adoptPackage(pakket: Partial<Omit<State, 'wedstrijd'>>) {
 		const t = this.toestand;
 		if (pakket.teamnaam?.trim()) t.teamnaam = pakket.teamnaam;
 		if (Array.isArray(pakket.spelers)) t.spelers = pakket.spelers;
-		if (kentFormatie(pakket.formatie)) t.formatie = pakket.formatie!;
+		if (knowsFormation(pakket.formatie)) t.formatie = pakket.formatie!;
 		if (pakket.helftMinuten) t.helftMinuten = pakket.helftMinuten;
 		if (pakket.delen === 2 || pakket.delen === 4) t.delen = pakket.delen;
 		if ('standaard' in pakket) t.standaard = pakket.standaard ?? null;
 		if (Array.isArray(pakket.trainingen)) t.trainingen = pakket.trainingen;
 		if (Array.isArray(pakket.archief)) t.archief = pakket.archief;
 		if (typeof pakket.verslagWissels === 'boolean') t.verslagWissels = pakket.verslagWissels;
-		this.bewaar();
+		this.save();
 	}
 
 	/** Alleen de voorbereiding en de geschiedenis; een lopende wedstrijd blijft lokaal. */
@@ -405,7 +405,7 @@ class App {
 	 * de andere kant op: een lopende wedstrijd wordt nooit overschreven door wat
 	 * er op de server staat. Zie neemSyncOver.
 	 */
-	syncPakket() {
+	syncPayload() {
 		const t = this.toestand;
 		return {
 			teamnaam: t.teamnaam,
@@ -421,12 +421,12 @@ class App {
 		};
 	}
 
-	neemSyncOver(d: ReturnType<App['syncPakket']>): boolean {
+	adoptSyncPayload(d: ReturnType<App['syncPayload']>): boolean {
 		if (!d || !Array.isArray(d.spelers)) return false;
 		const t = this.toestand;
 		t.spelers = d.spelers;
 		if (d.teamnaam?.trim()) t.teamnaam = d.teamnaam;
-		if (kentFormatie(d.formatie)) t.formatie = d.formatie;
+		if (knowsFormation(d.formatie)) t.formatie = d.formatie;
 		if (d.helftMinuten) t.helftMinuten = d.helftMinuten;
 		if (d.delen === 2 || d.delen === 4) t.delen = d.delen;
 		t.standaard = d.standaard ?? null;
@@ -436,8 +436,8 @@ class App {
 		/* Een wedstrijd die hier loopt blijft staan. Een opstelling die je kwijtraakt
 		   maak je opnieuw; wissels die je kwijtraakt zijn weg, en die stonden nergens
 		   anders. Alleen wat niet begonnen is mag wijken. */
-		if (!(this.gestart && !t.wedstrijd?.afgelopen)) t.wedstrijd = d.wedstrijd ?? null;
-		this.bewaar();
+		if (!(this.kickedOff && !t.wedstrijd?.afgelopen)) t.wedstrijd = d.wedstrijd ?? null;
+		this.save();
 		return true;
 	}
 }
@@ -445,8 +445,8 @@ class App {
 export const app = new App();
 
 /** Opstelling waar je nu aan werkt: de wedstrijd, of de standaard. */
-export function opstellingVan(
+export function lineupOf(
 	bron: 'wedstrijd' | 'standaard'
-): { formatie: string; opstelling: Opstelling; bank: string[] } | null {
+): { formatie: string; opstelling: Lineup; bank: string[] } | null {
 	return bron === 'standaard' ? app.toestand.standaard : app.toestand.wedstrijd;
 }

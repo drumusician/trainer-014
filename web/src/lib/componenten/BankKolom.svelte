@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { groepVan, kanKeepen, LINIES, LINIEVOLGORDE, plekLinie } from '$lib/domein/formaties';
-	import { mager, presentie } from '$lib/domein/presentie';
+	import { groupOf, canKeep, LINES, LINE_ORDER, positionLine } from '$lib/domein/formaties';
+	import { thinAttendance, attendanceOf } from '$lib/domein/presentie';
 	import { app } from '$lib/toestand.svelte';
-	import type { Linie, Speler } from '$lib/domein/types';
+	import type { Line, Player } from '$lib/domein/types';
 
 	let {
 		bank,
@@ -21,17 +21,17 @@
 		ontik: (spelerId: string) => void;
 	} = $props();
 
-	const spelers = $derived(bank.map((id) => app.spelerVan(id)).filter(Boolean) as Speler[]);
-	const doelLinie = $derived(gekozen ? plekLinie(gekozen, formatie) : null);
+	const spelers = $derived(bank.map((id) => app.playerById(id)).filter(Boolean) as Player[]);
+	const doelLinie = $derived(gekozen ? positionLine(gekozen, formatie) : null);
 
-	function pastBij(p: Speler): boolean {
+	function pastBij(p: Player): boolean {
 		if (!doelLinie) return false;
-		return doelLinie === 'K' ? kanKeepen(p) : p.linie === doelLinie;
+		return doelLinie === 'K' ? canKeep(p) : p.linie === doelLinie;
 	}
 
-	function groep(code: Linie): Speler[] {
+	function groep(code: Line): Player[] {
 		return spelers
-			.filter((p) => groepVan(p) === code)
+			.filter((p) => groupOf(p) === code)
 			.sort((a, b) => (tijden ? (tijden[a.id] ?? 0) - (tijden[b.id] ?? 0) : a.naam.localeCompare(b.naam)));
 	}
 </script>
@@ -42,15 +42,15 @@
 		{#if !spelers.length}
 			<p class="uitleg" style="margin: 0; font-size: 13px">{leegtekst}</p>
 		{/if}
-		{#each LINIEVOLGORDE as code (code)}
+		{#each LINE_ORDER as code (code)}
 			{@const groepje = groep(code)}
 			{#if groepje.length}
 				<div class="groepkop" class:past={gekozen && groepje.some(pastBij)}>
-					<b>{LINIES[code]}</b><span>{groepje.length}</span>
+					<b>{LINES[code]}</b><span>{groepje.length}</span>
 				</div>
 				<div class="rij">
 					{#each groepje as p (p.id)}
-						{@const recent = presentie(app.toestand.trainingen, p.id, 4)}
+						{@const recent = attendanceOf(app.toestand.trainingen, p.id, 4)}
 						<button
 							type="button"
 							class="chip"
@@ -61,7 +61,7 @@
 							<span>{p.naam}</span>
 							{#if tijden}
 								<span class="min">{Math.round((tijden[p.id] ?? 0) / 60)}′</span>
-							{:else if mager(recent)}
+							{:else if thinAttendance(recent)}
 								<span class="min mager">{recent.er}/{recent.totaal}</span>
 							{/if}
 						</button>
