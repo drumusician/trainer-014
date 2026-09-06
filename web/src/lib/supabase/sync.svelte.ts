@@ -45,7 +45,7 @@ async function sb(pad: string, opties: RequestInit & { metToken?: boolean } = {}
 
 	const r = await fetch(SUPABASE_URL + pad, { ...opties, headers: kop });
 	const tekst = await r.text();
-	let data: unknown = null;
+	let data: unknown;
 	try {
 		data = tekst ? JSON.parse(tekst) : null;
 	} catch {
@@ -120,7 +120,12 @@ class Sync {
 		}
 	}
 
-	private zet(d: { access_token: string; refresh_token: string; expires_in?: number; user?: { id: string; email: string } }) {
+	private zet(d: {
+		access_token: string;
+		refresh_token: string;
+		expires_in?: number;
+		user?: { id: string; email: string };
+	}) {
 		const oud = this.sessie;
 		this.sessie = {
 			access_token: d.access_token,
@@ -228,7 +233,8 @@ class Sync {
 		if (!h.includes('access_token=')) {
 			if (h.includes('error')) {
 				const f = new URLSearchParams(h.replace(/^#/, ''));
-				this.melding = 'Inloggen via de link lukte niet: ' + (f.get('error_description') ?? f.get('error') ?? 'onbekende fout');
+				this.melding =
+					'Inloggen via de link lukte niet: ' + (f.get('error_description') ?? f.get('error') ?? 'onbekende fout');
 				schoon();
 			}
 			return;
@@ -267,7 +273,11 @@ class Sync {
 			}
 			const nieuw = (await sb(
 				'/rest/v1/teams',
-				{ method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ naam: app.toestand.teamnaam, eigenaar: s.user_id }) },
+				{
+					method: 'POST',
+					headers: { Prefer: 'return=representation' },
+					body: JSON.stringify({ naam: app.toestand.teamnaam, eigenaar: s.user_id })
+				},
 				token
 			)) as { id: string }[];
 			s.teamId = nieuw[0].id;
@@ -293,7 +303,9 @@ class Sync {
 			const team = await this.zorgVoorTeam(token);
 			let verwacht: number | null = this.sessie.versie ?? null;
 			if (overschrijven) {
-				const nu = (await sb('/rest/v1/team_toestand?select=versie&team_id=eq.' + team, {}, token)) as { versie: number }[];
+				const nu = (await sb('/rest/v1/team_toestand?select=versie&team_id=eq.' + team, {}, token)) as {
+					versie: number;
+				}[];
 				verwacht = nu?.length ? nu[0].versie : null;
 			}
 			const pakket = app.syncPakket();
@@ -313,7 +325,8 @@ class Sync {
 		} catch (e) {
 			if (this.isBotsing(e as Fout)) {
 				this.botsing = true;
-				this.melding = 'Op de server staat iets nieuwers, van een ander toestel. Haal het eerst op, of stuur dit toestel er met opzet overheen.';
+				this.melding =
+					'Op de server staat iets nieuwers, van een ander toestel. Haal het eerst op, of stuur dit toestel er met opzet overheen.';
 			} else {
 				this.hapert = true;
 				this.melding = 'Opsturen lukte niet: ' + (e as Error).message;
@@ -343,8 +356,7 @@ class Sync {
 			}
 			const team = await this.zorgVoorTeam(token);
 			const rijen = (await sb('/rest/v1/team_toestand?select=data,versie&team_id=eq.' + team, {}, token)) as
-				| { data: ReturnType<typeof app.syncPakket>; versie: number }[]
-				| null;
+				{ data: ReturnType<typeof app.syncPakket>; versie: number }[] | null;
 			if (!rijen?.length) {
 				/* nog niets op de server: dan is wat hier staat het begin */
 				if (stil) {

@@ -26,9 +26,7 @@ export function bezetting(spelers: Speler[], formatie: string): LinieBezetting[]
 		linie,
 		naam: LINIES[linie],
 		spelers:
-			linie === 'K'
-				? spelers.filter((p) => p.keept).length
-				: spelers.filter((p) => groepVan(p) === linie).length,
+			linie === 'K' ? spelers.filter((p) => p.keept).length : spelers.filter((p) => groepVan(p) === linie).length,
 		plekken: plekkenPerLinie[linie] ?? 0
 	}));
 }

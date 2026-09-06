@@ -133,13 +133,7 @@
 	<main>
 		<div class="veldscherm">
 			<div class="veldrij">
-				<Veld
-					formatie={w.formatie}
-					opstelling={w.opstelling}
-					gekozen={app.gekozenPlek}
-					{tijden}
-					onplek={tikPlek}
-				/>
+				<Veld formatie={w.formatie} opstelling={w.opstelling} gekozen={app.gekozenPlek} {tijden} onplek={tikPlek} />
 				<BankKolom
 					bank={w.bank}
 					formatie={w.formatie}
@@ -150,8 +144,19 @@
 			</div>
 
 			<div class="knoprij">
-				<button class="prim" onclick={() => { assistVragen = false; doelpuntKiezen = !doelpuntKiezen; }}>Doelpunt</button>
-				<button onclick={() => { assistVragen = false; app.tegendoelpunt(); }}>Tegen</button>
+				<button
+					class="prim"
+					onclick={() => {
+						assistVragen = false;
+						doelpuntKiezen = !doelpuntKiezen;
+					}}>Doelpunt</button
+				>
+				<button
+					onclick={() => {
+						assistVragen = false;
+						app.tegendoelpunt();
+					}}>Tegen</button
+				>
 				{#if app.herstelbaar()}
 					<button onclick={() => app.herstelLaatste()}>↶ {app.herstelbaar()} terug</button>
 				{/if}
@@ -167,14 +172,19 @@
 			{#if doelpuntKiezen}
 				<div class="melding">
 					<span><b>Doelpunt.</b> Tik op het veld wie hem maakte.</span>
-					<button class="klein" onclick={() => { app.doelpunt(null); doelpuntKiezen = false; }}>Weet ik niet</button>
+					<button
+						class="klein"
+						onclick={() => {
+							app.doelpunt(null);
+							doelpuntKiezen = false;
+						}}>Weet ik niet</button
+					>
 					<button class="klein" onclick={() => (doelpuntKiezen = false)}>Annuleren</button>
 				</div>
 			{:else if assistVragen}
 				<div class="melding">
 					<span>
-						<b>{app.spelerVan(maker)?.naam ?? 'Doelpunt'}</b> scoorde. Wie legde hem klaar? Tik hem aan, of sla dit
-						over.
+						<b>{app.spelerVan(maker)?.naam ?? 'Doelpunt'}</b> scoorde. Wie legde hem klaar? Tik hem aan, of sla dit over.
 					</span>
 					<button class="klein" onclick={() => (assistVragen = false)}>Geen assist</button>
 				</div>
@@ -182,8 +192,8 @@
 				<div class="melding">
 					<span>
 						<b>{uit ? uit.naam : 'Lege plek'}</b> ·
-						{LINIES[plekLinie(app.gekozenPlek, w.formatie)].toLowerCase()}. Tik wie erin komt, of een andere plek om
-						te ruilen.
+						{LINIES[plekLinie(app.gekozenPlek, w.formatie)].toLowerCase()}. Tik wie erin komt, of een andere plek om te
+						ruilen.
 						{#if keeperMin > 0 && plekLinie(app.gekozenPlek, w.formatie) !== 'K'}
 							Hij keepte deze wedstrijd al {keeperMin} minuten.
 						{/if}

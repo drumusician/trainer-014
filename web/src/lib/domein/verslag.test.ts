@@ -2,10 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { verloopRegels, gebeurtenisTekst, verslagTekst } from './verslag';
 import type { Gebeurtenis, Speler } from './types';
 
-const spelers: Speler[] = [{ id: 'p1', naam: 'Aad', linie: 'A' }, { id: 'p2', naam: 'Bram', linie: 'M' }];
+const spelers: Speler[] = [
+	{ id: 'p1', naam: 'Aad', linie: 'A' },
+	{ id: 'p2', naam: 'Bram', linie: 'M' }
+];
 const bron = {
-	datum: '2026-09-06', tegenstander: 'Ajax', thuis: true, teamnaam: 'JO11-2', stand: [2, 1] as [number, number],
-	formatie: '4-3-3', duur: 4200,
+	datum: '2026-09-06',
+	tegenstander: 'Ajax',
+	thuis: true,
+	teamnaam: 'JO11-2',
+	stand: [2, 1] as [number, number],
+	formatie: '4-3-3',
+	duur: 4200,
 	gebeurtenissen: [
 		{ type: 'wissel' as const, t: 1200, eruit: 'p1', erin: 'p2', plek: 'SP' },
 		{ type: 'goal' as const, t: 900, speler: 'p1' },
@@ -19,11 +27,7 @@ describe('verslag', () => {
 		const tekst = verslagTekst(bron, spelers);
 		expect(tekst).toContain('JO11-2 – Ajax 2–1');
 		expect(tekst).not.toContain('voor');
-		expect(tekst.split('\n').slice(3)).toEqual([
-			"15′  1–0  Aad",
-			"30′  1–1  tegendoelpunt",
-			"50′  2–1  doelpunt"
-		]);
+		expect(tekst.split('\n').slice(3)).toEqual(['15′  1–0  Aad', '30′  1–1  tegendoelpunt', '50′  2–1  doelpunt']);
 	});
 
 	it('zet de wissels erbij als je dat wilt', () => {

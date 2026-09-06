@@ -20,18 +20,32 @@ export interface Verslagbron {
 
 export function bronVanWedstrijd(w: Wedstrijd, teamnaam: string): Verslagbron {
 	return {
-		datum: w.datum, tegenstander: w.tegenstander, thuis: w.thuis,
-		stand: stand(w), formatie: w.formatie, duur: eindTijd(w),
-		gebeurtenissen: w.gebeurtenissen, delen: w.delen, notitie: w.notitie, teamnaam
+		datum: w.datum,
+		tegenstander: w.tegenstander,
+		thuis: w.thuis,
+		stand: stand(w),
+		formatie: w.formatie,
+		duur: eindTijd(w),
+		gebeurtenissen: w.gebeurtenissen,
+		delen: w.delen,
+		notitie: w.notitie,
+		teamnaam
 	};
 }
 
 export function bronVanArchief(a: ArchiefWedstrijd): Verslagbron {
 	return {
-		datum: a.datum, tegenstander: a.tegenstander, thuis: a.thuis !== false,
-		stand: a.stand ?? [0, 0], formatie: a.formatie, duur: a.duur ?? 0,
-		gebeurtenissen: a.gebeurtenissen ?? [], namen: a.namen,
-		delen: a.delen, notitie: a.notitie, teamnaam: a.teamnaam
+		datum: a.datum,
+		tegenstander: a.tegenstander,
+		thuis: a.thuis !== false,
+		stand: a.stand ?? [0, 0],
+		formatie: a.formatie,
+		duur: a.duur ?? 0,
+		gebeurtenissen: a.gebeurtenissen ?? [],
+		namen: a.namen,
+		delen: a.delen,
+		notitie: a.notitie,
+		teamnaam: a.teamnaam
 	};
 }
 
@@ -52,16 +66,17 @@ export function gebeurtenisTekst(
 	/* Zonder formatie weten we de leesbare naam niet; dan maar de plek zelf. */
 	const plek = (id?: string | null) => (id ? (formatie ? plekLabel(id, formatie) : id) : '');
 	switch (g.type) {
-		case 'start': return 'Aftrap';
+		case 'start':
+			return 'Aftrap';
 		case 'rust':
 			return g.deel ? pauzeNaam(g.deel, delen) + ' — ' + deelNaam(g.deel, delen) + ' voorbij' : 'Rust';
-		case 'eind': return 'Einde';
-		case 'tegen': return 'Tegendoelpunt';
+		case 'eind':
+			return 'Einde';
+		case 'tegen':
+			return 'Tegendoelpunt';
 		case 'goal':
 			return (
-				'Doelpunt' +
-				(g.speler ? ' — ' + naam(g.speler) : '') +
-				(g.assist ? ' (assist ' + naam(g.assist) + ')' : '')
+				'Doelpunt' + (g.speler ? ' — ' + naam(g.speler) : '') + (g.assist ? ' (assist ' + naam(g.assist) + ')' : '')
 			);
 		case 'wissel':
 			return naam(g.erin) + ' voor ' + naam(g.eruit) + (g.plek ? ' op ' + plek(g.plek) : '');
@@ -73,14 +88,17 @@ export function gebeurtenisTekst(
 			}
 			if (g.plekA && g.plekB) return 'Van plek gewisseld: ' + plek(g.plekA) + ' en ' + plek(g.plekB);
 			return 'Van plek gewisseld';
-		default: return g.type;
+		default:
+			return g.type;
 	}
 }
 
 export function datumTekst(datum: string): string {
 	try {
 		return new Date(datum + 'T12:00:00').toLocaleDateString('nl-NL', {
-			weekday: 'long', day: 'numeric', month: 'long'
+			weekday: 'long',
+			day: 'numeric',
+			month: 'long'
 		});
 	} catch {
 		return datum;
@@ -97,8 +115,9 @@ export function verslagTekst(bron: Verslagbron, spelers: Speler[], metWissels = 
 	const ons = bron.teamnaam?.trim() || 'Ons team';
 	const regels: string[] = [];
 	regels.push(
-		(thuis ? ons + ' – ' + bron.tegenstander : bron.tegenstander + ' – ' + ons) + ' ' +
-		(thuis ? v + '–' + t : t + '–' + v)
+		(thuis ? ons + ' – ' + bron.tegenstander : bron.tegenstander + ' – ' + ons) +
+			' ' +
+			(thuis ? v + '–' + t : t + '–' + v)
 	);
 	regels.push(datumTekst(bron.datum));
 	regels.push('');
@@ -121,7 +140,9 @@ export function verslagTekst(bron: Verslagbron, spelers: Speler[], metWissels = 
 				tegen++;
 				regels.push(`${min}  ${voor}–${tegen}  tegendoelpunt`);
 			} else if (g.type === 'wissel' && metWissels) {
-				regels.push(`${min}       ${naamVan(g.erin, spelers, bron.namen)} voor ${naamVan(g.eruit, spelers, bron.namen)}`);
+				regels.push(
+					`${min}       ${naamVan(g.erin, spelers, bron.namen)} voor ${naamVan(g.eruit, spelers, bron.namen)}`
+				);
 			}
 		});
 	if (voor + tegen === 0) regels.push('Geen doelpunten.');

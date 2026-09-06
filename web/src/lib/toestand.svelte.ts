@@ -3,8 +3,16 @@ import { zetOpstellingOm } from './domein/opstelling';
 import { eindTijd, keepertijden, positietijden, speeltijden, stand, verstreken } from './domein/tijd';
 import { sorteerTrainingen } from './domein/presentie';
 import type {
-	Aanwezigheid, ArchiefWedstrijd, Gebeurtenis, GebeurtenisType, Opstelling,
-	Speler, Toestand, Training, Veldlinie, Wedstrijd
+	Aanwezigheid,
+	ArchiefWedstrijd,
+	Gebeurtenis,
+	GebeurtenisType,
+	Opstelling,
+	Speler,
+	Toestand,
+	Training,
+	Veldlinie,
+	Wedstrijd
 } from './domein/types';
 import { legeToestand } from './domein/types';
 
@@ -89,9 +97,13 @@ class App {
 	}
 
 	namenErbij(tekst: string) {
-		tekst.split('\n').map((x) => x.trim()).filter(Boolean).forEach((naam) => {
-			this.toestand.spelers.push({ id: nieuwId(), naam, linie: '' });
-		});
+		tekst
+			.split('\n')
+			.map((x) => x.trim())
+			.filter(Boolean)
+			.forEach((naam) => {
+				this.toestand.spelers.push({ id: nieuwId(), naam, linie: '' });
+			});
 		this.bewaar();
 	}
 
@@ -192,6 +204,7 @@ class App {
 		const w = this.toestand.wedstrijd;
 		if (!w) return;
 		if (afwezig && this.gestart && this.staatInVeld(spelerId)) return;
+		/* eslint-disable-next-line svelte/prefer-svelte-reactivity -- lokaal hulpje, gaat als array de toestand in */
 		const lijst = new Set(w.afwezig ?? []);
 		if (afwezig) {
 			lijst.add(spelerId);
@@ -416,10 +429,17 @@ class App {
 		const namen: Record<string, string> = {};
 		t.spelers.forEach((p) => (namen[p.id] = p.naam));
 		const regel: ArchiefWedstrijd = {
-			datum: w.datum, tegenstander: w.tegenstander, thuis: w.thuis,
-			stand: stand(w), formatie: w.formatie, duur: eindTijd(w),
-			delen: w.delen, notitie: w.notitie, teamnaam: t.teamnaam,
-			gebeurtenissen: w.gebeurtenissen, namen,
+			datum: w.datum,
+			tegenstander: w.tegenstander,
+			thuis: w.thuis,
+			stand: stand(w),
+			formatie: w.formatie,
+			duur: eindTijd(w),
+			delen: w.delen,
+			notitie: w.notitie,
+			teamnaam: t.teamnaam,
+			gebeurtenissen: w.gebeurtenissen,
+			namen,
 			afwezig: [...(w.afwezig ?? [])],
 			opstelling: { ...w.opstelling },
 			bank: [...w.bank],
@@ -646,9 +666,16 @@ class App {
 	syncPakket() {
 		const t = this.toestand;
 		return {
-			teamnaam: t.teamnaam, spelers: t.spelers, formatie: t.formatie, helftMinuten: t.helftMinuten, delen: t.delen,
-			standaard: t.standaard, trainingen: t.trainingen, archief: t.archief,
-			verslagWissels: t.verslagWissels, wedstrijd: t.wedstrijd
+			teamnaam: t.teamnaam,
+			spelers: t.spelers,
+			formatie: t.formatie,
+			helftMinuten: t.helftMinuten,
+			delen: t.delen,
+			standaard: t.standaard,
+			trainingen: t.trainingen,
+			archief: t.archief,
+			verslagWissels: t.verslagWissels,
+			wedstrijd: t.wedstrijd
 		};
 	}
 
@@ -676,6 +703,8 @@ class App {
 export const app = new App();
 
 /** Opstelling waar je nu aan werkt: de wedstrijd, of de standaard. */
-export function opstellingVan(bron: 'wedstrijd' | 'standaard'): { formatie: string; opstelling: Opstelling; bank: string[] } | null {
+export function opstellingVan(
+	bron: 'wedstrijd' | 'standaard'
+): { formatie: string; opstelling: Opstelling; bank: string[] } | null {
 	return bron === 'standaard' ? app.toestand.standaard : app.toestand.wedstrijd;
 }

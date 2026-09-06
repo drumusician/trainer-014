@@ -10,7 +10,12 @@ const spelers: Speler[] = [
 
 const archief: ArchiefWedstrijd[] = [
 	{
-		datum: '2026-08-30', tegenstander: 'Ajax', thuis: true, stand: [1, 0], formatie: '4-3-3', duur: 4200,
+		datum: '2026-08-30',
+		tegenstander: 'Ajax',
+		thuis: true,
+		stand: [1, 0],
+		formatie: '4-3-3',
+		duur: 4200,
 		namen: { p1: 'Daanish', p2: 'Gijs' },
 		gebeurtenissen: [{ type: 'goal', t: 900, speler: 'p1' }],
 		speeltijd: [

@@ -1,4 +1,4 @@
-import { plekken, plekLinie, plekLabel } from './formaties';
+import { plekLinie, plekLabel } from './formaties';
 import type { Gebeurtenis, Speler, Wedstrijd } from './types';
 
 export function mmss(sec: number): string {
@@ -98,11 +98,7 @@ export function veldIntervallen(w: Wedstrijd | null, nu = Date.now()): Interval[
 }
 
 /** Seconden per speler. Iedereen uit de selectie komt erin, ook met nul. */
-export function speeltijden(
-	w: Wedstrijd | null,
-	spelers: Speler[],
-	nu = Date.now()
-): Record<string, number> {
+export function speeltijden(w: Wedstrijd | null, spelers: Speler[], nu = Date.now()): Record<string, number> {
 	const totaal: Record<string, number> = {};
 	spelers.forEach((p) => (totaal[p.id] = 0));
 	veldIntervallen(w, nu).forEach((i) => {

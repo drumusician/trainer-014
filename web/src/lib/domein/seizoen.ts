@@ -20,7 +20,13 @@ export interface SeizoenStand {
 
 export function seizoenStand(archief: ArchiefWedstrijd[]): SeizoenStand {
 	const uit: SeizoenStand = {
-		wedstrijden: archief.length, gewonnen: 0, gelijk: 0, verloren: 0, voor: 0, tegen: 0, seconden: 0
+		wedstrijden: archief.length,
+		gewonnen: 0,
+		gelijk: 0,
+		verloren: 0,
+		voor: 0,
+		tegen: 0,
+		seconden: 0
 	};
 	archief.forEach((a) => {
 		const [v, t] = a.stand ?? [0, 0];
@@ -102,7 +108,5 @@ export function makers(archief: ArchiefWedstrijd[], spelers: Speler[]): MakerReg
 }
 
 export function topscorers(rijen: SeizoenRegel[]): SeizoenRegel[] {
-	return rijen
-		.filter((r) => r.doelpunten > 0)
-		.sort((a, b) => b.doelpunten - a.doelpunten || b.seconden - a.seconden);
+	return rijen.filter((r) => r.doelpunten > 0).sort((a, b) => b.doelpunten - a.doelpunten || b.seconden - a.seconden);
 }

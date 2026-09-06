@@ -12,7 +12,5 @@ export function datumKort(datum: string): string {
 
 /** "4 september 2026". */
 export function datumMetJaar(datum: string): string {
-	return (
-		lees(datum)?.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }) ?? datum
-	);
+	return lees(datum)?.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }) ?? datum;
 }

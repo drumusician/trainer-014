@@ -58,7 +58,9 @@ export function sorteer(rijen: SpelerRegel[], hoe: Sortering): SpelerRegel[] {
 	return [...rijen].sort((a, b) => {
 		if (hoe === 'minuten') return b.seconden - a.seconden || a.naam.localeCompare(b.naam);
 		if (hoe === 'doelpunten')
-			return b.doelpunten - a.doelpunten || b.assists - a.assists || b.seconden - a.seconden || a.naam.localeCompare(b.naam);
+			return (
+				b.doelpunten - a.doelpunten || b.assists - a.assists || b.seconden - a.seconden || a.naam.localeCompare(b.naam)
+			);
 		if (hoe === 'presentie') return deel(a.presentie) - deel(b.presentie) || a.naam.localeCompare(b.naam);
 		return a.naam.localeCompare(b.naam);
 	});

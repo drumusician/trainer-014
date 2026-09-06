@@ -2,7 +2,10 @@
 # De landingspagina staat op /, de app zelf op /app.
 [build]
   base = "web"
-  command = "npm run build"
+  # Niet alleen bouwen: eerst controleren. Zo kan een typefout of een omgevallen
+  # test niet meer ongemerkt live komen. Dezelfde stappen staan in
+  # .github/workflows/ci.yml, die geeft alleen sneller uitsluitsel.
+  command = "npx prettier --check \"src/**/*.{ts,svelte,css}\" && npx eslint . && npm run check && npm test && npm run build"
   publish = "build"
 
 [build.environment]

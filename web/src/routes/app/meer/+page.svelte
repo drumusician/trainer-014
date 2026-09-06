@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { backupNaam, leesBackup, maakBackup } from '$lib/domein/backup';
+	import { backupNaam, maakBackup } from '$lib/domein/backup';
 	import { beschrijf, leesCode, maakCode } from '$lib/domein/overzetten';
 	import { app } from '$lib/toestand.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
@@ -15,9 +15,7 @@
 	let backup = $state<'geen' | 'maken'>('geen');
 	/* De link uit de mail komt terug waar je hem opvroeg. Op je eigen machine is
 	   dat localhost, en dat is een andere opslag dan de echte site. */
-	const opLokaal = $derived(
-		typeof location !== 'undefined' && /^(localhost|127\.|\[::1\])/.test(location.hostname)
-	);
+	const opLokaal = $derived(typeof location !== 'undefined' && /^(localhost|127\.|\[::1\])/.test(location.hostname));
 	let backuptekst = $state('');
 
 	async function codeMaken() {
@@ -51,7 +49,13 @@
 	function overnemen() {
 		try {
 			const pakket = leesCode(code);
-			if (!confirm('Dit overnemen op dit toestel?\n\n' + beschrijf(pakket) + '.\n\nWat hierin zit vervangt wat je nu hebt. Een wedstrijd die nu loopt blijft staan.'))
+			if (
+				!confirm(
+					'Dit overnemen op dit toestel?\n\n' +
+						beschrijf(pakket) +
+						'.\n\nWat hierin zit vervangt wat je nu hebt. Een wedstrijd die nu loopt blijft staan.'
+				)
+			)
 				return;
 			app.neemOver(pakket);
 			overzet = 'geen';
@@ -61,7 +65,6 @@
 			alert('Dit kon ik niet lezen: ' + (e as Error).message);
 		}
 	}
-
 </script>
 
 <main>
@@ -81,19 +84,31 @@
 			{#if sync.fase === 'email'}
 				<label class="vak">
 					E-mailadres
-					<input type="email" inputmode="email" autocomplete="email" bind:value={sync.email} placeholder="jij@voorbeeld.nl" />
+					<input
+						type="email"
+						inputmode="email"
+						autocomplete="email"
+						bind:value={sync.email}
+						placeholder="jij@voorbeeld.nl"
+					/>
 				</label>
 				<div class="knoprij" style="padding-left: 0">
 					<button class="prim" disabled={sync.bezig} onclick={() => sync.stuurCode(sync.email)}>Stuur inlog</button>
 				</div>
 			{:else}
 				<p class="uitleg">
-					Op een telefoon: vul de <b>code</b> uit de mail hieronder in. Je mag gerust even naar je mail-app; dit
-					scherm staat er straks nog. Op een laptop kun je ook gewoon de <b>link</b> in de mail aanklikken.
+					Op een telefoon: vul de <b>code</b> uit de mail hieronder in. Je mag gerust even naar je mail-app; dit scherm
+					staat er straks nog. Op een laptop kun je ook gewoon de <b>link</b> in de mail aanklikken.
 				</p>
 				<label class="vak">
 					Code uit de mail
-					<input type="text" inputmode="numeric" autocomplete="one-time-code" bind:value={inlogcode} placeholder="123456" />
+					<input
+						type="text"
+						inputmode="numeric"
+						autocomplete="one-time-code"
+						bind:value={inlogcode}
+						placeholder="123456"
+					/>
 				</label>
 				<div class="knoprij" style="padding-left: 0">
 					<button class="prim" disabled={sync.bezig} onclick={() => sync.controleerCode(inlogcode)}>Inloggen</button>
@@ -103,9 +118,9 @@
 		{:else}
 			<p class="uitleg">
 				Ingelogd als <b>{sync.sessie.email ?? 'onbekend'}</b>. De app werkt gewoon zonder bereik en stuurt vanzelf op
-				zodra er weer internet is. Een wedstrijd die je klaarzet gaat mee, dus je stelt thuis op en pakt hem op het
-				veld op je telefoon op. Een wedstrijd die al loopt wordt wel opgestuurd, maar nooit overschreven door een
-				ander toestel.
+				zodra er weer internet is. Een wedstrijd die je klaarzet gaat mee, dus je stelt thuis op en pakt hem op het veld
+				op je telefoon op. Een wedstrijd die al loopt wordt wel opgestuurd, maar nooit overschreven door een ander
+				toestel.
 			</p>
 			<p class="uitleg">
 				<b>
@@ -138,8 +153,8 @@
 		<h2>Overzetten en back-up</h2>
 		{#if !sync.sessie}
 			<p class="uitleg">
-				<b class="mager">Alles staat alleen op dit toestel.</b> Raakt het kwijt of gaat het stuk, dan is je seizoen weg.
-				Maak af en toe een back-up, of log hierboven in en het gaat vanzelf.
+				<b class="mager">Alles staat alleen op dit toestel.</b> Raakt het kwijt of gaat het stuk, dan is je seizoen weg. Maak
+				af en toe een back-up, of log hierboven in en het gaat vanzelf.
 			</p>
 		{/if}
 		<p class="uitleg">
@@ -149,7 +164,13 @@
 		<div class="knoprij" style="padding-left: 0">
 			<button onclick={backupMaken}>Bestand opslaan</button>
 			<button onclick={codeMaken}>Code maken</button>
-			<button onclick={() => { overzet = 'invoeren'; backup = 'geen'; code = ''; }}>Invoeren</button>
+			<button
+				onclick={() => {
+					overzet = 'invoeren';
+					backup = 'geen';
+					code = '';
+				}}>Invoeren</button
+			>
 		</div>
 		{#if backup === 'maken'}
 			<p class="uitleg" style="margin-top: 12px">Opgeslagen als bestand, en gekopieerd.</p>
@@ -169,8 +190,8 @@
 
 		{#if opslagstand.ondersteund && opslagstand.blijvend === false}
 			<p class="uitleg" style="margin-top: 12px">
-				<b class="mager">Deze browser mag je gegevens opruimen</b> als hij plaats nodig heeft. Zet de app op je
-				beginscherm en log in, of maak af en toe een back-up.
+				<b class="mager">Deze browser mag je gegevens opruimen</b> als hij plaats nodig heeft. Zet de app op je beginscherm
+				en log in, of maak af en toe een back-up.
 			</p>
 		{/if}
 

@@ -12,6 +12,10 @@ export type Plek = [string, string, number, number, Linie];
  * een kleine telefoon niet raken. Verander je die, kijk dan of de breedste
  * linie nog past.
  */
+/* De regels hieronder spiegelen de linies op het veld: keeper, verdediging,
+   middenveld, aanval. Dat is te lezen als een opstelling en dat willen we houden,
+   dus Prettier blijft eraf. */
+// prettier-ignore
 export const FORMATIES: Record<string, Plek[]> = {
 	/* ---------- 11 tegen 11 ---------- */
 	'4-3-3': [
@@ -115,24 +119,19 @@ export const SPEELVORMEN: { naam: string; uitleg?: string; formaties: { sleutel:
 	},
 	{
 		naam: '8 tegen 8',
-		formaties: [
-			{ sleutel: '1-3-3-1', uitleg: 'meest gespeeld' },
-			{ sleutel: '1-3-2-2' },
-			{ sleutel: '1-2-3-2' }
-		]
+		formaties: [{ sleutel: '1-3-3-1', uitleg: 'meest gespeeld' }, { sleutel: '1-3-2-2' }, { sleutel: '1-2-3-2' }]
 	},
 	{
 		naam: '6 tegen 6',
-		formaties: [
-			{ sleutel: '1-2-2-1', uitleg: 'meest gespeeld' },
-			{ sleutel: '1-1-3-1' },
-			{ sleutel: '1-2-1-2' }
-		]
+		formaties: [{ sleutel: '1-2-2-1', uitleg: 'meest gespeeld' }, { sleutel: '1-1-3-1' }, { sleutel: '1-2-1-2' }]
 	},
 	{
 		naam: '4 tegen 4',
 		uitleg: 'zonder keeper',
-		formaties: [{ sleutel: '1-2-1', uitleg: 'ruit' }, { sleutel: '2-2', uitleg: 'blok' }]
+		formaties: [
+			{ sleutel: '1-2-1', uitleg: 'ruit' },
+			{ sleutel: '2-2', uitleg: 'blok' }
+		]
 	}
 ];
 

@@ -42,18 +42,30 @@
 			</p>
 			<textarea bind:value={namenVak} placeholder="Casper&#10;Maher&#10;Daan"></textarea>
 			<div class="knoprij" style="padding-left: 0; margin-top: 10px">
-				<button class="prim" onclick={() => { app.namenErbij(namenVak); namenVak = ''; }}>Toevoegen</button>
+				<button
+					class="prim"
+					onclick={() => {
+						app.namenErbij(namenVak);
+						namenVak = '';
+					}}>Toevoegen</button
+				>
 			</div>
 		{:else}
 			<p class="uitleg">
-				Zet per speler de linie: V verdediging, M middenveld, A aanval. <b>K</b> staat los: dat is iedereen die kan
-				keepen, ook als hij verder in het veld speelt. Alleen K aan en de rest uit betekent: keeper en verder niets.
-				Tik een naam aan om te wijzigen of te verwijderen.
+				Zet per speler de linie: V verdediging, M middenveld, A aanval. <b>K</b> staat los: dat is iedereen die kan keepen,
+				ook als hij verder in het veld speelt. Alleen K aan en de rest uit betekent: keeper en verder niets. Tik een naam
+				aan om te wijzigen of te verwijderen.
 			</p>
 			{#each t.spelers as p (p.id)}
 				{@const recent = presentie(t.trainingen, p.id, 4)}
 				<div class="sregel">
-					<span class="naam" role="button" tabindex="0" onclick={() => wijzig(p)} onkeydown={(e) => e.key === 'Enter' && wijzig(p)}>
+					<span
+						class="naam"
+						role="button"
+						tabindex="0"
+						onclick={() => wijzig(p)}
+						onkeydown={(e) => e.key === 'Enter' && wijzig(p)}
+					>
 						{p.naam}{#if mager(recent)}<span class="min mager"> {recent.er}/{recent.totaal}</span>{/if}
 					</span>
 					<div class="keuze">
@@ -71,7 +83,6 @@
 						if (naam?.trim()) app.namenErbij(naam);
 					}}>Speler toevoegen</button
 				>
-
 			</div>
 
 			<h2>Verdeling in {t.formatie}</h2>
@@ -99,14 +110,13 @@
 				{:else if dunneKeepersbezetting(verdeling)}
 					Er kan er maar één keepen. Is hij er niet, dan moet je ter plekke iemand aanwijzen.
 				{:else if verdeling.some(gedrang)}
-					Waar meer dan twee keer zoveel spelers als plekken staan, zit er elke wedstrijd iemand op de bank die
-					zichzelf daar ziet. Een andere formatie kan schelen.
+					Waar meer dan twee keer zoveel spelers als plekken staan, zit er elke wedstrijd iemand op de bank die zichzelf
+					daar ziet. Een andere formatie kan schelen.
 				{:else}
 					De letters zijn een hint bij het wisselen, geen regel: je kunt altijd iedereen kiezen.
 				{/if}
 			</p>
 		{/if}
-
 
 		<h2>Naam van je team</h2>
 		<p class="uitleg">
@@ -115,11 +125,7 @@
 		</p>
 		<label class="vak">
 			Teamnaam
-			<input
-				value={t.teamnaam}
-				placeholder="bijv. JO11-2"
-				onchange={(e) => app.zetTeamnaam(e.currentTarget.value)}
-			/>
+			<input value={t.teamnaam} placeholder="bijv. JO11-2" onchange={(e) => app.zetTeamnaam(e.currentTarget.value)} />
 		</label>
 	</div>
 </main>

@@ -10,7 +10,10 @@ const BESTANDEN = [...build, ...files];
 self.addEventListener('install', (event) => {
 	const e = event as ExtendableEvent;
 	e.waitUntil(
-		caches.open(CACHE).then((c) => c.addAll(BESTANDEN)).then(() => (self as unknown as ServiceWorkerGlobalScope).skipWaiting())
+		caches
+			.open(CACHE)
+			.then((c) => c.addAll(BESTANDEN))
+			.then(() => (self as unknown as ServiceWorkerGlobalScope).skipWaiting())
 	);
 });
 

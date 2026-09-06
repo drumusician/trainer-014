@@ -78,5 +78,4 @@
 			<li>Kies <b>App installeren</b> of <b>Toevoegen aan startscherm</b>.</li>
 		</ol>
 	{/if}
-
 {/if}

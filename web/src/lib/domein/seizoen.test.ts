@@ -9,16 +9,29 @@ const spelers: Speler[] = [
 
 const archief: ArchiefWedstrijd[] = [
 	{
-		datum: '2026-09-05', tegenstander: 'Ajax', thuis: true, stand: [2, 0], formatie: '4-3-3', duur: 4200,
+		datum: '2026-09-05',
+		tegenstander: 'Ajax',
+		thuis: true,
+		stand: [2, 0],
+		formatie: '4-3-3',
+		duur: 4200,
 		namen: { p1: 'Aad', p2: 'Bram' },
-		gebeurtenissen: [{ type: 'goal', t: 600, speler: 'p1' }, { type: 'goal', t: 1800, speler: null }],
+		gebeurtenissen: [
+			{ type: 'goal', t: 600, speler: 'p1' },
+			{ type: 'goal', t: 1800, speler: null }
+		],
 		speeltijd: [
 			{ id: 'p1', naam: 'Aad', seconden: 4200, keeper: 2100 },
 			{ id: 'p2', naam: 'Bram', seconden: 2100, keeper: 0 }
 		]
 	},
 	{
-		datum: '2026-08-29', tegenstander: 'Sparta', thuis: false, stand: [1, 3], formatie: '4-3-3', duur: 4200,
+		datum: '2026-08-29',
+		tegenstander: 'Sparta',
+		thuis: false,
+		stand: [1, 3],
+		formatie: '4-3-3',
+		duur: 4200,
 		namen: { p1: 'Aad', p2: 'Bram' },
 		gebeurtenissen: [{ type: 'goal', t: 900, speler: 'p2' }],
 		speeltijd: [

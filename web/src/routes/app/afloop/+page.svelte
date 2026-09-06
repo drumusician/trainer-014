@@ -30,7 +30,8 @@
 			{@const [v, t] = stand(w)}
 			<h2>Uitslag</h2>
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
-				{w.thuis ? app.toestand.teamnaam : w.tegenstander} {v} – {t}
+				{w.thuis ? app.toestand.teamnaam : w.tegenstander}
+				{v} – {t}
 				{w.thuis ? w.tegenstander : app.toestand.teamnaam}
 			</p>
 			<p class="uitleg">{datumMetJaar(w.datum)} · {mmss(eindTijd(w))} gespeeld · {w.formatie}</p>
@@ -54,8 +55,7 @@
 			<textarea
 				value={w.notitie ?? ''}
 				placeholder="Sterk begin, na rust wegge&#10;zakt. Achterin stond het goed."
-				oninput={(e) => app.zetNotitie(e.currentTarget.value)}
-			></textarea>
+				oninput={(e) => app.zetNotitie(e.currentTarget.value)}></textarea>
 
 			<h2>Delen</h2>
 			<p class="uitleg">Voor de groepsapp. De wissels laat ik er standaard uit.</p>

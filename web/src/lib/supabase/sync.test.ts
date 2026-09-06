@@ -35,8 +35,15 @@ beforeEach(() => {
 	app.toestand = legeToestand();
 	app.toestand.spelers = [{ id: 'p1', naam: 'Daanish', linie: 'M' }];
 	sync.sessie = {
-		access_token: 'token', refresh_token: 'r', verloopt: Date.now() + 3600_000,
-		user_id: 'u1', email: 'trainer@voorbeeld.nl', teamId: 'team-1', versie: 1, laatst: null, afdruk: null
+		access_token: 'token',
+		refresh_token: 'r',
+		verloopt: Date.now() + 3600_000,
+		user_id: 'u1',
+		email: 'trainer@voorbeeld.nl',
+		teamId: 'team-1',
+		versie: 1,
+		laatst: null,
+		afdruk: null
 	};
 	sync.vies = false;
 	sync.botsing = false;
@@ -76,7 +83,10 @@ describe('vanzelf bijwerken', () => {
 	});
 
 	it('haalt wel op als er hier niets klaarstaat', async () => {
-		nepFetch({ versie: 9, data: { spelers: [{ id: 'x', naam: 'Vanaf de laptop', linie: '' }], trainingen: [], archief: [] } });
+		nepFetch({
+			versie: 9,
+			data: { spelers: [{ id: 'x', naam: 'Vanaf de laptop', linie: '' }], trainingen: [], archief: [] }
+		});
 		await sync.ophalen(true);
 		expect(app.toestand.spelers[0].naam).toBe('Vanaf de laptop');
 		expect(sync.sessie!.versie).toBe(9);
@@ -118,7 +128,15 @@ describe('inloggen op een telefoon', () => {
 	it('vergeet de poging zodra je binnen bent', async () => {
 		globalThis.fetch = vi.fn(async (url: string) =>
 			url.includes('verify')
-				? new Response(JSON.stringify({ access_token: 'a', refresh_token: 'r', expires_in: 3600, user: { id: 'u', email: 'trainer@voorbeeld.nl' } }), { status: 200 })
+				? new Response(
+						JSON.stringify({
+							access_token: 'a',
+							refresh_token: 'r',
+							expires_in: 3600,
+							user: { id: 'u', email: 'trainer@voorbeeld.nl' }
+						}),
+						{ status: 200 }
+					)
 				: new Response('{}', { status: 200 })
 		) as unknown as typeof fetch;
 		await sync.stuurCode('trainer@voorbeeld.nl');

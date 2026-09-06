@@ -33,9 +33,7 @@
 
 	const bezet = $derived(doel ? Object.values(doel.opstelling).filter(Boolean).length : 0);
 	const nodig = $derived(doel ? aantalPlekken(doel.formatie) : 0);
-	const gekozenSpeler = $derived(
-		doel && app.gekozenPlek ? app.spelerVan(doel.opstelling[app.gekozenPlek]) : undefined
-	);
+	const gekozenSpeler = $derived(doel && app.gekozenPlek ? app.spelerVan(doel.opstelling[app.gekozenPlek]) : undefined);
 
 	/* Eerste tik kiest een plek. Tweede tik op een andere plek ruilt ze om; staat
 	   daar niemand, dan verhuist hij ernaartoe. */
@@ -61,9 +59,7 @@
 			.map((code) => LINIES[code].toLowerCase());
 	});
 
-	const mageren = $derived(
-		app.toestand.spelers.filter((p) => mager(presentie(app.toestand.trainingen, p.id, 4)))
-	);
+	const mageren = $derived(app.toestand.spelers.filter((p) => mager(presentie(app.toestand.trainingen, p.id, 4))));
 
 	function klaar() {
 		if (bron === 'standaard') {
@@ -71,7 +67,8 @@
 			goto('/app');
 			return;
 		}
-		if (bezet < nodig && !confirm('Er staan er ' + bezet + ' op het veld in plaats van ' + nodig + '. Toch doorgaan?')) return;
+		if (bezet < nodig && !confirm('Er staan er ' + bezet + ' op het veld in plaats van ' + nodig + '. Toch doorgaan?'))
+			return;
 		app.gekozenPlek = null;
 		goto('/app/wedstrijd');
 	}
@@ -118,8 +115,8 @@
 				<div class="melding">
 					<span>
 						{#if gekozenSpeler}
-							<b>{gekozenSpeler.naam}</b> · {LINIES[plekLinie(app.gekozenPlek, doel.formatie)].toLowerCase()}.
-							Tik een andere plek om te ruilen, of iemand van de bank.
+							<b>{gekozenSpeler.naam}</b> · {LINIES[plekLinie(app.gekozenPlek, doel.formatie)].toLowerCase()}. Tik een
+							andere plek om te ruilen, of iemand van de bank.
 						{:else}
 							<b>Lege plek</b> · {LINIES[plekLinie(app.gekozenPlek, doel.formatie)].toLowerCase()}. Tik wie hier komt te
 							staan.

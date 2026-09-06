@@ -14,7 +14,9 @@
 	<tbody>
 		{#each gesorteerd as r (r.naam)}
 			<tr>
-				<td>{r.naam}{#if r.sub}<span class="sub">{r.sub}</span>{/if}</td>
+				<td
+					>{r.naam}{#if r.sub}<span class="sub">{r.sub}</span>{/if}</td
+				>
 				<td class="balk"><div class="staaf"><i style="width: {Math.round((r.seconden / langst) * 100)}%"></i></div></td>
 				<td class="m">{Math.round(r.seconden / 60)} min</td>
 			</tr>

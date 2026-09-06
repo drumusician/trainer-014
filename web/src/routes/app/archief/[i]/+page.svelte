@@ -62,7 +62,9 @@
 			{@const ons = a.teamnaam?.trim() || app.toestand.teamnaam}
 			<h2>Uitslag</h2>
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
-				{thuis ? ons : a.tegenstander} {a.stand[0]} – {a.stand[1]} {thuis ? a.tegenstander : ons}
+				{thuis ? ons : a.tegenstander}
+				{a.stand[0]} – {a.stand[1]}
+				{thuis ? a.tegenstander : ons}
 			</p>
 			<p class="uitleg">{datumMetJaar(a.datum)} · {mmss(a.duur ?? 0)} gespeeld · {a.formatie}</p>
 			<div class="knoprij" style="padding-left: 0">
@@ -73,11 +75,18 @@
 				<div class="tweekolom">
 					<label class="vak">
 						Datum
-						<input type="date" value={a.datum} onchange={(e) => app.wijzigArchief(i, { datum: e.currentTarget.value })} />
+						<input
+							type="date"
+							value={a.datum}
+							onchange={(e) => app.wijzigArchief(i, { datum: e.currentTarget.value })}
+						/>
 					</label>
 					<label class="vak">
 						Thuis of uit
-						<select value={a.thuis !== false ? 'thuis' : 'uit'} onchange={(e) => app.wijzigArchief(i, { thuis: e.currentTarget.value === 'thuis' })}>
+						<select
+							value={a.thuis !== false ? 'thuis' : 'uit'}
+							onchange={(e) => app.wijzigArchief(i, { thuis: e.currentTarget.value === 'thuis' })}
+						>
 							<option value="thuis">Thuis</option>
 							<option value="uit">Uit</option>
 						</select>
@@ -85,7 +94,10 @@
 				</div>
 				<label class="vak">
 					Tegenstander
-					<input value={a.tegenstander} onchange={(e) => app.wijzigArchief(i, { tegenstander: e.currentTarget.value })} />
+					<input
+						value={a.tegenstander}
+						onchange={(e) => app.wijzigArchief(i, { tegenstander: e.currentTarget.value })}
+					/>
 				</label>
 			{/if}
 
@@ -95,7 +107,8 @@
 					naam: naamNu(r),
 					seconden: r.seconden ?? 0,
 					/* oudere wedstrijden hebben alleen keeperminuten, nieuwere alle plekken */
-					sub: positieTekst(r.posities, a.formatie) ||
+					sub:
+						positieTekst(r.posities, a.formatie) ||
 						(r.keeper ? Math.round(r.keeper / 60) + ' min in het doel' : undefined)
 				}))}
 			/>
@@ -105,8 +118,8 @@
 				<Verloop gebeurtenissen={a.gebeurtenissen ?? []} namen={a.namen} delen={a.delen} formatie={a.formatie} />
 			{:else}
 				<p class="uitleg">
-					Een doelpunt dat er niet was kun je weghalen; de stand telt vanzelf opnieuw. Wissels blijven staan, want
-					daar hangt de speeltijd aan.
+					Een doelpunt dat er niet was kun je weghalen; de stand telt vanzelf opnieuw. Wissels blijven staan, want daar
+					hangt de speeltijd aan.
 				</p>
 				<ul class="log">
 					{#each verloopRegels(a.gebeurtenissen ?? [], app.toestand.spelers, a.namen, a.delen, a.formatie) as r (r.index)}
@@ -152,8 +165,7 @@
 			<textarea
 				value={a.notitie ?? ''}
 				placeholder="Nog niets opgeschreven."
-				oninput={(e) => app.zetArchiefNotitie(i, e.currentTarget.value)}
-			></textarea>
+				oninput={(e) => app.zetArchiefNotitie(i, e.currentTarget.value)}></textarea>
 
 			<h2>Delen</h2>
 			<Verslag bron={bronVanArchief(a)} />

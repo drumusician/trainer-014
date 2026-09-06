@@ -1,0 +1,9 @@
+.svelte-kit
+build
+node_modules
+package-lock.json
+
+# Eén compact stijlblad: elke regel is één selector, zodat je hem scannend leest.
+# Prettier maakt er 1000 regels van. Zodra de stijl naar de componenten verhuist
+# (zie de code-audit) mag dit eruit.
+src/app.css

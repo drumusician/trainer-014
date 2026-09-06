@@ -11,14 +11,32 @@ function volleToestand(): Toestand {
 	t.trainingen = [{ id: 't1', datum: '2026-09-02', status: { p1: 'ja', p2: 'nee' } }];
 	t.archief = [
 		{
-			datum: '2026-08-30', tegenstander: 'Ajax', thuis: true, stand: [1, 0], formatie: '4-3-3',
-			duur: 4200, gebeurtenissen: [], speeltijd: [{ id: 'p1', naam: 'Daanish', seconden: 4200 }]
+			datum: '2026-08-30',
+			tegenstander: 'Ajax',
+			thuis: true,
+			stand: [1, 0],
+			formatie: '4-3-3',
+			duur: 4200,
+			gebeurtenissen: [],
+			speeltijd: [{ id: 'p1', naam: 'Daanish', seconden: 4200 }]
 		}
 	];
 	t.standaard = { formatie: '4-3-3', opstelling: { K: 'p2' }, bank: ['p1'] };
 	t.wedstrijd = {
-		datum: '2026-09-06', tegenstander: 'Sparta', thuis: true, formatie: '4-3-3', opstelling: {},
-		bank: [], gebeurtenissen: [], verstreken: 100, sinds: null, loopt: true, delen: 2, deel: 1, pauze: false, afgelopen: false
+		datum: '2026-09-06',
+		tegenstander: 'Sparta',
+		thuis: true,
+		formatie: '4-3-3',
+		opstelling: {},
+		bank: [],
+		gebeurtenissen: [],
+		verstreken: 100,
+		sinds: null,
+		loopt: true,
+		delen: 2,
+		deel: 1,
+		pauze: false,
+		afgelopen: false
 	};
 	return t;
 }

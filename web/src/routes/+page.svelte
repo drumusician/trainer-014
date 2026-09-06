@@ -34,11 +34,12 @@
 	<section class="hero">
 		<h1>Het blaadje in je hand,<br />maar dan op je telefoon</h1>
 		<p class="groot">
-			Blaadje houdt je opstelling, je wissels en de speeltijd bij terwijl jij coacht. Een wissel kost twee tikken, en
-			na afloop weet je precies wie hoe lang heeft gespeeld.
+			Blaadje houdt je opstelling, je wissels en de speeltijd bij terwijl jij coacht. Een wissel kost twee tikken, en na
+			afloop weet je precies wie hoe lang heeft gespeeld.
 		</p>
 		<div class="knoprij">
-			<a class="knop prim groot" href="/app" data-sveltekit-reload onclick={() => meld('App geopend')}>Blaadje openen</a>
+			<a class="knop prim groot" href="/app" data-sveltekit-reload onclick={() => meld('App geopend')}>Blaadje openen</a
+			>
 			<span class="klein">Gratis proberen · geen account nodig · werkt zonder bereik</span>
 		</div>
 	</section>
@@ -72,8 +73,8 @@
 		<div>
 			<h2>Helften of kwarten</h2>
 			<p>
-				Van 11 tegen 11 tot 4 tegen 4, in twee helften of in vier kwarten. Het aantal spelers ligt nergens vast, dus
-				bij de kleinsten werkt het net zo goed als bij de grote elftallen.
+				Van 11 tegen 11 tot 4 tegen 4, in twee helften of in vier kwarten. Het aantal spelers ligt nergens vast, dus bij
+				de kleinsten werkt het net zo goed als bij de grote elftallen.
 			</p>
 		</div>
 		<div>
@@ -129,9 +130,9 @@
 			linie, en de minuten die uit je wissels volgen. Geen beoordelingen, geen dossier.
 		</p>
 		<p>
-			<b>Daar zit ook een keerzijde aan.</b> Staat je seizoen alleen op je telefoon, dan is het weg zodra die telefoon
-			weg is: gestolen, in het water, of een browser die opruimt omdat je een tijd niet hebt gekeken. Maak dus af en
-			toe een back-up — dat is één knop en één bestand — of neem een account, dan gebeurt het vanzelf.
+			<b>Daar zit ook een keerzijde aan.</b> Staat je seizoen alleen op je telefoon, dan is het weg zodra die telefoon weg
+			is: gestolen, in het water, of een browser die opruimt omdat je een tijd niet hebt gekeken. Maak dus af en toe een back-up
+			— dat is één knop en één bestand — of neem een account, dan gebeurt het vanzelf.
 		</p>
 	</section>
 
@@ -143,9 +144,9 @@
 			wedstrijden uitproberen zonder ergens aan vast te zitten.
 		</p>
 		<p>
-			Wordt het je vaste gereedschap, dan wil je een account. Je seizoen staat dan veilig als je telefoon kwijtraakt,
-			en je werkt op meer dan één toestel: thuis de opstelling maken, langs de lijn wisselen. Dat kost € 30 per
-			seizoen, zo'n zeventig cent per speelweek.
+			Wordt het je vaste gereedschap, dan wil je een account. Je seizoen staat dan veilig als je telefoon kwijtraakt, en
+			je werkt op meer dan één toestel: thuis de opstelling maken, langs de lijn wisselen. Dat kost € 30 per seizoen,
+			zo'n zeventig cent per speelweek.
 		</p>
 		<p>
 			Zolang Blaadje in ontwikkeling is hoeft dat nog helemaal niet. Wie er nu bij komt, gebruikt dit seizoen alles
@@ -165,7 +166,8 @@
 			dat verklaart waarom het doet wat het doet en niet meer dan dat.
 		</p>
 		<p>
-			Het is nog volop in ontwikkeling en op dit moment gratis te gebruiken. Loop je ergens tegenaan of mis je iets, mail dan naar
+			Het is nog volop in ontwikkeling en op dit moment gratis te gebruiken. Loop je ergens tegenaan of mis je iets,
+			mail dan naar
 			<a href="mailto:tjaco@blaadje.app">tjaco@blaadje.app</a>. Ik lees alles.
 		</p>
 		<div class="knoprij">
@@ -175,7 +177,10 @@
 
 	<footer>
 		<p>
-			Blaadje · gemaakt in Nederland · <a href="/app" data-sveltekit-reload onclick={() => meld('App geopend')}>naar de app</a> ·
+			Blaadje · gemaakt in Nederland · <a href="/app" data-sveltekit-reload onclick={() => meld('App geopend')}
+				>naar de app</a
+			>
+			·
 			<a href="mailto:tjaco@blaadje.app">tjaco@blaadje.app</a>
 		</p>
 	</footer>

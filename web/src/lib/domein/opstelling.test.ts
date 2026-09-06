@@ -5,8 +5,17 @@ import type { Speler } from './types';
 const namen = ['Gijs', 'Jack', 'Maher', 'Daan', 'Mirza', 'Siem', 'Kasper', 'Daanish', 'Mauro', 'Max', 'Simon', 'Amir'];
 const spelers: Speler[] = namen.map((naam, i) => ({ id: 'p' + i, naam, linie: '' }));
 const opstelling = {
-	K: 'p0', RV: 'p1', CVr: 'p2', CVl: 'p3', LV: 'p4',
-	MR: 'p5', MC: 'p6', ML: 'p7', RB: 'p8', SP: 'p9', LB: 'p10'
+	K: 'p0',
+	RV: 'p1',
+	CVr: 'p2',
+	CVl: 'p3',
+	LV: 'p4',
+	MR: 'p5',
+	MC: 'p6',
+	ML: 'p7',
+	RB: 'p8',
+	SP: 'p9',
+	LB: 'p10'
 };
 
 describe('opstelling als tekst', () => {

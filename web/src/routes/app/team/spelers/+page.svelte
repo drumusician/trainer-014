@@ -29,8 +29,8 @@
 			<h2>Spelers</h2>
 			<p class="uitleg">
 				Alles bij elkaar: gespeelde minuten over {t.archief.length}
-				{t.archief.length === 1 ? 'bewaarde wedstrijd' : 'bewaarde wedstrijden'}, en hoe vaak ze op de training waren
-				({t.trainingen.length}
+				{t.archief.length === 1 ? 'bewaarde wedstrijd' : 'bewaarde wedstrijden'}, en hoe vaak ze op de training waren ({t
+					.trainingen.length}
 				{t.trainingen.length === 1 ? 'training' : 'trainingen'}).
 			</p>
 			<div class="sorteerrij">
@@ -53,7 +53,9 @@
 									{[r.keept ? 'K' : '', r.linie].filter(Boolean).join('·') || 'geen linie'}
 									{#if r.wedstrijden}
 										· {r.wedstrijden}
-										{r.wedstrijden === 1 ? 'wedstrijd' : 'wedstrijden'} · gem. {Math.round(r.seconden / 60 / r.wedstrijden)} min
+										{r.wedstrijden === 1 ? 'wedstrijd' : 'wedstrijden'} · gem. {Math.round(
+											r.seconden / 60 / r.wedstrijden
+										)} min
 									{/if}
 									{#if r.keeper}· {Math.round(r.keeper / 60)} min in het doel{/if}
 									{#if r.doelpunten}· <b>{r.doelpunten}× gescoord</b>{/if}

@@ -54,7 +54,11 @@ describe('trainingen', () => {
 	it('geeft oude trainingen zonder id er alsnog een bij het laden', () => {
 		localStorage.setItem(
 			'o14-app-v1',
-			JSON.stringify({ ...legeToestand(), spelers: app.toestand.spelers, trainingen: [{ datum: '2026-09-02', status: {} }] })
+			JSON.stringify({
+				...legeToestand(),
+				spelers: app.toestand.spelers,
+				trainingen: [{ datum: '2026-09-02', status: {} }]
+			})
 		);
 		app.laad();
 		expect(app.toestand.trainingen[0].id).toBeTruthy();
@@ -118,7 +122,12 @@ describe('een bewaarde wedstrijd bijwerken', () => {
 	function metArchief() {
 		app.toestand.archief = [
 			{
-				datum: '2026-08-30', tegenstander: 'Ajx', thuis: true, stand: [1, 1], formatie: '4-3-3', duur: 4200,
+				datum: '2026-08-30',
+				tegenstander: 'Ajx',
+				thuis: true,
+				stand: [1, 1],
+				formatie: '4-3-3',
+				duur: 4200,
 				namen: { p1: 'Daanish', p2: 'Gijs' },
 				gebeurtenissen: [
 					{ type: 'start', t: 0 },
@@ -310,7 +319,7 @@ describe('kwarten spelen', () => {
 	});
 
 	it('bewaart de speelwijze en de notitie in het archief', () => {
-		const w = metKwarten();
+		metKwarten();
 		app.zetNotitie('Sterk begin, na rust weggezakt.');
 		app.beeindig();
 		app.bewaarInArchief();
@@ -325,8 +334,18 @@ describe('kwarten spelen', () => {
 				...legeToestand(),
 				spelers: app.toestand.spelers,
 				wedstrijd: {
-					datum: '2026-09-06', tegenstander: 'Oud', thuis: true, formatie: '4-3-3', opstelling: {},
-					bank: [], gebeurtenissen: [], verstreken: 0, sinds: null, loopt: false, helft: 2, afgelopen: false
+					datum: '2026-09-06',
+					tegenstander: 'Oud',
+					thuis: true,
+					formatie: '4-3-3',
+					opstelling: {},
+					bank: [],
+					gebeurtenissen: [],
+					verstreken: 0,
+					sinds: null,
+					loopt: false,
+					helft: 2,
+					afgelopen: false
 				}
 			})
 		);
@@ -347,8 +366,17 @@ describe('van formatie wisselen met een standaardopstelling', () => {
 		app.toestand.standaard = {
 			formatie: '4-3-3',
 			opstelling: {
-				K: 'pa', RV: 'pb', CVr: 'pc', CVl: 'pd', LV: 'pe',
-				MR: 'pf', MC: 'pg', ML: 'ph', RB: 'pi', SP: 'pj', LB: 'pk'
+				K: 'pa',
+				RV: 'pb',
+				CVr: 'pc',
+				CVl: 'pd',
+				LV: 'pe',
+				MR: 'pf',
+				MC: 'pg',
+				ML: 'ph',
+				RB: 'pi',
+				SP: 'pj',
+				LB: 'pk'
 			},
 			bank: ['pl']
 		};

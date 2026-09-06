@@ -9,9 +9,7 @@
 	$effect(() => zetKop('Trainingen'));
 
 	const trainingen = $derived(app.toestand.trainingen);
-	const mageren = $derived(
-		app.toestand.spelers.filter((p) => mager(presentie(app.toestand.trainingen, p.id, 4)))
-	);
+	const mageren = $derived(app.toestand.spelers.filter((p) => mager(presentie(app.toestand.trainingen, p.id, 4))));
 
 	function telling(t: Training) {
 		const w = { ja: 0, af: 0, nee: 0 };
@@ -52,9 +50,7 @@
 						<a href="/app/trainingen/{t.id}">
 							<b>{datumKort(t.datum)}</b>
 							<span>
-								{w.ja} aanwezig{w.af ? ', ' + w.af + ' afgemeld' : ''}{w.nee
-									? ', ' + w.nee + ' niet gekomen'
-									: ''}
+								{w.ja} aanwezig{w.af ? ', ' + w.af + ' afgemeld' : ''}{w.nee ? ', ' + w.nee + ' niet gekomen' : ''}
 							</span>
 							<em>›</em>
 						</a>

@@ -17,7 +17,12 @@
 		if (!naam && t.teamnaam !== 'Ons team') naam = t.teamnaam;
 	});
 
-	const aantalNamen = $derived(namenVak.split('\n').map((r) => r.trim()).filter(Boolean).length);
+	const aantalNamen = $derived(
+		namenVak
+			.split('\n')
+			.map((r) => r.trim())
+			.filter(Boolean).length
+	);
 
 	function naarTwee() {
 		if (!naam.trim()) {
@@ -57,8 +62,8 @@
 		{#if stap === 1}
 			<h2>Hoe heet je team?</h2>
 			<p class="uitleg">
-				Die naam staat boven je wedstrijd en in het verslag dat je na afloop deelt. Iets als JO11-2, MO13-1 of gewoon
-				de naam die iedereen gebruikt.
+				Die naam staat boven je wedstrijd en in het verslag dat je na afloop deelt. Iets als JO11-2, MO13-1 of gewoon de
+				naam die iedereen gebruikt.
 			</p>
 			<label class="vak">
 				Teamnaam
@@ -70,8 +75,8 @@
 		{:else if stap === 2}
 			<h2>Wie zitten erin?</h2>
 			<p class="uitleg">
-				Plak of typ de namen, één per regel. Alleen voornamen is genoeg. Ze blijven op dit toestel staan en gaan
-				nergens anders heen.
+				Plak of typ de namen, één per regel. Alleen voornamen is genoeg. Ze blijven op dit toestel staan en gaan nergens
+				anders heen.
 			</p>
 			<textarea bind:value={namenVak} placeholder="Sem&#10;Noah&#10;Luuk"></textarea>
 			<p class="uitleg" style="margin-top: 8px">
@@ -92,8 +97,8 @@
 		{:else}
 			<h2>Hoe spelen jullie?</h2>
 			<p class="uitleg">
-				Dit bepaalt hoeveel plekken er op het veld staan en hoe de klok loopt. Je kunt het later altijd omzetten;
-				je opstelling verhuist dan mee.
+				Dit bepaalt hoeveel plekken er op het veld staan en hoe de klok loopt. Je kunt het later altijd omzetten; je
+				opstelling verhuist dan mee.
 			</p>
 			<div class="tweekolom">
 				<label class="vak">

@@ -93,7 +93,9 @@
 						onclick={() => {
 							if (
 								confirm(
-									'Deze wedstrijd tegen ' + w!.tegenstander + ' weggooien?\n\nWat je in het archief bewaarde blijft staan.'
+									'Deze wedstrijd tegen ' +
+										w!.tegenstander +
+										' weggooien?\n\nWat je in het archief bewaarde blijft staan.'
 								)
 							)
 								app.gooiWedstrijdWeg();

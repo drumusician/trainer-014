@@ -1,0 +1,44 @@
+# Het hek. Wat hier rood wordt, hoort niet live te komen.
+#
+# Netlify draait dezelfde controles in zijn eigen build (zie netlify.toml), zodat
+# een deploy ook echt tegengehouden wordt. Deze workflow is er voor de snelle
+# terugkoppeling en de geschiedenis: je ziet hier bij welke commit het brak.
+name: controle
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  controle:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Installeren
+        run: npm ci
+
+      - name: Opmaak
+        run: npx prettier --check "src/**/*.{ts,svelte,css}"
+
+      - name: Lint
+        run: npx eslint .
+
+      - name: Typen
+        run: npm run check
+
+      - name: Tests
+        run: npm test
+
+      - name: Bouwen
+        run: npm run build

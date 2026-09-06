@@ -3,9 +3,17 @@ import { zetOpstellingOm } from './opstelling';
 
 /** De opstelling zoals hij in 4-3-3 stond. */
 const vier33 = {
-	K: 'keeper', RV: 'jack', CVr: 'kasper', CVl: 'mirza', LV: 'daan',
-	MR: 'daanish', MC: 'amir', ML: 'mauro',
-	RB: 'simon', SP: 'max', LB: 'siem'
+	K: 'keeper',
+	RV: 'jack',
+	CVr: 'kasper',
+	CVl: 'mirza',
+	LV: 'daan',
+	MR: 'daanish',
+	MC: 'amir',
+	ML: 'mauro',
+	RB: 'simon',
+	SP: 'max',
+	LB: 'siem'
 };
 
 describe('van formatie wisselen', () => {

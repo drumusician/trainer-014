@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { mager, presentie } from '$lib/domein/presentie';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
@@ -31,10 +30,7 @@
 				</label>
 				<label class="vak">
 					Thuis of uit
-					<select
-						value={w.thuis ? 'thuis' : 'uit'}
-						onchange={(e) => app.zetThuis(e.currentTarget.value === 'thuis')}
-					>
+					<select value={w.thuis ? 'thuis' : 'uit'} onchange={(e) => app.zetThuis(e.currentTarget.value === 'thuis')}>
 						<option value="thuis">Thuis</option>
 						<option value="uit">Uit</option>
 					</select>
@@ -47,8 +43,8 @@
 					De wedstrijd loopt. Wie in het veld staat haal je eruit met een wissel, niet hier — anders klopt zijn
 					speeltijd niet meer. Van de bank afmelden kan wel.
 				{:else}
-					Tik weg wie er niet is. Die staat dan niet op de bank, zodat je hem er langs de lijn niet per ongeluk
-					in brengt. Wie al opgesteld stond, laat zijn plek leeg.
+					Tik weg wie er niet is. Die staat dan niet op de bank, zodat je hem er langs de lijn niet per ongeluk in
+					brengt. Wie al opgesteld stond, laat zijn plek leeg.
 				{/if}
 			</p>
 			<p class="telling">

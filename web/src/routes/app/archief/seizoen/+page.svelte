@@ -16,7 +16,6 @@
 			return d;
 		}
 	}
-
 </script>
 
 <main>
@@ -44,15 +43,15 @@
 							<span>
 								{r.naam}
 								<span class="sub">
-									{r.wedstrijden.map((w) => datumKort(w.datum) + (w.aantal > 1 ? ' ' + w.aantal + '×' : '')).join(' · ')}
+									{r.wedstrijden
+										.map((w) => datumKort(w.datum) + (w.aantal > 1 ? ' ' + w.aantal + '×' : ''))
+										.join(' · ')}
 								</span>
 							</span>
 						</li>
 					{/each}
 				</ul>
-				<p class="uitleg">
-					Alleen doelpunten waarvan je de maker aantikte. De rest telt gewoon mee in de uitslag.
-				</p>
+				<p class="uitleg">Alleen doelpunten waarvan je de maker aantikte. De rest telt gewoon mee in de uitslag.</p>
 			{/if}
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
@@ -61,7 +60,5 @@
 		{:else}
 			<p class="uitleg">Nog geen bewaarde wedstrijden.</p>
 		{/if}
-
-
 	</div>
 </main>

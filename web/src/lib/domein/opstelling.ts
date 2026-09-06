@@ -5,12 +5,7 @@ import type { Linie, Opstelling, Speler } from './types';
  * De opstelling als tekst, om naar een mede-trainer te sturen. Per linie op één
  * regel, met de plek erachter waar dat iets toevoegt.
  */
-export function opstellingTekst(
-	formatie: string,
-	opstelling: Opstelling,
-	bank: string[],
-	spelers: Speler[]
-): string {
+export function opstellingTekst(formatie: string, opstelling: Opstelling, bank: string[], spelers: Speler[]): string {
 	const naam = (id?: string | null) => spelers.find((p) => p.id === id)?.naam;
 	const regels: string[] = ['Opstelling ' + formatie];
 
