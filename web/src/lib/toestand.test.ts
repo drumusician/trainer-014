@@ -482,3 +482,56 @@ describe('wat er tussen je toestellen heen en weer gaat', () => {
 		expect(app.wedstrijd).toBeNull();
 	});
 });
+
+describe('de aftrap vastleggen', () => {
+	/* De eerste echte wedstrijd langs de lijn ging hierop mis. Er was voor het
+	   fluitsignaal nog een speler omgewisseld, dus de lijst was niet leeg, dus
+	   werd 'start' nooit weggeschreven. De klok liep gewoon, maar de app dacht de
+	   hele wedstrijd dat er nog niet was afgetrapt — en dan worden positiewissels
+	   niet meer bewaard. */
+	it('legt de aftrap ook vast als je vooraf nog geschoven hebt', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
+		app.herzetBank();
+
+		app.gekozenPlek = 'SP';
+		app.zetOpPlek('p2'); /* nog even schuiven voor de aftrap */
+		expect(app.gestart).toBe(false);
+
+		app.loopToggle();
+		expect(app.gestart).toBe(true);
+		expect(app.toestand.wedstrijd!.gebeurtenissen.some((g) => g.type === 'start')).toBe(true);
+	});
+
+	it('houdt schuiven voor de aftrap uit het verloop', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: null };
+		app.herzetBank();
+
+		app.gekozenPlek = 'K';
+		app.zetOpPlek('p1');
+		expect(app.toestand.wedstrijd!.gebeurtenissen).toEqual([]);
+	});
+
+	it('legt een positieruil wel vast zodra er is afgetrapt', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.opstelling = { K: 'p2', SP: 'p1' };
+		app.herzetBank();
+		app.gekozenPlek = 'SP';
+		app.zetOpPlek('p2');
+		app.loopToggle();
+
+		app.ruilInWedstrijd('K', 'SP');
+		expect(app.toestand.wedstrijd!.gebeurtenissen.filter((g) => g.type === 'ruil')).toHaveLength(1);
+	});
+
+	it('repareert een wedstrijd die zonder aftrap is opgeslagen', () => {
+		app.nieuweWedstrijd('Sparta', true);
+		app.toestand.wedstrijd!.gebeurtenissen = [{ type: 'wissel', t: 0, eruit: 'p1', erin: 'p2', plek: 'SP' }];
+		app.bewaar();
+		app.toestand = legeToestand();
+		app.laad();
+		expect(app.gestart).toBe(true);
+		expect(app.toestand.wedstrijd!.gebeurtenissen[0].type).toBe('start');
+	});
+});

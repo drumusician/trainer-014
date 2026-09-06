@@ -39,6 +39,11 @@ function migreer(t: Toestand): Toestand {
 		if (!tr.id) tr.id = 't' + (tr.datum ?? 'onbekend') + '-' + i; /* van voor de id's */
 	});
 	if (!Array.isArray(t.archief)) t.archief = [];
+	/* Wedstrijden van voor die fix: wel gebeurtenissen, geen start. Zonder die
+	   gebeurtenis denkt de app dat er nog niet is afgetrapt. */
+	if (w && w.gebeurtenissen?.length && !w.gebeurtenissen.some((g) => g.type === 'start')) {
+		w.gebeurtenissen.unshift({ type: 'start', t: 0 });
+	}
 	return t;
 }
 
@@ -231,7 +236,12 @@ class App {
 			w.loopt = false;
 			w.sinds = null;
 		} else {
-			if (!w.gebeurtenissen.length) this.log('start');
+			/* Op het ontbreken van een start-gebeurtenis letten, niet op een lege lijst.
+			   Wie voor het fluitsignaal nog even schuift had al iets in de lijst staan,
+			   en dan werd 'start' nooit vastgelegd. De app dacht de hele wedstrijd dat
+			   er nog niet was afgetrapt: positiewissels werden niet meer bewaard, de
+			   tabbalk bleef staan en de wedstrijd was niet beschermd tegen ophalen. */
+			if (!this.gestart) this.log('start');
 			w.loopt = true;
 			w.sinds = Date.now();
 		}
@@ -307,7 +317,8 @@ class App {
 		w.bank = w.bank.filter((x) => x !== spelerId);
 		if (eruit) {
 			w.bank.push(eruit);
-			this.log('wissel', { eruit, erin: spelerId, plek });
+			/* Voor de aftrap is dit je opstelling maken, geen wissel. Net als bij ruilen. */
+			if (this.gestart) this.log('wissel', { eruit, erin: spelerId, plek });
 		}
 		this.gekozenPlek = null;
 		this.bewaar();
