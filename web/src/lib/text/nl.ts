@@ -192,11 +192,37 @@ const match = {
 	scored: (name: string) => `${name} scoorde`
 } as const;
 
+/** De schil om elk scherm: waarschuwingen en de tabbalk. */
+const shell = {
+	savingFails: 'Opslaan lukt niet. Wat je nu doet is weg zodra je de app sluit — maak ruimte op je toestel.',
+	conflict: 'Op de server staat iets nieuwers, van een ander toestel.',
+	conflictPull: 'Ophalen',
+	conflictPush: 'Dit toestel',
+	tabs: {
+		matches: 'Wedstrijden',
+		training: 'Training',
+		team: 'Team',
+		data: 'Gegevens'
+	}
+} as const;
+
+/** Wat je ziet als een scherm het niet doet. */
+const errorPage = {
+	title: 'Er ging iets mis',
+	heading: 'Er ging iets mis',
+	hint: 'Dit scherm kwam er niet uit. Je gegevens staan gewoon nog op dit toestel — er is niets kwijt.',
+	toMatches: 'Terug naar de wedstrijden',
+	toData: 'Gegevens en back-up',
+	forReporting: 'Voor als je het doorgeeft:'
+} as const;
+
 export const text = {
 	common,
 	attendance,
 	afterMatch,
 	trainings,
 	team,
-	match
+	match,
+	shell,
+	errorPage
 } as const;

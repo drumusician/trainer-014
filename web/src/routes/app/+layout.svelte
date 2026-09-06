@@ -8,6 +8,7 @@
 	import { kop } from '$lib/header.svelte';
 	import { vraagBlijvendeOpslag } from '$lib/storage.svelte';
 	import Tabs from '$lib/components/Tabs.svelte';
+	import { text } from '$lib/text/nl';
 
 	/* The tab bar is always there, except where the pitch needs the height. That
 	   is one rule you can also see: on those screens the pitch is bigger. On the
@@ -103,14 +104,14 @@
 	<!-- Heavier than a conflict: from here on everything is lost. -->
 	{#if issues.savingFails}
 		<div class="waarschuwing ernstig">
-			<span>Opslaan lukt niet. Wat je nu doet is weg zodra je de app sluit — maak ruimte op je toestel.</span>
+			<span>{text.shell.savingFails}</span>
 		</div>
 	{/if}
 	{#if sync.botsing}
 		<div class="waarschuwing">
-			<span>Op de server staat iets nieuwers, van een ander toestel.</span>
-			<button class="klein" onclick={() => sync.ophalen()}>Ophalen</button>
-			<button class="klein" onclick={() => sync.opsturen(true)}>Dit toestel</button>
+			<span>{text.shell.conflict}</span>
+			<button class="klein" onclick={() => sync.ophalen()}>{text.shell.conflictPull}</button>
+			<button class="klein" onclick={() => sync.opsturen(true)}>{text.shell.conflictPush}</button>
 		</div>
 	{/if}
 	<header>

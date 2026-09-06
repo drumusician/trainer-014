@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { text } from '$lib/text/nl';
 
 	/* Four places; this app needs no more. During a match and while picking a
 	   lineup the bar is gone: there every pixel counts and you are doing one
@@ -10,10 +11,10 @@
 	/* Four places, each its own subject. The match running now and the matches you
 	   have played belong together, so they sit together. */
 	const TABS = [
-		{ pad: '/app', name: 'Wedstrijden', icoon: 'bal' },
-		{ pad: '/app/trainingen', name: 'Training', icoon: 'fluit' },
-		{ pad: '/app/team', name: 'Team', icoon: 'team' },
-		{ pad: '/app/meer', name: 'Gegevens', icoon: 'gegevens' }
+		{ pad: '/app', name: text.shell.tabs.matches, icoon: 'bal' },
+		{ pad: '/app/trainingen', name: text.shell.tabs.training, icoon: 'fluit' },
+		{ pad: '/app/team', name: text.shell.tabs.team, icoon: 'team' },
+		{ pad: '/app/meer', name: text.shell.tabs.data, icoon: 'gegevens' }
 	];
 
 	/* Anything to do with a match counts towards the first tab. */
