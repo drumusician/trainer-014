@@ -8,7 +8,7 @@
 	import { issues, clearIssues } from '$lib/issues.svelte';
 	import { text } from '$lib/text/nl';
 
-	$effect(() => zetKop('Gegevens'));
+	$effect(() => zetKop(text.data.title));
 
 	const t = $derived(app.toestand);
 	let inlogcode = $state('');
@@ -90,141 +90,140 @@
 
 <main>
 	<div class="pad">
-		<h2>Synchroniseren</h2>
+		<h2>{text.data.syncHeading}</h2>
 		{#if !sync.sessie}
 			<p class="uitleg">
-				Log in met je e-mailadres, dan staat je seizoen veilig en heb je het op al je toestellen. Je krijgt een mail met
-				een link en een code; geen wachtwoord om te onthouden.
+				{text.data.signInHint}
 			</p>
 			{#if opLokaal}
 				<p class="uitleg">
-					<b class="mager">Let op:</b> je draait dit op {location.host}. De link in de mail komt hier terug, niet op de
-					echte site, en dit is een aparte opslag. Wil je inloggen voor je telefoon, doe dat dan op de echte site.
+					<b class="mager">{text.data.localWarningLead}</b>
+					{text.data.localWarning(location.host)}
 				</p>
 			{/if}
 			{#if sync.fase === 'email'}
 				<label class="vak">
-					E-mailadres
+					{text.data.emailLabel}
 					<input
 						type="email"
 						inputmode="email"
 						autocomplete="email"
 						bind:value={sync.email}
-						placeholder="jij@voorbeeld.nl"
+						placeholder={text.data.emailPlaceholder}
 					/>
 				</label>
 				<div class="knoprij" style="padding-left: 0">
-					<button class="prim" disabled={sync.bezig} onclick={() => sync.stuurCode(sync.email)}>Stuur inlog</button>
+					<button class="prim" disabled={sync.bezig} onclick={() => sync.stuurCode(sync.email)}
+						>{text.data.sendCode}</button
+					>
 				</div>
 			{:else}
 				<p class="uitleg">
-					Op een telefoon: vul de <b>code</b> uit de mail hieronder in. Je mag gerust even naar je mail-app; dit scherm
-					staat er straks nog. Op een laptop kun je ook gewoon de <b>link</b> in de mail aanklikken.
+					{text.data.codeHintBefore} <b>{text.data.codeHintWord}</b>
+					{text.data.codeHintMiddle} <b>{text.data.codeHintLinkWord}</b>
+					{text.data.codeHintAfter}
 				</p>
 				<label class="vak">
-					Code uit de mail
+					{text.data.codeLabel}
 					<input
 						type="text"
 						inputmode="numeric"
 						autocomplete="one-time-code"
 						bind:value={inlogcode}
-						placeholder="123456"
+						placeholder={text.data.codePlaceholder}
 					/>
 				</label>
 				<div class="knoprij" style="padding-left: 0">
-					<button class="prim" disabled={sync.bezig} onclick={() => sync.controleerCode(inlogcode)}>Inloggen</button>
-					<button onclick={() => sync.opnieuw()}>Ander adres</button>
+					<button class="prim" disabled={sync.bezig} onclick={() => sync.controleerCode(inlogcode)}
+						>{text.data.signIn}</button
+					>
+					<button onclick={() => sync.opnieuw()}>{text.data.otherAddress}</button>
 				</div>
 			{/if}
 		{:else}
 			<p class="uitleg">
-				Ingelogd als <b>{sync.sessie.email ?? 'onbekend'}</b>. De app werkt gewoon zonder bereik en stuurt vanzelf op
-				zodra er weer internet is. Een wedstrijd die je klaarzet gaat mee, dus je stelt thuis op en pakt hem op het veld
-				op je telefoon op. Een wedstrijd die al loopt wordt wel opgestuurd, maar nooit overschreven door een ander
-				toestel.
+				{text.data.signedInAs} <b>{sync.sessie.email ?? text.data.unknownEmail}</b>. {text.data.signedInHint}
 			</p>
 			<p class="uitleg">
 				<b>
 					{#if sync.botsing}
-						Er staat iets nieuwers op de server.
+						{text.data.statusConflict}
 					{:else if sync.vies && sync.hapert}
-						Nog niet opgestuurd, geen verbinding.
+						{text.data.statusOffline}
 					{:else if sync.vies}
-						Nog niet opgestuurd.
+						{text.data.statusPending}
 					{:else if sync.sessie.laatst}
-						Bijgewerkt {new Date(sync.sessie.laatst).toLocaleString('nl-NL')}.
+						{text.data.statusUpdated(new Date(sync.sessie.laatst).toLocaleString('nl-NL'))}
 					{:else}
-						Nog niets uitgewisseld.
+						{text.data.statusNever}
 					{/if}
 				</b>
 			</p>
 			<div class="knoprij" style="padding-left: 0">
-				<button class="prim" disabled={sync.bezig} onclick={() => sync.opsturen()}>Nu opsturen</button>
-				<button disabled={sync.bezig} onclick={() => sync.ophalen()}>Ophalen</button>
-				<button onclick={() => sync.uitloggen()}>Uitloggen</button>
+				<button class="prim" disabled={sync.bezig} onclick={() => sync.opsturen()}>{text.data.pushNow}</button>
+				<button disabled={sync.bezig} onclick={() => sync.ophalen()}>{text.data.pull}</button>
+				<button onclick={() => sync.uitloggen()}>{text.data.signOut}</button>
 			</div>
 			{#if sync.botsingOpen}
 				<div class="knoprij" style="padding-left: 0">
-					<button class="uit" onclick={() => sync.opsturen(true)}>Toch dit toestel opsturen</button>
+					<button class="uit" onclick={() => sync.opsturen(true)}>{text.data.forcePush}</button>
 				</div>
 			{/if}
 		{/if}
 		{#if sync.message}<p class="uitleg" style="margin-top: 8px">{sync.message}</p>{/if}
 
-		<h2>Overzetten en back-up</h2>
+		<h2>{text.data.transferHeading}</h2>
 		{#if !sync.sessie}
 			<p class="uitleg">
-				<b class="mager">Alles staat alleen op dit toestel.</b> Raakt het kwijt of gaat het stuk, dan is je seizoen weg. Maak
-				af en toe een back-up, of log hierboven in en het gaat vanzelf.
+				<b class="mager">{text.data.onlyHereLead}</b>
+				{text.data.onlyHere}
 			</p>
 		{/if}
 		<p class="uitleg">
-			Alles wat de app onthoudt: selectie, standaardopstelling, trainingen en het hele archief. Als bestand om te
-			bewaren, of als code om op je andere toestel in te voeren. Een wedstrijd die nu loopt gaat nooit mee.
+			{text.data.transferHint}
 		</p>
 		<div class="knoprij" style="padding-left: 0">
-			<button onclick={backupMaken}>Bestand opslaan</button>
+			<button onclick={backupMaken}>{text.data.saveFile}</button>
 			<label class="knop">
-				Bestand openen
+				{text.data.openFile}
 				<input type="file" accept="application/json,.json" onchange={bestandInlezen} />
 			</label>
-			<button onclick={codeMaken}>Code maken</button>
+			<button onclick={codeMaken}>{text.data.makeCode}</button>
 			<button
 				onclick={() => {
 					overzet = 'invoeren';
 					backup = 'geen';
 					code = '';
-				}}>Invoeren</button
+				}}>{text.data.enter}</button
 			>
 		</div>
 		{#if backup === 'maken'}
-			<p class="uitleg" style="margin-top: 12px">Opgeslagen als bestand, en gekopieerd.</p>
+			<p class="uitleg" style="margin-top: 12px">{text.data.savedAndCopied}</p>
 			<textarea readonly value={backuptekst} style="min-height: 120px"></textarea>
 		{:else if overzet === 'maken'}
 			<p class="uitleg" style="margin-top: 12px">
-				Gekopieerd. Stuur hem naar je andere toestel en tik daar op <b>Invoeren</b>.
+				{text.data.copiedBefore} <b>{text.data.enter}</b>{text.data.copiedAfter}
 			</p>
 			<textarea readonly value={code}></textarea>
 		{:else if overzet === 'invoeren'}
-			<p class="uitleg" style="margin-top: 12px">Plak hier een code of de inhoud van een bestand; allebei werkt.</p>
-			<textarea bind:value={code} placeholder="Plak de code of de back-up" style="min-height: 120px"></textarea>
+			<p class="uitleg" style="margin-top: 12px">{text.data.pasteHint}</p>
+			<textarea bind:value={code} placeholder={text.data.pastePlaceholder} style="min-height: 120px"></textarea>
 			<div class="knoprij" style="padding-left: 0; margin-top: 10px">
-				<button class="prim" onclick={overnemen}>Overnemen</button>
+				<button class="prim" onclick={overnemen}>{text.data.adopt}</button>
 			</div>
 		{/if}
 
 		{#if opslagstand.ondersteund && opslagstand.blijvend === false}
 			<p class="uitleg" style="margin-top: 12px">
-				<b class="mager">Deze browser mag je gegevens opruimen</b> als hij plaats nodig heeft. Zet de app op je beginscherm
-				en log in, of maak af en toe een back-up.
+				<b class="mager">{text.data.mayCleanLead}</b>
+				{text.data.mayClean}
 			</p>
 		{/if}
 
 		{#if issues.lijst.length}
-			<h2>Wat er misging</h2>
+			<h2>{text.data.issuesHeading}</h2>
 			<p class="uitleg">
-				De app gaat door als er iets hapert — een volle opslag mag de klok niet stoppen. Maar dan moet je het achteraf
-				wel kunnen zien. Dit blijft op je toestel.
+				{text.data.issuesHint}
 			</p>
 			<div class="problemen">
 				{#each issues.lijst as probleem (probleem.when + probleem.what)}

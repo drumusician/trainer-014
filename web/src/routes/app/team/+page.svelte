@@ -52,9 +52,8 @@
 			</div>
 		{:else}
 			<p class="uitleg">
-				Zet per speler de linie: V verdediging, M middenveld, A aanval. <b>K</b> staat los: dat is iedereen die kan keepen,
-				ook als hij verder in het veld speelt. Alleen K aan en de rest uit betekent: keept en verder niets. Tik een naam aan
-				om te wijzigen of te verwijderen.
+				{text.team.lineHint.before} <b>{text.team.lineHint.bold}</b>
+				{text.team.lineHint.after}
 			</p>
 			{#each t.players as p (p.id)}
 				{@const recent = attendanceOf(t.trainings, p.id, 4)}

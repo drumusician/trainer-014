@@ -133,8 +133,13 @@ const team = {
 	emptyHintLink: 'Loop het opzetten door.',
 	namesPlaceholder: 'Casper\nMaher\nDaan',
 	add: 'Toevoegen',
-	lineHint:
-		'Zet per speler de linie: V verdediging, M middenveld, A aanval. K staat los: dat is iedereen die kan keepen, ook als hij verder in het veld speelt. Alleen K aan en de rest uit betekent: keept en verder niets. Tik een naam aan om te wijzigen of te verwijderen.',
+	/* In stukken omdat de K vet staat: dat is de letter waar de uitleg over gaat. */
+	lineHint: {
+		before: 'Zet per speler de linie: V verdediging, M middenveld, A aanval.',
+		bold: 'K',
+		after:
+			'staat los: dat is iedereen die kan keepen, ook als hij verder in het veld speelt. Alleen K aan en de rest uit betekent: keept en verder niets. Tik een naam aan om te wijzigen of te verwijderen.'
+	},
 	addPlayer: 'Speler toevoegen',
 	askName: 'Naam van de speler',
 	askRename: 'Naam wijzigen. Laat leeg om deze speler te verwijderen.',
@@ -483,6 +488,40 @@ const data = {
 	footer: 'Blaadje · het scherm blijft wakker zolang de klok loopt'
 } as const;
 
+/**
+ * De uitleg om de app op je beginscherm te zetten.
+ *
+ * Een paar zinnen staan hier in stukken. Dat is geen slordigheid: in "Scrol naar
+ * Zet op beginscherm" is dat middenstuk vet, want dat is precies het knopje dat
+ * je moet zoeken. Vet kan niet in een tekst zonder opmaak, dus staat het als
+ * eigen sleutel. De groepering laat zien dat het één zin is.
+ */
+const install = {
+	heading: 'Op je beginscherm zetten',
+	already: 'Blaadje staat al op je beginscherm. Dat is precies goed.',
+	intro:
+		'Blaadje is een website, geen download uit de App Store. Zet hem op je beginscherm en hij werkt als een gewone app: geen browserbalk meer, en het scherm blijft aan zolang de klok loopt.',
+	deviceIos: 'iPhone of iPad',
+	deviceAndroid: 'Android',
+
+	iosStep1: { before: 'Open', bold: 'blaadje.app', after: 'in Safari of Chrome.' },
+	iosStep2:
+		'Tik op de deelknop: het vierkantje met het pijltje omhoog. In Safari staat die onderin, in Chrome in de adresbalk.',
+	iosStep3: { before: 'Scrol naar', bold: 'Zet op beginscherm', middle: 'en tik op', bold2: 'Voeg toe', after: '.' },
+
+	androidOffer: 'Je browser kan het meteen doen:',
+	androidButton: 'Op mijn beginscherm zetten',
+	androidStep1: { before: 'Open', bold: 'blaadje.app', after: 'in Chrome.' },
+	androidStep2: 'Tik rechtsboven op de drie puntjes.',
+	androidStep3: {
+		before: 'Kies',
+		bold: 'App installeren',
+		middle: 'of',
+		bold2: 'Toevoegen aan startscherm',
+		after: '.'
+	}
+} as const;
+
 export const text = {
 	common,
 	attendance,
@@ -498,5 +537,6 @@ export const text = {
 	players,
 	lineupScreen,
 	setup,
-	data
+	data,
+	install
 } as const;

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { text } from '$lib/text/nl';
 	import { detectDevice, isInstalled, type Device } from '$lib/domain/device';
 
 	/** Chrome offers to install by itself; we catch that opportunity. */
@@ -32,23 +33,20 @@
 	/* Only the two devices you use at the touchline. On a laptop you prepare, and
 	   a browser tab does that just as well. */
 	const TABS: { code: Device; name: string }[] = [
-		{ code: 'ios', name: 'iPhone of iPad' },
-		{ code: 'android', name: 'Android' }
+		{ code: 'ios', name: text.install.deviceIos },
+		{ code: 'android', name: text.install.deviceAndroid }
 	];
 	/* If someone is on a laptop we show the iPhone instructions; they are looking
 	   these up for their phone anyway. */
 	const tonen = $derived(gekozen ?? (toestel === 'desktop' ? 'ios' : toestel));
 </script>
 
-<h2>Op je beginscherm zetten</h2>
+<h2>{text.install.heading}</h2>
 
 {#if alGeinstalleerd}
-	<p>Blaadje staat al op je beginscherm. Dat is precies goed.</p>
+	<p>{text.install.already}</p>
 {:else}
-	<p>
-		Blaadje is een website, geen download uit de App Store. Zet hem op je beginscherm en hij werkt als een gewone app:
-		geen browserbalk meer, en het scherm blijft aan zolang de klok loopt.
-	</p>
+	<p>{text.install.intro}</p>
 
 	<div class="keuze sorteer" style="margin: 14px 0">
 		{#each TABS as tab (tab.code)}
@@ -58,24 +56,32 @@
 
 	{#if tonen === 'ios'}
 		<ol class="stappen">
-			<li>Open <b>blaadje.app</b> in Safari of Chrome.</li>
+			<li>{text.install.iosStep1.before} <b>{text.install.iosStep1.bold}</b> {text.install.iosStep1.after}</li>
+			<li>{text.install.iosStep2}</li>
 			<li>
-				Tik op de deelknop: het vierkantje met het pijltje omhoog. In Safari staat die onderin, in Chrome in de
-				adresbalk.
+				{text.install.iosStep3.before} <b>{text.install.iosStep3.bold}</b>
+				{text.install.iosStep3.middle}
+				<b>{text.install.iosStep3.bold2}</b>{text.install.iosStep3.after}
 			</li>
-			<li>Scrol naar <b>Zet op beginscherm</b> en tik op <b>Voeg toe</b>.</li>
 		</ol>
 	{:else if tonen === 'android'}
 		{#if vraag}
-			<p>Je browser kan het meteen doen:</p>
+			<p>{text.install.androidOffer}</p>
 			<div class="knoprij" style="padding: 0 0 12px">
-				<button class="prim" onclick={installeren}>Op mijn beginscherm zetten</button>
+				<button class="prim" onclick={installeren}>{text.install.androidButton}</button>
 			</div>
 		{/if}
 		<ol class="stappen">
-			<li>Open <b>blaadje.app</b> in Chrome.</li>
-			<li>Tik rechtsboven op de drie puntjes.</li>
-			<li>Kies <b>App installeren</b> of <b>Toevoegen aan startscherm</b>.</li>
+			<li>
+				{text.install.androidStep1.before} <b>{text.install.androidStep1.bold}</b>
+				{text.install.androidStep1.after}
+			</li>
+			<li>{text.install.androidStep2}</li>
+			<li>
+				{text.install.androidStep3.before} <b>{text.install.androidStep3.bold}</b>
+				{text.install.androidStep3.middle}
+				<b>{text.install.androidStep3.bold2}</b>{text.install.androidStep3.after}
+			</li>
 		</ol>
 	{/if}
 {/if}
