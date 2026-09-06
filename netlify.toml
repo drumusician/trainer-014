@@ -48,8 +48,10 @@
   status = 301
 
 # De app is een enkele pagina die zelf routeert. Alles wat geen bestand is gaat
-# daarheen, zodat een diep adres als /app/archief/0 geen 404 geeft.
+# naar de schil, zodat een diep adres als /app/archief/0 geen 404 geeft.
+# Let op: dat is 200.html en niet index.html, want index.html is de echte
+# landingspagina en die wordt vooraf gerenderd.
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/200.html"
   status = 200

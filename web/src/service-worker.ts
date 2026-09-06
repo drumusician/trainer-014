@@ -44,8 +44,15 @@ self.addEventListener('fetch', (event) => {
 				if (antwoord.ok && antwoord.type === 'basic') cache.put(e.request, antwoord.clone());
 				return antwoord;
 			} catch {
-				/* geen bereik: geef terug wat we hebben, anders de app zelf */
-				return (await cache.match(e.request)) ?? (await cache.match('/')) ?? Response.error();
+				/* Geen bereik: geef terug wat we hebben, anders de app zelf. Niet '/',
+				   want dat is sinds het voorrenderen de landingspagina; wie langs de
+				   lijn offline een diep adres opent wil de app zien. */
+				return (
+					(await cache.match(e.request)) ??
+					(await cache.match('/app')) ??
+					(await cache.match('/200.html')) ??
+					Response.error()
+				);
 			}
 		})()
 	);

@@ -9,7 +9,12 @@ export default {
 		runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
 	},
 	kit: {
-		adapter: adapter({ fallback: 'index.html' }),
-		prerender: { entries: [] }
+		/* De schil waarmee de app zichzelf uittekent heet 200.html en niet
+		   index.html, want index.html is nu de echte landingspagina: die wordt
+		   vooraf gerenderd zodat een zoekmachine er iets ziet staan. */
+		adapter: adapter({ fallback: '200.html' }),
+		/* Alleen de landingspagina wordt uitgetekend. Niet verder kruipen: de
+		   app-routes moeten juist leeg blijven, die tekent de browser zelf. */
+		prerender: { entries: ['/'], crawl: false, handleUnseenRoutes: 'ignore' }
 	}
 };
