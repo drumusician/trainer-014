@@ -42,3 +42,25 @@ jobs:
 
       - name: Bouwen
         run: npm run build
+
+  # De regels die bepalen wie bij welk team mag. Dit draait op een echte Postgres
+  # met de echte schema.sql erin, dus geen Supabase-project en geen geheimen.
+  scheiding:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: proef
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Teams zijn gescheiden
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: proef
+        run: supabase/test/draai.sh
