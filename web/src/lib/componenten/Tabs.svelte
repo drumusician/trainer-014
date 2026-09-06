@@ -71,3 +71,74 @@
 		</a>
 	{/each}
 </nav>
+
+<style>
+	/* De balk zelf. Wat de balk aan ruimte opeist staat wél in app.css, want dat
+	   is padding op main en die staat buiten dit component. */
+	/* Vast aan de onderkant van het scherm, wat de browser ook van de paginahoogte
+	   vindt. De ruimte eronder is de plek van de home-indicator; die hoort leeg te
+	   blijven maar krijgt wel de achtergrond van de balk. */
+	.tabs {
+		position: fixed;
+		bottom: 0;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 100%;
+		max-width: 900px;
+		z-index: 5;
+		display: flex;
+		border-top: 1px solid var(--lijn);
+		/* Doorschijnend met een waas erachter, zoals iOS het zelf doet. Onder de
+		   labels ligt de strook van de home-indicator, en die kunnen we niet gebruiken:
+		   daar zit de veeggreep van het toestel. Wit op wit las die strook als lege
+		   app-ruimte. Zo zie je er de pagina doorheen schuiven en is het één balk. */
+		background: rgba(255, 255, 255, 0.82);
+		backdrop-filter: saturate(180%) blur(16px);
+		-webkit-backdrop-filter: saturate(180%) blur(16px);
+		padding-bottom: env(safe-area-inset-bottom);
+	}
+	/* Kan het toestel geen waas, dan liever ondoorzichtig dan grauw. */
+	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+		.tabs {
+			background: #fff;
+		}
+	}
+	.tabs a {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
+		padding: 6px 2px 4px;
+		text-decoration: none;
+		color: var(--grijs);
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.01em;
+	}
+	.tabs a span {
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.tabs a svg {
+		width: 23px;
+		height: 23px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.6;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+	.tabs a.aan {
+		color: var(--groen);
+	}
+	.tabs a.aan svg {
+		stroke-width: 2;
+	}
+	.tabs a:active {
+		background: var(--groen-licht);
+	}
+</style>

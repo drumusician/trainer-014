@@ -174,3 +174,38 @@
 		{/if}
 	</div>
 </main>
+
+<style>
+	/* Het blok bovenaan dat zegt wat er nu aan de hand is. Stond onder het kopje
+	   'Landingspagina' in app.css, terwijl alleen dit scherm het gebruikt. */
+	.nu {
+		display: block;
+		padding: 16px;
+		border-radius: 14px;
+		text-decoration: none;
+		background: var(--groen);
+		color: #fff;
+		margin-bottom: 12px;
+	}
+	.nu:active {
+		background: var(--groen-diep);
+	}
+	.nu .wat {
+		font-size: 12px;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		opacity: 0.8;
+		font-weight: 700;
+	}
+	.nu .titel {
+		font-size: 21px;
+		font-weight: 700;
+		margin: 4px 0 2px;
+		letter-spacing: -0.01em;
+	}
+	.nu .erbij {
+		font-size: 14px;
+		opacity: 0.85;
+		font-variant-numeric: tabular-nums;
+	}
+</style>

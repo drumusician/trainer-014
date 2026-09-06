@@ -79,3 +79,19 @@
 		</ol>
 	{/if}
 {/if}
+
+<style>
+	/* De genummerde stappen om de app op je beginscherm te zetten. */
+	ol.stappen {
+		margin: 0 0 14px;
+		padding-left: 22px;
+		color: var(--grijs);
+		max-width: 36em;
+	}
+	ol.stappen li {
+		margin-bottom: 8px;
+	}
+	ol.stappen b {
+		color: var(--inkt);
+	}
+</style>
