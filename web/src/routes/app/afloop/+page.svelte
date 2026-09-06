@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import Speeltijd from '$lib/componenten/Speeltijd.svelte';
-	import Verloop from '$lib/componenten/Verloop.svelte';
-	import Verslag from '$lib/componenten/Verslag.svelte';
-	import { endTime, mmss, positionText, positionTimes, playingTimes, score } from '$lib/domein/tijd';
-	import { bronVanWedstrijd } from '$lib/domein/verslag';
-	import { app } from '$lib/toestand.svelte';
-	import { zetKop } from '$lib/kop.svelte';
-	import { datumMetJaar } from '$lib/domein/datum';
+	import Speeltijd from '$lib/components/Speeltijd.svelte';
+	import Verloop from '$lib/components/Verloop.svelte';
+	import Verslag from '$lib/components/Verslag.svelte';
+	import { endTime, mmss, positionText, positionTimes, playingTimes, score } from '$lib/domain/time';
+	import { bronVanWedstrijd } from '$lib/domain/report';
+	import { app } from '$lib/store.svelte';
+	import { zetKop } from '$lib/header.svelte';
+	import { datumMetJaar } from '$lib/domain/dates';
 
 	const w = $derived(app.wedstrijd);
 	const tijden = $derived(playingTimes(w, app.toestand.spelers, app.nu));

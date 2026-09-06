@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { app } from '$lib/toestand.svelte';
-	import { zetKop } from '$lib/kop.svelte';
-	import { thinAttendance, attendanceOf } from '$lib/domein/presentie';
-	import { bezetting, dunneKeepersbezetting, gedrang, tekort } from '$lib/domein/bezetting';
-	import type { Player, FieldLine } from '$lib/domein/types';
+	import { app } from '$lib/store.svelte';
+	import { zetKop } from '$lib/header.svelte';
+	import { thinAttendance, attendanceOf } from '$lib/domain/attendance';
+	import { bezetting, dunneKeepersbezetting, gedrang, tekort } from '$lib/domain/coverage';
+	import type { Player, FieldLine } from '$lib/domain/types';
 
 	$effect(() => zetKop('Team'));
 

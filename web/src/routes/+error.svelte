@@ -8,7 +8,7 @@
 	 * niet doet.
 	 */
 	import { page } from '$app/state';
-	import { reportIssue } from '$lib/problemen.svelte';
+	import { reportIssue } from '$lib/issues.svelte';
 
 	$effect(() => {
 		reportIssue('Een scherm liep vast: ' + page.url.pathname, page.error?.message);

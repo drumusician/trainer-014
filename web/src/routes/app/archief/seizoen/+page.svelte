@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { makers, seizoenStand } from '$lib/domein/seizoen';
-	import { app } from '$lib/toestand.svelte';
-	import { zetKop } from '$lib/kop.svelte';
+	import { makers, seizoenStand } from '$lib/domain/season';
+	import { app } from '$lib/store.svelte';
+	import { zetKop } from '$lib/header.svelte';
 
 	$effect(() => zetKop('Seizoen', '/app', 'Terug'));
 

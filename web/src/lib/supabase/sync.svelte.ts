@@ -1,4 +1,4 @@
-import { app } from '$lib/toestand.svelte';
+import { app } from '$lib/store.svelte';
 import { SUPABASE_SLEUTEL, SUPABASE_URL } from './config';
 
 const SESSIESLEUTEL = 'o14-sessie-v1';

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { app } from '$lib/toestand.svelte';
-	import { zetKop } from '$lib/kop.svelte';
-	import { shortDate } from '$lib/domein/datum';
-	import type { Attendance } from '$lib/domein/types';
+	import { app } from '$lib/store.svelte';
+	import { zetKop } from '$lib/header.svelte';
+	import { shortDate } from '$lib/domain/dates';
+	import type { Attendance } from '$lib/domain/types';
 
 	const WOORD: Record<Attendance, string> = { ja: 'Aanwezig', af: 'Afgemeld', nee: 'Niet gekomen' };
 

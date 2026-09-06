@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { thinAttendance, attendanceOf } from '$lib/domein/presentie';
-	import { app } from '$lib/toestand.svelte';
-	import { zetKop } from '$lib/kop.svelte';
+	import { thinAttendance, attendanceOf } from '$lib/domain/attendance';
+	import { app } from '$lib/store.svelte';
+	import { zetKop } from '$lib/header.svelte';
 
 	$effect(() => zetKop('Wie is er?', '/app', 'Terug'));
 

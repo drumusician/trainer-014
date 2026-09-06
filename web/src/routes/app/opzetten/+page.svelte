@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { FORMATS } from '$lib/domein/formaties';
-	import { app } from '$lib/toestand.svelte';
-	import { zetKop } from '$lib/kop.svelte';
+	import { FORMATS } from '$lib/domain/formations';
+	import { app } from '$lib/store.svelte';
+	import { zetKop } from '$lib/header.svelte';
 
 	$effect(() => zetKop('Aan de slag', '/app', 'Overslaan'));
 

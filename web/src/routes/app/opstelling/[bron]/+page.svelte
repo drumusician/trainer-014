@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import Veld from '$lib/componenten/Veld.svelte';
-	import BankKolom from '$lib/componenten/BankKolom.svelte';
-	import { positionCount, groupOf, linesIn, LINES, positionLine, FORMATS } from '$lib/domein/formaties';
-	import { thinAttendance, attendanceOf } from '$lib/domein/presentie';
-	import { app } from '$lib/toestand.svelte';
-	import { zetKop } from '$lib/kop.svelte';
+	import Veld from '$lib/components/Veld.svelte';
+	import BankKolom from '$lib/components/BankKolom.svelte';
+	import { positionCount, groupOf, linesIn, LINES, positionLine, FORMATS } from '$lib/domain/formations';
+	import { thinAttendance, attendanceOf } from '$lib/domain/attendance';
+	import { app } from '$lib/store.svelte';
+	import { zetKop } from '$lib/header.svelte';
 
 	const bron = $derived(page.params.bron === 'standaard' ? 'standaard' : 'wedstrijd');
 	const doel = $derived(bron === 'standaard' ? app.toestand.standaard : app.wedstrijd);

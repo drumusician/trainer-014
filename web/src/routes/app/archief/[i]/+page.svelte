@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import Speeltijd from '$lib/componenten/Speeltijd.svelte';
-	import Verloop from '$lib/componenten/Verloop.svelte';
-	import Verslag from '$lib/componenten/Verslag.svelte';
-	import { mmss, positionText } from '$lib/domein/tijd';
-	import { shortDate, datumMetJaar } from '$lib/domein/datum';
-	import { timelineRows } from '$lib/domein/verslag';
-	import { bronVanArchief } from '$lib/domein/verslag';
-	import { app } from '$lib/toestand.svelte';
-	import { zetKop } from '$lib/kop.svelte';
+	import Speeltijd from '$lib/components/Speeltijd.svelte';
+	import Verloop from '$lib/components/Verloop.svelte';
+	import Verslag from '$lib/components/Verslag.svelte';
+	import { mmss, positionText } from '$lib/domain/time';
+	import { shortDate, datumMetJaar } from '$lib/domain/dates';
+	import { timelineRows } from '$lib/domain/report';
+	import { bronVanArchief } from '$lib/domain/report';
+	import { app } from '$lib/store.svelte';
+	import { zetKop } from '$lib/header.svelte';
 
 	const i = $derived(Number(page.params.i));
 	const a = $derived(app.toestand.archief[i]);

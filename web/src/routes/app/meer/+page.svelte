@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { backupName, readBackup, makeBackup } from '$lib/domein/backup';
-	import { describePackage, readTransferCode, makeTransferCode } from '$lib/domein/overzetten';
-	import { app } from '$lib/toestand.svelte';
+	import { backupName, readBackup, makeBackup } from '$lib/domain/backup';
+	import { describePackage, readTransferCode, makeTransferCode } from '$lib/domain/transfer';
+	import { app } from '$lib/store.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
-	import { zetKop } from '$lib/kop.svelte';
-	import { opslagstand } from '$lib/opslag.svelte';
-	import { issues, clearIssues } from '$lib/problemen.svelte';
+	import { zetKop } from '$lib/header.svelte';
+	import { opslagstand } from '$lib/storage.svelte';
+	import { issues, clearIssues } from '$lib/issues.svelte';
 
 	$effect(() => zetKop('Gegevens'));
 

@@ -2,12 +2,12 @@
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/state';
-	import { app } from '$lib/toestand.svelte';
+	import { app } from '$lib/store.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
-	import { loadIssues, issues } from '$lib/problemen.svelte';
-	import { kop } from '$lib/kop.svelte';
-	import { vraagBlijvendeOpslag } from '$lib/opslag.svelte';
-	import Tabs from '$lib/componenten/Tabs.svelte';
+	import { loadIssues, issues } from '$lib/issues.svelte';
+	import { kop } from '$lib/header.svelte';
+	import { vraagBlijvendeOpslag } from '$lib/storage.svelte';
+	import Tabs from '$lib/components/Tabs.svelte';
 
 	/* De tabbalk staat er altijd, behalve waar het veld de hoogte nodig heeft.
 	   Dat is één regel die je ook ziet: op die schermen is het veld groter. Op

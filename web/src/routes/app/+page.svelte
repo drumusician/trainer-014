@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { mmss, elapsed } from '$lib/domein/tijd';
-	import { partName, breakName } from '$lib/domein/delen';
-	import { shortDate } from '$lib/domein/datum';
-	import { seizoenStand } from '$lib/domein/seizoen';
-	import { FORMATS } from '$lib/domein/formaties';
-	import { app } from '$lib/toestand.svelte';
-	import { zetKop } from '$lib/kop.svelte';
+	import { mmss, elapsed } from '$lib/domain/time';
+	import { partName, breakName } from '$lib/domain/parts';
+	import { shortDate } from '$lib/domain/dates';
+	import { seizoenStand } from '$lib/domain/season';
+	import { FORMATS } from '$lib/domain/formations';
+	import { app } from '$lib/store.svelte';
+	import { zetKop } from '$lib/header.svelte';
 
 	$effect(() => zetKop('Wedstrijden'));
 

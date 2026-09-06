@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import OpBeginscherm from '$lib/componenten/OpBeginscherm.svelte';
-	import { meld, startMeten } from '$lib/meten';
-	import { isInstalled } from '$lib/domein/toestel';
+	import OpBeginscherm from '$lib/components/OpBeginscherm.svelte';
+	import { meld, startMeten } from '$lib/analytics';
+	import { isInstalled } from '$lib/domain/device';
 
 	onMount(() => {
 		/* "Zet op beginscherm" bewaart op iOS de pagina waar je op dat moment stond,

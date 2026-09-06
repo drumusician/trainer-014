@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 /* De rekenkern en de winkel draaien hier zonder browser eromheen. jsdom levert
-   een document; localStorage komt uit src/test/opzet.ts. */
+   een document; localStorage komt uit src/test/setup.ts. */
 export default defineConfig({
 	plugins: [svelte({ compilerOptions: { runes: true } })],
 	resolve: {
@@ -11,7 +11,7 @@ export default defineConfig({
 	},
 	test: {
 		environment: 'jsdom',
-		setupFiles: ['src/test/opzet.ts'],
+		setupFiles: ['src/test/setup.ts'],
 		include: ['src/**/*.test.ts'],
 		coverage: {
 			provider: 'v8',

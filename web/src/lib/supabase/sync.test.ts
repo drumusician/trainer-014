@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sync } from './sync.svelte';
-import { app } from '$lib/toestand.svelte';
-import { emptyState } from '$lib/domein/types';
+import { app } from '$lib/store.svelte';
+import { emptyState } from '$lib/domain/types';
 
 /** Een nepserver: genoeg om de beslissingen te testen, niet het netwerk. */
 function nepFetch(opties: { versie?: number; data?: unknown; botsing?: boolean; stuk?: boolean } = {}) {

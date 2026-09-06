@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import Veld from '$lib/componenten/Veld.svelte';
-	import BankKolom from '$lib/componenten/BankKolom.svelte';
-	import { LINES, positionLine } from '$lib/domein/formaties';
-	import { partName, breakName } from '$lib/domein/delen';
-	import { keeperTimes, mmss, playingTimes, score, elapsed } from '$lib/domein/tijd';
-	import { app } from '$lib/toestand.svelte';
-	import { zetKop } from '$lib/kop.svelte';
+	import Veld from '$lib/components/Veld.svelte';
+	import BankKolom from '$lib/components/BankKolom.svelte';
+	import { LINES, positionLine } from '$lib/domain/formations';
+	import { partName, breakName } from '$lib/domain/parts';
+	import { keeperTimes, mmss, playingTimes, score, elapsed } from '$lib/domain/time';
+	import { app } from '$lib/store.svelte';
+	import { zetKop } from '$lib/header.svelte';
 
 	const w = $derived(app.wedstrijd);
 	const klaar = $derived(!!w && !w.afgelopen && Object.keys(w.opstelling).length > 0);

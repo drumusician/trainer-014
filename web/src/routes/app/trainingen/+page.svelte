@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { app } from '$lib/toestand.svelte';
-	import { zetKop } from '$lib/kop.svelte';
-	import { shortDate } from '$lib/domein/datum';
-	import { thinAttendance, attendanceOf } from '$lib/domein/presentie';
-	import type { Training } from '$lib/domein/types';
+	import { app } from '$lib/store.svelte';
+	import { zetKop } from '$lib/header.svelte';
+	import { shortDate } from '$lib/domain/dates';
+	import { thinAttendance, attendanceOf } from '$lib/domain/attendance';
+	import type { Training } from '$lib/domain/types';
 
 	$effect(() => zetKop('Trainingen'));
 

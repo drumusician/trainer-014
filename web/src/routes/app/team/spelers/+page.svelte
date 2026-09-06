@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { thinAttendance } from '$lib/domein/presentie';
-	import { percentage, sorteer, spelersOverzicht, type Sortering } from '$lib/domein/spelers';
-	import { app } from '$lib/toestand.svelte';
-	import { zetKop } from '$lib/kop.svelte';
+	import { thinAttendance } from '$lib/domain/attendance';
+	import { percentage, sorteer, spelersOverzicht, type Sortering } from '$lib/domain/players';
+	import { app } from '$lib/store.svelte';
+	import { zetKop } from '$lib/header.svelte';
 
 	$effect(() => zetKop('Spelers', '/app/team', 'Terug'));
 
