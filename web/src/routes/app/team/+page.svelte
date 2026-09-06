@@ -59,15 +59,9 @@
 			{#each t.spelers as p (p.id)}
 				{@const recent = presentie(t.trainingen, p.id, 4)}
 				<div class="sregel">
-					<span
-						class="naam"
-						role="button"
-						tabindex="0"
-						onclick={() => wijzig(p)}
-						onkeydown={(e) => e.key === 'Enter' && wijzig(p)}
-					>
+					<button type="button" class="naam" onclick={() => wijzig(p)}>
 						{p.naam}{#if mager(recent)}<span class="min mager"> {recent.er}/{recent.totaal}</span>{/if}
-					</span>
+					</button>
 					<div class="keuze">
 						<button class:aan={p.keept} onclick={() => app.zetKeept(p)}>K</button>
 						{#each LINIEKNOPPEN as code (code)}

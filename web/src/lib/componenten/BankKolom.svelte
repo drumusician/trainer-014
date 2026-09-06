@@ -51,14 +51,12 @@
 				<div class="rij">
 					{#each groepje as p (p.id)}
 						{@const recent = presentie(app.toestand.trainingen, p.id, 4)}
-						<div
+						<button
+							type="button"
 							class="chip"
 							class:doel={gekozen && pastBij(p)}
 							class:andere={gekozen && !pastBij(p)}
-							role="button"
-							tabindex="0"
 							onclick={() => ontik(p.id)}
-							onkeydown={(e) => e.key === 'Enter' && ontik(p.id)}
 						>
 							<span>{p.naam}</span>
 							{#if tijden}
@@ -66,7 +64,7 @@
 							{:else if mager(recent)}
 								<span class="min mager">{recent.er}/{recent.totaal}</span>
 							{/if}
-						</div>
+						</button>
 					{/each}
 				</div>
 			{/if}

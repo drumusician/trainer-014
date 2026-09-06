@@ -104,12 +104,7 @@
 	</main>
 {:else}
 	<div class="klokbalk">
-		<div
-			role="button"
-			tabindex="0"
-			onclick={() => (klokBijstellen = !klokBijstellen)}
-			onkeydown={(e) => e.key === 'Enter' && (klokBijstellen = !klokBijstellen)}
-		>
+		<button type="button" class="kloktik" onclick={() => (klokBijstellen = !klokBijstellen)}>
 			<div class="klok">{mmss(verstreken(w, app.nu))}</div>
 			<div class="helft">
 				{#if w.pauze}
@@ -118,7 +113,7 @@
 					{deelNaam(w.deel, w.delen)} · tik om bij te stellen
 				{/if}
 			</div>
-		</div>
+		</button>
 		<div style="flex: 1"></div>
 		{#if klokBijstellen}
 			<button onclick={() => app.verschuifKlok(-60)}>−1′</button>

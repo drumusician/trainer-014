@@ -34,20 +34,21 @@
 
 	{#each plekken(formatie) as [plekId, label, x, y] (plekId)}
 		{@const p = app.spelerVan(opstelling[plekId])}
-		<div
+		<!-- Een echte knop, geen div die zich als knop voordoet: spatiebalk, focus en
+		     schermlezer zijn dan meteen goed en het scheelt handwerk. -->
+		<button
+			type="button"
 			class="plek"
 			class:leeg={!p}
 			class:gekozen={gekozen === plekId}
 			style="left: {x}%; top: {y}%"
-			role="button"
-			tabindex="0"
+			aria-label="{label}{p ? ': ' + p.naam : ': leeg'}"
 			onclick={() => onplek?.(plekId)}
-			onkeydown={(e) => e.key === 'Enter' && onplek?.(plekId)}
 		>
-			<div class="bol">{p ? p.naam : '+'}</div>
-			<div class="pos">
+			<span class="bol">{p ? p.naam : '+'}</span>
+			<span class="pos">
 				{label}{#if p && tijden}<span class="min">{Math.round((tijden[p.id] ?? 0) / 60)}′</span>{/if}
-			</div>
-		</div>
+			</span>
+		</button>
 	{/each}
 </div>
