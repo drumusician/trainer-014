@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gebeurtenisTekst, verslagTekst } from './verslag';
+import { verloopRegels, gebeurtenisTekst, verslagTekst } from './verslag';
 import type { Speler } from './types';
 
 const spelers: Speler[] = [{ id: 'p1', naam: 'Aad', linie: 'A' }, { id: 'p2', naam: 'Bram', linie: 'M' }];
@@ -61,13 +61,67 @@ describe('kwarten en een notitie', () => {
 });
 
 describe('van plek ruilen in het verloop', () => {
-	it('noemt wie er wisselden', () => {
+	/* Waar ze naartoe gingen zegt meer dan dat er iets wisselde. */
+	it('noemt wie waar naartoe ging', () => {
 		const g = { type: 'ruil' as const, t: 800, plekA: 'K', plekB: 'SP', spelerA: 'p1', spelerB: 'p2' };
-		expect(gebeurtenisTekst(g, spelers)).toBe('Aad en Bram wisselden van plek');
+		expect(gebeurtenisTekst(g, spelers, undefined, 2, '4-3-3')).toBe('Aad naar SP, Bram naar K');
+	});
+
+	it('gebruikt de leesbare naam van de plek', () => {
+		const g = { type: 'ruil' as const, t: 800, plekA: 'CVl', plekB: 'TIEN', spelerA: 'p1', spelerB: 'p2' };
+		expect(gebeurtenisTekst(g, spelers, undefined, 2, '4-4-2 ruit')).toBe('Aad naar 10, Bram naar CV');
 	});
 
 	it('houdt oude wedstrijden zonder namen leesbaar', () => {
 		const g = { type: 'ruil' as const, t: 800, plekA: 'K', plekB: 'SP' };
-		expect(gebeurtenisTekst(g, spelers)).toBe('Van plek gewisseld');
+		expect(gebeurtenisTekst(g, spelers, undefined, 2, '4-3-3')).toBe('Van plek gewisseld: K en SP');
+	});
+});
+
+describe('een wissel in het verloop', () => {
+	it('zegt er ook bij op welke plek', () => {
+		const g = { type: 'wissel' as const, t: 800, plek: 'TIEN', eruit: 'p1', erin: 'p2' };
+		expect(gebeurtenisTekst(g, spelers, undefined, 2, '4-4-2 ruit')).toBe('Bram voor Aad op 10');
+	});
+});
+
+describe('ruilen op hetzelfde moment samenvatten', () => {
+	/* Een rondje van vier kan niet in minder dan drie paarsgewijze ruilen. Zonder
+	   samenvatten lijkt iemand in dezelfde seconde twee keer te verhuizen. */
+	it('maakt van een rondje van vier één regel met de netto verhuizing', () => {
+		const vier: Speler[] = [
+			{ id: 'a', naam: 'Maher', linie: '' },
+			{ id: 'b', naam: 'Kasper', linie: '' },
+			{ id: 'c', naam: 'Jack', linie: '' },
+			{ id: 'd', naam: 'Zenith', linie: '' }
+		];
+		/* voor: K=Maher, VM=Kasper, CVr=Jack, RV=Zenith */
+		const g: Gebeurtenis[] = [
+			{ type: 'ruil', t: 2110, plekA: 'K', plekB: 'VM', spelerA: 'a', spelerB: 'b' },
+			{ type: 'ruil', t: 2110, plekA: 'CVr', plekB: 'RV', spelerA: 'c', spelerB: 'd' },
+			{ type: 'ruil', t: 2110, plekA: 'VM', plekB: 'CVr', spelerA: 'a', spelerB: 'd' }
+		];
+		const regels = verloopRegels(g, vier, undefined, 2, '4-4-2 ruit');
+		expect(regels).toHaveLength(1);
+		expect(regels[0].tekst).toBe('Maher naar CV, Kasper naar K, Jack naar RV, Zenith naar VM');
+	});
+
+	it('laat ruilen op verschillende tijdstippen apart staan', () => {
+		const g: Gebeurtenis[] = [
+			{ type: 'ruil', t: 100, plekA: 'K', plekB: 'SP', spelerA: 'p1', spelerB: 'p2' },
+			{ type: 'ruil', t: 200, plekA: 'K', plekB: 'SP', spelerA: 'p2', spelerB: 'p1' }
+		];
+		expect(verloopRegels(g, spelers, undefined, 2, '4-3-3')).toHaveLength(2);
+	});
+
+	it('houdt de plek in de lijst kloppend, zodat een doelpunt te wissen blijft', () => {
+		const g: Gebeurtenis[] = [
+			{ type: 'ruil', t: 100, plekA: 'K', plekB: 'SP', spelerA: 'p1', spelerB: 'p2' },
+			{ type: 'ruil', t: 100, plekA: 'SP', plekB: 'K', spelerA: 'p1', spelerB: 'p2' },
+			{ type: 'goal', t: 300, speler: 'p1' }
+		];
+		const regels = verloopRegels(g, spelers, undefined, 2, '4-3-3');
+		const doelpunt = regels.find((r) => r.type === 'goal');
+		expect(doelpunt?.index).toBe(2);
 	});
 });

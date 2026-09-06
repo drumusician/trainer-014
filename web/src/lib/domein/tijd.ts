@@ -1,4 +1,4 @@
-import { plekken, plekLinie } from './formaties';
+import { plekken, plekLinie, plekLabel } from './formaties';
 import type { Gebeurtenis, Speler, Wedstrijd } from './types';
 
 export function mmss(sec: number): string {
@@ -140,7 +140,7 @@ export function positietijden(w: Wedstrijd | null, nu = Date.now()): Record<stri
  */
 export function positieTekst(perPlek: Record<string, number> | undefined, formatie: string): string {
 	if (!perPlek) return '';
-	const label = (plek: string) => plekken(formatie).find((p) => p[0] === plek)?.[1] ?? plek;
+	const label = (plek: string) => plekLabel(plek, formatie);
 	const rijen = Object.entries(perPlek)
 		.filter(([, sec]) => sec > 0)
 		.sort((a, b) => b[1] - a[1]);

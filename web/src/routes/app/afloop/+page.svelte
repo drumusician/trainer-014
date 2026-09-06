@@ -47,7 +47,7 @@
 			/>
 
 			<h2>Verloop</h2>
-			<Verloop gebeurtenissen={w.gebeurtenissen} delen={w.delen} />
+			<Verloop gebeurtenissen={w.gebeurtenissen} delen={w.delen} formatie={w.formatie} />
 
 			<h2>Hoe ging het</h2>
 			<p class="uitleg">Een paar regels voor jezelf of voor de groepsapp. Gaat mee in het verslag.</p>

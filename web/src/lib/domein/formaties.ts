@@ -172,6 +172,11 @@ export function speelvormVan(formatie: string): string {
 	return SPEELVORMEN.find((s) => s.formaties.some((f) => f.sleutel === formatie))?.naam ?? '';
 }
 
+/** De leesbare naam van een plek: CVl heet CV, TIEN heet 10. */
+export function plekLabel(plekId: string, formatie: string): string {
+	return plekken(formatie).find((p) => p[0] === plekId)?.[1] ?? plekId;
+}
+
 export function plekLinie(plekId: string, formatie: string): Linie {
 	return plekken(formatie).find((p) => p[0] === plekId)?.[4] ?? '';
 }

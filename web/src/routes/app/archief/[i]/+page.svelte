@@ -6,7 +6,7 @@
 	import Verslag from '$lib/componenten/Verslag.svelte';
 	import { mmss, positieTekst } from '$lib/domein/tijd';
 	import { datumKort, datumMetJaar } from '$lib/domein/datum';
-	import { gebeurtenisTekst } from '$lib/domein/verslag';
+	import { verloopRegels } from '$lib/domein/verslag';
 	import { bronVanArchief } from '$lib/domein/verslag';
 	import { app } from '$lib/toestand.svelte';
 	import { zetKop } from '$lib/kop.svelte';
@@ -102,19 +102,19 @@
 
 			<h2>Verloop</h2>
 			{#if !bewerken}
-				<Verloop gebeurtenissen={a.gebeurtenissen ?? []} namen={a.namen} delen={a.delen} />
+				<Verloop gebeurtenissen={a.gebeurtenissen ?? []} namen={a.namen} delen={a.delen} formatie={a.formatie} />
 			{:else}
 				<p class="uitleg">
 					Een doelpunt dat er niet was kun je weghalen; de stand telt vanzelf opnieuw. Wissels blijven staan, want
 					daar hangt de speeltijd aan.
 				</p>
 				<ul class="log">
-					{#each a.gebeurtenissen ?? [] as g, index (index)}
+					{#each verloopRegels(a.gebeurtenissen ?? [], app.toestand.spelers, a.namen, a.delen, a.formatie) as r (r.index)}
 						<li>
-							<b>{mmss(g.t)}</b>
-							<span>{gebeurtenisTekst(g, app.toestand.spelers, a.namen, a.delen)}</span>
-							{#if g.type === 'goal' || g.type === 'tegen'}
-								<button class="klein uit" onclick={() => app.verwijderDoelpunt(i, index)}>Weg</button>
+							<b>{mmss(r.t)}</b>
+							<span>{r.tekst}</span>
+							{#if r.type === 'goal' || r.type === 'tegen'}
+								<button class="klein uit" onclick={() => app.verwijderDoelpunt(i, r.index)}>Weg</button>
 							{/if}
 						</li>
 					{/each}

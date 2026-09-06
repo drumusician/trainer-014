@@ -1,3 +1,4 @@
+import { plekLabel } from './formaties';
 import type { ArchiefWedstrijd, Gebeurtenis, Speler, Wedstrijd } from './types';
 import { eindTijd, stand } from './tijd';
 import { deelNaam, pauzeNaam } from './delen';
@@ -44,9 +45,12 @@ export function gebeurtenisTekst(
 	g: Gebeurtenis,
 	spelers: Speler[],
 	namen?: Record<string, string>,
-	delen: 2 | 4 = 2
+	delen: 2 | 4 = 2,
+	formatie?: string
 ): string {
 	const naam = (id?: string | null) => naamVan(id, spelers, namen);
+	/* Zonder formatie weten we de leesbare naam niet; dan maar de plek zelf. */
+	const plek = (id?: string | null) => (id ? (formatie ? plekLabel(id, formatie) : id) : '');
 	switch (g.type) {
 		case 'start': return 'Aftrap';
 		case 'rust':
@@ -59,12 +63,16 @@ export function gebeurtenisTekst(
 				(g.speler ? ' — ' + naam(g.speler) : '') +
 				(g.assist ? ' (assist ' + naam(g.assist) + ')' : '')
 			);
-		case 'wissel': return naam(g.erin) + ' voor ' + naam(g.eruit);
+		case 'wissel':
+			return naam(g.erin) + ' voor ' + naam(g.eruit) + (g.plek ? ' op ' + plek(g.plek) : '');
 		case 'ruil':
-			/* oudere wedstrijden legden alleen de plekken vast, niet wie er stonden */
-			return g.spelerA && g.spelerB
-				? naam(g.spelerA) + ' en ' + naam(g.spelerB) + ' wisselden van plek'
-				: 'Van plek gewisseld';
+			/* Waar ze naartoe gingen zegt meer dan dat ze wisselden. Oudere
+			   wedstrijden legden alleen de plekken vast, niet wie er stonden. */
+			if (g.spelerA && g.spelerB && g.plekA && g.plekB) {
+				return naam(g.spelerA) + ' naar ' + plek(g.plekB) + ', ' + naam(g.spelerB) + ' naar ' + plek(g.plekA);
+			}
+			if (g.plekA && g.plekB) return 'Van plek gewisseld: ' + plek(g.plekA) + ' en ' + plek(g.plekB);
+			return 'Van plek gewisseld';
 		default: return g.type;
 	}
 }
@@ -122,4 +130,80 @@ export function verslagTekst(bron: Verslagbron, spelers: Speler[], metWissels = 
 		regels.push(bron.notitie.trim());
 	}
 	return regels.join('\n');
+}
+
+export interface VerloopRegel {
+	t: number;
+	tekst: string;
+	/** plek in de oorspronkelijke lijst, zodat een doelpunt te verwijderen blijft */
+	index: number;
+	type: Gebeurtenis['type'];
+}
+
+/**
+ * Het verloop als regels om te tonen.
+ *
+ * Ruilen die op hetzelfde tijdstip achter elkaar staan worden één regel. Een
+ * rondje van vier spelers kan niet in minder dan drie paarsgewijze ruilen, dus
+ * anders lijkt iemand in dezelfde seconde twee keer te verhuizen. Wat je wilt
+ * lezen is waar iedereen terechtkwam, niet hoe de administratie daar kwam.
+ */
+export function verloopRegels(
+	gebeurtenissen: Gebeurtenis[],
+	spelers: Speler[],
+	namen?: Record<string, string>,
+	delen: 2 | 4 = 2,
+	formatie?: string
+): VerloopRegel[] {
+	const naam = (id?: string | null) => naamVan(id, spelers, namen);
+	const plek = (id?: string | null) => (id ? (formatie ? plekLabel(id, formatie) : id) : '');
+	const uit: VerloopRegel[] = [];
+
+	for (let i = 0; i < gebeurtenissen.length; i++) {
+		const g = gebeurtenissen[i];
+		if (g.type !== 'ruil') {
+			uit.push({ t: g.t ?? 0, tekst: gebeurtenisTekst(g, spelers, namen, delen, formatie), index: i, type: g.type });
+			continue;
+		}
+
+		const vanaf: Record<string, string> = {};
+		const naartoe: Record<string, string> = {};
+		const volgorde: string[] = [];
+		let j = i;
+		while (j < gebeurtenissen.length) {
+			const r = gebeurtenissen[j];
+			if (r.type !== 'ruil' || (r.t ?? 0) !== (g.t ?? 0)) break;
+			if (r.plekA && r.plekB) {
+				const stappen: [string | null | undefined, string, string][] = [
+					[r.spelerA, r.plekA, r.plekB],
+					[r.spelerB, r.plekB, r.plekA]
+				];
+				for (const [sp, van, naar] of stappen) {
+					if (!sp) continue;
+					if (!(sp in vanaf)) {
+						vanaf[sp] = van;
+						volgorde.push(sp);
+					}
+					naartoe[sp] = naar;
+				}
+			}
+			j++;
+		}
+
+		const verhuisd = volgorde.filter((sp) => vanaf[sp] !== naartoe[sp]);
+		if (!verhuisd.length) {
+			/* Geen namen vastgelegd, of alles kwam weer op zijn plek terug. */
+			uit.push({ t: g.t ?? 0, tekst: gebeurtenisTekst(g, spelers, namen, delen, formatie), index: i, type: g.type });
+			i = j - 1;
+			continue;
+		}
+		uit.push({
+			t: g.t ?? 0,
+			tekst: verhuisd.map((sp) => naam(sp) + ' naar ' + plek(naartoe[sp])).join(', '),
+			index: i,
+			type: g.type
+		});
+		i = j - 1;
+	}
+	return uit;
 }
