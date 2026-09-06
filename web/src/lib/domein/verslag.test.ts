@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { verloopRegels, gebeurtenisTekst, verslagTekst } from './verslag';
-import type { Speler } from './types';
+import type { Gebeurtenis, Speler } from './types';
 
 const spelers: Speler[] = [{ id: 'p1', naam: 'Aad', linie: 'A' }, { id: 'p2', naam: 'Bram', linie: 'M' }];
 const bron = {
