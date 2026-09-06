@@ -27,5 +27,13 @@ as $$
   select nullif(nullif(current_setting('request.jwt.claims', true), '')::json ->> 'sub', '')::uuid;
 $$;
 
+-- auth.jwt() levert het hele token. De uitnodigingen hangen aan een e-mailadres,
+-- en dat staat daarin — niet in auth.uid().
+create or replace function auth.jwt() returns jsonb
+language sql stable
+as $$
+  select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb;
+$$;
+
 grant usage on schema public to anon, authenticated;
 grant usage on schema auth   to anon, authenticated;
