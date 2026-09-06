@@ -10,13 +10,20 @@
 	import { bronVanArchief } from '$lib/domain/report';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
+	import { text } from '$lib/text/nl';
 
 	const i = $derived(Number(page.params.i));
 	const a = $derived(app.toestand.archive[i]);
 	/* Derived, not called in the template: that recalculates on every render. */
 	const regels = $derived(a ? timelineRows(a.events ?? [], app.toestand.players, a.names, a.parts, a.formation) : []);
 
-	$effect(() => zetKop(a ? shortDate(a.date) + ' · ' + a.opponent : 'Wedstrijd', '/app', 'Terug'));
+	$effect(() =>
+		zetKop(
+			a ? text.archivedMatch.title(shortDate(a.date), a.opponent) : text.archivedMatch.fallbackTitle,
+			'/app',
+			text.common.back
+		)
+	);
 
 	/** The current name, even if someone was renamed after the match. */
 	function naamNu(r: { id?: string; name: string }) {
@@ -48,7 +55,7 @@
 	}
 
 	function verwijder() {
-		if (!confirm('De wedstrijd tegen ' + a.opponent + ' van ' + a.date + ' uit het archief verwijderen?')) return;
+		if (!confirm(text.archivedMatch.confirmRemove(a.opponent, a.date))) return;
 		app.removeFromArchive(i);
 		goto('/app');
 	}
@@ -57,26 +64,28 @@
 <main>
 	<div class="pad">
 		{#if !a}
-			<p class="uitleg">Deze wedstrijd staat er niet meer.</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">Terug</a></div>
+			<p class="uitleg">{text.archivedMatch.gone}</p>
+			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app">{text.common.back}</a></div>
 		{:else}
 			{@const home = a.home !== false}
 			{@const ons = a.teamName?.trim() || app.toestand.teamName}
-			<h2>Uitslag</h2>
+			<h2>{text.archivedMatch.resultHeading}</h2>
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
 				{home ? ons : a.opponent}
 				{a.score[0]} – {a.score[1]}
 				{home ? a.opponent : ons}
 			</p>
-			<p class="uitleg">{datumMetJaar(a.date)} · {mmss(a.duration ?? 0)} gespeeld · {a.formation}</p>
+			<p class="uitleg">{text.archivedMatch.details(datumMetJaar(a.date), mmss(a.duration ?? 0), a.formation)}</p>
 			<div class="knoprij" style="padding-left: 0">
-				<button onclick={() => (bewerken = !bewerken)}>{bewerken ? 'Klaar met bijwerken' : 'Bijwerken'}</button>
+				<button onclick={() => (bewerken = !bewerken)}
+					>{bewerken ? text.archivedMatch.doneEditing : text.archivedMatch.edit}</button
+				>
 			</div>
 
 			{#if bewerken}
 				<div class="tweekolom">
 					<label class="vak">
-						Datum
+						{text.archivedMatch.dateLabel}
 						<input
 							type="date"
 							value={a.date}
@@ -84,23 +93,23 @@
 						/>
 					</label>
 					<label class="vak">
-						Thuis of uit
+						{text.archivedMatch.homeOrAwayLabel}
 						<select
 							value={a.home !== false ? 'thuis' : 'uit'}
 							onchange={(e) => app.updateArchived(i, { home: e.currentTarget.value === 'thuis' })}
 						>
-							<option value="thuis">Thuis</option>
-							<option value="uit">Uit</option>
+							<option value="thuis">{text.archivedMatch.home}</option>
+							<option value="uit">{text.archivedMatch.away}</option>
 						</select>
 					</label>
 				</div>
 				<label class="vak">
-					Tegenstander
+					{text.archivedMatch.opponentLabel}
 					<input value={a.opponent} onchange={(e) => app.updateArchived(i, { opponent: e.currentTarget.value })} />
 				</label>
 			{/if}
 
-			<h2>Speeltijd</h2>
+			<h2>{text.archivedMatch.playingTimeHeading}</h2>
 			<Speeltijd
 				rijen={(a.playingTime ?? []).map((r) => ({
 					name: naamNu(r),
@@ -108,70 +117,72 @@
 					/* oudere wedstrijden hebben alleen keeperminuten, nieuwere alle positionsOf */
 					sub:
 						positionText(r.positions, a.formation) ||
-						(r.keeper ? Math.round(r.keeper / 60) + ' min in het doel' : undefined)
+						(r.keeper ? text.archivedMatch.keeperMinutes(Math.round(r.keeper / 60)) : undefined)
 				}))}
 			/>
 
-			<h2>Verloop</h2>
+			<h2>{text.archivedMatch.timelineHeading}</h2>
 			{#if !bewerken}
 				<Verloop events={a.events ?? []} names={a.names} parts={a.parts} formation={a.formation} />
 			{:else}
-				<p class="uitleg">
-					Een doelpunt dat er niet was kun je weghalen; de stand telt vanzelf opnieuw. Wissels blijven staan, want daar
-					hangt de speeltijd aan.
-				</p>
+				<p class="uitleg">{text.archivedMatch.editHint}</p>
 				<ul class="log">
 					{#each regels as r (r.index)}
 						<li>
 							<b>{mmss(r.t)}</b>
 							<span>{r.tekst}</span>
 							{#if r.type === 'goal' || r.type === 'conceded'}
-								<button class="klein uit" onclick={() => app.removeGoal(i, r.index)}>Weg</button>
+								<button class="klein uit" onclick={() => app.removeGoal(i, r.index)}>{text.common.delete}</button>
 							{/if}
 						</li>
 					{/each}
 				</ul>
 
-				<h2>Doelpunt erbij</h2>
+				<h2>{text.archivedMatch.addGoalHeading}</h2>
 				<div class="tweekolom">
 					<label class="vak">
-						Minuut
-						<input type="number" inputmode="numeric" bind:value={nieuwMinuut} placeholder="35" />
+						{text.archivedMatch.minuteLabel}
+						<input
+							type="number"
+							inputmode="numeric"
+							bind:value={nieuwMinuut}
+							placeholder={text.archivedMatch.minutePlaceholder}
+						/>
 					</label>
 					<label class="vak">
-						Voor of tegen
+						{text.archivedMatch.forOrAgainstLabel}
 						<select bind:value={nieuwTegen}>
-							<option value={false}>Voor {ons}</option>
-							<option value={true}>Tegen</option>
+							<option value={false}>{text.archivedMatch.forUs(ons)}</option>
+							<option value={true}>{text.archivedMatch.against}</option>
 						</select>
 					</label>
 				</div>
 				{#if !nieuwTegen}
 					<label class="vak">
-						Wie scoorde
+						{text.archivedMatch.scorerLabel}
 						<select bind:value={nieuwMaker}>
-							<option value="">Weet ik niet</option>
+							<option value="">{text.archivedMatch.scorerUnknown}</option>
 							{#each makers as m (m.id)}<option value={m.id}>{m.name}</option>{/each}
 						</select>
 					</label>
 				{/if}
 				<div class="knoprij" style="padding-left: 0">
-					<button class="prim" onclick={doelpuntErbij}>Toevoegen</button>
+					<button class="prim" onclick={doelpuntErbij}>{text.archivedMatch.add}</button>
 				</div>
 			{/if}
 
-			<h2>Hoe ging het</h2>
+			<h2>{text.archivedMatch.noteHeading}</h2>
 			<textarea
 				value={a.note ?? ''}
-				placeholder="Nog niets opgeschreven."
+				placeholder={text.archivedMatch.notePlaceholder}
 				oninput={(e) => app.setArchiveNote(i, e.currentTarget.value)}></textarea>
 
-			<h2>Delen</h2>
+			<h2>{text.archivedMatch.shareHeading}</h2>
 			<Verslag bron={bronVanArchief(a)} />
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
-				<a class="knop prim" href="/app">Terug</a>
-				<button class="uit" onclick={verwijder}>Verwijderen</button>
+				<a class="knop prim" href="/app">{text.common.back}</a>
+				<button class="uit" onclick={verwijder}>{text.archivedMatch.remove}</button>
 			</div>
 		{/if}
 	</div>

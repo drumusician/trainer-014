@@ -267,6 +267,80 @@ const home = {
 	toSeason: 'Seizoen en topscorers'
 } as const;
 
+/** Een bewaarde wedstrijd terugkijken en bijwerken. */
+const archivedMatch = {
+	fallbackTitle: 'Wedstrijd',
+	title: (date: string, opponent: string) => `${date} · ${opponent}`,
+	gone: 'Deze wedstrijd staat er niet meer.',
+	resultHeading: 'Uitslag',
+	details: (date: string, played: string, formation: string) => `${date} · ${played} gespeeld · ${formation}`,
+	edit: 'Bijwerken',
+	doneEditing: 'Klaar met bijwerken',
+	dateLabel: 'Datum',
+	homeOrAwayLabel: 'Thuis of uit',
+	home: 'Thuis',
+	away: 'Uit',
+	opponentLabel: 'Tegenstander',
+	playingTimeHeading: 'Speeltijd',
+	keeperMinutes: (minutes: number) => `${minutes} min in het doel`,
+	timelineHeading: 'Verloop',
+	/* Alleen de score is hier te wijzigen; zie actions/archive.ts voor waarom. */
+	editHint:
+		'Een doelpunt dat er niet was kun je weghalen; de stand telt vanzelf opnieuw. Wissels blijven staan, want daar hangt de speeltijd aan.',
+	addGoalHeading: 'Doelpunt erbij',
+	minuteLabel: 'Minuut',
+	minutePlaceholder: '35',
+	forOrAgainstLabel: 'Voor of tegen',
+	forUs: (team: string) => `Voor ${team}`,
+	against: 'Tegen',
+	scorerLabel: 'Wie scoorde',
+	scorerUnknown: 'Weet ik niet',
+	add: 'Toevoegen',
+	noteHeading: 'Hoe ging het',
+	notePlaceholder: 'Nog niets opgeschreven.',
+	shareHeading: 'Delen',
+	remove: 'Verwijderen',
+	confirmRemove: (opponent: string, date: string) =>
+		`De wedstrijd tegen ${opponent} van ${date} uit het archief verwijderen?`
+} as const;
+
+/** Het seizoen: alles uit het archief bij elkaar. */
+const season = {
+	title: 'Seizoen',
+	heading: 'Seizoen',
+	empty:
+		'Nog geen bewaarde wedstrijden en geen trainingen. Sluit een wedstrijd af en bewaar hem, dan telt hij hier mee.',
+	record: (matches: number, won: number, drew: number, lost: number) =>
+		`${matches} ${matches === 1 ? 'wedstrijd' : 'wedstrijden'} · ${won}W ${drew}G ${lost}V`,
+	goals: (forGoals: number, against: number, minutes: number) =>
+		`${forGoals} voor, ${against} tegen · ${minutes} minuten voetbal`,
+	scorersHeading: 'Topscorers',
+	scorersHint: 'Alleen doelpunten waarvan je de maker aantikte. De rest telt gewoon mee in de uitslag.'
+} as const;
+
+/** Het spelersoverzicht: alles wat je van iedereen weet, op een rij. */
+const players = {
+	title: 'Spelers',
+	heading: 'Spelers',
+	empty: 'Nog geen selectie. Zet je namen erin bij Team.',
+	hint: (matches: number, sessions: number) =>
+		`Alles bij elkaar: gespeelde minuten over ${matches} ${matches === 1 ? 'bewaarde wedstrijd' : 'bewaarde wedstrijden'}, en hoe vaak ze op de training waren (${sessions} ${sessions === 1 ? 'training' : 'trainingen'}).`,
+	sortLabel: 'Sorteer op',
+	sortByMinutes: 'Speeltijd',
+	sortByAttendance: 'Presentie',
+	sortByGoals: 'Doelpunten',
+	sortByName: 'Naam',
+	noLine: 'geen linie',
+	matchesAverage: (matches: number, average: number) =>
+		`${matches} ${matches === 1 ? 'wedstrijd' : 'wedstrijden'} · gem. ${average} min`,
+	keeperMinutes: (minutes: number) => `${minutes} min in het doel`,
+	scored: (n: number) => `${n}× gescoord`,
+	assists: (n: number) => `${n} ${n === 1 ? 'assist' : 'assists'}`,
+	minutes: (n: number) => `${n} min`,
+	noSessions: 'geen training',
+	attendance: (pct: number, came: number, total: number) => `${pct}% · ${came}/${total}`
+} as const;
+
 export const text = {
 	common,
 	attendance,
@@ -276,5 +350,8 @@ export const text = {
 	match,
 	shell,
 	errorPage,
-	home
+	home,
+	archivedMatch,
+	season,
+	players
 } as const;

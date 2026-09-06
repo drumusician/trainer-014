@@ -3,8 +3,9 @@
 	import { percentage, sorteer, spelersOverzicht, type Sortering } from '$lib/domain/players';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
+	import { text } from '$lib/text/nl';
 
-	$effect(() => zetKop('Spelers', '/app/team', 'Terug'));
+	$effect(() => zetKop(text.players.title, '/app/team', text.common.back));
 
 	let hoe = $state<Sortering>('minuten');
 
@@ -13,28 +14,25 @@
 	const langst = $derived(Math.max(1, ...rijen.map((r) => r.seconds)));
 
 	const KNOPPEN: { hoe: Sortering; name: string }[] = [
-		{ hoe: 'minuten', name: 'Speeltijd' },
-		{ hoe: 'presentie', name: 'Presentie' },
-		{ hoe: 'doelpunten', name: 'Doelpunten' },
-		{ hoe: 'naam', name: 'Naam' }
+		{ hoe: 'minuten', name: text.players.sortByMinutes },
+		{ hoe: 'presentie', name: text.players.sortByAttendance },
+		{ hoe: 'doelpunten', name: text.players.sortByGoals },
+		{ hoe: 'naam', name: text.players.sortByName }
 	];
 </script>
 
 <main>
 	<div class="pad">
 		{#if !t.players.length}
-			<h2>Spelers</h2>
-			<p class="uitleg">Nog geen selectie. Zet je namen erin bij Team.</p>
+			<h2>{text.players.heading}</h2>
+			<p class="uitleg">{text.players.empty}</p>
 		{:else}
-			<h2>Spelers</h2>
+			<h2>{text.players.heading}</h2>
 			<p class="uitleg">
-				Alles bij elkaar: gespeelde minuten over {t.archive.length}
-				{t.archive.length === 1 ? 'bewaarde wedstrijd' : 'bewaarde wedstrijden'}, en hoe vaak ze op de training waren ({t
-					.trainings.length}
-				{t.trainings.length === 1 ? 'training' : 'trainingen'}).
+				{text.players.hint(t.archive.length, t.trainings.length)}
 			</p>
 			<div class="sorteerrij">
-				<span>Sorteer op</span>
+				<span>{text.players.sortLabel}</span>
 				<div class="keuze sorteer">
 					{#each KNOPPEN as k (k.hoe)}
 						<button class:aan={hoe === k.hoe} onclick={() => (hoe = k.hoe)}>{k.name}</button>
@@ -50,23 +48,24 @@
 							<td>
 								{r.name}
 								<span class="sub">
-									{[r.canKeep ? 'K' : '', r.line].filter(Boolean).join('·') || 'geen linie'}
+									{[r.canKeep ? 'K' : '', r.line].filter(Boolean).join('·') || text.players.noLine}
 									{#if r.matches}
-										· {r.matches}
-										{r.matches === 1 ? 'wedstrijd' : 'wedstrijden'} · gem. {Math.round(r.seconds / 60 / r.matches)} min
+										· {text.players.matchesAverage(r.matches, Math.round(r.seconds / 60 / r.matches))}
 									{/if}
-									{#if r.keeperSeconds}· {Math.round(r.keeperSeconds / 60)} min in het doel{/if}
-									{#if r.goals}· <b>{r.goals}× gescoord</b>{/if}
-									{#if r.assists}· <b>{r.assists} {r.assists === 1 ? 'assist' : 'assists'}</b>{/if}
+									{#if r.keeperSeconds}· {text.players.keeperMinutes(Math.round(r.keeperSeconds / 60))}{/if}
+									{#if r.goals}· <b>{text.players.scored(r.goals)}</b>{/if}
+									{#if r.assists}· <b>{text.players.assists(r.assists)}</b>{/if}
 								</span>
 							</td>
 							<td class="balk">
 								<div class="staaf"><i style="width: {Math.round((r.seconds / langst) * 100)}%"></i></div>
 							</td>
 							<td class="m">
-								{Math.round(r.seconds / 60)} min
+								{text.players.minutes(Math.round(r.seconds / 60))}
 								<span class="sub" class:mager={thinAttendance(r.recent)}>
-									{#if pct === null}geen training{:else}{pct}% · {r.attendance.er}/{r.attendance.totaal}{/if}
+									{pct === null
+										? text.players.noSessions
+										: text.players.attendance(pct, r.attendance.er, r.attendance.totaal)}
 								</span>
 							</td>
 						</tr>
