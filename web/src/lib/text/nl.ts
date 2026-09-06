@@ -72,7 +72,56 @@ const attendance = {
 	onToLineup: 'Verder naar de opstelling'
 } as const;
 
+/** Na de wedstrijd: uitslag, speeltijd, verloop en het verslag. */
+const afterMatch = {
+	title: 'Uitslag',
+	toStart: 'Naar start',
+	noMatch: 'Nog geen wedstrijd.',
+	resultHeading: 'Uitslag',
+	details: (date: string, played: string, formation: string) => `${date} · ${played} gespeeld · ${formation}`,
+	playingTimeHeading: 'Speeltijd',
+	timelineHeading: 'Verloop',
+	noteHeading: 'Hoe ging het',
+	noteHint: 'Een paar regels voor jezelf of voor de groepsapp. Gaat mee in het verslag.',
+	notePlaceholder: 'Sterk begin, na rust weggezakt. Achterin stond het goed.',
+	shareHeading: 'Delen',
+	shareHint: 'Voor de groepsapp. De wissels laat ik er standaard uit.',
+	archived: 'Bewaard in archief',
+	archive: 'Bewaren in archief',
+	newMatch: 'Nieuwe wedstrijd'
+} as const;
+
+/** Trainingen: de lijst, en één avond in detail. */
+const trainings = {
+	title: 'Trainingen',
+	heading: 'Trainingen',
+	noSquad: 'Zet eerst je selectie erin, dan kun je afvinken wie er was.',
+	none: 'Nog geen trainingen. Maak er een aan; iedereen staat dan op aanwezig en je tikt alleen wie er niet is.',
+	hint: 'Tik een training aan om hem bij te werken. De datum kun je daar aanpassen, dus een gemiste week vul je later gewoon in.',
+	/* Alleen noemen wat er is: nul afgemeld hoeft niet in de regel te staan. */
+	summary: (present: number, excused: number, absent: number) =>
+		`${present} aanwezig` + (excused ? `, ${excused} afgemeld` : '') + (absent ? `, ${absent} niet gekomen` : ''),
+	create: 'Nieuwe training',
+
+	thinHeading: 'Weinig geweest',
+	thinHint: 'Over de laatste vier trainingen. Je ziet het ook terug als je je opstelling maakt.',
+
+	gone: 'Deze training staat er niet meer.',
+	oneTitle: (date: string) => `Training ${date}`,
+	oneHeading: 'Training',
+	dateLabel: 'Datum',
+	present: (n: number) => `${n} aanwezig`,
+	excused: (n: number) => `${n} afgemeld`,
+	absent: (n: number) => `${n} niet gekomen`,
+	cycleHint: 'Tik op de knop achter een naam om hem langs aanwezig, afgemeld en niet gekomen te zetten.',
+	/* De drie standen op de knop zelf. */
+	statusWord: { present: 'Aanwezig', excused: 'Afgemeld', absent: 'Niet gekomen' },
+	remove: 'Verwijderen'
+} as const;
+
 export const text = {
 	common,
-	attendance
+	attendance,
+	afterMatch,
+	trainings
 } as const;

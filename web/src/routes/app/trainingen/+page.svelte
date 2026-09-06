@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { text } from '$lib/text/nl';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
 	import { shortDate } from '$lib/domain/dates';
 	import { thinAttendance, attendanceOf } from '$lib/domain/attendance';
 	import type { Training } from '$lib/domain/types';
 
-	$effect(() => zetKop('Trainingen'));
+	$effect(() => zetKop(text.trainings.title));
 
 	const trainings = $derived(app.toestand.trainings);
 	const mageren = $derived(
@@ -33,29 +34,20 @@
 
 <main>
 	<div class="pad">
-		<h2>Trainingen</h2>
+		<h2>{text.trainings.heading}</h2>
 		{#if !app.toestand.players.length}
-			<p class="uitleg">Zet eerst je selectie erin, dan kun je afvinken wie er was.</p>
+			<p class="uitleg">{text.trainings.noSquad}</p>
 		{:else if !trainings.length}
-			<p class="uitleg">
-				Nog geen trainingen. Maak er een aan; iedereen staat dan op aanwezig en je tikt alleen wie er niet is.
-			</p>
+			<p class="uitleg">{text.trainings.none}</p>
 		{:else}
-			<p class="uitleg">
-				Tik een training aan om hem bij te werken. De datum kun je daar aanpassen, dus een gemiste week vul je later
-				gewoon in.
-			</p>
+			<p class="uitleg">{text.trainings.hint}</p>
 			<ul class="log">
 				{#each trainings as t (t.id)}
 					{@const w = telling(t)}
 					<li class="klikbaar">
 						<a href="/app/trainingen/{t.id}">
 							<b>{shortDate(t.date)}</b>
-							<span>
-								{w.present} aanwezig{w.excused ? ', ' + w.excused + ' afgemeld' : ''}{w.absent
-									? ', ' + w.absent + ' niet gekomen'
-									: ''}
-							</span>
+							<span>{text.trainings.summary(w.present, w.excused, w.absent)}</span>
 							<em>›</em>
 						</a>
 					</li>
@@ -63,12 +55,12 @@
 			</ul>
 		{/if}
 		<div class="knoprij" style="padding-left: 0; margin-top: 12px">
-			<button class="prim" onclick={nieuw}>Nieuwe training</button>
+			<button class="prim" onclick={nieuw}>{text.trainings.create}</button>
 		</div>
 
 		{#if mageren.length}
-			<h2>Weinig geweest</h2>
-			<p class="uitleg">Over de laatste vier trainingen. Je ziet het ook terug als je je opstelling maakt.</p>
+			<h2>{text.trainings.thinHeading}</h2>
+			<p class="uitleg">{text.trainings.thinHint}</p>
 			<table class="uitslag">
 				<tbody>
 					{#each mageren as p (p.id)}

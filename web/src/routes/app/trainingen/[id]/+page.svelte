@@ -4,13 +4,17 @@
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
 	import { shortDate } from '$lib/domain/dates';
-	import type { Attendance } from '$lib/domain/types';
-
-	const WOORD: Record<Attendance, string> = { present: 'Aanwezig', excused: 'Afgemeld', absent: 'Niet gekomen' };
+	import { text } from '$lib/text/nl';
 
 	const t = $derived(app.trainingById(page.params.id));
 
-	$effect(() => zetKop(t ? 'Training ' + shortDate(t.date) : 'Training', '/app/trainingen', 'Terug'));
+	$effect(() =>
+		zetKop(
+			t ? text.trainings.oneTitle(shortDate(t.date)) : text.trainings.oneHeading,
+			'/app/trainingen',
+			text.common.back
+		)
+	);
 
 	const telling = $derived.by(() => {
 		const w = { present: 0, excused: 0, absent: 0 };
@@ -35,32 +39,35 @@
 <main>
 	<div class="pad">
 		{#if !t}
-			<p class="uitleg">Deze training staat er niet meer.</p>
-			<div class="knoprij" style="padding-left: 0"><a class="knop prim" href="/app/trainingen">Terug</a></div>
+			<p class="uitleg">{text.trainings.gone}</p>
+			<div class="knoprij" style="padding-left: 0">
+				<a class="knop prim" href="/app/trainingen">{text.common.back}</a>
+			</div>
 		{:else}
-			<h2>Training</h2>
+			<h2>{text.trainings.oneHeading}</h2>
 			<label class="vak">
-				Datum
+				{text.trainings.dateLabel}
 				<input type="date" value={t.date} onchange={(e) => app.setTrainingDate(t, e.currentTarget.value)} />
 			</label>
 			<p class="telling">
-				<span>{telling.present} aanwezig</span><span>{telling.excused} afgemeld</span><span
-					>{telling.absent} niet gekomen</span
-				>
+				<span>{text.trainings.present(telling.present)}</span><span>{text.trainings.excused(telling.excused)}</span
+				><span>{text.trainings.absent(telling.absent)}</span>
 			</p>
-			<p class="uitleg">Tik op de knop achter een naam om hem langs aanwezig, afgemeld en niet gekomen te zetten.</p>
+			<p class="uitleg">{text.trainings.cycleHint}</p>
 
 			{#each app.toestand.players as p (p.id)}
 				{@const st = t.status[p.id] ?? 'present'}
 				<div class="sregel">
 					<span class="naam">{p.name}</span>
-					<button class="presknop {st}" onclick={() => app.cycleAttendance(t, p.id)}>{WOORD[st]}</button>
+					<button class="presknop {st}" onclick={() => app.cycleAttendance(t, p.id)}
+						>{text.trainings.statusWord[st]}</button
+					>
 				</div>
 			{/each}
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
-				<a class="knop prim" href="/app/trainingen">Klaar</a>
-				<button class="uit" onclick={verwijder}>Verwijderen</button>
+				<a class="knop prim" href="/app/trainingen">{text.common.done}</a>
+				<button class="uit" onclick={verwijder}>{text.trainings.remove}</button>
 			</div>
 		{/if}
 	</div>
