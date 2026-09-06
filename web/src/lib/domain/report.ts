@@ -3,7 +3,7 @@ import type { ArchivedMatch, MatchEvent, Player, Match } from './types';
 import { endTime, score } from './time';
 import { partName, breakName } from './parts';
 
-/** Alles wat je nodig hebt om een wedstrijd terug te lezen, live of uit het archief. */
+/** Everything you need to read a match back, live or from the archive. */
 export interface ReportSource {
 	date: string;
 	opponent: string;
@@ -49,7 +49,7 @@ export function bronVanArchief(a: ArchivedMatch): ReportSource {
 	};
 }
 
-/** De naam van nu; valt terug op de naam zoals hij bij het bewaren was. */
+/** The current name; falls back to the name as it was when archived. */
 export function nameOf(id: string | null | undefined, players: Player[], names?: Record<string, string>): string {
 	if (!id) return 'onbekend';
 	return players.find((p) => p.id === id)?.name ?? names?.[id] ?? 'onbekend';
@@ -63,7 +63,7 @@ export function eventText(
 	formation?: string
 ): string {
 	const name = (id?: string | null) => nameOf(id, players, names);
-	/* Zonder formatie weten we de leesbare naam niet; dan maar de plek zelf. */
+	/* Without a formation we cannot know the readable name; then the raw position. */
 	const position = (id?: string | null) => (id ? (formation ? positionLabel(id, formation) : id) : '');
 	switch (g.type) {
 		case 'start':
@@ -81,8 +81,8 @@ export function eventText(
 		case 'substitution':
 			return name(g.on) + ' voor ' + name(g.off) + (g.position ? ' op ' + position(g.position) : '');
 		case 'swap':
-			/* Waar ze naartoe gingen zegt meer dan dat ze wisselden. Oudere
-			   wedstrijden legden alleen de plekken vast, niet wie er stonden. */
+			/* Where they went says more than that they swapped. Older matches recorded
+			   only the positions, not who stood there. */
 			if (g.playerA && g.playerB && g.positionA && g.positionB) {
 				return (
 					name(g.playerA) + ' naar ' + position(g.positionB) + ', ' + name(g.playerB) + ' naar ' + position(g.positionA)

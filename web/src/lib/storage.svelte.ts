@@ -1,15 +1,15 @@
 /**
- * Browsers ruimen opslag op bij plaatsgebrek of lange inactiviteit. Een trainer
- * die in de winterstop zes weken niet opent en dan zijn seizoen kwijt is: dat is
- * het ergste wat deze app kan doen.
+ * Browsers clear storage when space runs short or after long inactivity. A coach
+ * who does not open the app for six weeks over the winter break and then loses
+ * his season: that is the worst thing this app can do.
  *
- * We vragen de browser daarom om de opslag te beschermen. Geen garantie — de
- * browser beslist, en niet elke browser kent dit — maar het kost niets en het
- * scheelt op Chrome en Edge echt iets. Op iOS is een app op je beginscherm
- * sowieso beter af dan een tabblad.
+ * So we ask the browser to protect the storage. No guarantee — the browser
+ * decides, and not every browser knows this — but it costs nothing and genuinely
+ * helps on Chrome and Edge. On iOS an app on the home screen is better off than
+ * a tab either way.
  */
 export const opslagstand = $state({
-	/** null = nog niet gevraagd of niet ondersteund */
+	/** null = not asked yet, or not supported */
 	blijvend: null as boolean | null,
 	ondersteund: false
 });

@@ -1,15 +1,15 @@
-/* De vorm van alles wat de app onthoudt. Deze namen komen letterlijk uit de
-   oude versie, zodat wat er op je telefoon staat gewoon blijft werken. */
+/* The shape of everything the app remembers. Anything stored under the older
+   Dutch field names is converted on the way in; see migrate-storage.ts. */
 
 export type Line = 'K' | 'V' | 'M' | 'A' | '';
-/** Een veldlinie: K staat er los van, want keepen kan naast je gewone plek. */
+/** A field line: K sits apart, because keeping comes on top of your usual position. */
 export type FieldLine = 'V' | 'M' | 'A' | '';
 
 export interface Player {
 	id: string;
 	name: string;
 	line: FieldLine;
-	/** Kan keepen. Los van de veldlinie. */
+	/** Can keep. Separate from the field line. */
 	keeper?: boolean;
 }
 
@@ -17,25 +17,25 @@ export type MatchEventType = 'start' | 'break' | 'end' | 'goal' | 'conceded' | '
 
 export interface MatchEvent {
 	type: MatchEventType;
-	/** seconden na de aftrap */
+	/** seconds after kick-off */
 	t: number;
-	/** bij een doelpunt: wie hem maakte, of null als je het niet weet */
+	/** on a goal: who scored it, or null when you do not know */
 	player?: string | null;
-	/** bij een doelpunt: wie hem klaarlegde. Overslaan mag. */
+	/** on a goal: who set it up. May be skipped. */
 	assist?: string | null;
 	off?: string;
 	on?: string;
 	position?: string;
-	/** bij een ruil: de twee plekken die van speler wisselen, en wie er stonden */
+	/** on a swap: the two positions exchanging players, and who stood there */
 	positionA?: string;
 	positionB?: string;
 	playerA?: string | null;
 	playerB?: string | null;
-	/** bij een pauze: welk deel er net afgelopen is */
+	/** on a break: which part has just ended */
 	part?: number;
 }
 
-/** Een opstelling: plek-id uit de formatie -> speler-id. */
+/** A lineup: position id from the formation -> player id. */
 export type Lineup = Record<string, string | null>;
 
 export interface Match {
@@ -46,22 +46,22 @@ export interface Match {
 	lineup: Lineup;
 	bench: string[];
 	events: MatchEvent[];
-	/** seconden die al gelopen hebben, exclusief de lopende periode */
+	/** seconds already run, excluding the period currently running */
 	elapsed: number;
-	/** tijdstip waarop de klok voor het laatst is gestart, in ms */
+	/** when the clock was last started, in ms */
 	since: number | null;
 	running: boolean;
-	/** in hoeveel delen je speelt: 2 helften of 4 kwarten */
+	/** how many parts you play: 2 halves or 4 quarters */
 	parts: 2 | 4;
-	/** het deel waar je nu in zit, 1 tot en met `delen` */
+	/** the part you are in now, 1 through `parts` */
 	part: number;
-	/** tussen twee delen in: de klok staat stil en het volgende moet nog beginnen */
+	/** between two parts: the clock is stopped and the next has yet to begin */
 	inBreak: boolean;
 	finished: boolean;
-	/** hoe het ging, in je eigen woorden */
+	/** how it went, in your own words */
 	note?: string;
 	archived?: boolean;
-	/** wie er vandaag niet is; die staan niet op de bank en tellen niet mee */
+	/** who is not there today; they are off the bench and do not count */
 	absent?: string[];
 }
 
@@ -75,9 +75,9 @@ export interface PlayingTimeRow {
 	id?: string;
 	name: string;
 	seconds: number;
-	/** waarvan in het doel */
+	/** of which in goal */
 	keeper?: number;
-	/** seconden per plek uit de formatie, bijvoorbeeld { K: 2100, LV: 2100 } */
+	/** seconds per formation position, for example { K: 2100, LV: 2100 } */
 	positions?: Record<string, number>;
 }
 
@@ -88,15 +88,15 @@ export interface ArchivedMatch {
 	score: [number, number];
 	formation: string;
 	duration: number;
-	/** hoe je team heette toen je bewaarde */
+	/** what your team was called when you archived it */
 	teamName?: string;
 	parts?: 2 | 4;
 	note?: string;
 	events: MatchEvent[];
-	/** de namen zoals ze waren toen je bewaarde */
+	/** the names as they were when you archived it */
 	names?: Record<string, string>;
-	/** wie er die dag niet was. Zonder dit kun je nul minuten niet uit elkaar
-	    houden: was hij er niet, of stond hij de hele wedstrijd op de bank? */
+	/** who was not there that day. Without this you cannot tell two kinds of zero
+	    apart: was he absent, or on the bench all match? */
 	absent?: string[];
 	playingTime: PlayingTimeRow[];
 	/**

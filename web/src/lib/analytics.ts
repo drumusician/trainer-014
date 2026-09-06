@@ -1,14 +1,13 @@
 /**
- * Bezoek aan de landingspagina meten, en verder niets.
+ * Measure visits to the landing page, and nothing else.
  *
- * In de app zelf meten we niet. Op blaadje.app staat dat er zolang jij dat niet
- * wilt niets naar een server gaat, en dat moet waar blijven. Een marketingpagina
- * is iets anders dan de app waarin de namen van kinderen staan.
+ * We do not measure inside the app itself. blaadje.app promises that nothing goes
+ * to a server unless you want it to, and that has to stay true. A marketing page
+ * is a different thing from the app that holds children's names.
  *
- * Het script wordt daarom alleen op de landingspagina geladen. En de knoppen
- * naar de app doen een volledige paginawissel in plaats van een sprong binnen de
- * app, zodat het script weg is voordat /app in beeld komt. Dat scheelt vertrouwen
- * op instellingen van Plausible die ik niet kan controleren.
+ * So the script is loaded on the landing page only. And the buttons to the app do
+ * a full page load rather than a jump within the app, so the script is gone before
+ * /app appears. That saves relying on Plausible settings I cannot verify.
  */
 const DOMEIN = 'blaadje.app';
 const SCRIPT = 'https://plausible.io/js/pa-b3boY7ioSqozXuznm2eGT.js';
@@ -17,9 +16,9 @@ export function startMeten(): () => void {
 	if (typeof window === 'undefined' || location.hostname !== DOMEIN) return () => {};
 	if (document.querySelector(`script[src="${SCRIPT}"]`)) return () => {};
 
-	/* Letterlijk de stub van Plausible zelf. Belangrijk: init bewaart de opties in
-	   plausible.o. Het script leest die na het laden, en start zonder die waarde
-	   niet. Een init die niets doet ziet er onschuldig uit en meet niets. */
+	/* Literally Plausible's own stub. Important: init stores the options in
+	   plausible.o. The script reads that after loading, and without it never
+	   starts. An init that does nothing looks harmless and measures nothing. */
 	window.plausible =
 		window.plausible ||
 		function (...args: unknown[]) {
@@ -40,7 +39,7 @@ export function startMeten(): () => void {
 	return () => script.remove();
 }
 
-/** Eén gebeurtenis melden, als er gemeten wordt. */
+/** Report a single event, if measuring is on. */
 export function meld(name: string) {
 	window.plausible?.(name);
 }

@@ -2,13 +2,13 @@ import { app } from '$lib/store.svelte';
 import { SUPABASE_SLEUTEL, SUPABASE_URL } from './config';
 
 const SESSIESLEUTEL = 'o14-sessie-v1';
-/* Op een telefoon ga je tussendoor naar je mail; dan kan de app opnieuw laden.
-   Daarom onthouden we voor wie we een code aanvroegen. */
+/* On a phone you switch to your mail in between, which can reload the app.
+   That is why we remember who we requested a code for. */
 const INLOGSLEUTEL = 'o14-inlog-v1';
 
 const storage = () => (typeof localStorage === 'undefined' ? null : localStorage);
 
-/** Goedkoop vingerafdrukje, om te zien of er echt iets veranderd is. */
+/** A cheap fingerprint, to see whether anything really changed. */
 function vingerafdruk(waarde: unknown): string {
 	const tekst = JSON.stringify(waarde);
 	let h = 5381;
@@ -19,14 +19,14 @@ function vingerafdruk(waarde: unknown): string {
 interface Sessie {
 	access_token: string;
 	refresh_token: string;
-	/** wanneer het token verloopt, in ms */
+	/** when the token expires, in ms */
 	verloopt: number;
 	user_id?: string | null;
 	email?: string | null;
 	teamId?: string | null;
 	versie?: number;
 	laatst?: string | null;
-	/** vingerafdruk van wat er als laatste goed is aangekomen */
+	/** fingerprint of what last arrived successfully */
 	afdruk?: string | null;
 }
 
@@ -65,16 +65,16 @@ class Sync {
 	sessie = $state<Sessie | null>(null);
 	message = $state('');
 	bezig = $state(false);
-	/** 'email' of 'code' */
+	/** 'email' or 'code' */
 	fase = $state<'email' | 'code'>('email');
 	email = $state('');
 
-	/* ---------- vanzelf bijwerken ---------- */
-	/** er staan wijzigingen klaar die de server nog niet heeft */
+	/* ---------- syncing by itself ---------- */
+	/** there are changes waiting that the server does not have yet */
 	vies = $state(false);
-	/** de server heeft iets nieuwers; dan beslist de trainer, niet de app */
+	/** the server has something newer; then the coach decides, not the app */
 	botsing = $state(false);
-	/** laatste poging mislukt (meestal: geen bereik) */
+	/** the last attempt failed (usually: no signal) */
 	hapert = $state(false);
 	private wachter: ReturnType<typeof setTimeout> | null = null;
 	private bezigMetDuwen = false;
@@ -149,14 +149,14 @@ class Sync {
 		this.bewaarInlogpoging(null);
 	}
 
-	/** Toch een ander adres proberen. */
+	/** Try a different address after all. */
 	opnieuw() {
 		this.fase = 'email';
 		this.message = '';
 		this.bewaarInlogpoging(null);
 	}
 
-	/** Het token is een uur geldig; op tijd vernieuwen scheelt opnieuw inloggen. */
+	/** The token lasts an hour; refreshing in time saves logging in again. */
 	private async token(): Promise<string | null> {
 		const s = this.sessie;
 		if (!s) return null;
@@ -175,7 +175,7 @@ class Sync {
 		}
 	}
 
-	/* ---------- inloggen ---------- */
+	/* ---------- signing in ---------- */
 	async stuurCode(email: string) {
 		if (!email.trim()) {
 			this.message = 'Vul je e-mailadres in.';
@@ -225,7 +225,7 @@ class Sync {
 		}
 	}
 
-	/** Terug uit de mail: de sleutels staan achter een # in het adres. */
+	/** Back from the mail: the keys sit behind a # in the address. */
 	async pakInlogUitLink() {
 		if (typeof location === 'undefined') return;
 		const h = location.hash ?? '';
@@ -253,7 +253,7 @@ class Sync {
 			this.sessie!.email = u.email;
 			this.save();
 		} catch {
-			/* dan vullen we het bij de eerste synchronisatie aan */
+			/* then we fill it in on the first sync */
 		}
 		this.message = 'Ingelogd via de link.';
 	}
@@ -345,7 +345,7 @@ class Sync {
 			)
 		)
 			return;
-		if (stil && this.vies) return; /* nooit over eigen werk heen */
+		if (stil && this.vies) return; /* never over your own work */
 		this.bezig = !stil;
 		if (!stil) this.message = 'Bezig met ophalen…';
 		try {
@@ -358,7 +358,7 @@ class Sync {
 			const rijen = (await sb('/rest/v1/team_toestand?select=data,versie&team_id=eq.' + team, {}, token)) as
 				{ data: ReturnType<typeof app.syncPayload>; versie: number }[] | null;
 			if (!rijen?.length) {
-				/* nog niets op de server: dan is wat hier staat het begin */
+				/* nothing on the server yet: then what is here is the beginning */
 				if (stil) {
 					this.vies = true;
 					await this.duwAlsNodig();
@@ -367,7 +367,7 @@ class Sync {
 				}
 				return;
 			}
-			if (stil && this.sessie.versie === rijen[0].versie) return; /* al gelijk */
+			if (stil && this.sessie.versie === rijen[0].versie) return; /* already in step */
 			if (!app.adoptSyncPayload(rijen[0].data)) {
 				this.message = 'Wat er staat kon ik niet lezen.';
 				return;
@@ -393,23 +393,23 @@ class Sync {
 	}
 
 	/* ==========================================================
-	   Vanzelf bijwerken
-	   Het toestel schrijft, de server bewaart. We sturen op zodra er iets
-	   veranderd is en er bereik is; we halen alleen op als er hier niets
-	   klaarstaat, anders zouden we je eigen werk overschrijven.
+	   Syncing by itself
+	   The device writes, the server keeps. We push as soon as something has
+	   changed and there is signal; we only pull when nothing is waiting here,
+	   otherwise we would overwrite your own work.
 	   ========================================================== */
 
-	/** Wordt na elke opslag geroepen. */
+	/** Called after every save. */
 	merkVies() {
 		if (!this.sessie) return;
 		const nu = vingerafdruk(app.syncPayload());
-		if (nu === this.sessie.afdruk) return; /* niets veranderd wat de server aangaat */
+		if (nu === this.sessie.afdruk) return; /* nothing changed that concerns the server */
 		this.vies = true;
 		this.plan();
 	}
 
-	/** Even wachten tot het rustig is; anders sturen we tijdens een wedstrijd
-	    bij elke tik iets op. */
+	/** Wait until things settle; otherwise we push on every single tap during a
+	    match. */
 	private plan(na = 4000) {
 		if (this.wachter) clearTimeout(this.wachter);
 		this.wachter = setTimeout(() => this.duwAlsNodig(), na);
@@ -429,7 +429,7 @@ class Sync {
 		}
 	}
 
-	/** Bij het openen van de app, en als je terugkomt uit een ander scherm. */
+	/** On opening the app, and when you come back from another screen. */
 	async kijkEven() {
 		if (!this.sessie) return;
 		if (this.vies) {
@@ -439,12 +439,12 @@ class Sync {
 		try {
 			await this.ophalen(true);
 		} catch {
-			/* geen bereik: dan later */
+			/* no signal: then later */
 		}
-		/* En dan nog kijken of wat hier staat wel gelijk is aan wat de server heeft.
-		   Tot nu toe merkten we dat alleen ná een wijziging, en dat is te laat als
-		   er iets bíj komt in wat we uitwisselen: dan is alles wat er al stond
-		   ineens nieuw, terwijl er niemand iets aanraakt. */
+		/* And then check whether what is here still matches what the server has. Up
+		   to now we only noticed that after a change, which is too late when
+		   something is added to what we exchange: then everything that was already
+		   there is suddenly new, while nobody touched a thing. */
 		this.merkVies();
 	}
 }

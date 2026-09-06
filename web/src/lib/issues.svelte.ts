@@ -1,23 +1,23 @@
 /**
- * Een klein logboekje van wat er misging, op dit toestel.
+ * A small log of what went wrong, on this device.
  *
- * De app slikt op een paar plekken bewust fouten in: een volle opslag mag de
- * klok niet stoppen en een haperend netwerk mag geen wedstrijd onderbreken. Maar
- * daardoor kon je achteraf niet weten dát er iets was, en ik kon het niet
- * nakijken. Dit noteert het, en verder niets.
+ * In a few places the app deliberately swallows errors: a full disk must not stop
+ * the clock, and a flaky network must not interrupt a match. But that meant you
+ * could not know afterwards that anything had happened, and neither could I. This
+ * writes it down, and nothing else.
  *
- * Blijft op het toestel. Er gaat niets naar een server — dat is de belofte op de
- * landingspagina, en die geldt ook voor foutmeldingen.
+ * It stays on the device. Nothing goes to a server — that is the promise on the
+ * landing page, and it holds for error messages too.
  */
 const SLEUTEL = 'o14-problemen-v1';
 const MAX = 20;
 
 export interface Issue {
-	/** wanneer, als ISO-tekst zodat het in de opslag leesbaar blijft */
+	/** when, as ISO text so it stays readable in storage */
 	when: string;
-	/** wat er misging, in gewone taal */
+	/** what went wrong, in plain language */
 	what: string;
-	/** de technische melding, voor als ik moet zoeken */
+	/** the technical message, for when someone has to go looking */
 	message?: string;
 }
 
@@ -35,7 +35,7 @@ function lees(): Issue[] {
 
 export const issues = $state<{ lijst: Issue[]; savingFails: boolean }>({
 	lijst: [],
-	/** Losse vlag: als opslaan niet lukt is alles wat je daarna doet weg. */
+	/** Separate flag: if saving fails, everything you do afterwards is lost. */
 	savingFails: false
 });
 
@@ -44,18 +44,18 @@ export function loadIssues() {
 }
 
 /**
- * Iets noteren. Mag nooit zelf stukgaan: dit wordt aangeroepen vanuit een catch,
- * en een logboek dat de app laat vallen is erger dan geen logboek.
+ * Record something. Must never break itself: this is called from inside a catch,
+ * and a log that brings the app down is worse than no log at all.
  */
 export function reportIssue(what: string, fout?: unknown) {
 	try {
 		const message = fout instanceof Error ? fout.message : fout ? String(fout) : undefined;
-		/* eslint-disable-next-line svelte/prefer-svelte-reactivity -- meteen omgezet naar tekst, niet bewaard */
+		/* eslint-disable-next-line svelte/prefer-svelte-reactivity -- turned into text at once, never held */
 		const when = new Date().toISOString();
 		issues.lijst = [{ when, what, message }, ...issues.lijst].slice(0, MAX);
 		storage()?.setItem(SLEUTEL, JSON.stringify(issues.lijst));
 	} catch {
-		/* Dan houdt het op. Hier niets meer proberen. */
+		/* Then that is that. Do not try anything further here. */
 	}
 }
 
@@ -64,6 +64,6 @@ export function clearIssues() {
 	try {
 		storage()?.removeItem(SLEUTEL);
 	} catch {
-		/* stil */
+		/* quiet */
 	}
 }

@@ -23,10 +23,10 @@ import * as trainings from './actions/trainings';
 
 const SLEUTEL = 'o14-app-v1';
 
-/** Draaien we ergens met opslag? Op de server niet, in een test wel. */
+/** Are we somewhere with storage? Not on the server, yes in a test. */
 const storage = () => (typeof localStorage === 'undefined' ? null : localStorage);
 
-/** Oude opslag: 'K' was een linie. Nu staat keepen daarnaast. */
+/** Older storage: 'K' used to be a line. Keeping now sits alongside it. */
 function migrate(t: State): State {
 	t.players.forEach((p) => {
 		if ((p.line as string) === 'K') {
@@ -39,17 +39,17 @@ function migrate(t: State): State {
 	if (!t.teamName?.trim()) t.teamName = 'Ons team';
 	const w = t.match as (Match & { helft?: number }) | null;
 	if (w && w.part === undefined) {
-		/* van vroeger: toen waren het altijd twee helften */
+		/* from the old days: back then it was always two halves */
 		w.parts = 2;
 		w.part = w.helft === 2 ? 2 : 1;
 		w.inBreak = false;
 	}
 	t.trainings.forEach((tr, i) => {
-		if (!tr.id) tr.id = 't' + (tr.date ?? 'onbekend') + '-' + i; /* van voor de id's */
+		if (!tr.id) tr.id = 't' + (tr.date ?? 'onbekend') + '-' + i; /* from before ids existed */
 	});
 	if (!Array.isArray(t.archive)) t.archive = [];
-	/* Wedstrijden van voor die fix: wel gebeurtenissen, geen start. Zonder die
-	   gebeurtenis denkt de app dat er nog niet is afgetrapt. */
+	/* Matches from before that fix: events but no start. Without that event the
+	   app believes kick-off has not happened yet. */
 	if (w && w.events?.length && !w.events.some((g) => g.type === 'start')) {
 		w.events.unshift({ type: 'start', t: 0 });
 	}
@@ -58,11 +58,11 @@ function migrate(t: State): State {
 
 class App {
 	toestand = $state<State>(emptyState());
-	/** loopt mee met de klok, zodat schermen vanzelf bijwerken */
+	/** ticks along with the clock, so screens update by themselves */
 	nu = $state(Date.now());
-	/** de plek die je hebt aangetikt om te wisselen */
+	/** the position you tapped in order to substitute */
 	chosenPosition = $state<string | null>(null);
-	/** wordt na elke opslag geroepen, zodat de synchronisatie het weet */
+	/** called after every save, so syncing knows about it */
 	afterSave: (() => void) | null = null;
 
 	load() {
@@ -71,25 +71,25 @@ class App {
 		try {
 			const ruw = bak.getItem(SLEUTEL);
 			if (!ruw) return;
-			/* Eerst het oude formaat omzetten: de veldnamen waren Nederlands en
-			   staan nog zo in de opslag van iedereen die de app al gebruikte. */
+			/* Convert the old format first: the field names were Dutch and are still
+			   stored that way for everyone who already used the app. */
 			const d = migrateStorage(JSON.parse(ruw)) as Partial<State>;
 			if (d && Array.isArray(d.players)) {
 				this.toestand = migrate({ ...emptyState(), ...d });
-				this.save(); /* wat de migratie erbij zette, meteen vastleggen */
+				this.save(); /* record whatever the migration added, straight away */
 			}
 		} catch (fout) {
 			/*
-			 * Liever een lege app dan een stukke — maar niet stilletjes. Zonder
-			 * melding lijkt dit op alles kwijt zijn, zonder uitleg en zonder weg
-			 * terug. We zetten het onleesbare opzij en noteren het, zodat er iets
-			 * te redden valt in plaats van niets.
+			 * An empty app beats a broken one — but not silently. Without a notice
+			 * this looks like losing everything, with no explanation and no way
+			 * back. We set the unreadable data aside and record it, so there is
+			 * something to salvage instead of nothing.
 			 */
 			try {
 				const ruw = bak.getItem(SLEUTEL);
 				if (ruw) bak.setItem(SLEUTEL + '-onleesbaar', ruw);
 			} catch {
-				/* dan niet */
+				/* then not */
 			}
 			reportIssue('De opgeslagen gegevens waren niet te lezen. Wat erin stond is apart gezet.', fout);
 		}
@@ -103,9 +103,9 @@ class App {
 			issues.savingFails = false;
 		} catch (fout) {
 			/*
-			 * Een volle opslag mag de wedstrijd niet stoppen, dus we gaan door. Maar
-			 * stil blijven mag hier niet: vanaf nu is alles wat je doet weg zodra je
-			 * de app sluit. Daarom een vlag die het scherm laat waarschuwen.
+			 * A full disk must not stop the match, so we carry on. But staying quiet
+			 * is not allowed here: from now on everything you do is gone the moment
+			 * you close the app. Hence a flag that makes the screen warn you.
 			 */
 			if (!issues.savingFails) reportIssue('Opslaan lukte niet. Nieuwe wijzigingen worden niet bewaard.', fout);
 			issues.savingFails = true;
@@ -113,7 +113,7 @@ class App {
 		this.afterSave?.();
 	}
 
-	/* ---------- selectie ---------- */
+	/* ---------- squad ---------- */
 	playerById(id: string | null | undefined): Player | undefined {
 		return selectie.playerById(this.toestand, id);
 	}
@@ -143,12 +143,12 @@ class App {
 		this.save();
 	}
 
-	/* ---------- wedstrijd ---------- */
+	/* ---------- match ---------- */
 	get match(): Match | null {
 		return this.toestand.match;
 	}
 
-	/** Is er afgetrapt? Pas dan ligt de opstelling vast en gaat de klok tellen. */
+	/** Has it kicked off? Only then is the lineup fixed and does the clock count. */
 	get kickedOff(): boolean {
 		return klok.kickedOff(this.toestand.match);
 	}
@@ -174,7 +174,7 @@ class App {
 		if (match.setAbsent(this.toestand, spelerId, absent)) this.save();
 	}
 
-	/** De klok rechtstreeks op een minuut zetten, voor als je achteraf invoert. */
+	/** Set the clock straight to a minute, for entering a match afterwards. */
 	setClock(minuten: number) {
 		if (!klok.zetOp(this.toestand.match, Date.now(), minuten)) return;
 		this.nu = Date.now();
@@ -187,7 +187,7 @@ class App {
 		this.save();
 	}
 
-	/** Een proefwedstrijd of een misser weggooien. */
+	/** Discard a practice match or a mistake. */
 	discardMatch() {
 		this.toestand.match = null;
 		this.chosenPosition = null;
@@ -210,7 +210,7 @@ class App {
 		this.save();
 	}
 
-	/** Kan er nog een deel bij, of is dit het laatste? */
+	/** Is there another part to come, or is this the last one? */
 	get canStartNextPart(): boolean {
 		return klok.canStartNextPart(this.toestand.match);
 	}
@@ -245,7 +245,7 @@ class App {
 		if (archive.setNote(this.toestand, i, tekst)) this.save();
 	}
 
-	/** Iemand van de bank op de gekozen plek zetten. Tijdens een wedstrijd is dat een wissel. */
+	/** Put someone from the bench into the chosen position. During a match that is a substitution. */
 	putOnPosition(spelerId: string) {
 		if (!this.chosenPosition) return;
 		events.putOnPosition(this.toestand.match, this.nu, this.chosenPosition, spelerId);
@@ -300,7 +300,7 @@ class App {
 		this.save();
 	}
 
-	/* ---------- een bewaarde wedstrijd bijwerken ---------- */
+	/* ---------- amending an archived match ---------- */
 	updateArchived(i: number, velden: Partial<Pick<ArchivedMatch, 'date' | 'opponent' | 'home'>>) {
 		if (archive.wijzig(this.toestand, i, velden)) this.save();
 	}
@@ -313,7 +313,7 @@ class App {
 		if (archive.addGoal(this.toestand, i, minuut, spelerId, tegen)) this.save();
 	}
 
-	/* ---------- standaardopstelling ---------- */
+	/* ---------- default lineup ---------- */
 	ensureDefaultLineup() {
 		const st = opstellen.ensureDefaultLineup(this.toestand);
 		this.save();
@@ -352,7 +352,7 @@ class App {
 		this.save();
 	}
 
-	/* ---------- trainingen ---------- */
+	/* ---------- training sessions ---------- */
 	newTraining(): Training {
 		const training = trainings.newTraining(this.toestand, new Date().toISOString().slice(0, 10));
 		this.save();
@@ -377,11 +377,10 @@ class App {
 		this.save();
 	}
 
-	/* ---------- overzetten ---------- */
+	/* ---------- transferring ---------- */
 	/**
-	 * Een pakket van een ander toestel overnemen. Alles wat erin staat vervangt
-	 * wat je had; wat er niet in staat blijft. Een lopende wedstrijd raakt het
-	 * nooit aan.
+	 * Adopt a package from another device. Everything in it replaces what you had;
+	 * what is not in it stays. It never touches a running match.
 	 */
 	adoptPackage(pakket: Partial<Omit<State, 'match'>>) {
 		const t = this.toestand;
@@ -397,16 +396,16 @@ class App {
 		this.save();
 	}
 
-	/** Alleen de voorbereiding en de geschiedenis; een lopende wedstrijd blijft lokaal. */
+	/** Preparation and history only; a running match stays on this device. */
 	/**
-	 * Wat er tussen je toestellen heen en weer gaat.
+	 * What travels back and forth between your devices.
 	 *
-	 * De wedstrijd gaat mee. Voor de aftrap is dat gewoon voorbereiding: je zet
-	 * thuis de opstelling en de afmeldingen klaar en pakt hem op het veld op je
-	 * telefoon op. Tijdens de wedstrijd is het een reservekopie, want een lege
-	 * accu is nu het enige wat je hele wedstrijd kan kosten. Wat níet gebeurt is
-	 * de andere kant op: een lopende wedstrijd wordt nooit overschreven door wat
-	 * er op de server staat. Zie neemSyncOver.
+	 * The match goes along. Before kick-off that is simply preparation: you set the
+	 * lineup and the absences at home and pick it up on your phone at the pitch.
+	 * During the match it is a backup, because a flat battery is now the only thing
+	 * that can cost you a whole match. What does not happen is the other direction:
+	 * a running match is never overwritten by what sits on the server. See
+	 * adoptSyncPayload.
 	 */
 	syncPayload() {
 		const t = this.toestand;
@@ -425,8 +424,8 @@ class App {
 	}
 
 	adoptSyncPayload(ruw: ReturnType<App['syncPayload']>): boolean {
-		/* Wat er op de server staat kan van een toestel komen dat nog niet is
-		   bijgewerkt, en dan zijn de veldnamen Nederlands. */
+		/* What sits on the server may come from a device that has not been updated
+		   yet, and then the field names are still Dutch. */
 		const d = migrateStorage(ruw) as ReturnType<App['syncPayload']>;
 		if (!d || !Array.isArray(d.players)) return false;
 		const t = this.toestand;
@@ -439,9 +438,9 @@ class App {
 		t.trainings = Array.isArray(d.trainings) ? d.trainings : [];
 		t.archive = Array.isArray(d.archive) ? d.archive : [];
 		t.reportSubs = !!d.reportSubs;
-		/* Een wedstrijd die hier loopt blijft staan. Een opstelling die je kwijtraakt
-		   maak je opnieuw; wissels die je kwijtraakt zijn weg, en die stonden nergens
-		   anders. Alleen wat niet begonnen is mag wijken. */
+		/* A match running here stays put. A lineup you lose you can pick again;
+		   substitutions you lose are gone, and they existed nowhere else. Only what
+		   has not started may give way. */
 		if (!(this.kickedOff && !t.match?.finished)) t.match = d.match ?? null;
 		this.save();
 		return true;
@@ -450,7 +449,7 @@ class App {
 
 export const app = new App();
 
-/** Opstelling waar je nu aan werkt: de wedstrijd, of de standaard. */
+/** The lineup you are working on: the match, or the default. */
 export function lineupOf(
 	bron: 'wedstrijd' | 'standaard'
 ): { formation: string; lineup: Lineup; bench: string[] } | null {

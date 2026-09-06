@@ -1,15 +1,15 @@
-/** Wat er in de balk bovenaan staat. Elk scherm zet dit zelf. */
+/** What sits in the top bar. Every screen sets this itself. */
 export const kop = $state({
 	titel: 'Blaadje',
-	/** waar de knop rechtsboven naartoe gaat; null = geen knop */
+	/** where the top-right button goes; null = no button */
 	terug: null as string | null,
 	terugTekst: 'Terug',
-	/** stand, alleen tijdens een wedstrijd */
+	/** score, during a match only */
 	score: null as string | null,
 	/**
-	 * Altijd naar `terug`, ook als je ergens vandaan komt. Voor knoppen die geen
-	 * "terug" zijn maar een uitgang: na een wedstrijd wil je naar het startscherm
-	 * en niet terug het afgelopen wedstrijdscherm in.
+	 * Always go to `back`, even when you came from somewhere. For buttons that are
+	 * not "back" but an exit: after a match you want the start screen, not to walk
+	 * back into the match you just finished.
 	 */
 	vast: false
 });
