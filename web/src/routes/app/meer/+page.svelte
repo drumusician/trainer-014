@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { backupNaam, maakBackup } from '$lib/domein/backup';
+	import { backupNaam, leesBackup, maakBackup } from '$lib/domein/backup';
 	import { beschrijf, leesCode, maakCode } from '$lib/domein/overzetten';
 	import { app } from '$lib/toestand.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
@@ -43,6 +43,38 @@
 		a.download = backupNaam(gemaakt);
 		a.click();
 		URL.revokeObjectURL(a.href);
+	}
+
+	/**
+	 * Een bewaard bestand terugzetten.
+	 *
+	 * Stond er niet, terwijl 'Bestand opslaan' er wel is. Je kon een back-up dus
+	 * alleen terugzetten door hem te openen, alles te selecteren en te plakken —
+	 * op een telefoon met een bestand van honderd kilobyte geen doen.
+	 */
+	async function bestandInlezen(e: Event) {
+		const invoer = e.currentTarget as HTMLInputElement;
+		const bestand = invoer.files?.[0];
+		if (!bestand) return;
+		try {
+			const pakket = leesBackup(await bestand.text());
+			if (
+				confirm(
+					'Dit terugzetten op dit toestel?\n\n' +
+						beschrijf(pakket) +
+						'.\n\nWat hierin zit vervangt wat je nu hebt. Een wedstrijd die nu loopt blijft staan.'
+				)
+			) {
+				app.neemOver(pakket);
+				backup = 'geen';
+				overzet = 'geen';
+				alert('Teruggezet.');
+			}
+		} catch (fout) {
+			alert('Dit bestand kon ik niet lezen: ' + (fout as Error).message);
+		}
+		/* Leegmaken, anders kun je hetzelfde bestand niet nog een keer kiezen. */
+		invoer.value = '';
 	}
 
 	/** Eén knop voor allebei: een code en een back-up bevatten hetzelfde. */
@@ -163,6 +195,10 @@
 		</p>
 		<div class="knoprij" style="padding-left: 0">
 			<button onclick={backupMaken}>Bestand opslaan</button>
+			<label class="knop">
+				Bestand openen
+				<input type="file" accept="application/json,.json" onchange={bestandInlezen} />
+			</label>
 			<button onclick={codeMaken}>Code maken</button>
 			<button
 				onclick={() => {

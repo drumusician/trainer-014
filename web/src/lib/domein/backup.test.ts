@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { backupNaam, leesBackup, maakBackup } from './backup';
+import { beschrijf } from './overzetten';
 import { legeToestand } from './types';
 
 function volleToestand() {
@@ -62,5 +63,22 @@ describe('back-up', () => {
 
 	it('noemt het bestand naar de dag', () => {
 		expect(backupNaam('2026-09-03T10:00:00.000Z')).toBe('blaadje-2026-09-03.json');
+	});
+});
+
+describe('een bewaard bestand terugzetten', () => {
+	/* De knop 'Bestand openen' stond er niet, terwijl 'Bestand opslaan' er wel was.
+	   Wat je opslaat moet je ook terug kunnen zetten. */
+	it('leest terug wat maakBackup schreef, met archief en al', () => {
+		const heen = maakBackup(volleToestand(), '2026-09-06T10:00:00.000Z');
+		const terug = leesBackup(heen);
+		expect(terug.spelers.length).toBe(volleToestand().spelers.length);
+		expect(terug.archief.length).toBe(volleToestand().archief.length);
+		expect(terug.teamnaam).toBe(volleToestand().teamnaam);
+	});
+
+	it('beschrijft zowel een back-up als een overzetcode', () => {
+		const uitBackup = leesBackup(maakBackup(volleToestand(), '2026-09-06T10:00:00.000Z'));
+		expect(beschrijf(uitBackup)).toContain('speler');
 	});
 });

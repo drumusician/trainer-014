@@ -49,6 +49,8 @@ button.prim, .knop.prim { background: var(--groen); border-color: var(--groen); 
 button.prim:active, .knop.prim:active { background: var(--groen-diep); }
 button.uit, .knop.uit { border-color: var(--oranje); color: var(--oranje); }
 button.klein, .knop.klein { font-size: 13px; padding: 6px 9px; }
+/* Een bestandskiezer als knop: het invoerveld zelf is niet te stijlen. */
+label.knop input[type='file'] { display: none; }
 button:disabled { opacity: 0.4; }
 
 .klokbalk { display: flex; align-items: center; gap: 8px; flex: none; padding: 8px 12px; background: var(--groen); color: #fff; }

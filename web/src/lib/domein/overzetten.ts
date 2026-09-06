@@ -48,8 +48,15 @@ export function leesCode(tekst: string): OpzetPakket {
 }
 
 /** Wat er in dit pakket zit, om te laten zien voor je het overneemt. */
-export function beschrijf(p: OpzetPakket): string {
-	const stukjes = [p.spelers!.length + (p.spelers!.length === 1 ? ' speler' : ' spelers')];
+/**
+ * Wat er in een pakket zit, in één zin voor de bevestigingsvraag.
+ *
+ * Neemt alleen wat het leest, zodat zowel een overzetcode als een teruggezet
+ * back-upbestand erdoorheen kan.
+ */
+export function beschrijf(p: Partial<Pick<Toestand, 'spelers' | 'archief' | 'trainingen' | 'standaard'>>): string {
+	const aantal = p.spelers?.length ?? 0;
+	const stukjes = [aantal + (aantal === 1 ? ' speler' : ' spelers')];
 	if (p.archief) stukjes.push(p.archief.length + (p.archief.length === 1 ? ' wedstrijd' : ' wedstrijden'));
 	if (p.trainingen) stukjes.push(p.trainingen.length + (p.trainingen.length === 1 ? ' training' : ' trainingen'));
 	if (p.standaard) stukjes.push('een standaardopstelling');
