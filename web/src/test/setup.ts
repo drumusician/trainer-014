@@ -1,16 +1,16 @@
 /*
- * Eén doosje in het geheugen als localStorage, altijd, ongeacht wat de omgeving
- * zelf meebrengt.
+ * One in-memory box standing in for localStorage, always, regardless of what the
+ * environment brings along itself.
  *
- * Dit stond eerst achter een 'alleen als het ontbreekt'. Node 26 brengt een eigen
- * localStorage mee die er een bestand bij wil, dus daar sloeg het aan; op Node 22
- * — waar de CI op draait — levert jsdom er zelf een, en dan niet. Dat verschil
- * was niet onschuldig: de localStorage van jsdom is een Proxy waarin
- * `localStorage.setItem = ...` geen methode vervangt maar een item met die naam
- * opslaat. Een test die het mislukken van opslaan naspeelt greep daar dus mis,
- * en viel om in de CI terwijl hij lokaal slaagde.
+ * This used to sit behind an "only if it is missing". Node 26 ships its own
+ * localStorage that wants a file alongside it, so there it kicked in; on Node 22
+ * — which CI runs on — jsdom provides one, and then it did not. That difference
+ * was not harmless: jsdom's localStorage is a Proxy in which
+ * `localStorage.setItem = ...` does not replace a method but stores an item under
+ * that name. A test simulating a failed save therefore missed entirely, and fell
+ * over in CI while passing locally.
  *
- * Vandaar: de testopstelling bepaalt de omgeving, niet andersom.
+ * Hence: the test setup decides the environment, not the other way round.
  */
 const doos = new Map<string, string>();
 

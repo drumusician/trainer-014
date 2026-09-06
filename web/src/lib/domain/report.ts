@@ -109,8 +109,8 @@ export function dateText(date: string): string {
 }
 
 /**
- * Het verslag voor de groepsapp. Wissels blijven er standaard uit: de uitslag
- * is voor iedereen, de opstelling is van de trainer.
+ * The write-up for the team chat. Substitutions are left out by default: the
+ * result is for everyone, the lineup is the coach's business.
  */
 export function reportText(bron: ReportSource, players: Player[], metWissels = false): string {
 	const [v, t] = bron.score;
@@ -155,18 +155,18 @@ export function reportText(bron: ReportSource, players: Player[], metWissels = f
 export interface TimelineRow {
 	t: number;
 	tekst: string;
-	/** plek in de oorspronkelijke lijst, zodat een doelpunt te verwijderen blijft */
+	/** index in the original list, so a goal remains removable */
 	index: number;
 	type: MatchEvent['type'];
 }
 
 /**
- * Het verloop als regels om te tonen.
+ * The timeline as rows to display.
  *
- * Ruilen die op hetzelfde tijdstip achter elkaar staan worden één regel. Een
- * rondje van vier spelers kan niet in minder dan drie paarsgewijze ruilen, dus
- * anders lijkt iemand in dezelfde seconde twee keer te verhuizen. Wat je wilt
- * lezen is waar iedereen terechtkwam, niet hoe de administratie daar kwam.
+ * Swaps that sit back to back at the same timestamp become one row. A rotation
+ * of four players cannot be written in fewer than three pairwise swaps, so
+ * otherwise someone appears to move twice in the same second. What you want to
+ * read is where everyone ended up, not how the bookkeeping got there.
  */
 export function timelineRows(
 	events: MatchEvent[],
@@ -212,7 +212,7 @@ export function timelineRows(
 
 		const verhuisd = volgorde.filter((sp) => vanaf[sp] !== naartoe[sp]);
 		if (!verhuisd.length) {
-			/* Geen namen vastgelegd, of alles kwam weer op zijn plek terug. */
+			/* No names recorded, or everything ended up back where it started. */
 			uit.push({ t: g.t ?? 0, tekst: eventText(g, players, names, parts, formation), index: i, type: g.type });
 			i = j - 1;
 			continue;

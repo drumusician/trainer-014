@@ -1,5 +1,5 @@
-/* Deze twee mogen openbaar zijn. De publishable key geeft uit zichzelf nergens
-   toegang toe; Row Level Security bepaalt wat een ingelogde trainer mag zien,
-   en dat is alleen zijn eigen team. Zie supabase/schema.sql in de repo. */
+/* These two are safe to publish. The publishable key grants no access by
+   itself; Row Level Security decides what a signed-in coach may see, and that is
+   only their own team. See supabase/schema.sql in the repo. */
 export const SUPABASE_URL = 'https://gdsqdsxflueawfipjqbw.supabase.co';
 export const SUPABASE_SLEUTEL = 'sb_publishable_Qrjs4tqjHTAGs-p7zsvNHw_CV5WHNtP';

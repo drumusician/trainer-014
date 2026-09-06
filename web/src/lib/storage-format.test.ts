@@ -7,19 +7,19 @@ import { readTransferCode } from './domain/transfer';
 import opgeslagen from '../test/opslag-september-2026.json';
 
 /**
- * Kan de app lezen wat er in september 2026 is opgeslagen?
+ * Can the app read what was stored in September 2026?
  *
- * Dit bestand is een echte export van een echt seizoen, met verzonnen namen
- * erin. De structuur is onaangeraakt, want daar gaat het om.
+ * This file is a real export of a real season, with invented names in it. The
+ * structure is untouched, because that is what matters.
  *
- * Waarom dit bestaat: bij het hernoemen naar het Engels bleek verstreken zowel
- * een functienaam als een veldnaam in de opslag te zijn. Ik hernoemde allebei,
- * en de app las w.elapsed terwijl er verstreken in de opslag staat. De klok gaf
- * NaN:NaN. Alle 172 tests bleven groen, want een test bouwt zijn eigen objecten
- * en leest nooit echte opslag. Dat gat dicht deze test.
+ * Why this exists: while renaming to English, "verstreken" turned out to be both
+ * a function name and a stored field name. I renamed both, and the app read
+ * w.elapsed while storage held verstreken. The clock showed NaN:NaN. All 172
+ * tests stayed green, because a test builds its own objects and never reads real
+ * storage. This test closes that gap.
  *
- * Wie het opslagformaat verandert, verandert wat er op het toestel van een
- * ander staat. Dan hoort hier een migratie bij, en blijft deze test groen.
+ * Change the storage format and you change what sits on someone else's device.
+ * A migration belongs with that change, and this test stays green.
  */
 beforeEach(() => {
 	localStorage.clear();
@@ -58,10 +58,10 @@ describe('opslag van september 2026', () => {
 
 		const tijden = playingTimes(w, players);
 		const totaal = Object.values(tijden).reduce((s, x) => s + x, 0);
-		/* Elf spelers in het veld, elke seconde van de wedstrijd. */
+		/* Eleven players on the pitch, every second of the match. */
 		expect(Math.round(totaal)).toBe(11 * a.duration);
 
-		/* En op elk moment precies één keeper, geen seconde dubbel of leeg. */
+		/* And exactly one keeper at every moment, not a second doubled or empty. */
 		const keepers = keeperTimes(w);
 		expect(Math.round(Object.values(keepers).reduce((s, x) => s + x, 0))).toBe(a.duration);
 	});
@@ -114,9 +114,9 @@ describe('opslag van september 2026', () => {
 });
 
 describe('oude gegevens die van buiten binnenkomen', () => {
-	/* Drie wegen naar binnen, en alle drie kunnen ze iets van voor de vertaling
-	   aanleveren: een back-upbestand dat iemand bewaarde, een overzetcode van een
-	   toestel dat nog niet is bijgewerkt, en de server. */
+	/* Three ways in, and all three can deliver something from before the
+	   translation: a backup file someone saved, a transfer code from a device that
+	   has not been updated, and the server. */
 	it('leest een back-upbestand van voor de vertaalslag', () => {
 		const bestand = JSON.stringify({ blaadje: 1, gemaakt: '2026-09-06T10:00:00.000Z', toestand: opgeslagen });
 		const terug = readBackup(bestand);

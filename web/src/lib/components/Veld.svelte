@@ -13,13 +13,13 @@
 		formation: string;
 		lineup: Lineup;
 		gekozen?: string | null;
-		/** speelminuten per speler; tijdens een wedstrijd staan die onder de naam */
+		/** minutes played per player; during a match these sit under the name */
 		tijden?: Record<string, number> | null;
 		onplek?: (plekId: string) => void;
 	} = $props();
 
-	/* Afgeleid in plaats van in de template aangeroepen: anders rekent hij bij
-	   elke render opnieuw, en tijdens een wedstrijd is dat elke seconde. */
+	/* Derived rather than called in the template: otherwise it recalculates on
+	   every render, which during a match means every second. */
 	const vakken = $derived(positionsOf(formation));
 </script>
 
@@ -38,8 +38,8 @@
 
 	{#each vakken as [plekId, label, x, y] (plekId)}
 		{@const p = app.playerById(lineup[plekId])}
-		<!-- Een echte knop, geen div die zich als knop voordoet: spatiebalk, focus en
-		     schermlezer zijn dan meteen goed en het scheelt handwerk. -->
+		<!-- A real button, not a div pretending to be one: space bar, focus and screen
+		     reader are then correct straight away, and it saves hand-written code. -->
 		<button
 			type="button"
 			class="plek"

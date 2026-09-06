@@ -1,5 +1,5 @@
 <script lang="ts">
-	/** Eén tabel voor na afloop, in het archief en bij het seizoen. */
+	/** One table, used after the match, in the archive and for the season. */
 	export interface Regel {
 		name: string;
 		seconds: number;

@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { detectDevice, isInstalled, type Device } from '$lib/domain/device';
 
-	/** Chrome biedt zelf aan om te installeren; die gelegenheid vangen we op. */
+	/** Chrome offers to install by itself; we catch that opportunity. */
 	interface InstallVraag extends Event {
 		prompt: () => Promise<void>;
 	}
@@ -29,14 +29,14 @@
 		vraag = null;
 	}
 
-	/* Alleen de twee toestellen waar je hem langs de lijn op gebruikt. Op een
-	   laptop bereid je voor, en dat gaat in een tabblad net zo goed. */
+	/* Only the two devices you use at the touchline. On a laptop you prepare, and
+	   a browser tab does that just as well. */
 	const TABS: { code: Device; name: string }[] = [
 		{ code: 'ios', name: 'iPhone of iPad' },
 		{ code: 'android', name: 'Android' }
 	];
-	/* Zit iemand op een laptop, dan tonen we de iPhone-uitleg; die zoekt hij hier
-	   toch voor zijn telefoon op. */
+	/* If someone is on a laptop we show the iPhone instructions; they are looking
+	   these up for their phone anyway. */
 	const tonen = $derived(gekozen ?? (toestel === 'desktop' ? 'ios' : toestel));
 </script>
 
@@ -81,7 +81,7 @@
 {/if}
 
 <style>
-	/* De genummerde stappen om de app op je beginscherm te zetten. */
+	/* The numbered steps for putting the app on your home screen. */
 	ol.stappen {
 		margin: 0 0 14px;
 		padding-left: 22px;

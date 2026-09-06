@@ -65,7 +65,7 @@ describe('kwarten en een notitie', () => {
 });
 
 describe('van plek ruilen in het verloop', () => {
-	/* Waar ze naartoe gingen zegt meer dan dat er iets wisselde. */
+	/* Where they went says more than that something swapped. */
 	it('noemt wie waar naartoe ging', () => {
 		const g = { type: 'swap' as const, t: 800, positionA: 'K', positionB: 'SP', playerA: 'p1', playerB: 'p2' };
 		expect(eventText(g, players, undefined, 2, '4-3-3')).toBe('Aad naar SP, Bram naar K');
@@ -90,8 +90,8 @@ describe('een wissel in het verloop', () => {
 });
 
 describe('ruilen op hetzelfde moment samenvatten', () => {
-	/* Een rondje van vier kan niet in minder dan drie paarsgewijze ruilen. Zonder
-	   samenvatten lijkt iemand in dezelfde seconde twee keer te verhuizen. */
+	/* A rotation of four cannot be done in fewer than three pairwise swaps. Without
+	   collapsing them, someone appears to move twice in the same second. */
 	it('maakt van een rondje van vier één regel met de netto verhuizing', () => {
 		const vier: Player[] = [
 			{ id: 'a', name: 'Maher', line: '' },

@@ -3,7 +3,7 @@ import { sync } from './sync.svelte';
 import { app } from '$lib/store.svelte';
 import { emptyState } from '$lib/domain/types';
 
-/** Een nepserver: genoeg om de beslissingen te testen, niet het netwerk. */
+/** A fake server: enough to test the decisions, not the network. */
 function nepFetch(opties: { versie?: number; data?: unknown; botsing?: boolean; stuk?: boolean } = {}) {
 	const verstuurd: unknown[] = [];
 	const f = vi.fn(async (url: string, init?: RequestInit) => {
@@ -60,8 +60,9 @@ describe('vanzelf bijwerken', () => {
 		expect((verstuurd[0] as { players: unknown[] }).players).toHaveLength(1);
 	});
 
-	/* Stond hier andersom: de wedstrijd bleef bewust op één toestel. Maar dan kun
-	   je thuis niets klaarzetten, en dat is juist het moment waarop je rustig zit. */
+	/* This used to be the other way round: the match deliberately stayed on one
+	   device. But then you cannot prepare anything at home, which is precisely when
+	   you are sitting down quietly. */
 	it('stuurt ook een wedstrijd op die je klaarzet', async () => {
 		const { verstuurd } = nepFetch({ versie: 1 });
 		sync.merkVies();
@@ -116,7 +117,7 @@ describe('inloggen op een telefoon', () => {
 		await sync.stuurCode('trainer@voorbeeld.nl');
 		expect(sync.fase).toBe('code');
 
-		/* alsof de app opnieuw geladen wordt terwijl jij in je mail zit */
+		/* as if the app reloads while you are over in your mail */
 		sync.sessie = null;
 		sync.fase = 'email';
 		sync.email = '';
@@ -150,9 +151,9 @@ describe('inloggen op een telefoon', () => {
 });
 
 describe('bij het openen', () => {
-	/* Dit ging mis toen de wedstrijd bij het pakket kwam: op de laptop stond een
-	   opstelling klaar, maar er veranderde niets meer, dus merkte de app nooit dat
-	   er ineens meer te versturen viel. Op de telefoon bleef het leeg. */
+	/* This went wrong when the match joined the payload: a lineup was ready on the
+	   laptop, but nothing changed any more, so the app never noticed there was
+	   suddenly more to send. The phone stayed empty. */
 	it('merkt dat er hier iets staat wat de server nog niet heeft', async () => {
 		const { verstuurd } = nepFetch({ versie: 1, data: { players: app.toestand.players } });
 		sync.sessie!.afdruk = 'iets ouds';
@@ -168,7 +169,7 @@ describe('bij het openen', () => {
 	it('laat het met rust als de server alles al heeft', async () => {
 		nepFetch({ versie: 1, data: { players: app.toestand.players } });
 		sync.merkVies();
-		await sync.duwAlsNodig(); /* nu weet hij wat er staat */
+		await sync.duwAlsNodig(); /* now it knows what is there */
 		expect(sync.vies).toBe(false);
 
 		await sync.kijkEven();

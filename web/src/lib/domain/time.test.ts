@@ -85,11 +85,11 @@ describe('speeltijd', () => {
 });
 
 describe('van plek ruilen tijdens de wedstrijd', () => {
-	/* Jouw regel: wie een helft keept, speelt de andere helft in het veld. Vaak
-	   ruil je bij rust met iemand die al op het veld staat. */
+	/* The rule here: whoever keeps one half plays the other half outfield. At
+	   half-time you usually swap with someone already on the pitch. */
 	it('houdt de totale tijd gelijk en telt alleen het doel apart', () => {
 		const w = match();
-		/* Gijs keepte de eerste helft; bij rust ruilt hij met Kasper (middenveld) */
+		/* Gijs kept the first half; at half-time he swaps with Kasper (midfield) */
 		w.lineup['K'] = 'pKasper';
 		w.lineup['MC'] = 'pGijs';
 		w.events.push(

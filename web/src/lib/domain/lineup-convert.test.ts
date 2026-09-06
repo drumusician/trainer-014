@@ -29,8 +29,8 @@ describe('van formatie wisselen', () => {
 	it('schuift de drie middenvelders door en laat de vierde plek leeg', () => {
 		const uit = convertLineup(vier33, '4-3-3', '4-4-2');
 		const middenveld = ['MR', 'MCr', 'MCl', 'ML'].map((p) => uit.lineup[p]).filter(Boolean);
-		/* Er zijn er maar drie. De lege plek vult de trainer zelf; er stilletjes
-		   een aanvaller neerzetten zou een keuze voor hem maken. */
+		/* There are only three. The coach fills the empty position himself; quietly
+		   dropping a forward in there would make that choice for him. */
 		expect(middenveld).toHaveLength(3);
 	});
 

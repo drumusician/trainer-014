@@ -27,8 +27,8 @@ describe('het logboekje van wat er misging', () => {
 		expect(issues.lijst[0].what).toBe('nummer 29');
 	});
 
-	/* Dit wordt vanuit een catch aangeroepen. Een logboek dat zelf de app laat
-	   vallen is erger dan geen logboek. */
+	/* This is called from inside a catch. A log that brings the app down itself is
+	   worse than no log at all. */
 	it('gaat zelf nooit stuk, ook niet als de opslag weigert', () => {
 		const echt = localStorage.setItem;
 		localStorage.setItem = () => {

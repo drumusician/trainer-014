@@ -14,9 +14,9 @@ beforeEach(() => {
 });
 
 describe('trainingen', () => {
-	/* Deze ging mis: de winkel gaf het kale object terug, maar in de toestand
-	   staat een proxy. indexOf() vond hem dus niet en je landde op een leeg
-	   scherm. Sindsdien zoeken we op id. */
+	/* This one went wrong: the store returned the bare object while the state holds
+	   a proxy. indexOf() therefore did not find it and you landed on an empty
+	   screen. Since then we look up by id. */
 	it('geeft een nieuwe training terug die je meteen kunt opzoeken', () => {
 		const t = app.newTraining();
 		expect(t.id).toBeTruthy();
@@ -81,9 +81,9 @@ describe('wie is er vandaag', () => {
 		expect(app.toestand.match!.bench).toContain('p2');
 	});
 
-	/* Dit ging mis: de speeltijd wordt teruggerekend vanaf de opstelling van nu,
-	   dus wie je daar tijdens de wedstrijd uithaalt heeft volgens die berekening
-	   nooit gespeeld. Een hele wedstrijd werd stilletjes nul minuten. */
+	/* This went wrong: playing time is wound back from the lineup as it stands now,
+	   so anyone you remove from it during the match never played according to that
+	   calculation. A whole match silently became zero minutes. */
 	it('laat het veld met rust zodra de wedstrijd loopt', () => {
 		app.newMatch('Sparta', true);
 		app.toestand.match!.lineup = { K: 'p2', SP: 'p1' };
@@ -259,7 +259,7 @@ describe('wie er die dag was, bewaren', () => {
 		app.archiveMatch();
 		const a = app.toestand.archive[0];
 		expect(a.absent).toEqual(['p2']);
-		/* nul minuten betekent nu iets anders voor wie er wel was */
+		/* zero minutes now means something different for someone who was there */
 		expect(a.playingTime.find((r) => r.id === 'p2')!.seconds).toBe(0);
 	});
 
@@ -304,7 +304,7 @@ describe('kwarten spelen', () => {
 		app.togglePart();
 		app.togglePart();
 		expect(w.part).toBe(4);
-		expect(app.canStartNextPart).toBe(false); /* na het laatste kwart houdt het op */
+		expect(app.canStartNextPart).toBe(false); /* after the last quarter it stops */
 	});
 
 	it('houdt twee helften gewoon zoals het was', () => {
@@ -390,7 +390,7 @@ describe('van formatie wisselen met een standaardopstelling', () => {
 		expect(st.lineup.K).toBe('pa');
 		expect(st.lineup.CVr).toBe('pc');
 		expect(Object.values(st.lineup).filter(Boolean)).toHaveLength(10);
-		expect(st.bench).toHaveLength(2); /* de bankzitter plus de aanvaller die niet past */
+		expect(st.bench).toHaveLength(2); /* the substitute plus the forward who does not fit */
 	});
 
 	it('raakt niemand kwijt', () => {
@@ -472,7 +472,7 @@ describe('de naam van je team', () => {
 });
 
 describe('wat er tussen je toestellen heen en weer gaat', () => {
-	/* Dit ontbrak: je zette thuis de opstelling klaar en op je telefoon stond niets. */
+	/* This was missing: you set the lineup at home and your phone showed nothing. */
 	it('neemt een wedstrijd die klaarstaat mee', () => {
 		app.newMatch('Sparta', true);
 		app.toestand.match!.lineup = { K: 'p2', SP: 'p1' };
@@ -490,7 +490,7 @@ describe('wat er tussen je toestellen heen en weer gaat', () => {
 		expect(app.match?.absent).toContain('p1');
 	});
 
-	/* Een opstelling maak je opnieuw, wissels zijn weg. Dus: nooit overschrijven. */
+	/* A lineup you can pick again, substitutions are gone. So: never overwrite. */
 	it('laat een wedstrijd die hier loopt met rust', () => {
 		app.newMatch('Sparta', true);
 		app.toestand.match!.lineup = { K: 'p2' };
@@ -514,18 +514,17 @@ describe('wat er tussen je toestellen heen en weer gaat', () => {
 });
 
 describe('de aftrap vastleggen', () => {
-	/* De eerste echte wedstrijd langs de lijn ging hierop mis. Er was voor het
-	   fluitsignaal nog een speler omgewisseld, dus de lijst was niet leeg, dus
-	   werd 'start' nooit weggeschreven. De klok liep gewoon, maar de app dacht de
-	   hele wedstrijd dat er nog niet was afgetrapt — en dan worden positiewissels
-	   niet meer bewaard. */
+	/* The first real match at the touchline went wrong on this. A player had been
+	   swapped before the whistle, so the list was not empty, so 'start' was never
+	   written. The clock ran fine, but the app believed all match long that kick-off
+	   had not happened — and then position swaps are no longer recorded. */
 	it('legt de aftrap ook vast als je vooraf nog geschoven hebt', () => {
 		app.newMatch('Sparta', true);
 		app.toestand.match!.lineup = { K: 'p2', SP: 'p1' };
 		app.rebuildBench();
 
 		app.chosenPosition = 'SP';
-		app.putOnPosition('p2'); /* nog even schuiven voor de aftrap */
+		app.putOnPosition('p2'); /* one last shuffle before kick-off */
 		expect(app.kickedOff).toBe(false);
 
 		app.toggleRunning();
@@ -543,8 +542,8 @@ describe('de aftrap vastleggen', () => {
 		expect(app.toestand.match!.events).toEqual([]);
 	});
 
-	/* Je zet 's avonds de opstelling klaar en speelt de volgende dag. Dan hoort er
-	   niet de datum van gisteren op de wedstrijd te staan. */
+	/* You set the lineup in the evening and play the next day. The match should not
+	   then carry yesterday's date. */
 	it('stempelt de speeldag bij de aftrap, niet bij het aanmaken', () => {
 		app.newMatch('Sparta', true);
 		app.toestand.match!.date = '2020-01-01';
@@ -576,10 +575,9 @@ describe('de aftrap vastleggen', () => {
 });
 
 describe('een bewaarde wedstrijd op eigen benen', () => {
-	/* Het archief bewaarde de gebeurtenissen wel maar de eindopstelling niet, en
-	   de speeltijd wordt juist teruggerekend vanaf die opstelling. Daarmee was een
-	   bewaarde wedstrijd niet opnieuw uit te rekenen en dus nooit te repareren.
-	   Deze test bewijst dat dat nu wel kan. */
+	/* The archive stored the events but not the final lineup, and playing time is
+	   wound back from precisely that lineup. So an archived match could not be
+	   recalculated and was therefore beyond repair. This test proves it now can. */
 	it('is uit zijn eigen gegevens opnieuw uit te rekenen', () => {
 		app.newMatch('Sparta', true);
 		const w = app.toestand.match!;
@@ -712,8 +710,9 @@ describe('doelpunten en het terugnemen van je laatste tik', () => {
 		expect(app.toestand.match!.events).toHaveLength(voor - 1);
 	});
 
-	/* Dit kon niet, en het is precies de misser die langs de lijn gebeurt: je tikt
-	   de speler aan die scoorde en daarna zijn aangever, en hebt een ruil gemaakt. */
+	/* This was impossible, and it is exactly the slip that happens at the touchline:
+	   you tap the player who scored and then the one who set it up, and you have
+	   made a swap. */
 	it('neemt ook een positiewissel terug', () => {
 		const w = lopend();
 		app.swapDuringMatch('K', 'SP');
@@ -728,7 +727,7 @@ describe('doelpunten en het terugnemen van je laatste tik', () => {
 	it('draait een wissel helemaal terug, veld en bank', () => {
 		const w = lopend();
 		app.chosenPosition = 'SP';
-		app.putOnPosition('p2'); /* p2 uit het doel naar de spits, p1 naar de bank */
+		app.putOnPosition('p2'); /* p2 from goal to striker, p1 to the bench */
 		expect(w.lineup.SP).toBe('p2');
 		expect(w.bench).toContain('p1');
 
@@ -799,8 +798,8 @@ describe('opstellen, opruimen en overnemen', () => {
 		expect(app.toestand.archive[0].note).toBe('Achteraf bedacht.');
 	});
 
-	/* Overnemen komt van een overzetcode of een teruggezet bestand. Wat er niet in
-	   staat, blijft staan; een lopende wedstrijd hoort bij dit toestel. */
+	/* Adopting comes from a transfer code or a restored file. What is not in it
+	   stays; a running match belongs to this device. */
 	it('neemt alleen over wat er in het pakket zit', () => {
 		app.newMatch('Sparta', true);
 		app.toestand.teamName = 'Oud';
@@ -820,8 +819,8 @@ describe('opstellen, opruimen en overnemen', () => {
 });
 
 describe('wat er van de server binnenkomt', () => {
-	/* De controle op de formatie was dood: plekken() valt altijd terug op 4-3-3
-	   en geeft dus nooit iets leegs. Elke naam kwam er zo doorheen. */
+	/* The formation check was dead code: positionsOf() always falls back to 4-3-3
+	   and so never returns anything empty. Every name got through. */
 	it('weigert een formatie die we niet kennen', () => {
 		app.toestand.formation = '4-3-3';
 		app.adoptSyncPayload({
@@ -842,9 +841,9 @@ describe('wat er van de server binnenkomt', () => {
 });
 
 describe('als de opslag het begeeft', () => {
-	/* Een volle opslag mag de klok niet stoppen, dus de app gaat door. Maar dan
-	   is alles wat je daarna doet weg zodra je afsluit, en dat mag je niet pas
-	   thuis ontdekken. */
+	/* A full disk must not stop the clock, so the app carries on. But then
+	   everything you do afterwards is gone the moment you close it, and you should
+	   not discover that only once you are home. */
 	it('gaat door met de wedstrijd maar zet de vlag en noteert het', () => {
 		clearIssues();
 		app.newMatch('Sparta', true);
@@ -866,7 +865,7 @@ describe('als de opslag het begeeft', () => {
 		expect(issues.savingFails).toBe(false);
 	});
 
-	/* Zonder dit lijkt onleesbare opslag op alles kwijt zijn, zonder uitleg. */
+	/* Without this, unreadable storage looks like losing everything, unexplained. */
 	it('zet onleesbare gegevens apart in plaats van ze te laten vallen', () => {
 		clearIssues();
 		localStorage.setItem('o14-app-v1', '{"spelers":[ dit is geen json');
@@ -878,8 +877,8 @@ describe('als de opslag het begeeft', () => {
 });
 
 describe('de klok rechtstreeks zetten', () => {
-	/* ±1' is genoeg als de scheids er een minuut naast zit. Wie een wedstrijd
-	   achteraf invoert tikt daarmee een heel uur bij elkaar. */
+	/* ±1' is enough when the referee is a minute out. Anyone entering a match
+	   afterwards would be tapping a whole hour together. */
 	it('zet de klok op de opgegeven minuut', () => {
 		app.newMatch('Sparta', true);
 		app.toggleRunning();

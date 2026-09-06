@@ -97,7 +97,7 @@
 		-webkit-backdrop-filter: saturate(180%) blur(16px);
 		padding-bottom: env(safe-area-inset-bottom);
 	}
-	/* Kan het toestel geen waas, dan liever ondoorzichtig dan grauw. */
+	/* If the device cannot blur, opaque beats murky. */
 	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 		.tabs {
 			background: #fff;

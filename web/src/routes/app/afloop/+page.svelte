@@ -13,8 +13,8 @@
 	const tijden = $derived(playingTimes(w, app.toestand.players, app.nu));
 	const positions = $derived(positionTimes(w, app.nu));
 
-	/* Geen terugknop maar een uitgang: terug het afgelopen wedstrijdscherm in
-	   heeft niemand wat aan. */
+	/* Not a back button but an exit: walking back into the finished match screen
+	   helps nobody. */
 	$effect(() => zetKop('Uitslag', '/app', 'Naar start', null, true));
 
 	function bewaren() {

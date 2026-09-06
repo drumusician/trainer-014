@@ -67,8 +67,8 @@ describe('back-up', () => {
 });
 
 describe('een bewaard bestand terugzetten', () => {
-	/* De knop 'Bestand openen' stond er niet, terwijl 'Bestand opslaan' er wel was.
-	   Wat je opslaat moet je ook terug kunnen zetten. */
+	/* The 'Bestand openen' button was missing while 'Bestand opslaan' was not.
+	   What you save you must also be able to restore. */
 	it('leest terug wat maakBackup schreef, met archief en al', () => {
 		const heen = makeBackup(volleToestand(), '2026-09-06T10:00:00.000Z');
 		const terug = readBackup(heen);

@@ -56,7 +56,7 @@ describe('spelersoverzicht', () => {
 		const rijen = spelersOverzicht(players, archive, trainings);
 		expect(sorteer(rijen, 'naam').map((r) => r.name)).toEqual(['Daanish', 'Gijs', 'Nieuw']);
 		expect(sorteer(rijen, 'minuten').map((r) => r.name)).toEqual(['Daanish', 'Gijs', 'Nieuw']);
-		/* wie het minst kwam bovenaan; wie nog nooit een training had onderaan */
+		/* whoever came least at the top; whoever never had a session at the bottom */
 		expect(sorteer(rijen, 'presentie').map((r) => r.name)).toEqual(['Gijs', 'Daanish', 'Nieuw']);
 	});
 });

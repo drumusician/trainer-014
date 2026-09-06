@@ -15,18 +15,18 @@
 		zetKop(bron === 'standaard' ? 'Standaardopstelling' : 'Opstelling', '/app', 'Terug');
 	});
 
-	/* Rechtstreeks hierheen komen moet ook werken, bijvoorbeeld vanaf een kaart
-	   op het startscherm. Bestaat er nog geen standaardopstelling, dan maken we
-	   hem hier aan in plaats van een doodlopend scherm te tonen. */
+	/* Arriving here directly has to work too, for instance from a card on the
+	   start screen. If no default lineup exists yet we create one here rather than
+	   showing a dead end. */
 	$effect(() => {
 		if (bron === 'standaard' && !app.toestand.defaultLineup && app.toestand.players.length) {
 			app.ensureDefaultLineup();
 		}
 	});
 
-	/* Pas ná de aftrap hoort schuiven hier niet meer: vanaf dan wordt de speeltijd
-	   teruggerekend uit de wissels, en ongemerkt ruilen zet die op scherp.
-	   Zolang de klok nog niet gelopen heeft mag je alles nog verzetten. */
+	/* Only after kick-off does shuffling stop belonging here: from then on playing
+	   time is wound back from the substitutions, and an unrecorded swap puts that
+	   at risk. As long as the clock has not run you may still move anything. */
 	$effect(() => {
 		if (bron === 'wedstrijd' && app.kickedOff) goto('/app/wedstrijd');
 	});
@@ -37,8 +37,8 @@
 		doel && app.chosenPosition ? app.playerById(doel.lineup[app.chosenPosition]) : undefined
 	);
 
-	/* Eerste tik kiest een plek. Tweede tik op een andere plek ruilt ze om; staat
-	   daar niemand, dan verhuist hij ernaartoe. */
+	/* The first tap picks a position. A second tap on another position swaps them;
+	   if nobody is standing there, the player simply moves across. */
 	function tikPlek(plekId: string) {
 		if (!app.chosenPosition) {
 			app.chosenPosition = plekId;
@@ -51,11 +51,11 @@
 		app.swapPositions(bron, app.chosenPosition, plekId);
 	}
 
-	/* Linies zonder wissel: dat is een verrassing die je liever nu hebt. */
+	/* Lines with no substitute: that is a surprise you would rather have now. */
 	const zonderWissel = $derived.by(() => {
 		if (!doel) return [];
 		const bench = doel.bench.map((id) => app.playerById(id)).filter(Boolean);
-		/* alleen de linies die in deze formatie voorkomen: bij 4 tegen 4 geen keeper */
+		/* only the lines this formation has: at 4-a-side there is no keeper */
 		return linesIn(doel.formation)
 			.filter((code) => !bench.some((p) => p && groupOf(p) === code))
 			.map((code) => LINES[code].toLowerCase());

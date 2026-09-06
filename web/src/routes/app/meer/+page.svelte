@@ -14,8 +14,8 @@
 	let overzet = $state<'geen' | 'maken' | 'invoeren'>('geen');
 	let code = $state('');
 	let backup = $state<'geen' | 'maken'>('geen');
-	/* De link uit de mail komt terug waar je hem opvroeg. Op je eigen machine is
-	   dat localhost, en dat is een andere opslag dan de echte site. */
+	/* The link from the mail returns to wherever you requested it. On your own
+	   machine that is localhost, which is a different store from the real site. */
 	const opLokaal = $derived(typeof location !== 'undefined' && /^(localhost|127\.|\[::1\])/.test(location.hostname));
 	let backuptekst = $state('');
 
@@ -25,7 +25,7 @@
 		try {
 			await navigator.clipboard.writeText(code);
 		} catch {
-			/* dan met de hand */
+			/* then by hand */
 		}
 	}
 
@@ -36,7 +36,7 @@
 		try {
 			await navigator.clipboard.writeText(backuptekst);
 		} catch {
-			/* dan via het bestand */
+			/* then via the file */
 		}
 		const blob = new Blob([backuptekst], { type: 'application/json' });
 		const a = document.createElement('a');
@@ -47,11 +47,11 @@
 	}
 
 	/**
-	 * Een bewaard bestand terugzetten.
+	 * Restore a saved file.
 	 *
-	 * Stond er niet, terwijl 'Bestand opslaan' er wel is. Je kon een back-up dus
-	 * alleen terugzetten door hem te openen, alles te selecteren en te plakken —
-	 * op een telefoon met een bestand van honderd kilobyte geen doen.
+	 * This was missing while 'Bestand opslaan' was not. So the only way to restore
+	 * a backup was to open it, select everything and paste — not something you do
+	 * on a phone with a hundred-kilobyte file.
 	 */
 	async function bestandInlezen(e: Event) {
 		const invoer = e.currentTarget as HTMLInputElement;
@@ -74,11 +74,11 @@
 		} catch (fout) {
 			alert('Dit bestand kon ik niet lezen: ' + (fout as Error).message);
 		}
-		/* Leegmaken, anders kun je hetzelfde bestand niet nog een keer kiezen. */
+		/* Clear it, otherwise you cannot pick the same file twice. */
 		invoer.value = '';
 	}
 
-	/** Eén knop voor allebei: een code en een back-up bevatten hetzelfde. */
+	/** One button for both: a code and a backup hold the same thing. */
 	function overnemen() {
 		try {
 			const pakket = readTransferCode(code);

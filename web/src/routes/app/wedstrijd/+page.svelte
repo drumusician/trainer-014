@@ -13,11 +13,11 @@
 	const tijden = $derived(playingTimes(w, app.toestand.players, app.nu));
 	const uitslag = $derived(score(w));
 
-	/* Wie scoorde? Dan wordt het veld even een keuzelijst. */
+	/* Who scored? Then the pitch briefly becomes a picker. */
 	let doelpuntKiezen = $state(false);
-	/* De klok bijstellen hoeft bijna nooit, dus staat het weg tot je erop tikt. */
+	/* Adjusting the clock is almost never needed, so it hides until you tap it. */
 	let klokBijstellen = $state(false);
-	/* Na een doelpunt: wie legde hem klaar? Overslaan mag, het spel gaat door. */
+	/* After a goal: who set it up? Skipping is fine, the game moves on. */
 	let assistVragen = $state(false);
 	let maker = $state<string | null>(null);
 
@@ -64,8 +64,8 @@
 			app.chosenPosition = null;
 			return;
 		}
-		/* Twee plekken achter elkaar: dan ruilen ze. Dat is geen wissel, er komt
-		   niemand van de bank; denk aan de keeper die na rust het veld in gaat. */
+		/* Two positions in a row: then they swap. That is not a substitution, nobody
+		   comes off the bench; think of the keeper going outfield after half-time. */
 		app.swapDuringMatch(app.chosenPosition, plekId);
 	}
 
@@ -122,8 +122,8 @@
 	</div>
 
 	{#if klokBijstellen}
-		<!-- Eigen rij: naast de klok en twee knoppen paste dit niet op een telefoon,
-		     en dan liep de balk over de rand heen. -->
+		<!-- Its own row: alongside the clock and two buttons this did not fit on a
+		     phone, and the bar ran off the edge. -->
 		<div class="klokzetrij">
 			<label class="klokzet">
 				<span>Minuut</span>
@@ -173,9 +173,9 @@
 				{#if app.undoable()}
 					<button onclick={() => app.undoLast()}>↶ {app.undoable()} terug</button>
 				{/if}
-				<!-- Alleen zolang de klok stilstaat. Daarna zou dit een mistik zijn tijdens
-				     het coachen, en ligt er toch niets meer te wijzigen. Achteraan, zodat
-				     Doelpunt en Tegen niet verspringen als je op Start drukt. -->
+				<!-- Only while the clock is stopped. After that this would be a mis-tap during
+				     coaching, and there is nothing left to change anyway. At the end, so
+				     Doelpunt and Tegen do not shift when you press Start. -->
 				{#if !app.kickedOff}
 					<a class="knop" href="/app/aanwezig">Wie is er?</a>
 				{/if}
@@ -211,9 +211,9 @@
 							Hij keepte deze match al {keeperMin} minuten.
 						{/if}
 					</span>
-					<!-- Langs de lijn gaat je hand eerst naar de speler en pas dan naar wat hij
-					     deed. Wie zo begint zit nu in een wissel; hiermee is dat één tik terug,
-					     en werkt de volgorde allebei de kanten op. -->
+					<!-- At the touchline your hand goes to the player first and only then to what
+					     he did. Start that way and you are in a substitution; this makes that one
+					     tap back, and lets the order work both ways round. -->
 					{#if uit}
 						<button
 							class="klein"

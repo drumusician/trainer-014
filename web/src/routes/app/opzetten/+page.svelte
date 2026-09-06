@@ -12,7 +12,7 @@
 	let name = $state('');
 	let namenVak = $state('');
 
-	/* Wat er al staat overnemen, zodat je hem ook halverwege kunt gebruiken. */
+	/* Adopt what is already there, so you can also use this halfway through. */
 	$effect(() => {
 		if (!name && t.teamName !== 'Ons team') name = t.teamName;
 	});

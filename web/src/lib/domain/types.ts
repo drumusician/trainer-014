@@ -121,11 +121,11 @@ export interface Training {
 }
 
 export interface State {
-	/** hoe jouw team heet; staat in de kop en in het verslag */
+	/** what your team is called; appears in the header and in the report */
 	teamName: string;
 	players: Player[];
 	formation: string;
-	/** minuten per deel; heet nog helftMinuten omdat het zo is opgeslagen */
+	/** minutes per part, whether you play halves or quarters */
 	minutesPerPart: number;
 	parts: 2 | 4;
 	match: Match | null;

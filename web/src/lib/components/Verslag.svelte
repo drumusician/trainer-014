@@ -10,7 +10,7 @@
 		try {
 			await navigator.clipboard.writeText(tekst);
 		} catch {
-			/* dan met de hand uit het vak hieronder */
+			/* then copy it by hand from the box below */
 		}
 	}
 </script>

@@ -41,7 +41,7 @@
 				<a class="knop prim" href="/app/opzetten">Aan de slag</a>
 			</div>
 		{:else}
-			<!-- Wat er nu speelt staat bovenaan en is meteen de knop ernaartoe. -->
+			<!-- What is happening now sits at the top and is itself the button to it. -->
 			{#if bezig}
 				<a class="nu" href="/app/wedstrijd">
 					<div class="wat">Bezig</div>
@@ -174,8 +174,8 @@
 </main>
 
 <style>
-	/* Het blok bovenaan dat zegt wat er nu aan de hand is. Stond onder het kopje
-	   'Landingspagina' in app.css, terwijl alleen dit scherm het gebruikt. */
+	/* The block at the top saying what is going on right now. It sat under the
+	   heading 'Landingspagina' in app.css while only this screen uses it. */
 	.nu {
 		display: block;
 		padding: 16px;

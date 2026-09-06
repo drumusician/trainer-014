@@ -3,7 +3,7 @@ import { bezetting, dunneKeepersbezetting, gedrang, tekort } from './coverage';
 import { groupOf, canKeep } from './formations';
 import type { Player } from './types';
 
-/** De selectie zoals die op 4 september 2026 in de app stond. */
+/** The squad exactly as it stood in the app on 4 September 2026. */
 const selectie: Player[] = [
 	{ id: '1', name: 'Casper', line: 'M', keeper: true },
 	{ id: '2', name: 'Maher', line: 'V', keeper: true },
@@ -82,7 +82,7 @@ describe('iemand die alleen keeper is', () => {
 
 	it('licht op bij de keeperplek en niet bij een veldplek', () => {
 		expect(canKeep(alleenKeeper)).toBe(true);
-		expect(alleenKeeper.line).toBe(''); /* dus geen enkele veldlinie claimt hem */
+		expect(alleenKeeper.line).toBe(''); /* so no field line claims him */
 	});
 
 	it('valt zonder K-vinkje in "zonder linie", niet stilletjes ergens anders', () => {

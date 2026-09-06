@@ -52,7 +52,7 @@ describe('seizoen', () => {
 		const aad = rijen.find((r) => r.name === 'Aad')!;
 		expect(aad.seconds).toBe(4200);
 		expect(aad.keeper).toBe(2100);
-		expect(aad.wedstrijden).toBe(1); /* die tweede zat op de bank */
+		expect(aad.wedstrijden).toBe(1); /* that second one was on the bench */
 	});
 
 	it('houdt iemand die hernoemd is als één speler', () => {
@@ -66,13 +66,13 @@ describe('seizoen', () => {
 		const rijen = makers(archive, players);
 		expect(rijen.map((r) => r.name)).toEqual(['Aad', 'Bram']);
 		expect(rijen[0].wedstrijden).toEqual([{ date: '2026-09-05', opponent: 'Ajax', aantal: 1 }]);
-		/* het doelpunt zonder maker telt wel in de stand, niet in deze lijst */
+		/* the goal without a scorer counts towards the score, not in this list */
 		expect(rijen.reduce((a, r) => a + r.doelpunten, 0)).toBe(2);
 	});
 
 	it('zet de topscorer bovenaan en laat onbekende makers weg', () => {
 		const t = topscorers(seasonTotals(archive, players));
-		/* gelijk aantal doelpunten: dan telt de speeltijd, en Bram speelde meer */
+		/* equal goals: then playing time decides, and Bram played more */
 		expect(t.map((r) => r.name)).toEqual(['Bram', 'Aad']);
 		expect(t.reduce((a, r) => a + r.doelpunten, 0)).toBe(2); /* van de 3 doelpunten */
 	});

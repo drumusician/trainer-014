@@ -3,9 +3,9 @@ import { isOudFormaat, migreerToestand } from './migrate-storage';
 import opgeslagen from '../../test/opslag-september-2026.json';
 
 /**
- * De omzetting draait op een echte export van een echt seizoen. Dat is de enige
- * manier om te weten dat hij klopt: een zelfgemaakt voorbeeld bevat precies de
- * gevallen waar je aan dacht, en een echte opslag bevat de rest.
+ * The conversion runs against a real export of a real season. That is the only
+ * way to know it is right: an invented example contains exactly the cases you
+ * thought of, and real storage contains the rest.
  */
 describe('oude opslag omzetten', () => {
 	const om = migreerToestand(opgeslagen) as Record<string, never>;
@@ -106,7 +106,7 @@ describe('oude opslag omzetten', () => {
 	});
 
 	it('houdt de cijfers precies gelijk', () => {
-		/* De linkerkant leest het ruwe bestand, dus die velden heten nog Nederlands. */
+		/* The left-hand side reads the raw file, so those fields are still Dutch. */
 		const oud = (opgeslagen as unknown as { archief: Record<string, never>[] }).archief[0];
 		const nieuw = (om.archive as unknown as Record<string, never>[])[0];
 		expect(nieuw.duration).toBe(oud.duur);

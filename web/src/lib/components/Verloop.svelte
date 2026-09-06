@@ -13,7 +13,7 @@
 		events: MatchEvent[];
 		names?: Record<string, string>;
 		parts?: 2 | 4;
-		/** om een plek zijn leesbare naam te geven: CVl heet CV, TIEN heet 10 */
+		/** to give a position its readable name: CVl is called CV, TEN is called 10 */
 		formation?: string;
 	} = $props();
 

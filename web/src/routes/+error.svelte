@@ -1,11 +1,10 @@
 <script lang="ts">
 	/*
-	 * Wat je ziet als er iets breekt. Zonder deze pagina krijg je een wit scherm,
-	 * en dat is langs de lijn het slechtste moment om te moeten raden.
+	 * What you see when something breaks. Without this page you get a white screen,
+	 * and the touchline is the worst possible place to have to guess.
 	 *
-	 * Belangrijk: hier staat een weg terug naar de wedstrijd, want je gegevens
-	 * staan gewoon nog op je toestel. Er is niets kwijt door een scherm dat het
-	 * niet doet.
+	 * Important: there is a way back to the match here, because your data is still
+	 * on your device. Nothing is lost because a screen failed.
 	 */
 	import { page } from '$app/state';
 	import { reportIssue } from '$lib/issues.svelte';

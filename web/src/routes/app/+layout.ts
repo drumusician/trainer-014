@@ -1,3 +1,3 @@
-/* Alles draait in de browser: geen server, geen prerender per pagina. */
+/* Everything runs in the browser: no server, no per-page prerendering. */
 export const ssr = false;
 export const prerender = false;

@@ -8,7 +8,7 @@
 	const w = $derived(app.match);
 	const absent = $derived(new Set(w?.absent ?? []));
 	const er = $derived(app.toestand.players.filter((p) => !absent.has(p.id)).length);
-	/* Loopt de wedstrijd al, dan is dit geen opzetscherm meer maar een correctie. */
+	/* Once the match is running this is no longer a setup screen but a correction. */
 	const bezig = $derived(app.kickedOff && !w?.finished);
 </script>
 

@@ -5,10 +5,10 @@
 	import { isInstalled } from '$lib/domain/device';
 
 	onMount(() => {
-		/* "Zet op beginscherm" bewaart op iOS de pagina waar je op dat moment stond,
-		   niet wat er in het manifest staat. Wie het icoon vanaf deze pagina maakte
-		   opent dus de reclamefolder in plaats van de app. Dan sturen we hem door,
-		   en meten we niet: dit is een app die opent, geen bezoek aan de site. */
+		/* On iOS "Add to Home Screen" saves the page you were on at that moment, not
+		   what the manifest says. So anyone who made the icon from this page opens the
+		   brochure instead of the app. Then we send them onwards, and do not measure:
+		   this is an app opening, not a visit to the site. */
 		if (isInstalled()) {
 			location.replace('/app');
 			return;

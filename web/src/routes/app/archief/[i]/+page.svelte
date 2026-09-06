@@ -13,12 +13,12 @@
 
 	const i = $derived(Number(page.params.i));
 	const a = $derived(app.toestand.archive[i]);
-	/* Afgeleid, niet in de template aangeroepen: dat rekent bij elke render opnieuw. */
+	/* Derived, not called in the template: that recalculates on every render. */
 	const regels = $derived(a ? timelineRows(a.events ?? [], app.toestand.players, a.names, a.parts, a.formation) : []);
 
 	$effect(() => zetKop(a ? shortDate(a.date) + ' · ' + a.opponent : 'Wedstrijd', '/app', 'Terug'));
 
-	/** De naam van nu, ook als iemand na de wedstrijd hernoemd is. */
+	/** The current name, even if someone was renamed after the match. */
 	function naamNu(r: { id?: string; name: string }) {
 		return (r.id && app.playerById(r.id)?.name) || r.name;
 	}
@@ -28,7 +28,7 @@
 	let nieuwMaker = $state('');
 	let nieuwTegen = $state(false);
 
-	/* Wie er die wedstrijd speelde, voor het lijstje makers. */
+	/* Who played in that match, for the list of scorers. */
 	const makers = $derived(
 		(a?.playingTime ?? [])
 			.filter((r) => (r.seconds ?? 0) > 0)

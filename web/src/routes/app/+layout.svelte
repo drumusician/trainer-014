@@ -9,20 +9,20 @@
 	import { vraagBlijvendeOpslag } from '$lib/storage.svelte';
 	import Tabs from '$lib/components/Tabs.svelte';
 
-	/* De tabbalk staat er altijd, behalve waar het veld de hoogte nodig heeft.
-	   Dat is één regel die je ook ziet: op die schermen is het veld groter. Op
-	   het wedstrijdscherm geldt het pas zodra er is afgetrapt; daarvoor is het
-	   gewoon een tabblad. */
-	/* Hoe vaak je binnen de app genavigeerd hebt. Is dat minstens één keer, dan
-	   is "terug" de vorige pagina; anders (diepe link, verse start) valt hij
-	   terug op de vaste bestemming van het scherm. */
+	/* The tab bar is always there, except where the pitch needs the height. That
+	   is one rule you can also see: on those screens the pitch is bigger. On the
+	   match screen it only applies once play has kicked off; before that it is
+	   just another tab. */
+	/* How often you navigated inside the app. At least once, and "back" is the
+	   previous page; otherwise (deep link, fresh start) it falls back to the
+	   screen's fixed destination. */
 	let stappen = $state(0);
 	afterNavigate((nav) => {
 		if (nav.from) stappen++;
 	});
 
 	function terug(e: MouseEvent) {
-		if (stappen === 0 || !kop.terug || kop.vast) return; /* dan doet de link zelf zijn werk */
+		if (stappen === 0 || !kop.terug || kop.vast) return; /* then the link does its own work */
 		e.preventDefault();
 		history.back();
 	}
@@ -37,7 +37,7 @@
 	loadIssues();
 	app.load();
 	sync.load();
-	/* Lokaal is leidend; de server krijgt het zodra er bereik is. */
+	/* Local wins; the server gets it as soon as there is signal. */
 	app.afterSave = () => sync.merkVies();
 
 	let wakeLock: WakeLockSentinel | null = null;
@@ -68,7 +68,7 @@
 		const weerOnline = () => sync.duwAlsNodig();
 		window.addEventListener('online', weerOnline);
 
-		/* Eén klok voor de hele app: schermen die tijd tonen werken vanzelf bij. */
+		/* One clock for the whole app: screens showing time update by themselves. */
 		const tik = setInterval(() => {
 			if (app.match?.running) app.nu = Date.now();
 		}, 1000);
@@ -100,7 +100,7 @@
 </svelte:head>
 
 <div class="app" class:zonderbalk={inTaak}>
-	<!-- Zwaarder dan een botsing: hier gaat vanaf nu alles verloren. -->
+	<!-- Heavier than a conflict: from here on everything is lost. -->
 	{#if issues.savingFails}
 		<div class="waarschuwing ernstig">
 			<span>Opslaan lukt niet. Wat je nu doet is weg zodra je de app sluit — maak ruimte op je toestel.</span>
