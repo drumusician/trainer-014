@@ -62,6 +62,28 @@ describe('op je beginscherm zetten', () => {
 		expect(document.querySelector('.keuze button.aan')?.textContent?.trim()).toBe('Android');
 	});
 
+	/*
+	 * Wie hier al met Blaadje werkt vindt straks een lege app op zijn beginscherm:
+	 * die heeft eigen opslag. Zonder waarschuwing denkt hij dat hij alles kwijt is,
+	 * en dat is precies het moment waarop iemand stopt met de app.
+	 */
+	it('zegt dat je je gegevens eerst moet overzetten', async () => {
+		alsToestel(IPHONE);
+		localStorage.setItem('o14-app-v1', JSON.stringify({ players: [{ id: 'p1', name: 'Bram' }] }));
+		render(OpBeginscherm);
+		await tick();
+		expect(document.body.textContent).toContain('begint leeg');
+		expect(document.body.textContent).toContain('Code maken');
+	});
+
+	it('zwijgt daarover als er hier nog niets staat', async () => {
+		alsToestel(IPHONE);
+		localStorage.clear();
+		render(OpBeginscherm);
+		await tick();
+		expect(document.body.textContent).not.toContain('begint leeg');
+	});
+
 	it('houdt op met uitleggen als de app er al staat', async () => {
 		alsToestel(IPHONE, 0, true);
 		render(OpBeginscherm);

@@ -36,6 +36,40 @@ beforeEach(() => {
 });
 
 describe('het gegevensscherm', () => {
+	/*
+	 * Op een telefoon in de browser terwijl de app er ook op kan staan: dan is
+	 * inloggen hier zonde van de moeite. De app op het beginscherm heeft eigen
+	 * opslag, dus daar ben je daarna nog steeds niet ingelogd — en dat merk je pas
+	 * zaterdag.
+	 */
+	function opEenTelefoon(alsApp: boolean) {
+		Object.defineProperty(navigator, 'userAgent', {
+			value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)',
+			configurable: true
+		});
+		Object.defineProperty(navigator, 'standalone', { value: alsApp, configurable: true });
+		window.matchMedia = ((q: string) => ({
+			matches: alsApp && q.includes('standalone'),
+			media: q,
+			addEventListener() {},
+			removeEventListener() {}
+		})) as never;
+	}
+
+	it('raadt aan om eerst te installeren, op een telefoon in de browser', async () => {
+		opEenTelefoon(false);
+		render(Meer);
+		await tick();
+		expect(document.body.textContent).toContain('eerst op je beginscherm');
+	});
+
+	it('zegt daar niets over in de app zelf', async () => {
+		opEenTelefoon(true);
+		render(Meer);
+		await tick();
+		expect(document.body.textContent).not.toContain('eerst op je beginscherm');
+	});
+
 	it('vraagt eerst om een e-mailadres', () => {
 		render(Meer);
 		expect(document.querySelector('input[type=email]')).toBeTruthy();

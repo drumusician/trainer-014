@@ -10,12 +10,20 @@
 
 	let toestel = $state<Device>('desktop');
 	let alGeinstalleerd = $state(false);
+	/* Staat er hier al een seizoen? Dan moet dat mee, want de app op het
+	   beginscherm begint met een lege opslag. */
+	let alGegevens = $state(false);
 	let vraag = $state<InstallVraag | null>(null);
 	let gekozen = $state<Device | null>(null);
 
 	onMount(() => {
 		toestel = detectDevice(navigator.userAgent, navigator.maxTouchPoints);
 		alGeinstalleerd = isInstalled();
+		try {
+			alGegevens = !!localStorage.getItem('o14-app-v1');
+		} catch {
+			alGegevens = false;
+		}
 		const opvangen = (e: Event) => {
 			e.preventDefault();
 			vraag = e as InstallVraag;
@@ -47,6 +55,12 @@
 	<p>{text.install.already}</p>
 {:else}
 	<p>{text.install.intro}</p>
+
+	{#if alGegevens}
+		<!-- Wie hier al werkt vindt straks een lege app, en denkt dat hij alles kwijt
+		     is. Dat is precies het moment waarop iemand stopt met de app. -->
+		<p><b class="mager">{text.install.movePrompt}</b></p>
+	{/if}
 
 	<div class="keuze sorteer" style="margin: 14px 0">
 		{#each TABS as tab (tab.code)}

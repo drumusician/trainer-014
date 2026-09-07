@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { backupName, readBackup, makeBackup } from '$lib/domain/backup';
 	import { describePackage, readTransferCode, makeTransferCode } from '$lib/domain/transfer';
 	import { app } from '$lib/store.svelte';
@@ -8,6 +9,7 @@
 	import { issues, clearIssues } from '$lib/issues.svelte';
 	import { issueReport, mailInhoud, omgevingsregel } from '$lib/domain/issue-report';
 	import { deel } from '$lib/domain/share';
+	import { detectDevice, isInstalled } from '$lib/domain/device';
 	import { text } from '$lib/text/nl';
 
 	$effect(() => zetKop(text.data.title));
@@ -19,6 +21,19 @@
 	let backup = $state<'geen' | 'maken'>('geen');
 	/* The link from the mail returns to wherever you requested it. On your own
 	   machine that is localhost, which is a different store from the real site. */
+	/*
+	 * Op een telefoon in de browser, terwijl de app er ook op kan staan.
+	 *
+	 * Dan is inloggen hier zonde van de moeite: de app op het beginscherm heeft
+	 * eigen opslag, dus daar ben je daarna nog steeds niet ingelogd. Dat merk je
+	 * pas zaterdag. Onder onMount, want detectDevice en isInstalled kijken naar de
+	 * browser en die is er bij het bouwen niet.
+	 */
+	let eerstInstalleren = $state(false);
+	onMount(() => {
+		eerstInstalleren = !isInstalled() && detectDevice(navigator.userAgent, navigator.maxTouchPoints) !== 'desktop';
+	});
+
 	const opLokaal = $derived(typeof location !== 'undefined' && /^(localhost|127\.|\[::1\])/.test(location.hostname));
 	let backuptekst = $state('');
 	/* Het logboekje doorsturen: pas nadat je het gezien hebt. */
@@ -145,6 +160,12 @@
 			<p class="uitleg">
 				{text.data.signInHint}
 			</p>
+			{#if eerstInstalleren}
+				<p class="uitleg">
+					<b class="mager">{text.data.installFirstLead}</b>
+					{text.data.installFirst}
+				</p>
+			{/if}
 			{#if opLokaal}
 				<p class="uitleg">
 					<b class="mager">{text.data.localWarningLead}</b>

@@ -61,6 +61,8 @@ Uitrollen, terugrollen en gegevens terughalen staat in [UITROLLEN.md](../UITROLL
 
    Zonder die regel werkt de **link** in de mail: de app vangt hem op als je terugkomt. Dan moet wel Authentication → **URL Configuration** kloppen: Site URL op je Netlify-adres, en bij Redirect URLs ook je lokale testadres (`http://localhost:8788` of welke poort je gebruikt).
 
+   Dit is niet theoretisch: een nieuw adres krijgt **Confirm signup**, niet Magic Link. Zet je de token daar niet in, dan krijgt elke nieuwe trainer een mail met alleen een link — die opent in de browser, terwijl de app op zijn beginscherm eigen opslag heeft. Hij is dan ingelogd in Safari en niet in de app die hij zaterdag gebruikt.
+
    Waarom uiteindelijk toch een code en geen magic link: een app op je iPhone-beginscherm heeft eigen opslag, los van Safari. Een link uit de mail opent Safari, en dan logt de verkeerde omgeving in. Een code typ je in de app zelf, dus dat probleem bestaat niet.
 5. Project Settings → API Keys → tabje **Publishable and secret API keys** → de `sb_publishable_...` sleutel. Die staat samen met de project-URL boven in `app/index.html`. Allebei openbaar bedoeld; RLS doet het echte werk.
 

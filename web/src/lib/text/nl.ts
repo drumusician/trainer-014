@@ -441,6 +441,9 @@ const data = {
 		'Log in met je e-mailadres, dan staat je seizoen veilig en heb je het op al je toestellen. Je krijgt een mail met een link en een code; geen wachtwoord om te onthouden.',
 	/* De link uit de mail komt terug waar je hem opvroeg; op localhost is dat een
 	   andere opslag dan de echte site. */
+	installFirstLead: 'Zet Blaadje eerst op je beginscherm',
+	installFirst:
+		'en log daar in. De app op je beginscherm heeft zijn eigen opslag, los van deze browser: log je hier in, dan ben je daar niet ingelogd en sta je zaterdag met een lege app langs de lijn. De uitleg staat op blaadje.app, onderaan.',
 	localWarningLead: 'Let op:',
 	localWarning: (host: string) =>
 		`je draait dit op ${host}. De link in de mail komt hier terug, niet op de echte site, en dit is een aparte opslag. Wil je inloggen voor je telefoon, doe dat dan op de echte site.`,
@@ -581,6 +584,8 @@ const install = {
 	already: 'Blaadje staat al op je beginscherm. Dat is precies goed.',
 	intro:
 		'Blaadje is een website, geen download uit de App Store. Zet hem op je beginscherm en hij werkt als een gewone app: geen browserbalk meer, en het scherm blijft aan zolang de klok loopt.',
+	movePrompt:
+		'De app op je beginscherm begint leeg: hij heeft zijn eigen opslag, los van deze browser. Werk je hier al met Blaadje, haal je gegevens dan over voordat je verdergaat — bij Gegevens is dat Code maken, en in de nieuwe app Invoeren. Of log in beide in, dan gaat het vanzelf.',
 	deviceIos: 'iPhone of iPad',
 	deviceAndroid: 'Android',
 
