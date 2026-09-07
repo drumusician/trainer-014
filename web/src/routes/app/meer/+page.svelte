@@ -7,6 +7,7 @@
 	import { opslagstand } from '$lib/storage.svelte';
 	import { issues, clearIssues } from '$lib/issues.svelte';
 	import { issueReport, mailInhoud, omgevingsregel } from '$lib/domain/issue-report';
+	import { deel } from '$lib/domain/share';
 	import { text } from '$lib/text/nl';
 
 	$effect(() => zetKop(text.data.title));
@@ -23,6 +24,8 @@
 	/* Het logboekje doorsturen: pas nadat je het gezien hebt. */
 	let melden = $state('');
 	let uitnodigen = $state('');
+	/* De uitleg voor wie je hebt uitgenodigd, en hoe het doorsturen afliep. */
+	let uitlegVoor = $state<{ email: string; tekst: string; hoe: string } | null>(null);
 	/* Ben ik de eigenaar? Alleen dan kun je hier iemand bij zetten. */
 	const eigenaar = $derived(sync.leden.some((l) => l.gebruiker === sync.sessie?.user_id && l.rol === 'eigenaar'));
 
@@ -297,13 +300,18 @@
 				<div class="sregel">
 					<span class="naam mager">{text.data.invitePending(u.email)}</span>
 					{#if eigenaar}
-						<!-- Blaadje verstuurt zelf geen mail; dat zou een server vragen. Dit
-						     opent de mail van de trainer, met de uitleg er al in. -->
-						<a
-							class="knop klein"
-							href="mailto:{u.email}?subject={encodeURIComponent(
-								text.data.inviteMailSubject(t.teamName)
-							)}&body={encodeURIComponent(text.data.inviteMailBody(t.teamName, u.email))}">{text.data.tellHim}</a
+						<!-- Blaadje verstuurt zelf geen bericht; dat zou een server vragen.
+						     Dit zet de uitleg klaar en laat het toestel kiezen hoe hij weggaat:
+						     WhatsApp, mail, klembord. Hier stond een mailto-koppeling, en die
+						     opent op een telefoon soms niets of het verkeerde programma —
+						     terwijl een trainer dit vrijwel altijd via WhatsApp stuurt. -->
+						<button
+							class="klein"
+							onclick={async () => {
+								const tekst = text.data.inviteText(t.teamName, u.email);
+								const hoe = await deel(tekst, text.data.inviteTitle(t.teamName));
+								uitlegVoor = { email: u.email, tekst, hoe };
+							}}>{text.data.tellHim}</button
 						>
 						<button class="klein" onclick={() => sync.trekIn(u.id)}>{text.data.withdraw}</button>
 					{/if}
@@ -311,6 +319,24 @@
 			{/each}
 			{#if eigenaar && sync.openstaand.length}
 				<p class="uitleg" style="font-size: 13px">{text.data.tellHimHint}</p>
+			{/if}
+			{#if uitlegVoor}
+				<p class="uitleg" style="margin-top: 8px">
+					{#if uitlegVoor.hoe === 'gedeeld'}
+						{text.data.tellHimShared}
+					{:else if uitlegVoor.hoe === 'gekopieerd'}
+						{text.data.tellHimCopied}
+						<b>{uitlegVoor.email}</b>.
+					{:else}
+						{text.data.tellHimSelf} <b>{uitlegVoor.email}</b>.
+					{/if}
+				</p>
+				{#if uitlegVoor.hoe !== 'gedeeld'}
+					<textarea readonly value={uitlegVoor.tekst} style="min-height: 140px"></textarea>
+				{/if}
+				<div class="knoprij" style="padding-left: 0; margin-top: 8px">
+					<button class="klein" onclick={() => (uitlegVoor = null)}>{text.data.closeIssues}</button>
+				</div>
 			{/if}
 			{#if eigenaar}
 				<label class="vak">

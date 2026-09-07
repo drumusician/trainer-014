@@ -337,22 +337,75 @@ describe('het gegevensscherm als je ingelogd bent', () => {
 	 * hem zeggen — en dan liever met een uitleg die klopt dan met 'ik heb je
 	 * toegevoegd, zoek maar uit'.
 	 */
-	it('zet een mail klaar met de uitleg erin', async () => {
+	/*
+	 * Doorsturen via het deelvenster van het toestel.
+	 *
+	 * Dit was een mailto-koppeling. Die opent op een telefoon soms niets of het
+	 * verkeerde programma, terwijl een trainer dit vrijwel altijd via WhatsApp
+	 * stuurt. Het deelvenster laat hem zelf kiezen, en op een laptop valt het
+	 * terug op het klembord.
+	 */
+	function metDelen(opties: { share?: unknown; clipboard?: unknown }) {
+		if ('share' in opties) {
+			Object.defineProperty(navigator, 'share', { value: opties.share, configurable: true });
+		} else {
+			Reflect.deleteProperty(navigator, 'share');
+		}
+		Object.defineProperty(navigator, 'clipboard', { value: opties.clipboard, configurable: true });
+	}
+
+	async function metUitnodiging() {
 		metSelectie();
 		sync.sessie!.user_id = 'u1';
 		sync.sessie!.teamId = 'team-1';
-		sync.leden = [{ gebruiker: 'u1', rol: 'eigenaar' }];
+		sync.leden = [{ gebruiker: 'u1', rol: 'eigenaar', email: 'tjaco@voorbeeld.nl' }];
 		sync.openstaand = [{ id: 'i1', email: 'matthijs@voorbeeld.nl' }];
 		render(Meer);
 		await tick();
+	}
 
-		const link = screen.getByRole('link', { name: 'Laat het hem weten' }).getAttribute('href') ?? '';
-		expect(link.startsWith('mailto:matthijs@voorbeeld.nl')).toBe(true);
-		const tekst = decodeURIComponent(link);
+	it('geeft de uitleg door via het deelvenster van het toestel', async () => {
+		const share = vi.fn().mockResolvedValue(undefined);
+		metDelen({ share, clipboard: { writeText: vi.fn() } });
+		await metUitnodiging();
+
+		screen.getByRole('button', { name: 'Uitleg delen' }).click();
+		await tick();
+		await tick();
+
+		const tekst = share.mock.calls[0][0].text as string;
 		expect(tekst).toContain('O14-3');
 		expect(tekst).toContain('blaadje.app');
 		expect(tekst).toContain('matthijs@voorbeeld.nl');
 		expect(tekst).toContain('Aannemen');
+		expect(document.body.textContent).toContain('Doorgestuurd');
+	});
+
+	/* Op een laptop is er geen deelvenster; dan het klembord, met de tekst erbij
+	   zodat je ziet wat je doorstuurt. */
+	it('valt terug op het klembord en laat de tekst zien', async () => {
+		metDelen({ clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
+		await metUitnodiging();
+
+		screen.getByRole('button', { name: 'Uitleg delen' }).click();
+		await tick();
+		await tick();
+
+		expect(document.body.textContent).toContain('op je klembord');
+		expect((document.querySelector('textarea') as HTMLTextAreaElement).value).toContain('blaadje.app');
+	});
+
+	/* En lukt er helemaal niets, dan staat de tekst er nog steeds. */
+	it('laat de tekst staan als er niets lukt', async () => {
+		metDelen({ clipboard: undefined });
+		await metUitnodiging();
+
+		screen.getByRole('button', { name: 'Uitleg delen' }).click();
+		await tick();
+		await tick();
+
+		expect(document.body.textContent).toContain('Kopieer deze tekst');
+		expect(document.querySelector('textarea')).toBeTruthy();
 	});
 
 	it('vraagt of je een uitnodiging aanneemt, met de naam van het team erbij', async () => {

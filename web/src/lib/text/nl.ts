@@ -486,11 +486,14 @@ const data = {
 	invite: 'Uitnodigen',
 	invitePending: (email: string) => `${email} · uitgenodigd, nog niet ingelogd`,
 	withdraw: 'Intrekken',
-	tellHim: 'Laat het hem weten',
+	tellHim: 'Uitleg delen',
 	tellHimHint:
-		'Blaadje verstuurt zelf geen mail — daar zou een server voor nodig zijn, en die is er bewust niet. Deze knop opent je eigen mail met de uitleg erin.',
-	inviteMailSubject: (team: string) => `Blaadje voor ${team}`,
-	inviteMailBody: (team: string, adres: string) =>
+		'Blaadje verstuurt zelf geen bericht — daar zou een server voor nodig zijn, en die is er bewust niet. Deze knop zet de uitleg klaar en laat je hem doorsturen: WhatsApp, mail, wat je maar gebruikt.',
+	tellHimShared: 'Doorgestuurd.',
+	tellHimCopied: 'De uitleg staat op je klembord. Plak hem in een bericht aan',
+	tellHimSelf: 'Kopieer deze tekst en stuur hem naar',
+	inviteTitle: (team: string) => `Blaadje voor ${team}`,
+	inviteText: (team: string, adres: string) =>
 		[
 			`Ik heb je toegevoegd aan ${team} in Blaadje, de app waarmee ik de wedstrijden bijhoud.`,
 			'',
