@@ -577,6 +577,104 @@ class Sync {
 		}
 	}
 
+	/**
+	 * Zelf een team beginnen.
+	 *
+	 * Tot nu toe ontstond een team alleen als je nog nergens bij hoorde. Wie was
+	 * uitgenodigd voor het team van een ander zat daarmee vast: hij kon nooit zijn
+	 * eigen ploeg beginnen. Dat is geen ondersteunende rol maar een val.
+	 *
+	 * Het nieuwe team begint leeg, en dat is regel 4: wat er nu in de app staat
+	 * hoort bij het team dat je verlaat, en meenemen zou het daar naar binnen
+	 * schrijven. Wie nog nergens bij hoorde houdt wel wat hij heeft — dat ís het
+	 * begin van zijn team.
+	 */
+	async nieuwTeam(naam: string) {
+		if (!this.sessie) return;
+		const schoon = naam.trim();
+		if (!schoon) {
+			this.message = 'Geef het team een naam.';
+			return;
+		}
+		if (this.vies && this.sessie.teamId) {
+			this.message = 'Stuur eerst op wat hier nog klaarstaat, of haal op.';
+			return;
+		}
+		this.bezig = true;
+		try {
+			const token = await this.token();
+			if (!token) return;
+			if (!this.sessie.user_id) {
+				const u = (await sb('/auth/v1/user', {}, token)) as { id: string; email: string };
+				this.sessie.user_id = u.id;
+				this.sessie.email = u.email;
+			}
+			const gemaakt = (await sb(
+				'/rest/v1/teams',
+				{
+					method: 'POST',
+					headers: { Prefer: 'return=representation' },
+					body: JSON.stringify({ naam: schoon, eigenaar: this.sessie.user_id })
+				},
+				token
+			)) as { id: string }[];
+
+			if (this.sessie.teamId) app.wisAlles();
+			app.setTeamName(schoon);
+			this.sessie.teamId = gemaakt[0].id;
+			/* Vers aangemaakt: de server heeft nog niets. Geen 'onbekend' maar 'leeg'. */
+			this.sessie.versie = 0;
+			this.sessie.afdruk = null;
+			this.leden = [];
+			this.openstaand = [];
+			this.botsing = false;
+			this.save();
+			await this.haalTeams();
+			await this.opsturen(false, true);
+			this.message = 'Nieuw team gemaakt: ' + schoon + '.';
+		} catch (e) {
+			this.message = 'Een nieuw team maken lukte niet: ' + (e as Error).message;
+		} finally {
+			this.bezig = false;
+		}
+	}
+
+	/**
+	 * De naam van het team gelijk houden met wat de trainer invulde.
+	 *
+	 * teams.naam werd één keer gezet bij het aanmaken en daarna nooit meer. Wie
+	 * zijn team hernoemde zag in de lijst nog de naam van toen — precies op het
+	 * moment dat je tussen twee teams moet kiezen.
+	 *
+	 * Eén poging per naam. Lukt het niet omdat je niet de eigenaar bent, dan
+	 * blijft het daarbij: opnieuw proberen bij elke opslag is hoe je een lus bouwt.
+	 */
+	private naamGeprobeerd: string | null = null;
+
+	private async houdNaamGelijk(token: string, team: string) {
+		const wil = app.toestand.teamName;
+		/*
+		 * 'Ons team' is de naam die er staat als er nog niets is ingevuld. Die mag
+		 * nooit naar de server: een toestel met een lege app zou daarmee het team van
+		 * een ander hernoemen naar 'Ons team'. Een test ving dat op de dag dat dit
+		 * geschreven werd.
+		 */
+		if (wil === 'Ons team') return;
+		const bekend = this.mijnTeams.find((p) => p.id === team)?.naam;
+		if (!bekend || bekend === wil || this.naamGeprobeerd === wil) return;
+		this.naamGeprobeerd = wil;
+		try {
+			await sb(
+				'/rest/v1/teams?id=eq.' + team,
+				{ method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ naam: wil }) },
+				token
+			);
+			this.mijnTeams = this.mijnTeams.map((p) => (p.id === team ? { ...p, naam: wil } : p));
+		} catch {
+			/* niet de eigenaar, of geen bereik: dan blijft de naam zoals hij was */
+		}
+	}
+
 	/** De teams waar je bij hoort. Staat altijd op het gegevensscherm. */
 	async haalTeams() {
 		const token = await this.token();
@@ -808,6 +906,7 @@ class Sync {
 			this.hapert = false;
 			this.mislukt = 0;
 			this.message = 'Opgestuurd.';
+			await this.houdNaamGelijk(token, team);
 		} catch (e) {
 			if (e instanceof WachtOpDeTrainer) {
 				this.message = (e as Error).message;

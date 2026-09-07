@@ -1267,3 +1267,176 @@ describe('een uur later, na het vernieuwen van het toegangsbewijs', () => {
 		expect(sync.sessie).not.toBeNull();
 	});
 });
+
+/*
+ * Zelf een team beginnen.
+ *
+ * Tot nu toe ontstond een team alleen als je nog nergens bij hoorde. Wie was
+ * uitgenodigd voor het team van een ander zat daarmee vast: hij kon nooit zijn
+ * eigen ploeg beginnen. Dat is geen ondersteunende rol maar een val.
+ */
+describe('een eigen team beginnen', () => {
+	function server() {
+		const verstuurd: { url: string; method?: string; body?: Record<string, unknown> }[] = [];
+		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+			const u = String(url);
+			verstuurd.push({ url: u, method: init?.method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+			if (u.includes('/rest/v1/teams') && init?.method === 'POST')
+				return new Response(JSON.stringify([{ id: 'nieuw-team' }]), { status: 200 });
+			if (u.includes('teams?select=id'))
+				return new Response(
+					JSON.stringify([
+						{ id: 'team-1', naam: 'JO13-1' },
+						{ id: 'nieuw-team', naam: 'JO10-4' }
+					]),
+					{ status: 200 }
+				);
+			if (u.includes('uitnodigingen') || u.includes('team_leden')) return new Response('[]', { status: 200 });
+			if (u.includes('team_toestand')) return new Response('[]', { status: 200 });
+			return new Response(JSON.stringify({ versie: 1 }), { status: 200 });
+		}) as unknown as typeof fetch;
+		return verstuurd;
+	}
+
+	beforeEach(() => {
+		noodrem.los();
+		sync.mijnTeams = [{ id: 'team-1', naam: 'JO13-1' }];
+		sync.message = '';
+		sync.vies = false;
+		app.toestand = emptyState();
+		app.toestand.teamName = 'JO13-1';
+		app.toestand.players = [{ id: 'p1', name: 'Bram', line: 'M' }];
+	});
+
+	it('maakt een team op jouw naam en volgt het meteen', async () => {
+		const verstuurd = server();
+		sync.sessie!.teamId = 'team-1';
+		sync.sessie!.versie = 5;
+
+		await sync.nieuwTeam('  JO10-4  ');
+
+		const post = verstuurd.find((v) => v.url.includes('/rest/v1/teams') && v.method === 'POST');
+		expect(post?.body).toMatchObject({ naam: 'JO10-4', eigenaar: 'u1' });
+		expect(sync.sessie!.teamId).toBe('nieuw-team');
+		expect(app.toestand.teamName).toBe('JO10-4');
+	});
+
+	/*
+	 * Regel 4, opnieuw: wat er in de app stond hoort bij het team dat je verlaat.
+	 * Het meenemen zou de selectie van de een in de ploeg van de ander schrijven.
+	 */
+	it('begint leeg, en neemt de spelers van het vorige team niet mee', async () => {
+		server();
+		sync.sessie!.teamId = 'team-1';
+		sync.sessie!.versie = 5;
+
+		await sync.nieuwTeam('JO10-4');
+
+		expect(app.toestand.players).toHaveLength(0);
+		expect(app.toestand.archive).toHaveLength(0);
+	});
+
+	/* Maar wie nog nergens bij hoorde houdt wat hij heeft: dat ís het begin. */
+	it('houdt wat er staat als dit je eerste team is', async () => {
+		server();
+		sync.sessie!.teamId = undefined;
+		sync.sessie!.versie = undefined;
+
+		await sync.nieuwTeam('JO10-4');
+
+		expect(app.toestand.players).toHaveLength(1);
+		expect(sync.sessie!.teamId).toBe('nieuw-team');
+	});
+
+	it('vraagt om een naam', async () => {
+		const verstuurd = server();
+		await sync.nieuwTeam('   ');
+		expect(verstuurd.some((v) => v.method === 'POST')).toBe(false);
+		expect(sync.message).toContain('naam');
+	});
+
+	it('begint niets nieuws zolang er hier iets klaarstaat', async () => {
+		const verstuurd = server();
+		sync.sessie!.teamId = 'team-1';
+		sync.vies = true;
+		await sync.nieuwTeam('JO10-4');
+		expect(verstuurd.some((v) => v.method === 'POST')).toBe(false);
+		expect(sync.sessie!.teamId).toBe('team-1');
+	});
+});
+
+/*
+ * De naam van het team gelijk houden.
+ *
+ * teams.naam werd één keer gezet bij het aanmaken en daarna nooit meer. Wie zijn
+ * team hernoemde zag in de lijst nog de naam van toen — precies op het moment dat
+ * je tussen twee teams moet kiezen.
+ */
+describe('de teamnaam op de server', () => {
+	function server(mislukt = false) {
+		const verstuurd: { url: string; method?: string; body?: Record<string, unknown> }[] = [];
+		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+			const u = String(url);
+			verstuurd.push({ url: u, method: init?.method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+			if (init?.method === 'PATCH' && mislukt)
+				return new Response(JSON.stringify({ message: 'mag niet' }), { status: 403 });
+			if (u.includes('teams?select=id'))
+				return new Response(JSON.stringify([{ id: 'team-1', naam: 'JO13-1' }]), { status: 200 });
+			if (u.includes('uitnodigingen')) return new Response('[]', { status: 200 });
+			return new Response(JSON.stringify({ versie: 9 }), { status: 200 });
+		}) as unknown as typeof fetch;
+		return verstuurd;
+	}
+
+	beforeEach(() => {
+		noodrem.los();
+		sync.mijnTeams = [{ id: 'team-1', naam: 'JO13-1' }];
+		sync.vies = false;
+		sync.botsing = false;
+		app.toestand = emptyState();
+		sync.sessie!.teamId = 'team-1';
+		sync.sessie!.versie = 4;
+	});
+
+	it('werkt de naam bij zodra de trainer hem verandert', async () => {
+		const verstuurd = server();
+		app.toestand.teamName = 'JO13-2';
+		await sync.opsturen();
+		const patch = verstuurd.find((v) => v.method === 'PATCH');
+		expect(patch?.body).toMatchObject({ naam: 'JO13-2' });
+		expect(sync.mijnTeams[0].naam).toBe('JO13-2');
+	});
+
+	it('laat hem met rust als hij niet veranderd is', async () => {
+		const verstuurd = server();
+		app.toestand.teamName = 'JO13-1';
+		await sync.opsturen();
+		expect(verstuurd.some((v) => v.method === 'PATCH')).toBe(false);
+	});
+
+	/*
+	 * 'Ons team' is de naam die er staat als er nog niets is ingevuld. Een toestel
+	 * met een lege app zou daarmee het team van een ander hernoemen.
+	 */
+	it('stuurt de standaardnaam nooit op', async () => {
+		const verstuurd = server();
+		app.toestand.teamName = 'Ons team';
+		await sync.opsturen();
+		expect(verstuurd.some((v) => v.method === 'PATCH')).toBe(false);
+		expect(sync.mijnTeams[0].naam).toBe('JO13-1');
+	});
+
+	/*
+	 * Eén poging per naam. Lukt het niet omdat je niet de eigenaar bent, dan blijft
+	 * het daarbij: bij elke opslag opnieuw proberen is precies hoe je een lus bouwt.
+	 */
+	/* Een naam die nog niet geprobeerd is, want de rem werkt per naam. */
+	it('probeert het niet bij elke opslag opnieuw', async () => {
+		const verstuurd = server(true);
+		app.toestand.teamName = 'JO13-9';
+		await sync.opsturen();
+		await sync.opsturen();
+		await sync.opsturen();
+		expect(verstuurd.filter((v) => v.method === 'PATCH')).toHaveLength(1);
+	});
+});

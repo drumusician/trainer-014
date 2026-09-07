@@ -150,6 +150,11 @@ hoort namelijk bij het team dat je verlaat, en meenemen zou het bij het nieuwe
 naar binnen schrijven. Kwam je nergens vandaan, dan blijft het juist staan — dat
 ís het begin van dat team.
 
+Zelf een team beginnen kan altijd, ook als je al bij het team van iemand anders
+hoort — anders is meekijken een val waar je nooit meer uitkomt met een eigen
+ploeg. Zo'n nieuw team begint leeg, om dezelfde reden als regel 4: wat er in de
+app staat hoort bij het team dat je verlaat.
+
 De lijst met je teams staat altijd op het gegevensscherm, met daarin welk team
 aanstaat. Hij was eerst een eenmalig keuzemoment dat verdween zodra je gekozen
 had, en dat maakte er een eenrichtingsdeur van: wie twee teams heeft koos er een

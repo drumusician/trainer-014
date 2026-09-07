@@ -251,6 +251,17 @@
 						>
 					{/if}
 				{/each}
+				<!-- Wie is uitgenodigd voor het team van een ander moet ook zijn eigen
+				     ploeg kunnen beginnen; anders is meekijken een val. -->
+				<button
+					disabled={sync.bezig}
+					onclick={() => {
+						const huidig = sync.mijnTeams.find((p) => p.id === sync.sessie?.teamId)?.naam ?? t.teamName;
+						if (sync.sessie?.teamId && !confirm(text.data.confirmNewTeam(huidig))) return;
+						const naam = prompt(text.data.askNewTeam);
+						if (naam?.trim()) sync.nieuwTeam(naam);
+					}}>{text.data.newTeam}</button
+				>
 			</div>
 		{/if}
 

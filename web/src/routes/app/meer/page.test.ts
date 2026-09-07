@@ -409,6 +409,33 @@ describe('het gegevensscherm als je ingelogd bent', () => {
 		expect(sync.sessie!.teamId).toBe('team-1');
 	});
 
+	/*
+	 * Wie is uitgenodigd voor het team van een ander moet ook zijn eigen ploeg
+	 * kunnen beginnen. Zonder die knop is meekijken een val: je komt er nooit meer
+	 * uit met een eigen team.
+	 */
+	it('laat je een eigen team beginnen, ook als je al bij een team hoort', async () => {
+		sync.sessie!.teamId = 'team-1';
+		sync.mijnTeams = [{ id: 'team-1', naam: 'JO13-1' }];
+		vi.stubGlobal('confirm', () => true);
+		vi.stubGlobal('prompt', () => 'JO10-4');
+		render(Meer);
+		await tick();
+		expect(screen.getByRole('button', { name: 'Nieuw team' })).toBeTruthy();
+	});
+
+	it('begint niets als je de naam leeg laat', async () => {
+		sync.sessie!.teamId = 'team-1';
+		sync.mijnTeams = [{ id: 'team-1', naam: 'JO13-1' }];
+		vi.stubGlobal('confirm', () => true);
+		vi.stubGlobal('prompt', () => '');
+		render(Meer);
+		await tick();
+		screen.getByRole('button', { name: 'Nieuw team' }).click();
+		await tick();
+		expect(sync.sessie!.teamId).toBe('team-1');
+	});
+
 	it('noemt bij één team gewoon welk team dat is', async () => {
 		sync.sessie!.teamId = 'team-1';
 		sync.mijnTeams = [{ id: 'team-1', naam: 'JO13-1' }];

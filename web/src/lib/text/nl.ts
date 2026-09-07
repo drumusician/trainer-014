@@ -516,6 +516,10 @@ const data = {
 	confirmChooseTeam: (naam: string) =>
 		`Dit toestel op ${naam} zetten?\n\nDe selectie, trainingen en het archief die nu in de app staan worden vervangen door die van ${naam}.`,
 	firstPullHeading: 'Nog niet opgehaald',
+	newTeam: 'Nieuw team',
+	askNewTeam: 'Hoe heet het nieuwe team?',
+	confirmNewTeam: (huidig: string) =>
+		`Een nieuw team beginnen?\n\nWat er nu in de app staat hoort bij ${huidig} en blijft daar. Dit toestel begint leeg voor het nieuwe team.`,
 
 	transferHeading: 'Overzetten en back-up',
 	onlyHereLead: 'Alles staat alleen op dit toestel.',
