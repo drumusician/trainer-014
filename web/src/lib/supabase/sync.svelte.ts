@@ -1,4 +1,5 @@
 import { app } from '$lib/store.svelte';
+import { reportIssue } from '$lib/issues.svelte';
 import { SUPABASE_SLEUTEL, SUPABASE_URL } from './config';
 
 const SESSIESLEUTEL = 'o14-sessie-v1';
@@ -59,11 +60,13 @@ const AFKOELEN = 900_000;
 
 class Noodrem {
 	private stempels: number[] = [];
+	/** hoe vaak welk pad, om te kunnen zien wát er loopt */
+	private paden: Record<string, number> = {};
 	/** wanneer de rem eraf mag; 0 = hij staat er niet op */
 	tot = 0;
 
 	/** Mag er nog een verzoek uit? Zo niet, dan staat de rem erop. */
-	mag(nu: number): boolean {
+	mag(nu: number, pad = ''): boolean {
 		if (this.tot) {
 			if (nu < this.tot) return false;
 			this.los();
@@ -71,9 +74,25 @@ class Noodrem {
 		this.stempels = this.stempels.filter((s) => nu - s < RAAM);
 		if (this.stempels.length >= GRENS) {
 			this.tot = nu + AFKOELEN;
+			/*
+			 * Opschrijven wát er zo vaak langskwam. Dit is het enige moment waarop we
+			 * er iets van zien: de lus zelf was niet te reproduceren, dus als hij zich
+			 * weer voordoet moet de app zelf vertellen welke aanroep het was. Het komt
+			 * in het logboekje bij Gegevens, en dat is met één knop door te sturen.
+			 */
+			reportIssue(
+				'De app deed te veel verzoeken achter elkaar en heeft zichzelf stilgezet.',
+				Object.entries(this.paden)
+					.sort((a, b) => b[1] - a[1])
+					.map(([p, n]) => p + ' ×' + n)
+					.join(', ')
+			);
 			return false;
 		}
 		this.stempels.push(nu);
+		/* Alleen het soort pad tellen, nooit een id of een adres. */
+		const soort = pad.split('?')[0].replace(/\/[0-9a-f-]{8,}$/i, '/…');
+		this.paden[soort] = (this.paden[soort] ?? 0) + 1;
 		return true;
 	}
 
@@ -81,13 +100,14 @@ class Noodrem {
 	los() {
 		this.tot = 0;
 		this.stempels = [];
+		this.paden = {};
 	}
 }
 
 export const noodrem = new Noodrem();
 
 async function sb(pad: string, opties: RequestInit & { metToken?: boolean } = {}, token?: string) {
-	if (!noodrem.mag(Date.now())) {
+	if (!noodrem.mag(Date.now(), pad)) {
 		const fout = new Error(
 			'De app deed veel te veel verzoeken achter elkaar en heeft zichzelf stilgezet. Er gaat iets mis met synchroniseren; je gegevens op dit toestel zijn veilig.'
 		) as Fout;
@@ -238,7 +258,22 @@ class Sync {
 			user_id: d.user?.id ?? oud?.user_id ?? null,
 			email: d.user?.email ?? oud?.email ?? null,
 			teamId: oud?.teamId ?? null,
-			versie: oud?.versie ?? 0,
+			/*
+			 * Twee dingen die hier misgingen, en allebei stil.
+			 *
+			 * De versie werd 0 als hij nog onbekend was. Maar 0 betekent 'we hebben
+			 * gekeken en er stond niets', en onbekend betekent 'we hebben dit team nog
+			 * nooit gezien'. Door dat verschil weg te poetsen omzeilde elke
+			 * tokenvernieuwing de regel dat je nooit opstuurt naar een team dat je niet
+			 * hebt opgehaald — precies de regel die andermans seizoen beschermt.
+			 *
+			 * En de vingerafdruk werd helemaal niet meegenomen. Na elke vernieuwing was
+			 * hij dus leeg, en dan vindt merkVies() altijd een verschil: de app denkt
+			 * bij elke opslag dat er iets te versturen is, ook als er niets veranderd
+			 * is. Een uur lang, elk uur opnieuw.
+			 */
+			versie: oud?.versie,
+			afdruk: oud?.afdruk ?? null,
 			laatst: oud?.laatst ?? null
 		};
 		this.save();
@@ -277,8 +312,25 @@ class Sync {
 			})) as Parameters<Sync['zet']>[0];
 			this.zet(d);
 			return this.sessie!.access_token;
-		} catch {
-			this.uitloggen();
+		} catch (e) {
+			/*
+			 * Alleen uitloggen als de server het bewijs echt afwijst.
+			 *
+			 * Hier stond een catch die bij élke fout uitlogde. Geen bereik op het
+			 * moment dat je token toevallig verloopt? Uitgelogd, langs de lijn, en
+			 * opnieuw inloggen kan niet want er is geen bereik. En sinds de noodrem
+			 * bestaat gold het ook daarvoor: de rem sloeg aan en je was je sessie
+			 * kwijt.
+			 *
+			 * Een verlopen of ingetrokken bewijs geeft 400 of 401. Al het andere is
+			 * een storing, en daar hoort de trainer niets van te merken.
+			 */
+			const status = (e as Fout).status ?? 0;
+			if (status === 400 || status === 401 || status === 403) {
+				this.uitloggen();
+			} else {
+				this.hapert = true;
+			}
 			return null;
 		}
 	}

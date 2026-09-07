@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { noodrem, sync } from './sync.svelte';
 import { app } from '$lib/store.svelte';
+import { issues } from '$lib/issues.svelte';
 import { emptyState } from '$lib/domain/types';
 
 /** A fake server: enough to test the decisions, not the network. */
@@ -1089,6 +1090,20 @@ describe('de noodrem', () => {
 	});
 
 	/* En als hij erop staat: zeggen wat er is, en niet blijven proberen. */
+	/*
+	 * De rem is ook een instrument. De lus was niet te reproduceren, dus als hij
+	 * zich weer voordoet moet de app zelf opschrijven wélke aanroep het was — in
+	 * het logboekje bij Gegevens, dat met één knop door te sturen is.
+	 */
+	it('schrijft op wat er zo vaak werd opgevraagd', () => {
+		issues.lijst = [];
+		const nu = Date.now();
+		for (let i = 0; i < 200; i++) noodrem.mag(nu + i * 10, '/rest/v1/team_toestand?select=data');
+		expect(issues.lijst).toHaveLength(1);
+		expect(issues.lijst[0].what).toContain('te veel verzoeken');
+		expect(issues.lijst[0].message).toContain('/rest/v1/team_toestand');
+	});
+
 	it('zegt wat er aan de hand is en probeert het niet opnieuw', async () => {
 		const nu = Date.now();
 		for (let i = 0; i < 400; i++) noodrem.mag(nu + i * 10);
@@ -1099,5 +1114,156 @@ describe('de noodrem', () => {
 		expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(voor);
 		expect(sync.message).toContain('stilgezet');
 		expect(sync.botsing).toBe(false);
+	});
+});
+
+/*
+ * Wat een tokenvernieuwing niet mag kwijtmaken.
+ *
+ * Elk uur wordt het toegangsbewijs vernieuwd, en daarbij wordt de sessie opnieuw
+ * opgebouwd. Twee velden vielen daar stilletjes uit. Geen van beide levert een
+ * foutmelding op; het gaat om gedrag dat een uur later ineens anders is.
+ */
+describe('een uur later, na het vernieuwen van het toegangsbewijs', () => {
+	beforeEach(() => noodrem.los());
+
+	function metVernieuwing() {
+		globalThis.fetch = vi.fn(async (url: string) => {
+			if (String(url).includes('/auth/v1/token')) {
+				return new Response(JSON.stringify({ access_token: 'nieuw', refresh_token: 'r2', expires_in: 3600 }), {
+					status: 200
+				});
+			}
+			return new Response('[]', { status: 200 });
+		}) as unknown as typeof fetch;
+	}
+
+	/*
+	 * 0 betekent 'we hebben gekeken en er stond niets'. Onbekend betekent 'we
+	 * hebben dit team nog nooit gezien'. Dat verschil is precies de regel die
+	 * andermans seizoen beschermt; hem wegpoetsen bij het vernieuwen zette die
+	 * regel elk uur weer buiten werking.
+	 */
+	it('houdt vast dat het team nog nooit is opgehaald', async () => {
+		metVernieuwing();
+		sync.sessie = {
+			access_token: 'oud',
+			refresh_token: 'r',
+			verloopt: Date.now() - 1000,
+			teamId: 'team-1',
+			versie: undefined,
+			afdruk: null,
+			laatst: null
+		} as typeof sync.sessie;
+
+		await sync.haalPloeg();
+
+		expect(sync.sessie?.access_token).toBe('nieuw');
+		expect(sync.sessie?.versie).toBeUndefined();
+	});
+
+	/*
+	 * En de vingerafdruk. Zonder die vindt merkVies() altijd een verschil, dus
+	 * denkt de app bij elke opslag dat er iets te versturen is — ook als er niets
+	 * veranderd is.
+	 */
+	it('houdt de vingerafdruk vast, zodat niet alles ineens nieuw lijkt', async () => {
+		metVernieuwing();
+		const afdrukVooraf = 'ietsherkenbaars';
+		sync.sessie = {
+			access_token: 'oud',
+			refresh_token: 'r',
+			verloopt: Date.now() - 1000,
+			teamId: 'team-1',
+			versie: 4,
+			afdruk: afdrukVooraf,
+			laatst: null
+		} as typeof sync.sessie;
+
+		await sync.haalPloeg();
+
+		expect(sync.sessie?.afdruk).toBe(afdrukVooraf);
+	});
+
+	it('houdt ook het team en de versie vast', async () => {
+		metVernieuwing();
+		sync.sessie = {
+			access_token: 'oud',
+			refresh_token: 'r',
+			verloopt: Date.now() - 1000,
+			teamId: 'team-7',
+			versie: 12,
+			afdruk: null,
+			laatst: null
+		} as typeof sync.sessie;
+
+		await sync.haalPloeg();
+
+		expect(sync.sessie?.teamId).toBe('team-7');
+		expect(sync.sessie?.versie).toBe(12);
+	});
+
+	/*
+	 * En uitloggen doet hij alleen als de server het bewijs echt afwijst. Er stond
+	 * een catch die bij élke fout uitlogde: geen bereik op het moment dat je token
+	 * toevallig verloopt, en je stond langs de lijn uitgelogd — opnieuw inloggen
+	 * kan dan niet, want er is geen bereik.
+	 */
+	it('blijft ingelogd als er alleen geen bereik is', async () => {
+		globalThis.fetch = vi.fn(async () => {
+			throw new Error('geen bereik');
+		}) as unknown as typeof fetch;
+		sync.sessie = {
+			access_token: 'oud',
+			refresh_token: 'r',
+			verloopt: Date.now() - 1000,
+			teamId: 'team-1',
+			versie: 4,
+			afdruk: null,
+			laatst: null
+		} as typeof sync.sessie;
+
+		await sync.haalPloeg();
+
+		expect(sync.sessie).not.toBeNull();
+		expect(sync.hapert).toBe(true);
+	});
+
+	it('logt wel uit als de server het bewijs afwijst', async () => {
+		globalThis.fetch = vi.fn(
+			async () => new Response(JSON.stringify({ message: 'invalid refresh token' }), { status: 401 })
+		) as unknown as typeof fetch;
+		sync.sessie = {
+			access_token: 'oud',
+			refresh_token: 'r',
+			verloopt: Date.now() - 1000,
+			teamId: 'team-1',
+			versie: 4,
+			afdruk: null,
+			laatst: null
+		} as typeof sync.sessie;
+
+		await sync.haalPloeg();
+		expect(sync.sessie).toBeNull();
+	});
+
+	/* En de noodrem mag je zeker niet uitloggen: die slaat juist aan als er iets
+	   mis is, en dan wil je je sessie houden. */
+	it('blijft ingelogd als de noodrem aanslaat', async () => {
+		globalThis.fetch = vi.fn(async () => new Response('{}', { status: 200 })) as unknown as typeof fetch;
+		sync.sessie = {
+			access_token: 'oud',
+			refresh_token: 'r',
+			verloopt: Date.now() - 1000,
+			teamId: 'team-1',
+			versie: 4,
+			afdruk: null,
+			laatst: null
+		} as typeof sync.sessie;
+		const nu = Date.now();
+		for (let i = 0; i < 400; i++) noodrem.mag(nu + i * 10);
+
+		await sync.haalPloeg();
+		expect(sync.sessie).not.toBeNull();
 	});
 });
