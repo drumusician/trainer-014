@@ -150,6 +150,15 @@ hoort namelijk bij het team dat je verlaat, en meenemen zou het bij het nieuwe
 naar binnen schrijven. Kwam je nergens vandaan, dan blijft het juist staan — dat
 ís het begin van dat team.
 
+Er is nog een vijfde regel, en die gaat niet over teams maar over mensen: **logt
+er iemand anders in dan de vorige keer, dan vraagt de app van wie de gegevens op
+dit toestel zijn.** Zolang dat niet beantwoord is gaat er niets heen en weer.
+
+Zonder die vraag gebeurt het volgende op een geleende telefoon: de nieuwe trainer
+logt in, heeft nog geen team, dus maakt de app er een aan — met de naam van het
+team dat er al stond — en stuurt de spelers van de vorige trainer daarheen.
+Niemand die het ziet gebeuren.
+
 Zelf een team beginnen kan altijd, ook als je al bij het team van iemand anders
 hoort — anders is meekijken een val waar je nooit meer uitkomt met een eigen
 ploeg. Zo'n nieuw team begint leeg, om dezelfde reden als regel 4: wat er in de

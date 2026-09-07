@@ -439,6 +439,14 @@ const data = {
 	syncHeading: 'Synchroniseren',
 	signInHint:
 		'Log in met je e-mailadres, dan staat je seizoen veilig en heb je het op al je toestellen. Je krijgt een code per mail; geen wachtwoord om te onthouden.',
+	otherUserHeading: 'Van wie zijn deze gegevens?',
+	otherUser: (vorige: string) =>
+		`Op dit toestel staat nog het team van ${vorige}. Er gaat niets heen en weer zolang dit niet duidelijk is.`,
+	otherUserKeep: 'Meenemen naar dit account',
+	otherUserFresh: 'Schoon beginnen',
+	otherUserFreshHint:
+		'Schoon beginnen wist het team op dit toestel. Staat het nergens anders, dan is het weg — maak eerst een back-up bij Overzetten.',
+
 	installFirstLead: 'Zet Blaadje eerst op je beginscherm',
 	installFirst: 'en log daar in. Die app staat los van deze browser: log je hier in, dan ben je daar niet ingelogd.',
 	localWarningLead: 'Let op:',

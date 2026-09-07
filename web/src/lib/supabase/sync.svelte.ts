@@ -3,6 +3,8 @@ import { reportIssue } from '$lib/issues.svelte';
 import { SUPABASE_SLEUTEL, SUPABASE_URL } from './config';
 
 const SESSIESLEUTEL = 'o14-sessie-v1';
+/* Blijft staan na uitloggen: daaraan zien we of er iemand anders inlogt. */
+const LAATSTE_INLOG = 'o14-laatste-inlog-v1';
 /* On a phone you switch to your mail in between, which can reload the app.
    That is why we remember who we requested a code for. */
 const INLOGSLEUTEL = 'o14-inlog-v1';
@@ -202,6 +204,18 @@ class Sync {
 	openstaand = $state<{ id: string; email: string }[]>([]);
 	/** teams waarvoor er een uitnodiging op jouw adres klaarstaat */
 	uitgenodigdVoor = $state<{ id: string; naam: string }[]>([]);
+	/**
+	 * Er logt iemand anders in dan de vorige keer, en er staat hier nog een team.
+	 *
+	 * Dat gebeurt op een geleende telefoon, of als je zelf twee adressen hebt. Wat
+	 * er dan níét mag gebeuren: die spelers stilletjes meenemen naar het nieuwe
+	 * account. Heeft dat account nog geen team, dan maakt de app er een aan met de
+	 * naam van het oude en duwt de namen van andermans kinderen erin.
+	 *
+	 * Dus wachten we, en vraagt het scherm wat de bedoeling is. Zolang dit gevuld
+	 * is gaat er niets heen en weer.
+	 */
+	andereGebruiker = $state<string | null>(null);
 
 	load() {
 		const bak = storage();
@@ -279,6 +293,51 @@ class Sync {
 		this.save();
 	}
 
+	/** Wie er als laatste inlogde. Overleeft uitloggen, want daar gaat het om. */
+	private onthoudGebruiker(email: string | null | undefined) {
+		try {
+			if (email) storage()?.setItem(LAATSTE_INLOG, email);
+		} catch {
+			/* dan onthouden we het niet; dat is hinderlijk, niet gevaarlijk */
+		}
+	}
+
+	/**
+	 * Is dit een ander dan de vorige keer, en staat er hier nog iets?
+	 *
+	 * Aangeroepen na elke geslaagde inlog. Zonder gegevens op dit toestel valt er
+	 * niets te verhuizen en is er dus ook niets te vragen.
+	 */
+	private kijkNaarWissel() {
+		const nu = this.sessie?.email;
+		let vorige: string | null;
+		try {
+			vorige = storage()?.getItem(LAATSTE_INLOG) ?? null;
+		} catch {
+			vorige = null;
+		}
+		const staatHierIets = app.toestand.players.length > 0 || app.toestand.archive.length > 0;
+		if (vorige && nu && vorige !== nu && staatHierIets) {
+			this.andereGebruiker = vorige;
+			return;
+		}
+		this.onthoudGebruiker(nu);
+	}
+
+	/** Meenemen: wat hier staat wordt het begin van dit account. */
+	neemMee() {
+		this.andereGebruiker = null;
+		this.onthoudGebruiker(this.sessie?.email);
+	}
+
+	/** Schoon beginnen: wat hier staat hoort bij de vorige, en blijft daar. */
+	beginSchoon() {
+		app.wisAlles();
+		this.andereGebruiker = null;
+		this.vies = false;
+		this.onthoudGebruiker(this.sessie?.email);
+	}
+
 	uitloggen() {
 		this.sessie = null;
 		this.message = '';
@@ -288,6 +347,7 @@ class Sync {
 		this.leden = [];
 		this.openstaand = [];
 		this.uitgenodigdVoor = [];
+		this.andereGebruiker = null;
 		storage()?.removeItem(SESSIESLEUTEL);
 		this.bewaarInlogpoging(null);
 	}
@@ -377,6 +437,7 @@ class Sync {
 			this.zet(d);
 			this.fase = 'email';
 			this.bewaarInlogpoging(null);
+			this.kijkNaarWissel();
 			this.message = 'Ingelogd.';
 		} catch (e) {
 			this.message = 'Deze code klopt niet of is verlopen: ' + (e as Error).message;
@@ -415,6 +476,7 @@ class Sync {
 		} catch {
 			/* then we fill it in on the first sync */
 		}
+		this.kijkNaarWissel();
 		this.message = 'Ingelogd via de link.';
 	}
 
@@ -446,6 +508,14 @@ class Sync {
 	 */
 	private async zorgVoorTeam(token: string): Promise<string> {
 		const s = this.sessie!;
+		/* Zolang niet duidelijk is van wie de gegevens op dit toestel zijn, gaat er
+		   niets heen en weer. Anders beantwoordt de app die vraag zelf, met de
+		   spelers van iemand anders. */
+		if (this.andereGebruiker) {
+			throw new WachtOpDeTrainer(
+				'Op dit toestel staan nog de gegevens van ' + this.andereGebruiker + '. Kies bij Gegevens wat daarmee moet.'
+			);
+		}
 		if (s.teamId) return s.teamId;
 
 		const rijen = (await sb('/rest/v1/teams?select=id,naam&order=gemaakt.asc', {}, token)) as {

@@ -29,6 +29,7 @@ beforeEach(() => {
 	sync.leden = [];
 	sync.openstaand = [];
 	sync.uitgenodigdVoor = [];
+	sync.andereGebruiker = null;
 	globalThis.fetch = vi.fn(async () => new Response('[]', { status: 200 })) as unknown as typeof fetch;
 	vi.restoreAllMocks();
 	vi.stubGlobal('alert', () => {});
@@ -457,6 +458,34 @@ describe('het gegevensscherm als je ingelogd bent', () => {
 
 		expect(document.body.textContent).toContain('Kopieer deze tekst');
 		expect(document.querySelector('textarea')).toBeTruthy();
+	});
+
+	/*
+	 * Er logt iemand anders in dan de vorige keer en er staat hier nog een team.
+	 * Die vraag beantwoordt de app niet zelf: het antwoord gaat over de spelers van
+	 * iemand anders.
+	 */
+	it('vraagt van wie de gegevens op dit toestel zijn', async () => {
+		sync.andereGebruiker = 'tjaco@voorbeeld.nl';
+		render(Meer);
+		await tick();
+		expect(document.body.textContent).toContain('Van wie zijn deze gegevens');
+		expect(document.body.textContent).toContain('tjaco@voorbeeld.nl');
+		expect(screen.getByRole('button', { name: 'Meenemen naar dit account' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Schoon beginnen' })).toBeTruthy();
+	});
+
+	it('waarschuwt dat schoon beginnen het team hier wist', async () => {
+		sync.andereGebruiker = 'tjaco@voorbeeld.nl';
+		render(Meer);
+		await tick();
+		expect(document.body.textContent).toContain('back-up');
+	});
+
+	it('vraagt dat niet als er niets aan de hand is', async () => {
+		render(Meer);
+		await tick();
+		expect(document.body.textContent).not.toContain('Van wie zijn deze gegevens');
 	});
 
 	it('vraagt of je een uitnodiging aanneemt, met de naam van het team erbij', async () => {

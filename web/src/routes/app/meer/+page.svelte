@@ -242,6 +242,24 @@
 		{/if}
 		{#if sync.message}<p class="uitleg" style="margin-top: 8px">{sync.message}</p>{/if}
 
+		<!-- Er logt iemand anders in dan de vorige keer en er staat hier nog een
+		     team. Die vraag beantwoordt de app niet zelf, want het antwoord gaat over
+		     de spelers van iemand anders. -->
+		{#if sync.andereGebruiker}
+			<h2>{text.data.otherUserHeading}</h2>
+			<p class="uitleg">{text.data.otherUser(sync.andereGebruiker)}</p>
+			<p class="uitleg" style="font-size: 13px">{text.data.otherUserFreshHint}</p>
+			<div class="knoprij" style="padding-left: 0">
+				<button class="prim" onclick={() => sync.neemMee()}>{text.data.otherUserKeep}</button>
+				<button
+					class="uit"
+					onclick={() => {
+						if (confirm(text.data.otherUserFreshHint)) sync.beginSchoon();
+					}}>{text.data.otherUserFresh}</button
+				>
+			</div>
+		{/if}
+
 		{#if sync.uitgenodigdVoor.length}
 			<h2>{text.data.invitedHeading}</h2>
 			{#each sync.uitgenodigdVoor as u (u.id)}

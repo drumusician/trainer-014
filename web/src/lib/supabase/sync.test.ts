@@ -1440,3 +1440,158 @@ describe('de teamnaam op de server', () => {
 		expect(verstuurd.filter((v) => v.method === 'PATCH')).toHaveLength(1);
 	});
 });
+
+/*
+ * Er logt iemand anders in dan de vorige keer.
+ *
+ * Op een geleende telefoon, of als je zelf twee adressen hebt. Wat er dan niet
+ * mag gebeuren: de spelers op dit toestel stilletjes meenemen naar het nieuwe
+ * account. Heeft dat account nog geen team, dan maakt de app er een aan — met de
+ * naam van het oude team — en duwt de namen van andermans kinderen erin.
+ */
+describe('als er iemand anders inlogt', () => {
+	function metInlog(email: string) {
+		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+			const u = String(url);
+			if (u.includes('/rest/v1/teams') && init?.method === 'POST')
+				return new Response(JSON.stringify([{ id: 'vers-team' }]), { status: 200 });
+			if (u.includes('/auth/v1/verify'))
+				return new Response(
+					JSON.stringify({
+						access_token: 'nieuw',
+						refresh_token: 'r2',
+						expires_in: 3600,
+						user: { id: 'u9', email }
+					}),
+					{ status: 200 }
+				);
+			if (u.includes('teams?select=id')) return new Response('[]', { status: 200 });
+			if (u.includes('uitnodigingen')) return new Response('[]', { status: 200 });
+			return new Response(JSON.stringify({ versie: 1 }), { status: 200 });
+		}) as unknown as typeof fetch;
+	}
+
+	beforeEach(() => {
+		noodrem.los();
+		localStorage.clear();
+		sync.sessie = null;
+		sync.andereGebruiker = null;
+		sync.message = '';
+		app.toestand = emptyState();
+		app.toestand.teamName = 'JO13-1';
+		app.toestand.players = [{ id: 'p1', name: 'Bram', line: 'M' }];
+	});
+
+	it('vraagt van wie de gegevens zijn', async () => {
+		localStorage.setItem('o14-laatste-inlog-v1', 'tjaco@voorbeeld.nl');
+		metInlog('matthijs@voorbeeld.nl');
+		sync.email = 'matthijs@voorbeeld.nl';
+
+		await sync.controleerCode('12345678');
+
+		expect(sync.andereGebruiker).toBe('tjaco@voorbeeld.nl');
+	});
+
+	/* Dit is waarom het ertoe doet: zolang die vraag openstaat gaat er niets weg. */
+	it('stuurt niets op zolang die vraag openstaat', async () => {
+		localStorage.setItem('o14-laatste-inlog-v1', 'tjaco@voorbeeld.nl');
+		metInlog('matthijs@voorbeeld.nl');
+		sync.email = 'matthijs@voorbeeld.nl';
+		await sync.controleerCode('12345678');
+
+		const voor = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
+		await sync.opsturen();
+		const na = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) =>
+			String(c[0]).includes('toestand_opslaan')
+		);
+		expect(na).toHaveLength(0);
+		expect(sync.message).toContain('tjaco@voorbeeld.nl');
+		void voor;
+	});
+
+	it('vraagt niets als dezelfde persoon opnieuw inlogt', async () => {
+		localStorage.setItem('o14-laatste-inlog-v1', 'tjaco@voorbeeld.nl');
+		metInlog('tjaco@voorbeeld.nl');
+		sync.email = 'tjaco@voorbeeld.nl';
+		await sync.controleerCode('12345678');
+		expect(sync.andereGebruiker).toBeNull();
+	});
+
+	it('vraagt niets als er hier niets staat om te verhuizen', async () => {
+		app.toestand = emptyState();
+		localStorage.setItem('o14-laatste-inlog-v1', 'tjaco@voorbeeld.nl');
+		metInlog('matthijs@voorbeeld.nl');
+		sync.email = 'matthijs@voorbeeld.nl';
+		await sync.controleerCode('12345678');
+		expect(sync.andereGebruiker).toBeNull();
+	});
+
+	it('vraagt niets bij de allereerste inlog op een toestel', async () => {
+		metInlog('tjaco@voorbeeld.nl');
+		sync.email = 'tjaco@voorbeeld.nl';
+		await sync.controleerCode('12345678');
+		expect(sync.andereGebruiker).toBeNull();
+	});
+
+	it('neemt de gegevens mee als de trainer dat zegt', async () => {
+		localStorage.setItem('o14-laatste-inlog-v1', 'tjaco@voorbeeld.nl');
+		metInlog('matthijs@voorbeeld.nl');
+		sync.email = 'matthijs@voorbeeld.nl';
+		await sync.controleerCode('12345678');
+
+		sync.neemMee();
+		expect(sync.andereGebruiker).toBeNull();
+		expect(app.toestand.players).toHaveLength(1);
+		expect(localStorage.getItem('o14-laatste-inlog-v1')).toBe('matthijs@voorbeeld.nl');
+	});
+
+	it('begint schoon als de trainer dat zegt', async () => {
+		localStorage.setItem('o14-laatste-inlog-v1', 'tjaco@voorbeeld.nl');
+		metInlog('matthijs@voorbeeld.nl');
+		sync.email = 'matthijs@voorbeeld.nl';
+		await sync.controleerCode('12345678');
+
+		sync.beginSchoon();
+		expect(sync.andereGebruiker).toBeNull();
+		expect(app.toestand.players).toHaveLength(0);
+		expect(app.toestand.teamName).not.toBe('JO13-1');
+	});
+
+	/*
+	 * De test die laat zien waaróm die vraag er is.
+	 *
+	 * Zonder hem maakt de app voor het nieuwe account een team aan — met de naam
+	 * van het oude — en stuurt de spelers van de vorige trainer daarheen. Niemand
+	 * ziet dat gebeuren.
+	 */
+	it('stuurt de spelers van de vorige niet naar het nieuwe team', async () => {
+		localStorage.setItem('o14-laatste-inlog-v1', 'tjaco@voorbeeld.nl');
+		metInlog('matthijs@voorbeeld.nl');
+		sync.email = 'matthijs@voorbeeld.nl';
+		await sync.controleerCode('12345678');
+
+		await sync.opsturen();
+
+		const oproepen = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+		/* geen team aangemaakt op naam van het oude team */
+		expect(
+			oproepen.some((c) => String(c[0]).includes('/rest/v1/teams') && (c[1] as RequestInit)?.method === 'POST')
+		).toBe(false);
+		/* en niets opgestuurd */
+		expect(oproepen.some((c) => String(c[0]).includes('toestand_opslaan'))).toBe(false);
+	});
+
+	/* En daarna gaat het gewoon weer. */
+	it('gaat weer synchroniseren zodra de vraag beantwoord is', async () => {
+		localStorage.setItem('o14-laatste-inlog-v1', 'tjaco@voorbeeld.nl');
+		metInlog('matthijs@voorbeeld.nl');
+		sync.email = 'matthijs@voorbeeld.nl';
+		await sync.controleerCode('12345678');
+		sync.neemMee();
+
+		await sync.opsturen();
+		expect(
+			(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.some((c) => String(c[0]).includes('toestand_opslaan'))
+		).toBe(true);
+	});
+});
