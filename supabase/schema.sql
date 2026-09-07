@@ -300,3 +300,57 @@ grant select, insert, delete on public.uitnodigingen to authenticated;
 insert into public.team_leden (team_id, gebruiker, rol)
 select id, eigenaar, 'eigenaar' from public.teams
 on conflict do nothing;
+
+-- ---------- wie is wie ----------
+-- team_leden bewaarde alleen een gebruikersnummer, en de adressen staan in
+-- auth.users, waar de app niet bij mag. Op het scherm stond daardoor 'eigenaar'
+-- en 'trainer' zonder naam erbij — precies de vraag die je stelt als je kijkt
+-- wie er allemaal bij je team kan.
+--
+-- Dus schrijven we het adres mee op het moment dat iemand lid wordt. Alleen
+-- teamgenoten kunnen het lezen; dat regelt de leesregel op team_leden, die er al
+-- staat. En het is het adres waarop je hem zelf hebt uitgenodigd.
+alter table public.team_leden add column if not exists email text;
+
+create or replace function public.eigenaar_wordt_lid() returns trigger
+language plpgsql security definer
+set search_path = public
+as $$
+begin
+  insert into public.team_leden (team_id, gebruiker, rol, email)
+  values (new.id, new.eigenaar, 'eigenaar', (select u.email from auth.users u where u.id = new.eigenaar))
+  on conflict do nothing;
+  return new;
+end;
+$$;
+
+create or replace function public.uitnodiging_aannemen()
+returns setof uuid
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  mijn_email text := lower(auth.jwt() ->> 'email');
+  r record;
+begin
+  if auth.uid() is null or mijn_email is null or mijn_email = '' then
+    raise exception 'niet ingelogd' using errcode = '42501';
+  end if;
+
+  for r in
+    select id, team_id from public.uitnodigingen where lower(email) = mijn_email
+  loop
+    insert into public.team_leden (team_id, gebruiker, rol, email)
+    values (r.team_id, auth.uid(), 'trainer', mijn_email)
+    on conflict do nothing;
+    delete from public.uitnodigingen where id = r.id;
+    return next r.team_id;
+  end loop;
+end;
+$$;
+
+-- Wie al lid was heeft nog geen adres bij zijn regel staan.
+update public.team_leden l
+   set email = u.email
+  from auth.users u
+ where u.id = l.gebruiker and l.email is null;

@@ -697,7 +697,7 @@ class Sync {
 		const team = this.sessie.teamId;
 		try {
 			this.leden = (await sb(
-				'/rest/v1/team_leden?select=gebruiker,rol&team_id=eq.' + team + '&order=toegevoegd.asc',
+				'/rest/v1/team_leden?select=gebruiker,rol,email&team_id=eq.' + team + '&order=toegevoegd.asc',
 				{},
 				token
 			)) as Lid[];

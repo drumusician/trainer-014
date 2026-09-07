@@ -272,9 +272,16 @@
 			<p class="uitleg">{eigenaar ? text.data.teamHint : text.data.teamOnlyOwner}</p>
 			{#each sync.leden as lid (lid.gebruiker)}
 				<div class="sregel">
+					<!-- Het adres voorop: 'eigenaar' en 'trainer' zonder naam beantwoordt
+					     niet de vraag die je stelt als je hier kijkt. -->
 					<span class="naam">
-						{lid.rol === 'eigenaar' ? text.data.roleOwner : text.data.roleTrainer}
-						{#if lid.gebruiker === sync.sessie.user_id}<span class="min mager"> {text.data.you}</span>{/if}
+						{lid.email ?? text.data.memberUnknown}
+						<span class="min mager">
+							{lid.rol === 'eigenaar' ? text.data.roleOwner : text.data.roleTrainer}{lid.gebruiker ===
+							sync.sessie.user_id
+								? ' · ' + text.data.you
+								: ''}</span
+						>
 					</span>
 					{#if eigenaar && lid.rol !== 'eigenaar'}
 						<button

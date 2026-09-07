@@ -166,6 +166,13 @@ do $$ begin
        and gebruiker = '11111111-1111-1111-1111-111111111111'
        and rol = 'eigenaar'
   ) then raise exception 'wie een team aanmaakt is er geen lid van'; end if;
+
+  -- met zijn adres erbij, anders staat er op het scherm 'eigenaar' zonder naam
+  if (select email from public.team_leden
+       where gebruiker = '11111111-1111-1111-1111-111111111111')
+     is distinct from 'tjaco@voorbeeld.nl' then
+    raise exception 'de eigenaar staat in de ploeg zonder adres';
+  end if;
 end $$;
 commit;
 
@@ -178,6 +185,10 @@ declare n int;
 begin
   select count(*) into n from public.team_leden;
   if n <> 0 then raise exception 'een buitenstaander ziet % lidmaatschap(pen)', n; end if;
+
+  -- en dus ook geen adressen van mensen bij een ander team
+  select count(*) into n from public.team_leden where email is not null;
+  if n <> 0 then raise exception 'een buitenstaander leest adressen van een ander team'; end if;
 
   select count(*) into n from public.uitnodigingen;
   if n <> 0 then raise exception 'een buitenstaander ziet uitnodigingen die niet voor hem zijn'; end if;
@@ -276,6 +287,13 @@ begin
 
   select count(*) into n from public.uitnodigingen;
   if n <> 0 then raise exception 'de uitnodiging bleef staan na het aannemen'; end if;
+
+  -- en zijn adres staat erbij, kleingeschreven zoals hij is uitgenodigd
+  if (select email from public.team_leden
+       where gebruiker = '22222222-2222-2222-2222-222222222222')
+     is distinct from 'matthijs@voorbeeld.nl' then
+    raise exception 'de nieuwe trainer staat in de ploeg zonder adres';
+  end if;
 end $$;
 commit;
 

@@ -287,8 +287,8 @@ describe('het gegevensscherm als je ingelogd bent', () => {
 		sync.sessie!.user_id = 'u1';
 		sync.sessie!.teamId = 'team-1';
 		sync.leden = [
-			{ gebruiker: 'u1', rol: 'eigenaar' },
-			{ gebruiker: 'u2', rol: 'trainer' }
+			{ gebruiker: 'u1', rol: 'eigenaar', email: 'tjaco@voorbeeld.nl' },
+			{ gebruiker: 'u2', rol: 'trainer', email: 'matthijs@voorbeeld.nl' }
 		];
 		render(Meer);
 		await tick();
@@ -407,6 +407,38 @@ describe('het gegevensscherm als je ingelogd bent', () => {
 		screen.getByRole('button', { name: 'Overstappen naar JO15-2' }).click();
 		await tick();
 		expect(sync.sessie!.teamId).toBe('team-1');
+	});
+
+	/*
+	 * 'eigenaar' en 'trainer' zonder naam beantwoordt niet de vraag die je stelt
+	 * als je hier kijkt: wie kan er allemaal bij mijn team?
+	 */
+	it('zet bij elk lid het adres, met de rol erachter', async () => {
+		sync.sessie!.user_id = 'u1';
+		sync.sessie!.teamId = 'team-1';
+		sync.leden = [
+			{ gebruiker: 'u1', rol: 'eigenaar', email: 'tjaco@voorbeeld.nl' },
+			{ gebruiker: 'u2', rol: 'trainer', email: 'matthijs@voorbeeld.nl' }
+		];
+		render(Meer);
+		await tick();
+		const regels = [...document.querySelectorAll('.sregel')].map((r) => r.textContent ?? '');
+		expect(regels[0]).toContain('tjaco@voorbeeld.nl');
+		expect(regels[0]).toContain('eigenaar');
+		expect(regels[0]).toContain('jij');
+		expect(regels[1]).toContain('matthijs@voorbeeld.nl');
+		expect(regels[1]).toContain('trainer');
+		expect(regels[1]).not.toContain('jij');
+	});
+
+	/* Een lid van vóór deze verandering heeft nog geen adres bij zijn regel. */
+	it('valt terug op iets leesbaars als het adres ontbreekt', async () => {
+		sync.sessie!.user_id = 'u1';
+		sync.sessie!.teamId = 'team-1';
+		sync.leden = [{ gebruiker: 'u1', rol: 'eigenaar' }];
+		render(Meer);
+		await tick();
+		expect(document.querySelector('.sregel')?.textContent).toContain('adres onbekend');
 	});
 
 	/*

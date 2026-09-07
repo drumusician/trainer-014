@@ -480,6 +480,7 @@ const data = {
 	roleOwner: 'eigenaar',
 	roleTrainer: 'trainer',
 	you: 'jij',
+	memberUnknown: 'adres onbekend',
 	inviteLabel: 'E-mailadres',
 	invitePlaceholder: 'naam@voorbeeld.nl',
 	invite: 'Uitnodigen',
