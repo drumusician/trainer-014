@@ -438,24 +438,25 @@ const data = {
 
 	syncHeading: 'Synchroniseren',
 	signInHint:
-		'Log in met je e-mailadres, dan staat je seizoen veilig en heb je het op al je toestellen. Je krijgt een mail met een link en een code; geen wachtwoord om te onthouden.',
-	/* De link uit de mail komt terug waar je hem opvroeg; op localhost is dat een
-	   andere opslag dan de echte site. */
+		'Log in met je e-mailadres, dan staat je seizoen veilig en heb je het op al je toestellen. Je krijgt een code van zes cijfers per mail; geen wachtwoord om te onthouden.',
 	installFirstLead: 'Zet Blaadje eerst op je beginscherm',
-	installFirst:
-		'en log daar in. De app op je beginscherm heeft zijn eigen opslag, los van deze browser: log je hier in, dan ben je daar niet ingelogd en sta je zaterdag met een lege app langs de lijn. De uitleg staat op blaadje.app, onderaan.',
+	installFirst: 'en log daar in. Die app staat los van deze browser: log je hier in, dan ben je daar niet ingelogd.',
 	localWarningLead: 'Let op:',
 	localWarning: (host: string) =>
-		`je draait dit op ${host}. De link in de mail komt hier terug, niet op de echte site, en dit is een aparte opslag. Wil je inloggen voor je telefoon, doe dat dan op de echte site.`,
+		`je draait dit op ${host}, en dat is een aparte opslag. Wil je inloggen voor je telefoon, doe dat dan op de echte site.`,
 	emailLabel: 'E-mailadres',
 	emailPlaceholder: 'jij@voorbeeld.nl',
 	sendCode: 'Stuur inlog',
-	codeHintBefore: 'Op een telefoon: vul de',
-	codeHintWord: 'code',
-	codeHintMiddle:
-		'uit de mail hieronder in. Je mag gerust even naar je mail-app; dit scherm staat er straks nog. Op een laptop kun je ook gewoon de',
-	codeHintLinkWord: 'link',
-	codeHintAfter: 'in de mail aanklikken.',
+	/*
+	 * Alleen een code, geen link.
+	 *
+	 * Een link opent de browser, en de app op je beginscherm staat daar los van:
+	 * je zou inloggen in Safari terwijl je zaterdag de app gebruikt. Een code typ
+	 * je in de app zelf, en dan klopt het altijd — waar je ook bent.
+	 */
+	codeHintBefore: 'Vul de',
+	codeHintWord: 'code van zes cijfers',
+	codeHintAfter: 'uit de mail hieronder in. Je mag gerust even naar je mail-app; dit scherm staat er straks nog.',
 	codeLabel: 'Code uit de mail',
 	codePlaceholder: '123456',
 	signIn: 'Inloggen',
@@ -478,7 +479,7 @@ const data = {
 	/* ---------- wie kan erbij ---------- */
 	teamHeading: 'Wie kan hierbij',
 	teamHint:
-		'Zaterdag staat er soms een ander langs de lijn. Nodig hem uit met het e-mailadres waarmee hij inlogt; hij ziet het zodra hij dat doet. Hij ziet dan alles wat jij ziet — spelers, trainingen en archief — en jullie zien elkaars adres. Jij blijft de enige die het team kan hernoemen of iemand kan toevoegen of eruit halen.',
+		'Nodig een tweede trainer uit met het adres waarmee hij inlogt. Hij ziet dan alles wat jij ziet: spelers, trainingen en archief. Alleen jij kunt mensen toevoegen of eruit halen.',
 	teamOnlyOwner: 'Alleen de eigenaar kan hier iemand bij zetten.',
 	roleOwner: 'eigenaar',
 	roleTrainer: 'trainer',
@@ -487,11 +488,10 @@ const data = {
 	inviteLabel: 'E-mailadres',
 	invitePlaceholder: 'naam@voorbeeld.nl',
 	invite: 'Uitnodigen',
-	invitePending: (email: string) => `${email} · uitgenodigd, nog niet ingelogd`,
+	invitePending: (email: string) => `${email} · nog niet ingelogd`,
 	withdraw: 'Intrekken',
 	tellHim: 'Uitleg delen',
-	tellHimHint:
-		'Blaadje verstuurt zelf geen bericht — daar zou een server voor nodig zijn, en die is er bewust niet. Deze knop zet de uitleg klaar en laat je hem doorsturen: WhatsApp, mail, wat je maar gebruikt.',
+	tellHimHint: 'Hij ziet de uitnodiging pas als hij inlogt, dus laat het hem even weten.',
 	tellHimShared: 'Doorgestuurd.',
 	tellHimCopied: 'De uitleg staat op je klembord. Plak hem in een bericht aan',
 	tellHimSelf: 'Kopieer deze tekst en stuur hem naar',
@@ -561,8 +561,7 @@ const data = {
 		'De app gaat door als er iets hapert — een volle opslag mag de klok niet stoppen. Maar dan moet je het achteraf wel kunnen zien. Dit blijft op je toestel.',
 	clearIssues: 'Lijst wissen',
 	sendIssues: 'Stuur dit naar Tjaco',
-	sendIssuesHint:
-		'Hieronder staat precies wat er verstuurd wordt. Namen van kinderen zitten er niet in; die zijn eruit gehaald voordat deze tekst bestond. Er gaat pas iets weg als je hem zelf verstuurt.',
+	sendIssuesHint: 'Dit is precies wat er weggaat, en er staan geen namen van kinderen in. Versturen doe je zelf.',
 	sendIssuesMail: 'Openen in mail',
 	sendIssuesCopied: 'Gekopieerd. Lukt de mail niet, plak hem dan zelf in een bericht aan',
 	sendIssuesSubject: 'Blaadje — wat er misging',
@@ -585,7 +584,7 @@ const install = {
 	intro:
 		'Blaadje is een website, geen download uit de App Store. Zet hem op je beginscherm en hij werkt als een gewone app: geen browserbalk meer, en het scherm blijft aan zolang de klok loopt.',
 	movePrompt:
-		'De app op je beginscherm begint leeg: hij heeft zijn eigen opslag, los van deze browser. Werk je hier al met Blaadje, haal je gegevens dan over voordat je verdergaat — bij Gegevens is dat Code maken, en in de nieuwe app Invoeren. Of log in beide in, dan gaat het vanzelf.',
+		'De app op je beginscherm begint leeg; wat hier staat gaat niet vanzelf mee. Maak eerst een code bij Gegevens, en voer die daar in. Of log op allebei in.',
 	deviceIos: 'iPhone of iPad',
 	deviceAndroid: 'Android',
 

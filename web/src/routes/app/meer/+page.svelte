@@ -191,7 +191,6 @@
 			{:else}
 				<p class="uitleg">
 					{text.data.codeHintBefore} <b>{text.data.codeHintWord}</b>
-					{text.data.codeHintMiddle} <b>{text.data.codeHintLinkWord}</b>
 					{text.data.codeHintAfter}
 				</p>
 				<label class="vak">

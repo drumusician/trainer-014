@@ -49,21 +49,28 @@ Uitrollen, terugrollen en gegevens terughalen staat in [UITROLLEN.md](../UITROLL
 1. Project aanmaken in de privé-org. Bij Security: **Data API aan**, **automatically expose new tables uit**, **automatic RLS aan**.
 2. SQL editor → `schema.sql` erin → Run.
 3. Authentication → Sign In / Providers → **Email** aanzetten.
-4. Authentication → **Emails**: zet `{{ .Token }}` in de tekst van **drie** sjablonen — **Magic Link**, **Confirm signup** én **Invite user**. Zonder die regel stuurt Supabase alleen een link, terwijl de app om een code van zes cijfers vraagt.
-
-   Alle drie, want Supabase kiest een ander sjabloon afhankelijk van wie er inlogt. De app roept altijd hetzelfde aan (`/auth/v1/otp` met `create_user: true`), maar:
+4. Authentication → **Emails**: vervang de tekst van **Magic Link**, **Confirm signup** én **Invite user** door alleen een code. Alle drie, want Supabase kiest een ander sjabloon afhankelijk van wie er inlogt:
 
    - een adres dat Supabase al kent → **Magic Link**
    - een adres dat hij nog niet kent → **Confirm signup**
    - iemand die je via het dashboard uitnodigt → **Invite user**
 
-   Alleen Magic Link aanpassen werkt dus prima zolang je in je eentje test, en gaat stuk op de eerste échte tweede trainer. Die krijgt een mail zonder code en komt er niet in.
+   Alleen Magic Link aanpassen werkt prima zolang je in je eentje test, en gaat stuk op de eerste échte tweede trainer.
 
-   Zonder die regel werkt de **link** in de mail: de app vangt hem op als je terugkomt. Dan moet wel Authentication → **URL Configuration** kloppen: Site URL op je Netlify-adres, en bij Redirect URLs ook je lokale testadres (`http://localhost:8788` of welke poort je gebruikt).
+   **Geen link, alleen een code.** Een link opent de browser, en een app op je beginscherm staat daar los van: je logt dan in in Safari terwijl je zaterdag de app gebruikt. Een code typ je in de app zelf, en dan klopt het altijd. Daarom staat er in Blaadje ook nergens meer iets over een link.
 
-   Dit is niet theoretisch: een nieuw adres krijgt **Confirm signup**, niet Magic Link. Zet je de token daar niet in, dan krijgt elke nieuwe trainer een mail met alleen een link — die opent in de browser, terwijl de app op zijn beginscherm eigen opslag heeft. Hij is dan ingelogd in Safari en niet in de app die hij zaterdag gebruikt.
+   Plak in alle drie de sjablonen dit:
 
-   Waarom uiteindelijk toch een code en geen magic link: een app op je iPhone-beginscherm heeft eigen opslag, los van Safari. Een link uit de mail opent Safari, en dan logt de verkeerde omgeving in. Een code typ je in de app zelf, dus dat probleem bestaat niet.
+   ```html
+   <h2>Inloggen bij Blaadje</h2>
+   <p>Je code is:</p>
+   <p style="font-size:28px;font-weight:700;letter-spacing:4px">{{ .Token }}</p>
+   <p>Vul hem in op het scherm waar je hem hebt aangevraagd. De code is een uur geldig.</p>
+   <p style="color:#667">Niet zelf aangevraagd? Dan kun je deze mail weggooien.</p>
+   ```
+
+   Let op: geen `{{ .ConfirmationURL }}` erin. Zolang die er staat is er een link, en dan gaat er vroeg of laat iemand op klikken.
+
 5. Project Settings → API Keys → tabje **Publishable and secret API keys** → de `sb_publishable_...` sleutel. Die staat samen met de project-URL boven in `app/index.html`. Allebei openbaar bedoeld; RLS doet het echte werk.
 
 De ingebouwde mail van Supabase heeft een lage limiet (een paar per uur) en is bedoeld om te testen. Voor jezelf is dat genoeg. Zodra er meer trainers op zitten: Authentication → SMTP Settings met een eigen afzender, anders komen de codes niet aan.

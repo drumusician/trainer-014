@@ -73,7 +73,7 @@ describe('op je beginscherm zetten', () => {
 		render(OpBeginscherm);
 		await tick();
 		expect(document.body.textContent).toContain('begint leeg');
-		expect(document.body.textContent).toContain('Code maken');
+		expect(document.body.textContent).toContain('code bij Gegevens');
 	});
 
 	it('zwijgt daarover als er hier nog niets staat', async () => {

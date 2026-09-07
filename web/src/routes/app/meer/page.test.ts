@@ -224,6 +224,23 @@ describe('het gegevensscherm', () => {
 		expect(screen.getByRole('button', { name: 'Inloggen' })).toBeTruthy();
 	});
 
+	/*
+	 * Inloggen gaat alleen met een code, nooit met een link. Een link opent de
+	 * browser, en de app op je beginscherm staat daar los van: je logt dan in in
+	 * Safari terwijl je zaterdag de app gebruikt. Deze test houdt vast dat het
+	 * scherm geen link belooft die er niet is.
+	 */
+	it('belooft nergens een link in de mail', () => {
+		const eerst = render(Meer);
+		expect(document.body.textContent).toContain('code van zes cijfers');
+		expect(document.body.textContent).not.toContain('link');
+		eerst.unmount();
+
+		sync.fase = 'code';
+		render(Meer);
+		expect(document.body.textContent).not.toContain('link');
+	});
+
 	it('laat je terug naar een ander adres', async () => {
 		sync.fase = 'code';
 		render(Meer);
