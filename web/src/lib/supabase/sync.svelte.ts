@@ -68,6 +68,16 @@ export interface Lid {
 	email?: string;
 }
 
+/**
+ * Er moet eerst een team gekozen worden.
+ *
+ * Geen storing maar een vraag aan de trainer, en dat verschil moet de app maken.
+ * Behandel je dit als een mislukking, dan blijft hij het proberen en zegt het
+ * scherm 'geen verbinding' — waarna iemand met zijn telefoon in de lucht naar
+ * buiten loopt terwijl hij gewoon op een knop moet drukken.
+ */
+class KiesEerstEenTeam extends Error {}
+
 class Sync {
 	sessie = $state<Sessie | null>(null);
 	message = $state('');
@@ -317,7 +327,7 @@ class Sync {
 			this.teamKeuze = [];
 		} else if (rijen?.length > 1) {
 			this.teamKeuze = rijen;
-			throw new Error('Je hoort bij meer dan één team. Kies er een bij Gegevens.');
+			throw new KiesEerstEenTeam('Je hoort bij meer dan één team. Kies bij Gegevens welk team dit toestel volgt.');
 		} else {
 			if (!s.user_id) {
 				const u = (await sb('/auth/v1/user', {}, token)) as { id: string; email: string };
@@ -496,9 +506,21 @@ class Sync {
 		if (!token) return [];
 		this.bezig = true;
 		try {
-			const teams = (await sb('/rest/v1/rpc/uitnodiging_aannemen', { method: 'POST' }, token)) as string[] | null;
+			/*
+			 * PostgREST geeft een functie die 'setof uuid' teruggeeft als een lijst
+			 * tekst terug, maar bij een andere vorm of een andere versie kan het net
+			 * zo goed een lijst objecten met één veld zijn. Wat er precies uit komt
+			 * zie je pas tegen de echte server, en dit is te belangrijk om op te
+			 * gokken: leest de app hem verkeerd, dan zegt hij dat er geen uitnodiging
+			 * klaarstond terwijl hij hem net heeft aangenomen — en dan probeert de
+			 * trainer het nog eens, en nog eens. Dus allebei de vormen aankunnen.
+			 */
+			const rauw = (await sb('/rest/v1/rpc/uitnodiging_aannemen', { method: 'POST' }, token)) as unknown[] | null;
+			const teams = (rauw ?? [])
+				.map((r) => (typeof r === 'string' ? r : Object.values(r as Record<string, unknown>)[0]))
+				.filter((r): r is string => typeof r === 'string');
 			this.uitgenodigdVoor = [];
-			if (!teams?.length) {
+			if (!teams.length) {
 				this.message = 'Er stond geen uitnodiging klaar op dit adres.';
 				return [];
 			}
@@ -558,6 +580,10 @@ class Sync {
 			this.mislukt = 0;
 			this.message = 'Opgestuurd.';
 		} catch (e) {
+			if (e instanceof KiesEerstEenTeam) {
+				this.message = (e as Error).message;
+				return;
+			}
 			this.mislukt++;
 			if (this.isBotsing(e as Fout)) {
 				this.botsing = true;
@@ -620,6 +646,10 @@ class Sync {
 			this.mislukt = 0;
 			this.message = stil ? '' : 'Opgehaald.';
 		} catch (e) {
+			if (e instanceof KiesEerstEenTeam) {
+				this.message = (e as Error).message;
+				return;
+			}
 			this.hapert = true;
 			if (!stil) this.message = 'Ophalen lukte niet: ' + (e as Error).message;
 		} finally {

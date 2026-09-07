@@ -627,6 +627,28 @@ describe('uitgenodigd worden', () => {
 		expect(sync.uitgenodigdVoor).toHaveLength(0);
 	});
 
+	/*
+	 * Wat PostgREST teruggeeft voor een functie die 'setof uuid' oplevert, zie je
+	 * pas tegen de echte server: een lijst tekst, of een lijst objecten met één
+	 * veld. Gokt de app verkeerd, dan zegt hij dat er geen uitnodiging klaarstond
+	 * terwijl hij hem net heeft aangenomen — en dan probeert de trainer het nog
+	 * eens, en nog eens.
+	 */
+	it('begrijpt het antwoord ook als het in objecten verpakt zit', async () => {
+		globalThis.fetch = vi.fn(async (url: string) => {
+			const u = String(url);
+			if (u.includes('uitnodiging_aannemen')) {
+				return new Response(JSON.stringify([{ uitnodiging_aannemen: 'team-9' }]), { status: 200 });
+			}
+			if (u.includes('teams?select=id'))
+				return new Response(JSON.stringify([{ id: 'team-9', naam: 'JO15-2' }]), { status: 200 });
+			return new Response('[]', { status: 200 });
+		}) as unknown as typeof fetch;
+		const teams = await sync.neemUitnodigingAan();
+		expect(teams).toEqual(['team-9']);
+		expect(sync.message).toContain('Aangenomen');
+	});
+
 	it('zegt het als er niets klaarstond', async () => {
 		globalThis.fetch = vi.fn(async () => new Response('[]', { status: 200 })) as unknown as typeof fetch;
 		await sync.neemUitnodigingAan();
@@ -687,5 +709,58 @@ describe('als het nieuwe schema er nog niet is', () => {
 		await sync.kijkNaarUitnodigingen();
 		expect(sync.uitgenodigdVoor).toHaveLength(0);
 		expect(sync.message).toBe('');
+	});
+});
+
+/*
+ * Vastzitten op een keuze.
+ *
+ * Hoor je bij twee teams en heb je nog niet gekozen, dan kán er niet opgestuurd
+ * worden. Dat is geen storing maar een vraag aan de trainer. De app mag daar niet
+ * eindeloos op blijven kloppen, en al helemaal niet melden dat er geen verbinding
+ * is — dan gaat hij naar buiten lopen met zijn telefoon in de lucht terwijl hij
+ * gewoon op een knop moet drukken.
+ */
+describe('wachten op een teamkeuze', () => {
+	beforeEach(() => {
+		sync.teamKeuze = [];
+		sync.hapert = false;
+		sync.message = '';
+		sync.sessie!.teamId = undefined;
+		globalThis.fetch = vi.fn(async (url: string) => {
+			if (String(url).includes('teams?select=id')) {
+				return new Response(
+					JSON.stringify([
+						{ id: 'team-1', naam: 'JO13-1' },
+						{ id: 'team-9', naam: 'JO15-2' }
+					]),
+					{ status: 200 }
+				);
+			}
+			return new Response('{}', { status: 200 });
+		}) as unknown as typeof fetch;
+	});
+
+	it('zegt wat er moet gebeuren in plaats van dat er iets mis is', async () => {
+		await sync.opsturen();
+		expect(sync.teamKeuze).toHaveLength(2);
+		expect(sync.message).toContain('Kies');
+		expect(sync.message).not.toContain('lukte niet');
+	});
+
+	/* 'hapert' betekent: geen bereik. Dat is hier niet zo, en het scherm zou het
+	   anders zo opschrijven. */
+	it('noemt het geen verbindingsprobleem', async () => {
+		await sync.opsturen();
+		expect(sync.hapert).toBe(false);
+	});
+
+	it('blijft er niet op kloppen', async () => {
+		vi.useFakeTimers();
+		await sync.opsturen();
+		const naEerste = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
+		vi.advanceTimersByTime(10 * 60_000);
+		expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(naEerste);
+		vi.useRealTimers();
 	});
 });
