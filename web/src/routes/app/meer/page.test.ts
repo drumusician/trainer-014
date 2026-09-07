@@ -25,7 +25,7 @@ beforeEach(() => {
 	sync.hapert = false;
 	sync.botsing = false;
 	sync.message = '';
-	sync.teamKeuze = [];
+	sync.mijnTeams = [];
 	sync.leden = [];
 	sync.openstaand = [];
 	sync.uitgenodigdVoor = [];
@@ -357,14 +357,55 @@ describe('het gegevensscherm als je ingelogd bent', () => {
 	/* Bij meer dan één team kiest de trainer; de app gokt niet. */
 	it('laat je kiezen welk team dit toestel volgt', async () => {
 		sync.sessie!.teamId = undefined;
-		sync.teamKeuze = [
+		sync.mijnTeams = [
 			{ id: 'team-1', naam: 'JO13-1' },
 			{ id: 'team-9', naam: 'JO15-2' }
 		];
 		render(Meer);
 		await tick();
-		expect(screen.getByRole('button', { name: 'Dit toestel volgt JO13-1' })).toBeTruthy();
-		expect(screen.getByRole('button', { name: 'Dit toestel volgt JO15-2' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Overstappen naar JO13-1' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Overstappen naar JO15-2' })).toBeTruthy();
+	});
+
+	/*
+	 * De lijst blijft staan nadat je gekozen hebt. Hij verdween eerst, en dat maakte
+	 * er een eenrichtingsdeur van: wie twee teams heeft koos er ooit een en kwam
+	 * nooit meer bij het andere.
+	 */
+	it('blijft laten zien welk team aanstaat', async () => {
+		sync.sessie!.teamId = 'team-1';
+		sync.mijnTeams = [
+			{ id: 'team-1', naam: 'JO13-1' },
+			{ id: 'team-9', naam: 'JO15-2' }
+		];
+		render(Meer);
+		await tick();
+		const aan = screen.getByRole('button', { name: 'JO13-1 · staat aan' }) as HTMLButtonElement;
+		expect(aan.disabled).toBe(true);
+		expect(screen.getByRole('button', { name: 'Overstappen naar JO15-2' })).toBeTruthy();
+	});
+
+	it('vraagt om een bevestiging voordat je overstapt', async () => {
+		sync.sessie!.teamId = 'team-1';
+		sync.mijnTeams = [
+			{ id: 'team-1', naam: 'JO13-1' },
+			{ id: 'team-9', naam: 'JO15-2' }
+		];
+		vi.stubGlobal('confirm', () => false);
+		render(Meer);
+		await tick();
+		screen.getByRole('button', { name: 'Overstappen naar JO15-2' }).click();
+		await tick();
+		expect(sync.sessie!.teamId).toBe('team-1');
+	});
+
+	it('noemt bij één team gewoon welk team dat is', async () => {
+		sync.sessie!.teamId = 'team-1';
+		sync.mijnTeams = [{ id: 'team-1', naam: 'JO13-1' }];
+		render(Meer);
+		await tick();
+		expect(document.body.textContent).toContain('JO13-1 · staat aan');
+		expect(document.body.textContent).not.toContain('Overstappen naar');
 	});
 
 	/* Zolang we nog niet weten wie er lid zijn, staat er niets. Anders leest de

@@ -123,6 +123,38 @@ Een code en een back-up bevatten hetzelfde, op één ding na: de wedstrijd die n
 loopt zit er niet in. Die is bedoeld om over te zetten en te bewaren, en een
 half gespeelde wedstrijd hoort daar niet bij.
 
+## Welk team volgt dit toestel
+
+Sinds er meer trainers bij een team kunnen, is dit de plek waar een fout iemands
+seizoen kost. Vier regels, en alles in `sync.svelte.ts` is een uitwerking daarvan:
+
+1. **Een toestel volgt precies één team.** Alles wat het opstuurt gaat daarheen.
+2. **De app raadt nooit welk team dat is.** Hoor je bij meer teams en is er nog
+   geen gekozen, dan gebeurt er niets tot de trainer kiest. Dat is een vraag, geen
+   storing: er komt geen 'geen verbinding' te staan en er wordt niet doorgeprobeerd.
+3. **Het eerste contact met een team is altijd ophalen, nooit opsturen.** Weet het
+   toestel niet op welke versie het bouwt, dan heeft het dit team nog nooit gezien,
+   en dan is opsturen het overschrijven van iets wat het niet kent.
+4. **Overstappen kan alleen als er niets klaarstaat, en lukt helemaal of niet.**
+   Eerst het andere team ophalen, en pas omzetten als dat gelukt is.
+
+Regel 3 zat er eerst niet in, en dat is het scherpst denkbare randje. Een net
+toegevoegde trainer logt in, zijn nog lege app duwt naar jouw team, de
+versiecontrole houdt hem tegen — en dan krijgt hij een botsing te zien waarvan één
+van de twee knoppen met opzet zijn lege toestel over jouw seizoen heen stuurt. Een
+geladen wapen in handen van iemand die net binnenkomt.
+
+Regel 4 heeft een tweede helft die makkelijk te missen is: stap je over naar een
+team waar nog *niets* staat, dan wordt wat er op dit toestel staat gewist. Dat
+hoort namelijk bij het team dat je verlaat, en meenemen zou het bij het nieuwe
+naar binnen schrijven. Kwam je nergens vandaan, dan blijft het juist staan — dat
+ís het begin van dat team.
+
+De lijst met je teams staat altijd op het gegevensscherm, met daarin welk team
+aanstaat. Hij was eerst een eenmalig keuzemoment dat verdween zodra je gekozen
+had, en dat maakte er een eenrichtingsdeur van: wie twee teams heeft koos er een
+en kwam nooit meer bij het andere.
+
 ## Een telefoon die leegloopt
 
 De lopende wedstrijd gaat wél naar de server, en dat is met opzet: het is het

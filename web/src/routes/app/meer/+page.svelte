@@ -37,6 +37,16 @@
 		}
 	});
 
+	/* De lijst met teams hoort er te staan zodra je ingelogd bent, ook als er maar
+	   één is: dan lees je welk team dit toestel volgt. */
+	let teamsGehaald = $state(false);
+	$effect(() => {
+		if (sync.sessie && !teamsGehaald) {
+			teamsGehaald = true;
+			sync.haalTeams();
+		}
+	});
+
 	async function codeMaken() {
 		code = makeTransferCode(t);
 		overzet = 'maken';
@@ -221,12 +231,25 @@
 			</div>
 		{/if}
 
-		{#if sync.teamKeuze.length}
+		<!-- Altijd zichtbaar, niet alleen bij het eerste keuzemoment. Anders is het
+		     een eenrichtingsdeur: wie twee teams heeft koos er ooit een en kwam nooit
+		     meer bij het andere. -->
+		{#if sync.sessie && sync.mijnTeams.length}
 			<h2>{text.data.chooseTeamHeading}</h2>
-			<p class="uitleg">{text.data.chooseTeamHint}</p>
+			{#if sync.mijnTeams.length > 1}
+				<p class="uitleg">{text.data.chooseTeamHint}</p>
+			{/if}
 			<div class="knoprij" style="padding-left: 0">
-				{#each sync.teamKeuze as ploeg (ploeg.id)}
-					<button onclick={() => sync.kiesTeam(ploeg.id)}>{text.data.chooseTeam(ploeg.naam)}</button>
+				{#each sync.mijnTeams as ploeg (ploeg.id)}
+					{#if ploeg.id === sync.sessie.teamId}
+						<button class="prim" disabled>{text.data.currentTeam(ploeg.naam)}</button>
+					{:else}
+						<button
+							onclick={() => {
+								if (confirm(text.data.confirmChooseTeam(ploeg.naam))) sync.kiesTeam(ploeg.id);
+							}}>{text.data.chooseTeam(ploeg.naam)}</button
+						>
+					{/if}
 				{/each}
 			</div>
 		{/if}

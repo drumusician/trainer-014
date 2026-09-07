@@ -508,11 +508,14 @@ const data = {
 	invitedFor: (naam: string) => `${naam} heeft je gevraagd om mee te kijken.`,
 	acceptInvite: 'Aannemen',
 
-	chooseTeamHeading: 'Welk team op dit toestel?',
+	chooseTeamHeading: 'Welk team volgt dit toestel',
 	chooseTeamHint:
-		'Je hoort bij meer dan één team. Kies welk team dit toestel bijhoudt; wat er nu in de app staat wordt vervangen door dat van het team dat je kiest.',
-	chooseTeam: (naam: string) => `Dit toestel volgt ${naam}`,
-	currentTeam: (naam: string) => `Dit toestel volgt ${naam}.`,
+		'Alles wat je hier bijhoudt gaat naar het team dat aanstaat. Wissel je, dan wordt wat er nu in de app staat vervangen door dat van het andere team — stuur dus eerst op wat er nog klaarstaat.',
+	chooseTeam: (naam: string) => `Overstappen naar ${naam}`,
+	currentTeam: (naam: string) => `${naam} · staat aan`,
+	confirmChooseTeam: (naam: string) =>
+		`Dit toestel op ${naam} zetten?\n\nDe selectie, trainingen en het archief die nu in de app staan worden vervangen door die van ${naam}.`,
+	firstPullHeading: 'Nog niet opgehaald',
 
 	transferHeading: 'Overzetten en back-up',
 	onlyHereLead: 'Alles staat alleen op dit toestel.',

@@ -421,6 +421,7 @@ describe('welk team dit toestel volgt', () => {
 		const f = vi.fn(async (url: string, init?: RequestInit) => {
 			const u = String(url);
 			if (u.includes('teams?select=id')) return new Response(JSON.stringify(teams), { status: 200 });
+			if (u.includes('uitnodigingen')) return new Response('[]', { status: 200 });
 			if (u.includes('/rest/v1/teams') && init?.method === 'POST') {
 				gemaakt.push(JSON.parse(String(init.body)));
 				return new Response(JSON.stringify([{ id: 'vers-team' }]), { status: 200 });
@@ -433,7 +434,7 @@ describe('welk team dit toestel volgt', () => {
 	}
 
 	beforeEach(() => {
-		sync.teamKeuze = [];
+		sync.mijnTeams = [];
 		sync.leden = [];
 		sync.openstaand = [];
 		sync.uitgenodigdVoor = [];
@@ -445,7 +446,8 @@ describe('welk team dit toestel volgt', () => {
 		sync.sessie!.teamId = undefined;
 		await sync.opsturen();
 		expect(sync.sessie!.teamId).toBe('team-1');
-		expect(sync.teamKeuze).toHaveLength(0);
+		/* de lijst blijft staan; hij is geen keuzemoment maar een overzicht */
+		expect(sync.mijnTeams).toEqual([{ id: 'team-1', naam: 'JO13-1' }]);
 	});
 
 	/*
@@ -462,9 +464,40 @@ describe('welk team dit toestel volgt', () => {
 		await sync.opsturen();
 
 		expect(sync.sessie!.teamId).toBeUndefined();
-		expect(sync.teamKeuze.map((t) => t.naam)).toEqual(['JO13-1', 'JO15-2']);
+		expect(sync.mijnTeams.map((t) => t.naam)).toEqual(['JO13-1', 'JO15-2']);
 		/* en er is niets opgestuurd */
 		expect(f.mock.calls.some((c) => String(c[0]).includes('toestand_opslaan'))).toBe(false);
+	});
+
+	/*
+	 * De bron van de verwarring op 7 september.
+	 *
+	 * De tweede trainer logde voor het eerst in, kreeg automatisch een eigen leeg
+	 * team, en nam daarna pas de uitnodiging aan. Twee teams, waarvan één nergens
+	 * voor dient — en precies díé tweede maakte de keuzeknoppen nodig. De app
+	 * veroorzaakte zijn eigen complexiteit.
+	 */
+	it('maakt geen leeg team aan als er een uitnodiging klaarstaat', async () => {
+		const gemaakt: unknown[] = [];
+		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+			const u = String(url);
+			if (u.includes('teams?select=id')) return new Response('[]', { status: 200 });
+			if (u.includes('uitnodigingen')) return new Response(JSON.stringify([{ team_id: 'team-9' }]), { status: 200 });
+			if (u.includes('/rest/v1/teams') && init?.method === 'POST') {
+				gemaakt.push(1);
+				return new Response(JSON.stringify([{ id: 'ongewenst' }]), { status: 200 });
+			}
+			return new Response('{}', { status: 200 });
+		}) as unknown as typeof fetch;
+
+		sync.sessie!.teamId = undefined;
+		await sync.opsturen();
+
+		expect(gemaakt).toHaveLength(0);
+		expect(sync.sessie!.teamId).toBeUndefined();
+		expect(sync.message).toContain('uitnodiging');
+		/* en het is geen storing, dus geen 'geen verbinding' en geen herhaling */
+		expect(sync.hapert).toBe(false);
 	});
 
 	it('maakt er een aan als je nog nergens bij hoort', async () => {
@@ -481,7 +514,7 @@ describe('welk team dit toestel volgt', () => {
 		sync.vies = false;
 		await sync.kiesTeam('team-2');
 		expect(sync.sessie!.teamId).toBe('team-2');
-		expect(sync.teamKeuze).toHaveLength(0);
+		expect(sync.mijnTeams).toHaveLength(0);
 	});
 
 	/*
@@ -497,13 +530,28 @@ describe('welk team dit toestel volgt', () => {
 		expect(sync.message).toContain('Stuur eerst op');
 	});
 
-	it('vergeet de versie van het vorige team bij het overstappen', async () => {
+	/*
+	 * Maar die rem mag geen doodlopende weg worden. Volgt dit toestel nog geen
+	 * team, dan hoort wat er klaarstaat nergens bij, en 'stuur eerst op' zou
+	 * verwijzen naar iets wat niet bestaat. Dat is de toestand van iemand die net
+	 * is uitgenodigd.
+	 */
+	it('laat een toestel dat nog nergens bij hoort wel kiezen', async () => {
+		metTeams([]);
+		sync.sessie!.teamId = undefined;
+		sync.vies = true;
+		await sync.kiesTeam('team-9');
+		expect(sync.sessie!.teamId).toBe('team-9');
+		expect(sync.message).not.toContain('Stuur eerst op');
+	});
+
+	/* De versie van het ene team zegt niets over het andere; hem meenemen zou
+	   betekenen dat we denken te weten waar we op bouwen terwijl dat niet zo is. */
+	it('neemt de versie van het vorige team niet mee', async () => {
 		metTeams([]);
 		sync.sessie!.versie = 42;
-		sync.sessie!.afdruk = 'iets';
 		await sync.kiesTeam('team-2');
-		expect(sync.sessie!.versie).toBeUndefined();
-		expect(sync.sessie!.afdruk).toBeNull();
+		expect(sync.sessie!.versie).not.toBe(42);
 	});
 });
 
@@ -579,7 +627,7 @@ describe('wie er bij het team kan', () => {
 describe('uitgenodigd worden', () => {
 	beforeEach(() => {
 		sync.uitgenodigdVoor = [];
-		sync.teamKeuze = [];
+		sync.mijnTeams = [];
 		sync.message = '';
 	});
 
@@ -607,6 +655,28 @@ describe('uitgenodigd worden', () => {
 		expect(sync.uitgenodigdVoor).toHaveLength(0);
 	});
 
+	/*
+	 * De doodlopende weg van 7 september.
+	 *
+	 * Wie net is uitgenodigd en zelf nog geen team heeft, houdt er precies één
+	 * over. De knoppen verschenen pas bij twee of meer, dus die persoon zag
+	 * 'Aangenomen. Kies hieronder welk team je wilt' met niets eronder — op het
+	 * moment dat hij voor het eerst binnenkwam.
+	 */
+	it('zet ook bij één team de knop neer', async () => {
+		globalThis.fetch = vi.fn(async (url: string) => {
+			const u = String(url);
+			if (u.includes('uitnodiging_aannemen')) return new Response(JSON.stringify(['team-9']), { status: 200 });
+			if (u.includes('teams?select=id'))
+				return new Response(JSON.stringify([{ id: 'team-9', naam: 'JO15-2' }]), { status: 200 });
+			return new Response('[]', { status: 200 });
+		}) as unknown as typeof fetch;
+
+		await sync.neemUitnodigingAan();
+		expect(sync.mijnTeams).toEqual([{ id: 'team-9', naam: 'JO15-2' }]);
+		expect(sync.message).not.toContain('Kies hieronder');
+	});
+
 	it('neemt aan en vraagt daarna welk team dit toestel volgt', async () => {
 		globalThis.fetch = vi.fn(async (url: string) => {
 			const u = String(url);
@@ -623,7 +693,7 @@ describe('uitgenodigd worden', () => {
 		}) as unknown as typeof fetch;
 		const teams = await sync.neemUitnodigingAan();
 		expect(teams).toEqual(['team-9']);
-		expect(sync.teamKeuze).toHaveLength(2);
+		expect(sync.mijnTeams).toHaveLength(2);
 		expect(sync.uitgenodigdVoor).toHaveLength(0);
 	});
 
@@ -723,7 +793,7 @@ describe('als het nieuwe schema er nog niet is', () => {
  */
 describe('wachten op een teamkeuze', () => {
 	beforeEach(() => {
-		sync.teamKeuze = [];
+		sync.mijnTeams = [];
 		sync.hapert = false;
 		sync.message = '';
 		sync.sessie!.teamId = undefined;
@@ -743,7 +813,7 @@ describe('wachten op een teamkeuze', () => {
 
 	it('zegt wat er moet gebeuren in plaats van dat er iets mis is', async () => {
 		await sync.opsturen();
-		expect(sync.teamKeuze).toHaveLength(2);
+		expect(sync.mijnTeams).toHaveLength(2);
 		expect(sync.message).toContain('Kies');
 		expect(sync.message).not.toContain('lukte niet');
 	});
@@ -762,5 +832,201 @@ describe('wachten op een teamkeuze', () => {
 		vi.advanceTimersByTime(10 * 60_000);
 		expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(naEerste);
 		vi.useRealTimers();
+	});
+});
+
+/*
+ * De vier regels waar het niet mis mag gaan.
+ *
+ * 1. Een toestel volgt precies één team. Alles wat het opstuurt gaat daarheen.
+ * 2. De app raadt nooit welk team dat is.
+ * 3. Het eerste contact met een team is altijd ophalen, nooit opsturen.
+ * 4. Overstappen kan alleen als er niets klaarstaat, en lukt helemaal of niet.
+ *
+ * Regel 3 is de belangrijkste. Zonder die regel duwt een net toegevoegde trainer
+ * zijn nog lege app naar het team van een ander. De versiecontrole houdt dat
+ * tegen, maar dan krijgt hij een botsing te zien — en één van de twee knoppen
+ * daar stuurt met opzet dit toestel eroverheen. Een geladen wapen in handen van
+ * iemand die net binnenkomt.
+ */
+describe('elkaars teams niet overschrijven', () => {
+	function server(opties: { teams?: { id: string; naam: string }[]; documenten?: Record<string, unknown> } = {}) {
+		const verstuurd: { url: string; method?: string; body?: Record<string, unknown> }[] = [];
+		const documenten = opties.documenten ?? {};
+		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+			const u = String(url);
+			const body = init?.body ? JSON.parse(String(init.body)) : null;
+			verstuurd.push({ url: u, method: init?.method, body });
+			if (u.includes('teams?select=id')) {
+				return new Response(JSON.stringify(opties.teams ?? [{ id: 'team-1', naam: 'JO13-1' }]), { status: 200 });
+			}
+			if (u.includes('uitnodigingen')) return new Response('[]', { status: 200 });
+			if (u.includes('/rest/v1/teams') && init?.method === 'POST') {
+				return new Response(JSON.stringify([{ id: 'vers-team' }]), { status: 200 });
+			}
+			if (u.includes('team_toestand')) {
+				const id = u.split('team_id=eq.')[1]?.split('&')[0] ?? '';
+				const d = documenten[id];
+				return new Response(JSON.stringify(d ? [d] : []), { status: 200 });
+			}
+			if (u.includes('rpc/toestand_opslaan')) return new Response(JSON.stringify({ versie: 9 }), { status: 200 });
+			return new Response('{}', { status: 200 });
+		}) as unknown as typeof fetch;
+		return verstuurd;
+	}
+
+	const documentVan = (naam: string, versie = 4) => ({
+		versie,
+		data: { teamName: naam, players: [{ id: 'x', name: 'Speler van ' + naam, line: 'M' }], archive: [], trainings: [] }
+	});
+
+	beforeEach(() => {
+		sync.mijnTeams = [];
+		sync.message = '';
+		sync.botsing = false;
+		sync.hapert = false;
+	});
+
+	/* ---------- regel 3 ---------- */
+	it('stuurt niets op naar een team dat dit toestel nog nooit heeft opgehaald', async () => {
+		const verstuurd = server({ documenten: { 'team-1': documentVan('JO13-1') } });
+		sync.sessie!.teamId = undefined;
+		sync.sessie!.versie = undefined;
+		app.toestand.teamName = 'Ons team';
+
+		await sync.opsturen();
+
+		expect(verstuurd.some((v) => v.url.includes('toestand_opslaan'))).toBe(false);
+		expect(sync.message).toContain('nog niet opgehaald');
+		expect(sync.botsing).toBe(false);
+	});
+
+	it('stuurt wel op naar een team dat het net zelf heeft aangemaakt', async () => {
+		const verstuurd = server({ teams: [] });
+		sync.sessie!.teamId = undefined;
+		sync.sessie!.versie = undefined;
+
+		await sync.opsturen();
+
+		/* vers aangemaakt: de server heeft niets, dus opsturen is hier veilig */
+		expect(verstuurd.some((v) => v.url.includes('toestand_opslaan'))).toBe(true);
+	});
+
+	it('stuurt gewoon op zodra het team een keer opgehaald is', async () => {
+		const verstuurd = server({ documenten: { 'team-1': documentVan('JO13-1') } });
+		sync.sessie!.teamId = 'team-1';
+		sync.sessie!.versie = 4;
+
+		await sync.opsturen();
+		expect(verstuurd.some((v) => v.url.includes('toestand_opslaan'))).toBe(true);
+	});
+
+	/* ---------- regel 4 ---------- */
+	it('neemt bij het overstappen de gegevens van het andere team over', async () => {
+		server({
+			teams: [
+				{ id: 'team-1', naam: 'JO13-1' },
+				{ id: 'team-9', naam: 'JO15-2' }
+			],
+			documenten: { 'team-9': documentVan('JO15-2', 7) }
+		});
+		sync.mijnTeams = [
+			{ id: 'team-1', naam: 'JO13-1' },
+			{ id: 'team-9', naam: 'JO15-2' }
+		];
+		sync.sessie!.teamId = 'team-1';
+		sync.sessie!.versie = 3;
+		sync.vies = false;
+
+		await sync.kiesTeam('team-9');
+
+		expect(sync.sessie!.teamId).toBe('team-9');
+		expect(sync.sessie!.versie).toBe(7);
+		expect(app.toestand.teamName).toBe('JO15-2');
+		expect(app.toestand.players[0].name).toBe('Speler van JO15-2');
+	});
+
+	/*
+	 * Dit is het doorkruisen waar het om gaat. Stap je over naar een team waar nog
+	 * niets staat, dan mag wat hier staat niet meegaan: dat is van het team dat je
+	 * verlaat, en het zou zich bij het nieuwe naar binnen schrijven.
+	 */
+	it('draagt geen gegevens van het ene team het andere in', async () => {
+		server({
+			teams: [
+				{ id: 'team-1', naam: 'JO13-1' },
+				{ id: 'team-9', naam: 'JO15-2' }
+			],
+			documenten: {}
+		});
+		app.toestand.teamName = 'JO13-1';
+		app.toestand.players = [{ id: 'p1', name: 'Bram', line: 'M' }];
+		sync.sessie!.teamId = 'team-1';
+		sync.sessie!.versie = 3;
+		sync.vies = false;
+
+		await sync.kiesTeam('team-9');
+
+		expect(app.toestand.players).toHaveLength(0);
+		expect(app.toestand.teamName).not.toBe('JO13-1');
+	});
+
+	/* Maar wie nergens vandaan komt houdt wat hij heeft: dat ís het begin. */
+	it('laat wat er staat met rust als dit het eerste team is', async () => {
+		server({ teams: [{ id: 'team-9', naam: 'JO15-2' }], documenten: {} });
+		app.toestand.players = [{ id: 'p1', name: 'Bram', line: 'M' }];
+		sync.sessie!.teamId = undefined;
+		sync.sessie!.versie = undefined;
+
+		await sync.kiesTeam('team-9');
+
+		expect(sync.sessie!.teamId).toBe('team-9');
+		expect(app.toestand.players).toHaveLength(1);
+	});
+
+	/*
+	 * Halverwege blijven steken is het gevaarlijkst: dan staat de selectie van het
+	 * ene team op een toestel dat het andere volgt, en duwt de eerstvolgende
+	 * wijziging hem de verkeerde kant op.
+	 */
+	it('stapt niet half over als het ophalen mislukt', async () => {
+		globalThis.fetch = vi.fn(async (url: string) => {
+			if (String(url).includes('team_toestand')) throw new Error('geen bereik');
+			return new Response('[]', { status: 200 });
+		}) as unknown as typeof fetch;
+		app.toestand.teamName = 'JO13-1';
+		sync.sessie!.teamId = 'team-1';
+		sync.sessie!.versie = 3;
+		sync.vies = false;
+
+		await sync.kiesTeam('team-9');
+
+		expect(sync.sessie!.teamId).toBe('team-1');
+		expect(sync.sessie!.versie).toBe(3);
+		expect(app.toestand.teamName).toBe('JO13-1');
+		expect(sync.message).toContain('niets veranderd');
+	});
+
+	it('stapt niet over met werk dat nog klaarstaat', async () => {
+		server();
+		sync.sessie!.teamId = 'team-1';
+		sync.vies = true;
+		await sync.kiesTeam('team-9');
+		expect(sync.sessie!.teamId).toBe('team-1');
+	});
+
+	/* ---------- regel 2 ---------- */
+	it('kiest niet zelf als er meer teams zijn', async () => {
+		const verstuurd = server({
+			teams: [
+				{ id: 'team-1', naam: 'JO13-1' },
+				{ id: 'team-9', naam: 'JO15-2' }
+			]
+		});
+		sync.sessie!.teamId = undefined;
+		await sync.opsturen();
+		expect(sync.sessie!.teamId).toBeUndefined();
+		expect(verstuurd.some((v) => v.url.includes('toestand_opslaan'))).toBe(false);
+		expect(sync.mijnTeams).toHaveLength(2);
 	});
 });

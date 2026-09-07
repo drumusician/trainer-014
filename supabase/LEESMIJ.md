@@ -49,7 +49,15 @@ Uitrollen, terugrollen en gegevens terughalen staat in [UITROLLEN.md](../UITROLL
 1. Project aanmaken in de privé-org. Bij Security: **Data API aan**, **automatically expose new tables uit**, **automatic RLS aan**.
 2. SQL editor → `schema.sql` erin → Run.
 3. Authentication → Sign In / Providers → **Email** aanzetten.
-4. Authentication → **Emails** → template **Magic Link**: zet `{{ .Token }}` in de tekst. Zonder die regel stuurt Supabase alleen een link, en de app vraagt om een code van zes cijfers.
+4. Authentication → **Emails**: zet `{{ .Token }}` in de tekst van **drie** sjablonen — **Magic Link**, **Confirm signup** én **Invite user**. Zonder die regel stuurt Supabase alleen een link, terwijl de app om een code van zes cijfers vraagt.
+
+   Alle drie, want Supabase kiest een ander sjabloon afhankelijk van wie er inlogt. De app roept altijd hetzelfde aan (`/auth/v1/otp` met `create_user: true`), maar:
+
+   - een adres dat Supabase al kent → **Magic Link**
+   - een adres dat hij nog niet kent → **Confirm signup**
+   - iemand die je via het dashboard uitnodigt → **Invite user**
+
+   Alleen Magic Link aanpassen werkt dus prima zolang je in je eentje test, en gaat stuk op de eerste échte tweede trainer. Die krijgt een mail zonder code en komt er niet in.
 
    Zonder die regel werkt de **link** in de mail: de app vangt hem op als je terugkomt. Dan moet wel Authentication → **URL Configuration** kloppen: Site URL op je Netlify-adres, en bij Redirect URLs ook je lokale testadres (`http://localhost:8788` of welke poort je gebruikt).
 

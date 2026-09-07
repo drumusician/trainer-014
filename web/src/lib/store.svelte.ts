@@ -449,6 +449,22 @@ class App {
 	 * a running match is never overwritten by what sits on the server. See
 	 * adoptSyncPayload.
 	 */
+	/**
+	 * Alles wissen en opnieuw beginnen.
+	 *
+	 * Voor het overstappen naar een team waar nog niets staat. Wat hier staat hoort
+	 * dan bij het vórige team, en meenemen zou het bij het nieuwe naar binnen
+	 * schrijven — precies het doorkruisen dat nooit mag gebeuren.
+	 *
+	 * Een wedstrijd die hier loopt gaat ook weg, en dat is de bedoeling: die hoort
+	 * bij het team dat je verlaat, niet bij het team waar je heen gaat.
+	 */
+	wisAlles() {
+		this.toestand = emptyState();
+		this.chosenPosition = null;
+		this.save();
+	}
+
 	syncPayload() {
 		const t = this.toestand;
 		return {

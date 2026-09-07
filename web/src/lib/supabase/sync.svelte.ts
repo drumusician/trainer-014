@@ -69,14 +69,14 @@ export interface Lid {
 }
 
 /**
- * Er moet eerst een team gekozen worden.
+ * Er moet eerst iets beslist worden door de trainer.
  *
- * Geen storing maar een vraag aan de trainer, en dat verschil moet de app maken.
- * Behandel je dit als een mislukking, dan blijft hij het proberen en zegt het
- * scherm 'geen verbinding' — waarna iemand met zijn telefoon in de lucht naar
- * buiten loopt terwijl hij gewoon op een knop moet drukken.
+ * Geen storing maar een vraag, en dat verschil moet de app maken. Behandel je dit
+ * als een mislukking, dan blijft hij het proberen en zegt het scherm 'geen
+ * verbinding' — waarna iemand met zijn telefoon in de lucht naar buiten loopt
+ * terwijl hij gewoon op een knop moet drukken.
  */
-class KiesEerstEenTeam extends Error {}
+class WachtOpDeTrainer extends Error {}
 
 class Sync {
 	sessie = $state<Sessie | null>(null);
@@ -109,10 +109,15 @@ class Sync {
 
 	/* ---------- meerdere trainers ----------
 	   Zolang er één team was, kon de app het gewoon pakken. Nu je ook lid kunt
-	   zijn van het team van een ander, mag hij dat niet meer gokken: het verkeerde
-	   team pakken betekent andermans seizoen overschrijven met dat van jou. Staat
-	   deze lijst gevuld, dan wacht het synchroniseren tot de trainer kiest. */
-	teamKeuze = $state<{ id: string; naam: string }[]>([]);
+	   zijn van meer teams — je eigen ploeg en die van iemand anders, of gewoon
+	   twee ploegen — mag hij dat niet meer gokken: het verkeerde team pakken
+	   betekent andermans seizoen overschrijven met dat van jou.
+
+	   Dit was eerst een eenmalige keuze die verdween zodra je hem gemaakt had.
+	   Daarmee was het een eenrichtingsdeur: wie twee teams heeft koos er een en
+	   kwam nooit meer bij het andere. Nu is het gewoon een lijst die er altijd
+	   staat, met daarin welk team dit toestel volgt. */
+	mijnTeams = $state<{ id: string; naam: string }[]>([]);
 	/** de ploeg van dit team, om te laten zien wie er allemaal bij kan */
 	leden = $state<Lid[]>([]);
 	/** uitnodigingen die nog openstaan voor dit team */
@@ -186,7 +191,7 @@ class Sync {
 		this.message = '';
 		this.vies = false;
 		this.botsing = false;
-		this.teamKeuze = [];
+		this.mijnTeams = [];
 		this.leden = [];
 		this.openstaand = [];
 		this.uitgenodigdVoor = [];
@@ -303,7 +308,23 @@ class Sync {
 		this.message = 'Ingelogd via de link.';
 	}
 
-	/* ---------- team ---------- */
+	/* ==========================================================
+	   Welk team volgt dit toestel
+
+	   Vier regels, en alles hieronder is een uitwerking daarvan:
+
+	   1. Een toestel volgt precies één team. Alles wat het opstuurt gaat daarheen.
+	   2. De app raadt nooit welk team dat is. Zijn er meer, dan kiest de trainer.
+	   3. Het eerste contact met een team is altijd ophalen, nooit opsturen.
+	   4. Overstappen kan alleen als er niets klaarstaat, en vervangt wat er hier
+	      staat door dat van het andere team.
+
+	   Regel 3 is de belangrijkste en zat er eerst niet in. Zonder die regel duwt
+	   een net toegevoegde trainer zijn nog lege app naar jouw team. De
+	   versiecontrole houdt dat tegen, maar hij krijgt dan een botsing te zien —
+	   en één van de twee knoppen daar stuurt met opzet dit toestel eroverheen.
+	   Dat is een geladen wapen in handen van iemand die net binnenkomt.
+	   ========================================================== */
 	/**
 	 * Welk team hoort bij dit toestel?
 	 *
@@ -322,13 +343,30 @@ class Sync {
 			naam: string;
 		}[];
 
+		this.mijnTeams = rijen ?? [];
+
 		if (rijen?.length === 1) {
 			s.teamId = rijen[0].id;
-			this.teamKeuze = [];
 		} else if (rijen?.length > 1) {
-			this.teamKeuze = rijen;
-			throw new KiesEerstEenTeam('Je hoort bij meer dan één team. Kies bij Gegevens welk team dit toestel volgt.');
+			throw new WachtOpDeTrainer('Je hoort bij meer dan één team. Kies bij Gegevens welk team dit toestel volgt.');
 		} else {
+			/*
+			 * Geen team. Voordat we er een aanmaken: staat er een uitnodiging klaar?
+			 *
+			 * Zonder deze vraag kreeg de tweede trainer bij zijn eerste inlog een eigen
+			 * leeg team, en pas daarna nam hij de uitnodiging aan — met twee teams als
+			 * gevolg, waarvan één nergens voor dient. Die tweede is precies wat de
+			 * keuzeknoppen nodig maakte, en dus complexiteit die alleen de app zelf
+			 * had veroorzaakt.
+			 */
+			const wachtend = (await sb('/rest/v1/uitnodigingen?select=team_id', {}, token)) as {
+				team_id: string;
+			}[];
+			if (wachtend?.length) {
+				await this.kijkNaarUitnodigingen();
+				throw new WachtOpDeTrainer('Er staat een uitnodiging voor je klaar. Neem hem aan bij Gegevens.');
+			}
+
 			if (!s.user_id) {
 				const u = (await sb('/auth/v1/user', {}, token)) as { id: string; email: string };
 				s.user_id = u.id;
@@ -344,6 +382,9 @@ class Sync {
 				token
 			)) as { id: string }[];
 			s.teamId = gemaakt[0].id;
+			/* Vers aangemaakt, dus de server heeft nog niets. Dat is geen 'onbekend'
+			   maar een 'leeg', en dat verschil bepaalt of er opgestuurd mag worden. */
+			s.versie = 0;
 		}
 		this.save();
 		return s.teamId!;
@@ -356,18 +397,88 @@ class Sync {
 	 * van het ene team in de hand naar het andere overstappen, en die daar
 	 * overheen zetten.
 	 */
+	/**
+	 * Regel 4: overstappen naar een ander team.
+	 *
+	 * Het gevaarlijke aan overstappen is niet het wisselen maar het halverwege
+	 * blijven steken. Zetten we eerst het teamnummer om en mislukt daarna het
+	 * ophalen, dan staat de selectie van het ene team op een toestel dat het
+	 * andere volgt — en de eerstvolgende wijziging duwt die de verkeerde kant op.
+	 * Daarom eerst halen, en pas omzetten als dat gelukt is.
+	 */
 	async kiesTeam(teamId: string) {
 		if (!this.sessie) return;
-		if (this.vies) {
+		if (teamId === this.sessie.teamId) return;
+
+		/*
+		 * De rem geldt alleen als dit toestel al een team volgt. Dan hoort wat er
+		 * klaarstaat bij dát team, en overstappen zou het bij het andere naar binnen
+		 * duwen. Volgt het nog geen team, dan hoort het klaarstaande werk nergens
+		 * bij en zou de rem een doodlopende weg zijn: 'stuur eerst op' terwijl er
+		 * niets is om naar op te sturen.
+		 */
+		if (this.vies && this.sessie.teamId) {
 			this.message = 'Stuur eerst op wat hier nog klaarstaat, of haal op.';
 			return;
 		}
-		this.sessie.teamId = teamId;
-		this.sessie.versie = undefined;
-		this.sessie.afdruk = null;
-		this.teamKeuze = [];
-		this.save();
-		await this.ophalen();
+
+		const kwam = this.sessie.teamId;
+		this.bezig = true;
+		try {
+			const token = await this.token();
+			if (!token) return;
+			const rijen = (await sb('/rest/v1/team_toestand?select=data,versie&team_id=eq.' + teamId, {}, token)) as
+				{ data: ReturnType<typeof app.syncPayload>; versie: number }[] | null;
+
+			if (rijen?.length) {
+				if (!app.adoptSyncPayload(rijen[0].data)) {
+					this.message = 'Wat er bij dat team staat kon ik niet lezen. Er is niets veranderd.';
+					return;
+				}
+				this.sessie.versie = rijen[0].versie;
+			} else if (kwam) {
+				/*
+				 * Een leeg team, en we kwamen van een ander. Wat hier staat is dan van
+				 * dát team, en meenemen zou het bij het nieuwe naar binnen schrijven.
+				 * Dus schoon beginnen. Kwamen we nergens vandaan, dan is wat hier staat
+				 * juist het begin van dit team en blijft het staan.
+				 */
+				app.wisAlles();
+				this.sessie.versie = 0;
+			} else {
+				this.sessie.versie = 0;
+			}
+
+			this.sessie.teamId = teamId;
+			this.sessie.afdruk = vingerafdruk(app.syncPayload());
+			this.sessie.laatst = new Date().toISOString();
+			this.leden = [];
+			this.openstaand = [];
+			this.vies = false;
+			this.botsing = false;
+			this.save();
+			this.message = 'Dit toestel volgt nu ' + (this.mijnTeams.find((p) => p.id === teamId)?.naam ?? 'dit team') + '.';
+			await this.haalPloeg();
+		} catch (e) {
+			/* Niets omgezet: het toestel volgt nog steeds hetzelfde team. */
+			this.message = 'Overstappen lukte niet: ' + (e as Error).message + '. Er is niets veranderd.';
+		} finally {
+			this.bezig = false;
+		}
+	}
+
+	/** De teams waar je bij hoort. Staat altijd op het gegevensscherm. */
+	async haalTeams() {
+		const token = await this.token();
+		if (!token) return;
+		try {
+			this.mijnTeams = (await sb('/rest/v1/teams?select=id,naam&order=gemaakt.asc', {}, token)) as {
+				id: string;
+				naam: string;
+			}[];
+		} catch {
+			/* geen bereik: dan een andere keer */
+		}
 	}
 
 	/* ---------- wie kan erbij ---------- */
@@ -524,12 +635,8 @@ class Sync {
 				this.message = 'Er stond geen uitnodiging klaar op dit adres.';
 				return [];
 			}
-			this.message = 'Aangenomen. Kies hieronder welk team je op dit toestel wilt.';
-			const alle = (await sb('/rest/v1/teams?select=id,naam&order=gemaakt.asc', {}, token)) as {
-				id: string;
-				naam: string;
-			}[];
-			this.teamKeuze = alle.length > 1 ? alle : [];
+			await this.haalTeams();
+			this.message = 'Aangenomen. Hieronder staat welk team dit toestel volgt.';
 			return teams;
 		} catch (e) {
 			this.message = 'Aannemen lukte niet: ' + (e as Error).message;
@@ -557,6 +664,16 @@ class Sync {
 				return;
 			}
 			const team = await this.zorgVoorTeam(token);
+			/*
+			 * Regel 3. Weten we niet op welke versie we bouwen, dan hebben we dit team
+			 * nog nooit opgehaald — en dan is opsturen het overschrijven van iets wat
+			 * we niet gezien hebben.
+			 */
+			if (this.sessie.versie === undefined && !overschrijven) {
+				const naam = this.mijnTeams.find((p) => p.id === team)?.naam ?? 'dit team';
+				this.message = `Dit toestel heeft de gegevens van ${naam} nog niet opgehaald. Doe dat eerst met Ophalen.`;
+				return;
+			}
 			let verwacht: number | null = this.sessie.versie ?? null;
 			if (overschrijven) {
 				const nu = (await sb('/rest/v1/team_toestand?select=versie&team_id=eq.' + team, {}, token)) as {
@@ -580,7 +697,7 @@ class Sync {
 			this.mislukt = 0;
 			this.message = 'Opgestuurd.';
 		} catch (e) {
-			if (e instanceof KiesEerstEenTeam) {
+			if (e instanceof WachtOpDeTrainer) {
 				this.message = (e as Error).message;
 				return;
 			}
@@ -646,7 +763,7 @@ class Sync {
 			this.mislukt = 0;
 			this.message = stil ? '' : 'Opgehaald.';
 		} catch (e) {
-			if (e instanceof KiesEerstEenTeam) {
+			if (e instanceof WachtOpDeTrainer) {
 				this.message = (e as Error).message;
 				return;
 			}
