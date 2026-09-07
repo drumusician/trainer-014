@@ -438,7 +438,7 @@ const data = {
 
 	syncHeading: 'Synchroniseren',
 	signInHint:
-		'Log in met je e-mailadres, dan staat je seizoen veilig en heb je het op al je toestellen. Je krijgt een code van zes cijfers per mail; geen wachtwoord om te onthouden.',
+		'Log in met je e-mailadres, dan staat je seizoen veilig en heb je het op al je toestellen. Je krijgt een code per mail; geen wachtwoord om te onthouden.',
 	installFirstLead: 'Zet Blaadje eerst op je beginscherm',
 	installFirst: 'en log daar in. Die app staat los van deze browser: log je hier in, dan ben je daar niet ingelogd.',
 	localWarningLead: 'Let op:',
@@ -455,10 +455,14 @@ const data = {
 	 * je in de app zelf, en dan klopt het altijd — waar je ook bent.
 	 */
 	codeHintBefore: 'Vul de',
-	codeHintWord: 'code van zes cijfers',
+	codeHintWord: 'code',
 	codeHintAfter: 'uit de mail hieronder in. Je mag gerust even naar je mail-app; dit scherm staat er straks nog.',
 	codeLabel: 'Code uit de mail',
-	codePlaceholder: '123456',
+	/* Geen aantal cijfers noemen: de lengte van de code is een instelling in
+	   Supabase en staat er niet voor eeuwig hetzelfde. Een tekst die je moet
+	   naschrijven zodra je daar iets aanpast, is een tekst die vanzelf onwaar
+	   wordt. */
+	codePlaceholder: '12345678',
 	signIn: 'Inloggen',
 	otherAddress: 'Ander adres',
 

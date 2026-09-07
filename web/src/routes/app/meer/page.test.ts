@@ -232,7 +232,7 @@ describe('het gegevensscherm', () => {
 	 */
 	it('belooft nergens een link in de mail', () => {
 		const eerst = render(Meer);
-		expect(document.body.textContent).toContain('code van zes cijfers');
+		expect(document.body.textContent).toContain('een code per mail');
 		expect(document.body.textContent).not.toContain('link');
 		eerst.unmount();
 

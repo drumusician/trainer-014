@@ -71,6 +71,8 @@ Uitrollen, terugrollen en gegevens terughalen staat in [UITROLLEN.md](../UITROLL
 
    Let op: geen `{{ .ConfirmationURL }}` erin. Zolang die er staat is er een link, en dan gaat er vroeg of laat iemand op klikken.
 
+   Hoe lang die code is stel je in bij Authentication → Sign In / Providers → Email → **Email OTP Length**. In Blaadje staat dat aantal nergens in een tekst: een zin die je moet naschrijven zodra je daar iets verandert, wordt vanzelf onwaar.
+
 5. Project Settings → API Keys → tabje **Publishable and secret API keys** → de `sb_publishable_...` sleutel. Die staat samen met de project-URL boven in `app/index.html`. Allebei openbaar bedoeld; RLS doet het echte werk.
 
 De ingebouwde mail van Supabase heeft een lage limiet (een paar per uur) en is bedoeld om te testen. Voor jezelf is dat genoeg. Zodra er meer trainers op zitten: Authentication → SMTP Settings met een eigen afzender, anders komen de codes niet aan.
