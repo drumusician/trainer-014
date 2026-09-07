@@ -490,7 +490,8 @@ describe('wat er tussen je toestellen heen en weer gaat', () => {
 		expect(app.match?.absent).toContain('p1');
 	});
 
-	/* A lineup you can pick again, substitutions are gone. So: never overwrite. */
+	/* Na de aftrap wint dit toestel altijd: wissels die hier nog niet verstuurd
+	   zijn, bestaan op dat moment nergens anders. */
 	it('laat een wedstrijd die hier loopt met rust', () => {
 		app.newMatch('Sparta', true);
 		app.toestand.match!.lineup = { K: 'p2' };
@@ -500,6 +501,38 @@ describe('wat er tussen je toestellen heen en weer gaat', () => {
 		expect(app.adoptSyncPayload(JSON.parse(JSON.stringify(vanElders)))).toBe(true);
 		expect(app.match?.opponent).toBe('Sparta');
 		expect(app.kickedOff).toBe(true);
+	});
+
+	/*
+	 * De andere helft van dezelfde regel, en die lag nergens vast. Vóór de aftrap
+	 * wint de server wél. Dat is het geval waarin je thuis een opstelling maakt en
+	 * er ondertussen op je telefoon ook een staat: dan is er één die het wordt, en
+	 * ben je hooguit twee minuten klikken kwijt.
+	 */
+	it('laat een klaargezette opstelling wel wijken voor de server', () => {
+		app.newMatch('Hier', true);
+		app.toestand.match!.lineup = { K: 'p2' };
+
+		const vanElders = JSON.parse(JSON.stringify(app.syncPayload()));
+		vanElders.match.opponent = 'Van de server';
+		vanElders.match.lineup = { SP: 'p1' };
+
+		expect(app.adoptSyncPayload(vanElders)).toBe(true);
+		expect(app.match?.opponent).toBe('Van de server');
+		expect(app.match?.lineup.SP).toBe('p1');
+	});
+
+	/* En één tik op start verlegt die grens. */
+	it('verlegt die grens zodra er afgetrapt is', () => {
+		app.newMatch('Hier', true);
+		app.toestand.match!.lineup = { K: 'p2' };
+		app.toggleRunning();
+
+		const vanElders = JSON.parse(JSON.stringify(app.syncPayload()));
+		vanElders.match.opponent = 'Van de server';
+
+		expect(app.adoptSyncPayload(vanElders)).toBe(true);
+		expect(app.match?.opponent).toBe('Hier');
 	});
 
 	it('ruimt de wedstrijd wel op als hij afgelopen is', () => {
@@ -924,8 +957,8 @@ describe('de klok rechtstreeks zetten', () => {
  * seconden na elke wissel staat hij er; raakt het toestel op, dan pakt een ander
  * hem op met alles wat er al gebeurd is. Wat níét gebeurt is de andere kant op:
  * een wedstrijd die hier loopt wordt nooit overschreven door wat er op de server
- * staat. Een opstelling die je kwijtraakt kies je opnieuw; wissels die je
- * kwijtraakt bestonden nergens anders.
+ * staat — niet omdat wissels niet bewaard worden (dat gebeurt wel), maar omdat
+ * er tussen de tik en het opsturen een gat zit waarin ze alleen hier staan.
  */
 describe('een wedstrijd voortzetten op een ander toestel', () => {
 	function opHetVeld() {

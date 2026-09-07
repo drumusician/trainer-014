@@ -480,9 +480,24 @@ class App {
 		t.trainings = Array.isArray(d.trainings) ? d.trainings : [];
 		t.archive = Array.isArray(d.archive) ? d.archive : [];
 		t.reportSubs = !!d.reportSubs;
-		/* A match running here stays put. A lineup you lose you can pick again;
-		   substitutions you lose are gone, and they existed nowhere else. Only what
-		   has not started may give way. */
+		/*
+		 * Where the line sits: kick-off.
+		 *
+		 * Everything about the match — the lineup and every substitution — is stored
+		 * and does go to the server, four seconds after each change. This is not
+		 * about what gets saved. It is about who wins when this device and the server
+		 * disagree.
+		 *
+		 * Before kick-off the server wins. Worst case you prepared a lineup here and
+		 * someone prepared a different one elsewhere: you pick again, two minutes.
+		 *
+		 * After kick-off this device always wins, because of the gap between tapping
+		 * a substitution and it reaching the server. Normally four seconds; standing
+		 * behind the sports hall with no signal, twenty minutes. For that stretch
+		 * those substitutions exist on this phone and nowhere else, and overwriting
+		 * them would put them beyond recovery — nobody remembers who came off ten
+		 * minutes ago.
+		 */
 		if (!(this.kickedOff && !t.match?.finished)) t.match = d.match ?? null;
 		this.save();
 		return true;

@@ -129,9 +129,19 @@ De lopende wedstrijd gaat wél naar de server, en dat is met opzet: het is het
 enige wat nergens anders bestaat. Vier seconden na elke wissel staat hij er.
 
 Andersom gaat hij niet: een wedstrijd die hier loopt wordt **nooit** overschreven
-door wat er op de server staat. Een opstelling die je kwijtraakt kies je opnieuw;
-wissels die je kwijtraakt bestonden nergens anders. Een toestel dat zelf niets
-heeft lopen pakt hem wel op, compleet met alles wat er al gebeurd is.
+door wat er op de server staat. Een toestel dat zelf niets heeft lopen pakt hem
+wel op, compleet met alles wat er al gebeurd is.
+
+De grens ligt bij de aftrap, en dat gaat niet over wat er bewaard wordt — de
+opstelling en elke wissel gaan gewoon mee — maar over wie er wint als dit toestel
+en de server het oneens zijn:
+
+- **Vóór de aftrap** wint de server. Je bent in het slechtste geval een
+  klaargezette opstelling kwijt: opnieuw klikken, twee minuten.
+- **Ná de aftrap** wint dit toestel, altijd. Tussen de tik op een wissel en het
+  opsturen zit een gat — normaal vier seconden, achter de sporthal zonder bereik
+  twintig minuten. In dat gat staan die wissels hier en nergens anders, en wie er
+  tien minuten geleden uitging weet niemand meer.
 
 Bij de aftrap wordt vastgelegd wie hem bijhoudt (`keptBy`). Tikt er een tweede
 mee, dan staat dat bovenaan het wedstrijdscherm, met een knop om hem met opzet

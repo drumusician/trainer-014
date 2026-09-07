@@ -64,7 +64,9 @@ Instellen → Synchroniseren. Inloggen met e-mail en een code, één keer per to
 
 Wat meegaat: selectie, formatie, standaardopstelling, trainingen, archief én de wedstrijd die nu loopt. Die laatste juist wel: hij bestaat nergens anders, en vier seconden na elke wissel staat hij op de server. Loopt een telefoon leeg, dan pakt een ander toestel hem op met alles erin.
 
-Andersom gaat hij niet. Een wedstrijd die op dit toestel loopt wordt nooit overschreven door wat er op de server staat — een opstelling kies je opnieuw, wissels bestonden nergens anders. Wie hem bijhoudt staat erbij; tikt er een tweede mee, dan waarschuwt het wedstrijdscherm en kun je hem met opzet overnemen.
+Andersom gaat hij niet. Een wedstrijd die op dit toestel loopt wordt nooit overschreven door wat er op de server staat. De grens ligt bij de aftrap: daarvóór wint de server (je bent hooguit een klaargezette opstelling kwijt), daarná altijd dit toestel. Dat laatste omdat er tussen de tik op een wissel en het opsturen een gat zit — vier seconden, of twintig minuten zonder bereik — waarin die wissels hier staan en nergens anders.
+
+Wie hem bijhoudt staat erbij; tikt er een tweede mee, dan waarschuwt het wedstrijdscherm en kun je hem met opzet overnemen.
 
 In een back-up of een overzetcode zit de lopende wedstrijd níét. Die zijn om te bewaren en over te zetten, en een half gespeelde wedstrijd hoort daar niet bij.
 
