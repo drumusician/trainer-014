@@ -321,6 +321,30 @@ describe('het gegevensscherm als je ingelogd bent', () => {
 		expect(screen.getByRole('button', { name: 'Intrekken' })).toBeTruthy();
 	});
 
+	/*
+	 * Blaadje verstuurt zelf geen mail; daar zou een server voor nodig zijn. De
+	 * uitgenodigde ziet zijn uitnodiging pas als hij inlogt, dus iemand moet het
+	 * hem zeggen — en dan liever met een uitleg die klopt dan met 'ik heb je
+	 * toegevoegd, zoek maar uit'.
+	 */
+	it('zet een mail klaar met de uitleg erin', async () => {
+		metSelectie();
+		sync.sessie!.user_id = 'u1';
+		sync.sessie!.teamId = 'team-1';
+		sync.leden = [{ gebruiker: 'u1', rol: 'eigenaar' }];
+		sync.openstaand = [{ id: 'i1', email: 'matthijs@voorbeeld.nl' }];
+		render(Meer);
+		await tick();
+
+		const link = screen.getByRole('link', { name: 'Laat het hem weten' }).getAttribute('href') ?? '';
+		expect(link.startsWith('mailto:matthijs@voorbeeld.nl')).toBe(true);
+		const tekst = decodeURIComponent(link);
+		expect(tekst).toContain('O14-3');
+		expect(tekst).toContain('blaadje.app');
+		expect(tekst).toContain('matthijs@voorbeeld.nl');
+		expect(tekst).toContain('Aannemen');
+	});
+
 	it('vraagt of je een uitnodiging aanneemt, met de naam van het team erbij', async () => {
 		sync.sessie!.teamId = 'team-1';
 		sync.uitgenodigdVoor = [{ id: 'team-9', naam: 'JO15-2' }];

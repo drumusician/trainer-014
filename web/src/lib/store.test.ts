@@ -916,3 +916,98 @@ describe('de klok rechtstreeks zetten', () => {
 		expect(app.match!.elapsed).toBe(12 * 60);
 	});
 });
+
+/*
+ * Een telefoon die leegloopt.
+ *
+ * Dit is het scenario waarvoor de lopende wedstrijd meegaat naar de server. Vier
+ * seconden na elke wissel staat hij er; raakt het toestel op, dan pakt een ander
+ * hem op met alles wat er al gebeurd is. Wat níét gebeurt is de andere kant op:
+ * een wedstrijd die hier loopt wordt nooit overschreven door wat er op de server
+ * staat. Een opstelling die je kwijtraakt kies je opnieuw; wissels die je
+ * kwijtraakt bestonden nergens anders.
+ */
+describe('een wedstrijd voortzetten op een ander toestel', () => {
+	function opHetVeld() {
+		app.toestand = emptyState();
+		app.toestand.teamName = 'JO14-3';
+		app.toestand.players = [
+			{ id: 'k1', name: 'Bram', line: '', keeper: true },
+			{ id: 'a1', name: 'Finn', line: 'A' },
+			{ id: 'b1', name: 'Gijs', line: 'A' }
+		];
+		app.whoIsKeeping = 'tjaco@voorbeeld.nl';
+		app.newMatch('Kampong', true);
+		app.toestand.match!.lineup = { K: 'k1', SP: 'a1' };
+		app.toestand.match!.bench = ['b1'];
+		app.toggleRunning();
+		/* zoals langs de lijn: plek aantikken, dan de speler van de bank */
+		app.chosenPosition = 'SP';
+		app.putOnPosition('b1');
+		app.goal('b1');
+		return JSON.parse(JSON.stringify(app.syncPayload()));
+	}
+
+	it('stuurt de lopende wedstrijd mee, met de wissels erin', () => {
+		const pakket = opHetVeld();
+		expect(pakket.match.running).toBe(true);
+		expect(pakket.match.events.filter((g: { type: string }) => g.type === 'substitution')).toHaveLength(1);
+		expect(pakket.match.keptBy).toBe('tjaco@voorbeeld.nl');
+	});
+
+	it('komt compleet binnen op een toestel dat zelf niets heeft lopen', () => {
+		const pakket = opHetVeld();
+
+		/* de tweede telefoon: net ingelogd, verder leeg */
+		app.toestand = emptyState();
+		app.whoIsKeeping = 'matthijs@voorbeeld.nl';
+		expect(app.adoptSyncPayload(pakket)).toBe(true);
+
+		expect(app.match!.opponent).toBe('Kampong');
+		expect(app.kickedOff).toBe(true);
+		expect(app.match!.lineup.SP).toBe('b1');
+		expect(app.match!.events.filter((g) => g.type === 'substitution')).toHaveLength(1);
+		expect(app.match!.events.filter((g) => g.type === 'goal')).toHaveLength(1);
+	});
+
+	it('laat daarna zien op wiens toestel hij begonnen is', () => {
+		const pakket = opHetVeld();
+		app.toestand = emptyState();
+		app.adoptSyncPayload(pakket);
+		expect(app.match!.keptBy).toBe('tjaco@voorbeeld.nl');
+	});
+
+	it('draagt over zonder iets van de wedstrijd te veranderen', () => {
+		const pakket = opHetVeld();
+		app.toestand = emptyState();
+		app.whoIsKeeping = 'matthijs@voorbeeld.nl';
+		app.adoptSyncPayload(pakket);
+		const voor = JSON.stringify({ ...app.match, keptBy: null });
+
+		expect(app.takeOverMatch()).toBe(true);
+		expect(app.match!.keptBy).toBe('matthijs@voorbeeld.nl');
+		expect(JSON.stringify({ ...app.match, keptBy: null })).toBe(voor);
+	});
+
+	/* En de andere kant op blijft dicht: wat hier loopt gaat voor. */
+	it('overschrijft nooit een wedstrijd die hier al loopt', () => {
+		const pakket = opHetVeld();
+		opHetVeld();
+		app.toestand.match!.opponent = 'Hier op het veld';
+		app.adoptSyncPayload(pakket);
+		expect(app.match!.opponent).toBe('Hier op het veld');
+	});
+
+	it('neemt niets over als je niet ingelogd bent', () => {
+		opHetVeld();
+		app.whoIsKeeping = null;
+		expect(app.takeOverMatch()).toBe(false);
+	});
+
+	it('neemt een afgelopen wedstrijd niet over', () => {
+		opHetVeld();
+		app.toestand.match!.finished = true;
+		app.whoIsKeeping = 'matthijs@voorbeeld.nl';
+		expect(app.takeOverMatch()).toBe(false);
+	});
+});

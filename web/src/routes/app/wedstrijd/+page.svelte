@@ -116,7 +116,17 @@
 	</main>
 {:else}
 	{#if anderTikt}
-		<div class="waarschuwing"><span>{text.match.keptBy(anderTikt)}</span></div>
+		<!-- Met een uitweg: bij een lege telefoon moet je hem juist wél overnemen,
+		     en dan hoort de waarschuwing weg te gaan. -->
+		<div class="waarschuwing">
+			<span>{text.match.keptBy(anderTikt)}</span>
+			<button
+				class="klein"
+				onclick={() => {
+					if (confirm(text.match.confirmTakeOver)) app.takeOverMatch();
+				}}>{text.match.takeOver}</button
+			>
+		</div>
 	{/if}
 	<div class="klokbalk">
 		<button type="button" class="kloktik" onclick={() => (klokBijstellen = !klokBijstellen)}>

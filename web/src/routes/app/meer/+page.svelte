@@ -256,10 +256,21 @@
 				<div class="sregel">
 					<span class="naam mager">{text.data.invitePending(u.email)}</span>
 					{#if eigenaar}
+						<!-- Blaadje verstuurt zelf geen mail; dat zou een server vragen. Dit
+						     opent de mail van de trainer, met de uitleg er al in. -->
+						<a
+							class="knop klein"
+							href="mailto:{u.email}?subject={encodeURIComponent(
+								text.data.inviteMailSubject(t.teamName)
+							)}&body={encodeURIComponent(text.data.inviteMailBody(t.teamName, u.email))}">{text.data.tellHim}</a
+						>
 						<button class="klein" onclick={() => sync.trekIn(u.id)}>{text.data.withdraw}</button>
 					{/if}
 				</div>
 			{/each}
+			{#if eigenaar && sync.openstaand.length}
+				<p class="uitleg" style="font-size: 13px">{text.data.tellHimHint}</p>
+			{/if}
 			{#if eigenaar}
 				<label class="vak">
 					{text.data.inviteLabel}

@@ -108,8 +108,8 @@ Lokaal is leidend. De app werkt zonder bereik, en zodra er internet is gaat wat
 er veranderd is vanzelf naar de server. De regel eronder:
 
 - **Opsturen** gebeurt vier seconden na de laatste wijziging, en alleen als het
-  pakket echt anders is dan wat er al staat. Een lopende wedstrijd zit er niet
-  in, dus tijdens een wedstrijd wordt er niets verstuurd.
+  pakket echt anders is dan wat er al staat. Ook tijdens een wedstrijd: vier
+  seconden na elke wissel staat hij op de server.
 - **Ophalen** gebeurt bij het openen van de app en als je terugkomt uit een ander
   scherm, maar **nooit** als er hier nog iets klaarstaat. Dan zou je je eigen
   werk overschrijven.
@@ -119,9 +119,26 @@ er veranderd is vanzelf naar de server. De regel eronder:
 - Geen bereik? Dan blijft het klaarstaan en gaat het mee zodra je weer online
   bent.
 
-Een code en een back-up bevatten precies hetzelfde als wat er naar de server
-gaat: alles behalve de wedstrijd die nu loopt. Zo hoef je niet te onthouden welke
-knop wat meeneemt.
+Een code en een back-up bevatten hetzelfde, op één ding na: de wedstrijd die nu
+loopt zit er niet in. Die is bedoeld om over te zetten en te bewaren, en een
+half gespeelde wedstrijd hoort daar niet bij.
+
+## Een telefoon die leegloopt
+
+De lopende wedstrijd gaat wél naar de server, en dat is met opzet: het is het
+enige wat nergens anders bestaat. Vier seconden na elke wissel staat hij er.
+
+Andersom gaat hij niet: een wedstrijd die hier loopt wordt **nooit** overschreven
+door wat er op de server staat. Een opstelling die je kwijtraakt kies je opnieuw;
+wissels die je kwijtraakt bestonden nergens anders. Een toestel dat zelf niets
+heeft lopen pakt hem wel op, compleet met alles wat er al gebeurd is.
+
+Bij de aftrap wordt vastgelegd wie hem bijhoudt (`keptBy`). Tikt er een tweede
+mee, dan staat dat bovenaan het wedstrijdscherm, met een knop om hem met opzet
+over te nemen. Dat is voor de telefoon die leegloopt. Houden twee mensen hem
+tegelijk bij, dan duwen ze om beurten hun eigen versie naar de server en raken de
+wissels van een van beiden zoek — daarom staat er een waarschuwing en geen
+automatische samenvoeging.
 
 ## Opslag
 

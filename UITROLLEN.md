@@ -74,10 +74,15 @@ Terughalen uit Supabase met de hand: kopieer de JSON uit `team_toestand.data`,
 plak hem in een bestand en open dat met **Bestand openen**. Er zit geen andere
 vorm tussen; wat er in de database staat is exact wat de app opslaat.
 
-Een lopende wedstrijd gaat nooit mee, niet naar de server en niet in een
-back-up. Die blijft op het toestel waar hij gespeeld wordt, zodat een druk op de
-knop op je laptop nooit de wedstrijd van dat moment kan wissen. Keerzijde: raakt
-dat toestel zaterdag kwijt, dan is die ene wedstrijd weg.
+Een lopende wedstrijd gaat wél naar de server — vier seconden na elke wissel —
+maar zit **niet** in een back-up of een overzetcode. Loopt er een telefoon leeg,
+dan opent de vervanger de app, logt in, en de wedstrijd staat er compleet.
+Bovenaan het wedstrijdscherm staat dan wie hem bijhield, met een knop om hem over
+te nemen.
+
+Andersom gebeurt het nooit: een wedstrijd die op een toestel loopt wordt niet
+overschreven door wat er op de server staat. Anders zou een druk op de knop op de
+laptop de wissels wissen van de wedstrijd die op het veld bezig is.
 
 ## Als het misgaat terwijl er gevoetbald wordt
 

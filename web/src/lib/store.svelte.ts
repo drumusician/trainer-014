@@ -215,6 +215,23 @@ class App {
 	/** Wie er tikt. Alleen bekend als je ingelogd bent; anders blijft het leeg. */
 	whoIsKeeping: string | null = null;
 
+	/**
+	 * Deze wedstrijd op dit toestel overnemen.
+	 *
+	 * Voor de telefoon die leegloopt. De wedstrijd zelf staat hier al — die komt
+	 * binnen vier seconden na elke wissel op de server en wordt bij het openen
+	 * opgehaald. Wat hier verandert is alleen wie hem bijhoudt, zodat het andere
+	 * toestel bij een volgende poging een botsing krijgt in plaats van er stil
+	 * overheen te schrijven.
+	 */
+	takeOverMatch(): boolean {
+		const w = this.toestand.match;
+		if (!w || w.finished || !this.whoIsKeeping) return false;
+		w.keptBy = this.whoIsKeeping;
+		this.save();
+		return true;
+	}
+
 	toggleRunning() {
 		if (
 			!klok.toggleRunning(

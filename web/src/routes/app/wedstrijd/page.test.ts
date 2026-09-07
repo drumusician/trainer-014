@@ -393,6 +393,52 @@ describe('het wedstrijdscherm tijdens een wedstrijd', () => {
 		expect(melding).toContain('wissels zoek');
 	});
 
+	/*
+	 * De uitweg. De wedstrijd staat hier al — hij gaat binnen vier seconden na elke
+	 * wissel naar de server en komt bij het openen mee. Overnemen verandert alleen
+	 * wie hem bijhoudt, zodat het andere toestel bij een volgende poging een
+	 * botsing krijgt in plaats van er stil overheen te schrijven.
+	 */
+	it('laat je hem overnemen als de andere telefoon leeg is', async () => {
+		lopendeWedstrijd(600, { keptBy: 'tjaco@voorbeeld.nl' });
+		sync.sessie = { access_token: 'x', refresh_token: 'y', email: 'matthijs@voorbeeld.nl' } as never;
+		app.whoIsKeeping = 'matthijs@voorbeeld.nl';
+		vi.stubGlobal('confirm', () => true);
+		render(Wedstrijd);
+
+		screen.getByRole('button', { name: 'Ik neem hem over' }).click();
+		await tick();
+		expect(app.toestand.match!.keptBy).toBe('matthijs@voorbeeld.nl');
+		expect(document.querySelector('.waarschuwing')).toBeNull();
+	});
+
+	it('neemt niets over als je het afbreekt', async () => {
+		lopendeWedstrijd(600, { keptBy: 'tjaco@voorbeeld.nl' });
+		sync.sessie = { access_token: 'x', refresh_token: 'y', email: 'matthijs@voorbeeld.nl' } as never;
+		app.whoIsKeeping = 'matthijs@voorbeeld.nl';
+		vi.stubGlobal('confirm', () => false);
+		render(Wedstrijd);
+
+		screen.getByRole('button', { name: 'Ik neem hem over' }).click();
+		await tick();
+		expect(app.toestand.match!.keptBy).toBe('tjaco@voorbeeld.nl');
+	});
+
+	/* Wat er onderweg gebeurd is blijft staan: de wissels zijn het hele punt. */
+	it('houdt bij het overnemen alles wat er al gebeurd is', async () => {
+		lopendeWedstrijd(600, { keptBy: 'tjaco@voorbeeld.nl' });
+		app.log('substitution', { off: 'a1', on: 'b1', position: 'SP' });
+		const voor = app.toestand.match!.events.length;
+		sync.sessie = { access_token: 'x', refresh_token: 'y', email: 'matthijs@voorbeeld.nl' } as never;
+		app.whoIsKeeping = 'matthijs@voorbeeld.nl';
+		vi.stubGlobal('confirm', () => true);
+		render(Wedstrijd);
+
+		screen.getByRole('button', { name: 'Ik neem hem over' }).click();
+		await tick();
+		expect(app.toestand.match!.events).toHaveLength(voor);
+	});
+
 	it('waarschuwt jezelf niet', () => {
 		lopendeWedstrijd(600, { keptBy: 'tjaco@voorbeeld.nl' });
 		sync.sessie = { access_token: 'x', refresh_token: 'y', email: 'tjaco@voorbeeld.nl' } as never;

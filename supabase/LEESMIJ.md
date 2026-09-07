@@ -62,7 +62,11 @@ De ingebouwde mail van Supabase heeft een lage limiet (een paar per uur) en is b
 
 Instellen → Synchroniseren. Inloggen met e-mail en een code, één keer per toestel. Daarna twee knoppen: **Opsturen** en **Ophalen**.
 
-Wat meegaat: selectie, formatie, standaardopstelling, trainingen, archief. Wat niet meegaat: de wedstrijd die nu loopt. Die blijft op het toestel waar je hem speelt, zodat een druk op de knop op je laptop nooit je lopende wedstrijd kan wissen.
+Wat meegaat: selectie, formatie, standaardopstelling, trainingen, archief én de wedstrijd die nu loopt. Die laatste juist wel: hij bestaat nergens anders, en vier seconden na elke wissel staat hij op de server. Loopt een telefoon leeg, dan pakt een ander toestel hem op met alles erin.
+
+Andersom gaat hij niet. Een wedstrijd die op dit toestel loopt wordt nooit overschreven door wat er op de server staat — een opstelling kies je opnieuw, wissels bestonden nergens anders. Wie hem bijhoudt staat erbij; tikt er een tweede mee, dan waarschuwt het wedstrijdscherm en kun je hem met opzet overnemen.
+
+In een back-up of een overzetcode zit de lopende wedstrijd níét. Die zijn om te bewaren en over te zetten, en een half gespeelde wedstrijd hoort daar niet bij.
 
 Botst het, dan zegt de app dat er iets nieuwers op de server staat en doet hij niets. Je kiest dan zelf: ophalen, of met opzet dit toestel eroverheen sturen.
 

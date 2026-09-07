@@ -192,6 +192,9 @@ const match = {
 	undo: (what: string) => `↶ ${what} terug`,
 	whoIsThere: 'Wie is er?',
 	keptBy: (wie: string) => `${wie} houdt deze wedstrijd bij. Tik hier niet ook mee, anders raken jullie wissels zoek.`,
+	takeOver: 'Ik neem hem over',
+	confirmTakeOver:
+		'Deze wedstrijd op dit toestel overnemen?\n\nDoe dit als het andere toestel leeg is of kwijt. Houden jullie hem daarna allebei bij, dan raken de wissels van een van jullie zoek.',
 	finish: 'Wedstrijd afsluiten',
 	confirmFinish: 'Wedstrijd afsluiten?\n\nDe klok stopt en je krijgt het overzicht met de speeltijden.',
 
@@ -482,6 +485,22 @@ const data = {
 	invite: 'Uitnodigen',
 	invitePending: (email: string) => `${email} · uitgenodigd, nog niet ingelogd`,
 	withdraw: 'Intrekken',
+	tellHim: 'Laat het hem weten',
+	tellHimHint:
+		'Blaadje verstuurt zelf geen mail — daar zou een server voor nodig zijn, en die is er bewust niet. Deze knop opent je eigen mail met de uitleg erin.',
+	inviteMailSubject: (team: string) => `Blaadje voor ${team}`,
+	inviteMailBody: (team: string, adres: string) =>
+		[
+			`Ik heb je toegevoegd aan ${team} in Blaadje, de app waarmee ik de wedstrijden bijhoud.`,
+			'',
+			'Zo kom je erin:',
+			'',
+			'1. Ga naar https://blaadje.app en open de app.',
+			`2. Log in met dit adres: ${adres}. Je krijgt een code per mail.`,
+			'3. Ga naar Gegevens. Daar staat dat je bent uitgenodigd; druk op Aannemen.',
+			'',
+			'Zet hem daarna op je beginscherm, dan werkt hij ook zonder bereik.'
+		].join('\n'),
 	removeMember: 'Eruit halen',
 	confirmRemoveMember: 'Deze trainer er weer uit halen?\n\nHij komt dan niet meer bij dit team.',
 
