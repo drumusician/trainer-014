@@ -397,7 +397,7 @@
 		{/if}
 
 		<p class="uitleg" style="margin-top: 24px; font-size: 11px; opacity: 0.75">
-			{text.data.footer}
+			{text.data.footer(__VERSIE__)}
 		</p>
 	</div>
 </main>

@@ -557,7 +557,7 @@ const data = {
 	sendIssuesSubject: 'Blaadje — wat er misging',
 	closeIssues: 'Sluiten',
 
-	footer: 'Blaadje · het scherm blijft wakker zolang de klok loopt'
+	footer: (versie: string) => `Blaadje ${versie} · het scherm blijft wakker zolang de klok loopt`
 } as const;
 
 /**

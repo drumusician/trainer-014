@@ -164,6 +164,16 @@ describe('het gegevensscherm', () => {
 		expect(issues.lijst).toHaveLength(0);
 	});
 
+	/*
+	 * Welke bouw draait dit toestel? Zonder dat te kunnen zien is elke proef met
+	 * twee toestellen onbetrouwbaar: een tabblad dat sinds gisteren openstaat doet
+	 * nog precies wat het deed, en dat zie je nergens aan.
+	 */
+	it('zet onderaan welke versie er draait', () => {
+		render(Meer);
+		expect(document.body.textContent).toContain('Blaadje test');
+	});
+
 	it('toont Nederlands, geen Engelse resten van de hernoeming', () => {
 		metSelectie();
 		render(Meer);
