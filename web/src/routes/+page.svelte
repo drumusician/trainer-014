@@ -104,6 +104,9 @@
 			{text.landing.privacy1}
 		</p>
 		<p>
+			{text.landing.privacyShare}
+		</p>
+		<p>
 			{text.landing.privacy2}
 		</p>
 		<p>

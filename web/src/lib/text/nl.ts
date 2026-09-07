@@ -475,7 +475,7 @@ const data = {
 	/* ---------- wie kan erbij ---------- */
 	teamHeading: 'Wie kan hierbij',
 	teamHint:
-		'Zaterdag staat er soms een ander langs de lijn. Nodig hem uit met het e-mailadres waarmee hij inlogt; hij ziet het zodra hij dat doet. Jij blijft de enige die het team kan hernoemen of iemand kan toevoegen.',
+		'Zaterdag staat er soms een ander langs de lijn. Nodig hem uit met het e-mailadres waarmee hij inlogt; hij ziet het zodra hij dat doet. Hij ziet dan alles wat jij ziet — spelers, trainingen en archief — en jullie zien elkaars adres. Jij blijft de enige die het team kan hernoemen of iemand kan toevoegen of eruit halen.',
 	teamOnlyOwner: 'Alleen de eigenaar kan hier iemand bij zetten.',
 	roleOwner: 'eigenaar',
 	roleTrainer: 'trainer',
@@ -658,7 +658,9 @@ const landing = {
 
 	privacyHeading: 'Waar je gegevens blijven',
 	privacy1:
-		'Alles staat op je eigen toestel. Inloggen hoeft niet, en zolang jij dat niet wilt gaat er niets naar een server. Neem je wel een account, dan gaan je gegevens over een beveiligde verbinding en ben jij de enige die bij je eigen team kan.',
+		'Alles staat op je eigen toestel. Inloggen hoeft niet, en zolang jij dat niet wilt gaat er niets naar een server. Neem je wel een account, dan gaan je gegevens over een beveiligde verbinding en bepaal jij wie erbij kan.',
+	privacyShare:
+		'Deel je je team met een tweede trainer, dan ziet hij alles wat jij ziet: de spelers, de trainingen en het archief. Jullie zien ook elkaars e-mailadres, zodat iedereen kan nagaan wie er bij de gegevens van die kinderen kan. Uitnodigen gaat op adres en niet met een deelbare code, en je kunt iemand er ook weer uit halen.',
 	privacy2:
 		'Namen van kinderen zijn geen bijzaak. Daarom bewaart Blaadje alleen wat het echt nodig heeft: een voornaam, een linie, en de minuten die uit je wissels volgen. Geen beoordelingen, geen dossier.',
 	privacy3: {

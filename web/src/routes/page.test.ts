@@ -56,6 +56,20 @@ describe('de landingspagina', () => {
 		}
 	});
 
+	/*
+	 * Er stond 'ben jij de enige die bij je eigen team kan'. Sinds je een tweede
+	 * trainer kunt uitnodigen is dat niet meer waar, en het stond op een openbare
+	 * pagina. Wat je deelt hoort te staan waar iemand het leest vóór hij deelt,
+	 * niet waar hij het ontdekt.
+	 */
+	it('zegt wat een tweede trainer te zien krijgt', () => {
+		render(Landing);
+		const tekst = document.body.textContent ?? '';
+		expect(tekst).not.toContain('de enige die bij je eigen team kan');
+		expect(tekst).toContain('ziet hij alles wat jij ziet');
+		expect(tekst).toContain('elkaars e-mailadres');
+	});
+
 	it('vertelt de zes dingen die de app doet', () => {
 		render(Landing);
 		expect(document.querySelectorAll('.blokken > div')).toHaveLength(6);
