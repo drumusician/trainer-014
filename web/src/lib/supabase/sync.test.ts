@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { sync } from './sync.svelte';
+import { noodrem, sync } from './sync.svelte';
 import { app } from '$lib/store.svelte';
 import { emptyState } from '$lib/domain/types';
 
@@ -1028,5 +1028,76 @@ describe('elkaars teams niet overschrijven', () => {
 		expect(sync.sessie!.teamId).toBeUndefined();
 		expect(verstuurd.some((v) => v.url.includes('toestand_opslaan'))).toBe(false);
 		expect(sync.mijnTeams).toHaveLength(2);
+	});
+});
+
+/*
+ * De noodrem.
+ *
+ * Op 7 september stonden er 81.705.953 API-verzoeken in de statistieken van
+ * Postgres en de database op 100% processor. De lus zelf was niet te
+ * reproduceren — vier nagebootste toestanden en de echte gebouwde app tegen een
+ * nepserver deden alle vier braaf niets. Daarom geen reparatie van die ene lus
+ * maar een grens eromheen: alle verkeer gaat door sb(), en daar wordt geteld.
+ *
+ * Deze test is er niet om een bug te vangen die we kennen, maar om er een te
+ * begrenzen die we niet kennen.
+ */
+describe('de noodrem', () => {
+	beforeEach(() => {
+		noodrem.los();
+		sync.message = '';
+		sync.hapert = false;
+		globalThis.fetch = vi.fn(async () => new Response('{}', { status: 200 })) as unknown as typeof fetch;
+	});
+
+	it('laat normaal gebruik gewoon door', () => {
+		const nu = Date.now();
+		for (let i = 0; i < 100; i++) expect(noodrem.mag(nu + i * 10)).toBe(true);
+	});
+
+	it('slaat aan bij een lus', () => {
+		const nu = Date.now();
+		let doorgelaten = 0;
+		/* duizend verzoeken in tien seconden: dat is geen gebruik meer */
+		for (let i = 0; i < 1000; i++) if (noodrem.mag(nu + i * 10)) doorgelaten++;
+		expect(doorgelaten).toBeLessThan(200);
+	});
+
+	/* Een wedstrijd duurt een uur en kost een verzoek of veertig. Die mag nooit
+	   geraakt worden door de rem. */
+	it('raakt een hele wedstrijd niet', () => {
+		const nu = Date.now();
+		let doorgelaten = 0;
+		for (let i = 0; i < 40; i++) if (noodrem.mag(nu + i * 90_000)) doorgelaten++;
+		expect(doorgelaten).toBe(40);
+	});
+
+	it('laat het na een kwartier weer los', () => {
+		const nu = Date.now();
+		for (let i = 0; i < 400; i++) noodrem.mag(nu + i * 10);
+		expect(noodrem.mag(nu + 60_000)).toBe(false);
+		expect(noodrem.mag(nu + 16 * 60_000)).toBe(true);
+	});
+
+	it('gaat eraf als de trainer zelf op de knop drukt', async () => {
+		const nu = Date.now();
+		for (let i = 0; i < 400; i++) noodrem.mag(nu + i * 10);
+		expect(noodrem.mag(nu + 1000)).toBe(false);
+		noodrem.los();
+		expect(noodrem.mag(nu + 1001)).toBe(true);
+	});
+
+	/* En als hij erop staat: zeggen wat er is, en niet blijven proberen. */
+	it('zegt wat er aan de hand is en probeert het niet opnieuw', async () => {
+		const nu = Date.now();
+		for (let i = 0; i < 400; i++) noodrem.mag(nu + i * 10);
+		const voor = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
+
+		await sync.opsturen(false, true);
+
+		expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(voor);
+		expect(sync.message).toContain('stilgezet');
+		expect(sync.botsing).toBe(false);
 	});
 });

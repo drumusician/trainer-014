@@ -35,7 +35,65 @@ interface Fout extends Error {
 	data?: { code?: string; message?: string };
 }
 
+/**
+ * De noodrem.
+ *
+ * Op 7 september stond er 81.705.953 keer hetzelfde voorwerk in de statistieken
+ * van Postgres — dat is het aantal API-verzoeken dat deze app heeft gedaan. De
+ * database stond op 100% processor. De lus zelf was niet te reproduceren: vier
+ * nagebootste toestanden en de echte gebouwde app tegen een nepserver deden alle
+ * vier braaf niets.
+ *
+ * Dus is dit geen reparatie van die lus maar een grens eromheen. Alle verkeer
+ * naar Supabase gaat door sb(), en hier wordt geteld. Gaat het over de grens, dan
+ * stopt het — wat de oorzaak ook is, en ook als die oorzaak er morgen anders
+ * uitziet. Een trainer merkt er niets van: de app werkt zonder server, en na een
+ * kwartier mag hij het opnieuw proberen.
+ *
+ * De grens ligt ruim boven normaal gebruik. Opstarten kost er ongeveer twintig;
+ * een hele wedstrijd bijhouden een stuk of veertig.
+ */
+const RAAM = 60_000;
+const GRENS = 150;
+const AFKOELEN = 900_000;
+
+class Noodrem {
+	private stempels: number[] = [];
+	/** wanneer de rem eraf mag; 0 = hij staat er niet op */
+	tot = 0;
+
+	/** Mag er nog een verzoek uit? Zo niet, dan staat de rem erop. */
+	mag(nu: number): boolean {
+		if (this.tot) {
+			if (nu < this.tot) return false;
+			this.los();
+		}
+		this.stempels = this.stempels.filter((s) => nu - s < RAAM);
+		if (this.stempels.length >= GRENS) {
+			this.tot = nu + AFKOELEN;
+			return false;
+		}
+		this.stempels.push(nu);
+		return true;
+	}
+
+	/** Met de hand opnieuw proberen mag altijd; dan beslist de trainer. */
+	los() {
+		this.tot = 0;
+		this.stempels = [];
+	}
+}
+
+export const noodrem = new Noodrem();
+
 async function sb(pad: string, opties: RequestInit & { metToken?: boolean } = {}, token?: string) {
+	if (!noodrem.mag(Date.now())) {
+		const fout = new Error(
+			'De app deed veel te veel verzoeken achter elkaar en heeft zichzelf stilgezet. Er gaat iets mis met synchroniseren; je gegevens op dit toestel zijn veilig.'
+		) as Fout;
+		fout.status = 429;
+		throw fout;
+	}
 	const kop: Record<string, string> = {
 		apikey: SUPABASE_SLEUTEL,
 		'Content-Type': 'application/json',
@@ -655,6 +713,8 @@ class Sync {
 
 	async opsturen(overschrijven = false, stil = false) {
 		if (!this.sessie) return;
+		/* Met de hand op de knop drukken haalt de rem eraf: dan beslist de trainer. */
+		if (!stil) noodrem.los();
 		this.bezig = !stil;
 		if (!stil) this.message = 'Bezig met opsturen…';
 		try {
@@ -701,6 +761,12 @@ class Sync {
 				this.message = (e as Error).message;
 				return;
 			}
+			if ((e as Fout).status === 429) {
+				/* De noodrem. Doorproberen is precies wat we net hebben tegengehouden. */
+				this.hapert = true;
+				this.message = (e as Error).message;
+				return;
+			}
 			this.mislukt++;
 			if (this.isBotsing(e as Fout)) {
 				this.botsing = true;
@@ -727,6 +793,7 @@ class Sync {
 		)
 			return;
 		if (stil && this.vies) return; /* never over your own work */
+		if (!stil) noodrem.los();
 		this.bezig = !stil;
 		if (!stil) this.message = 'Bezig met ophalen…';
 		try {
@@ -768,6 +835,10 @@ class Sync {
 				return;
 			}
 			this.hapert = true;
+			if ((e as Fout).status === 429) {
+				this.message = (e as Error).message;
+				return;
+			}
 			if (!stil) this.message = 'Ophalen lukte niet: ' + (e as Error).message;
 		} finally {
 			this.bezig = false;
