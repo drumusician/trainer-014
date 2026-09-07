@@ -445,7 +445,7 @@ const data = {
 	otherUserKeep: 'Meenemen naar dit account',
 	otherUserFresh: 'Schoon beginnen',
 	otherUserFreshHint:
-		'Schoon beginnen wist het team op dit toestel. Staat het nergens anders, dan is het weg — maak eerst een back-up bij Overzetten.',
+		'Schoon beginnen wist het team op dit toestel en haalt op wat bij dit account hoort. Staat het team hier nergens anders, dan is het weg — maak dan eerst een back-up bij Overzetten.',
 
 	installFirstLead: 'Zet Blaadje eerst op je beginscherm',
 	installFirst: 'en log daar in. Die app staat los van deze browser: log je hier in, dan ben je daar niet ingelogd.',

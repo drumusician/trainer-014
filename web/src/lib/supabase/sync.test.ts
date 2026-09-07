@@ -1595,3 +1595,114 @@ describe('als er iemand anders inlogt', () => {
 		).toBe(true);
 	});
 });
+
+/*
+ * De hele heen-en-weer.
+ *
+ * Tjaco's vraag: en als ik daarna weer terugswitch, nadat ik met dat tweede
+ * account een nieuw team heb gemaakt? Dat is de reis die je op één toestel maakt
+ * als je twee accounts test, en het is precies de reis waarop gegevens van de
+ * een bij de ander kunnen belanden.
+ */
+describe('heen en weer tussen twee accounts', () => {
+	const documenten: Record<string, { data: Record<string, unknown>; versie: number }> = {};
+	let teamsVan: Record<string, { id: string; naam: string }[]> = {};
+	let wie = '';
+
+	function server() {
+		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+			const u = String(url);
+			const body = init?.body ? JSON.parse(String(init.body)) : null;
+			if (u.includes('/auth/v1/verify'))
+				return new Response(
+					JSON.stringify({ access_token: 't', refresh_token: 'r', expires_in: 3600, user: { id: wie, email: wie } }),
+					{ status: 200 }
+				);
+			if (u.includes('teams?select=id')) return new Response(JSON.stringify(teamsVan[wie] ?? []), { status: 200 });
+			if (u.includes('/rest/v1/teams') && init?.method === 'POST') {
+				const id = 'team-van-' + wie;
+				teamsVan[wie] = [...(teamsVan[wie] ?? []), { id, naam: body.naam }];
+				return new Response(JSON.stringify([{ id }]), { status: 200 });
+			}
+			if (u.includes('uitnodigingen')) return new Response('[]', { status: 200 });
+			if (u.includes('team_toestand')) {
+				const id = u.split('team_id=eq.')[1]?.split('&')[0] ?? '';
+				const d = documenten[id];
+				return new Response(JSON.stringify(d ? [d] : []), { status: 200 });
+			}
+			if (u.includes('rpc/toestand_opslaan')) {
+				const id = body.p_team_id as string;
+				const versie = (documenten[id]?.versie ?? 0) + 1;
+				documenten[id] = { data: body.p_data, versie };
+				return new Response(JSON.stringify({ versie }), { status: 200 });
+			}
+			return new Response('{}', { status: 200 });
+		}) as unknown as typeof fetch;
+	}
+
+	async function logIn(email: string) {
+		wie = email;
+		sync.email = email;
+		await sync.controleerCode('12345678');
+	}
+
+	beforeEach(() => {
+		noodrem.los();
+		localStorage.clear();
+		for (const k of Object.keys(documenten)) delete documenten[k];
+		teamsVan = {};
+		sync.sessie = null;
+		sync.andereGebruiker = null;
+		sync.vies = false;
+		sync.botsing = false;
+		sync.mijnTeams = [];
+		app.toestand = emptyState();
+		server();
+	});
+
+	it('houdt de twee seizoenen uit elkaar, de hele reis lang', async () => {
+		/* Tjaco richt zijn team in en stuurt het op. */
+		await logIn('tjaco@voorbeeld.nl');
+		app.toestand.teamName = 'JO14-3';
+		app.toestand.players = [{ id: 'p1', name: 'Bram', line: 'M' }];
+		await sync.opsturen();
+		const teamTjaco = sync.sessie!.teamId!;
+		expect(documenten[teamTjaco].data.teamName).toBe('JO14-3');
+
+		/* Uitloggen, en Matthijs logt in op hetzelfde toestel. */
+		sync.uitloggen();
+		await logIn('matthijs@voorbeeld.nl');
+		expect(sync.andereGebruiker).toBe('tjaco@voorbeeld.nl');
+
+		/* Hij begint schoon en maakt zijn eigen team. */
+		sync.beginSchoon();
+		await Promise.resolve();
+		expect(app.toestand.players).toHaveLength(0);
+
+		await sync.nieuwTeam('JO10-4');
+		app.toestand.players = [{ id: 'q1', name: 'Sil', line: 'A' }];
+		await sync.opsturen();
+		const teamMatthijs = sync.sessie!.teamId!;
+		expect(teamMatthijs).not.toBe(teamTjaco);
+		expect(documenten[teamMatthijs].data.teamName).toBe('JO10-4');
+
+		/* En Tjaco's team is onderweg niet aangeraakt. */
+		expect(documenten[teamTjaco].data.teamName).toBe('JO14-3');
+		expect((documenten[teamTjaco].data.players as unknown[])[0]).toMatchObject({ name: 'Bram' });
+
+		/* Terug naar Tjaco. Weer de vraag, want er staat nu Matthijs' team. */
+		sync.uitloggen();
+		await logIn('tjaco@voorbeeld.nl');
+		expect(sync.andereGebruiker).toBe('matthijs@voorbeeld.nl');
+
+		/* Schoon beginnen haalt meteen zijn eigen seizoen terug. */
+		sync.beginSchoon();
+		await new Promise((r) => setTimeout(r, 0));
+		expect(app.toestand.teamName).toBe('JO14-3');
+		expect(app.toestand.players.map((p) => p.name)).toEqual(['Bram']);
+		expect(sync.sessie!.teamId).toBe(teamTjaco);
+
+		/* En het team van Matthijs is nog steeds van hem. */
+		expect(documenten[teamMatthijs].data.teamName).toBe('JO10-4');
+	});
+});

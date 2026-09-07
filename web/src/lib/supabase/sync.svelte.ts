@@ -324,18 +324,34 @@ class Sync {
 		this.onthoudGebruiker(nu);
 	}
 
-	/** Meenemen: wat hier staat wordt het begin van dit account. */
+	/**
+	 * Meenemen: wat hier staat wordt het begin van dit account.
+	 *
+	 * Klopt als het nieuwe account nog geen team heeft — je bent van adres
+	 * veranderd en je seizoen verhuist mee. Heeft het al wel een team, dan zegt de
+	 * app daarna dat je eerst moet ophalen, en dat is ook waar: twee seizoenen in
+	 * één team passen niet, en welke van de twee wint is niets wat de app mag
+	 * beslissen.
+	 */
 	neemMee() {
 		this.andereGebruiker = null;
 		this.onthoudGebruiker(this.sessie?.email);
+		this.merkVies();
 	}
 
-	/** Schoon beginnen: wat hier staat hoort bij de vorige, en blijft daar. */
+	/**
+	 * Schoon beginnen: wat hier staat hoort bij de vorige, en blijft daar.
+	 *
+	 * En dan meteen halen wat bij dít account hoort. Er is op dat moment niets meer
+	 * te verliezen, dus wachten tot de trainer zelf op Ophalen drukt is alleen maar
+	 * een leeg scherm waar hij niets van begrijpt.
+	 */
 	beginSchoon() {
 		app.wisAlles();
 		this.andereGebruiker = null;
 		this.vies = false;
 		this.onthoudGebruiker(this.sessie?.email);
+		void this.ophalen(true);
 	}
 
 	uitloggen() {
