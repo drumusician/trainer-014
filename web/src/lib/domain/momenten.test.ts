@@ -82,6 +82,33 @@ describe('de opstelling terugkijken', () => {
 	});
 
 	/*
+	 * Bij een wissel blijft de pion staan en verandert alleen de naam erin. Zonder
+	 * aanwijzing zie je dan niet waar het gebeurde — vandaar dat elk moment zegt
+	 * welke plekken veranderden.
+	 */
+	it('wijst aan welke plekken op dit moment veranderden', () => {
+		const momenten = momentenVan(WEDSTRIJD, SPELERS);
+		/* bij de aftrap is er nog niets veranderd */
+		expect(momenten[0].veranderd).toEqual([]);
+		/* twee wissels tegelijk: twee plekken */
+		expect(momenten[1].veranderd.sort()).toEqual(['CM', 'SP']);
+		expect(momenten[2].veranderd).toEqual(['LV']);
+	});
+
+	it('wijst bij een ruil allebei de plekken aan', () => {
+		const metRuil: ArchivedMatch = {
+			...WEDSTRIJD,
+			events: [
+				{ type: 'start', t: 0 },
+				{ type: 'swap', t: 900, positionA: 'LV', positionB: 'SP', playerA: 'v1', playerB: 'a1' }
+			] as never,
+			lineup: { K: 'k1', LV: 'a1', RV: 'v2', CM: 'm1', SP: 'v1' }
+		};
+		const momenten = momentenVan(metRuil, SPELERS);
+		expect(momenten[1].veranderd.sort()).toEqual(['LV', 'SP']);
+	});
+
+	/*
 	 * Wedstrijden van voordat de eindopstelling meeging zijn niet terug te rekenen.
 	 * Dan hoort er niets te staan, want iets verzinnen is erger dan niets tonen.
 	 */

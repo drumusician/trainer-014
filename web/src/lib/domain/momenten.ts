@@ -20,6 +20,14 @@ export interface Moment {
 	tekst: string;
 	lineup: Record<string, string>;
 	bench: string[];
+	/**
+	 * De plekken die op dit moment van speler wisselden.
+	 *
+	 * Bij een gewone wissel blijft de pion staan en verandert alleen de naam erin;
+	 * dan zie je zonder aanwijzing niet wáár het gebeurde. Bij de aftrap is er
+	 * niets veranderd, dus dan is deze leeg.
+	 */
+	veranderd: string[];
 }
 
 /**
@@ -68,18 +76,23 @@ export function momentenVan(a: ArchivedMatch, players: Player[]): Moment[] {
 
 	const gezien = new Set<number>();
 	const uit: Moment[] = [];
+	let vorige: Record<string, string> | null = null;
 	for (const t of tijden.sort((x, y) => x - y)) {
 		if (gezien.has(t)) continue;
 		gezien.add(t);
 		const lineup: Record<string, string> = {};
 		for (const i of intervallen) if (i.van <= t && t < i.tot) lineup[i.position] = i.player;
 		const opHetVeld = new Set(Object.values(lineup));
+		/* Ook plekken die leeg raakten tellen mee, vandaar allebei de kanten. */
+		const plekken = vorige ? new Set([...Object.keys(lineup), ...Object.keys(vorige)]) : new Set<string>();
 		uit.push({
 			t,
 			tekst: tekstOp(t) || 'Aftrap',
 			lineup,
-			bench: erbij.filter((id) => !opHetVeld.has(id))
+			bench: erbij.filter((id) => !opHetVeld.has(id)),
+			veranderd: [...plekken].filter((plek) => lineup[plek] !== vorige![plek])
 		});
+		vorige = lineup;
 	}
 	return uit;
 }

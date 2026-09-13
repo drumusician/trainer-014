@@ -126,7 +126,7 @@
 				<h2>{text.archivedMatch.lineupHeading}</h2>
 				<p class="uitleg">{text.archivedMatch.lineupHint}</p>
 				<div class="veldrij">
-					<Veld formation={a.formation} lineup={m.lineup} />
+					<Veld formation={a.formation} lineup={m.lineup} gemarkeerd={m.veranderd} />
 					<BankKolom bench={m.bench} formation={a.formation} ontik={() => {}} />
 				</div>
 				<div class="knoprij" style="padding-left: 0">

@@ -7,12 +7,15 @@
 		formation,
 		lineup,
 		gekozen = null,
+		gemarkeerd = null,
 		tijden = null,
 		onplek
 	}: {
 		formation: string;
 		lineup: Lineup;
 		gekozen?: string | null;
+		/** plekken die oplichten omdat daar net iets veranderde */
+		gemarkeerd?: string[] | null;
 		/** minutes played per player; during a match these sit under the name */
 		tijden?: Record<string, number> | null;
 		onplek?: (plekId: string) => void;
@@ -45,6 +48,7 @@
 			class="plek"
 			class:leeg={!p}
 			class:gekozen={gekozen === plekId}
+			class:gemarkeerd={gemarkeerd?.includes(plekId)}
 			style="left: {x}%; top: {y}%"
 			aria-label="{label}{p ? ': ' + p.name : ': leeg'}"
 			onclick={() => onplek?.(plekId)}

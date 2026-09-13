@@ -170,6 +170,11 @@ main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height:
 .plek .pos .min { color: #fff; font-variant-numeric: tabular-nums; margin-left: 4px; opacity: .85; }
 .plek.leeg .bol { background: rgba(255, 255, 255, 0.3); color: rgba(255, 255, 255, 0.9); font-weight: 500; }
 .plek.gekozen .bol { background: var(--oranje); border-color: #fff; color: #fff; }
+/* Wat er op dit moment veranderde, bij het terugkijken in het archief. Een ring
+   en geen vulling: dit is geen keuze die je maakt maar een aanwijzing waar je
+   moet kijken, en het moet niet op een gekozen plek lijken. */
+.plek.gemarkeerd .bol { border-color: var(--oranje); }
+.plek.gemarkeerd .pos { color: #fff; }
 
 .banknaast {
 	flex: 1 1 96px; min-width: 92px; max-width: 190px; align-self: stretch;

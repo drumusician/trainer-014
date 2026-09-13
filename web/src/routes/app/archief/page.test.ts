@@ -214,6 +214,18 @@ describe('de opstelling van een bewaarde wedstrijd', () => {
 		expect(document.body.textContent).toContain('2 van 2');
 	});
 
+	/* Waar gebeurde het? Bij een wissel beweegt er niets, dus de plek licht op. */
+	it('licht de plek op waar de wissel plaatsvond', async () => {
+		metArchief(METOPSTELLING);
+		render(Archief);
+		expect(document.querySelectorAll('.plek.gemarkeerd')).toHaveLength(0);
+		screen.getByRole('button', { name: 'Verder' }).click();
+		await tick();
+		const op = [...document.querySelectorAll('.plek.gemarkeerd')];
+		expect(op).toHaveLength(1);
+		expect(op[0].textContent).toContain('Gijs');
+	});
+
 	it('kan niet verder dan de eerste en de laatste', async () => {
 		metArchief(METOPSTELLING);
 		render(Archief);
