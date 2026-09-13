@@ -2,6 +2,9 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Speeltijd from '$lib/components/Speeltijd.svelte';
+	import Veld from '$lib/components/Veld.svelte';
+	import BankKolom from '$lib/components/BankKolom.svelte';
+	import { momentenVan } from '$lib/domain/momenten';
 	import Verloop from '$lib/components/Verloop.svelte';
 	import Verslag from '$lib/components/Verslag.svelte';
 	import { mmss, positionText } from '$lib/domain/time';
@@ -29,6 +32,12 @@
 	function naamNu(r: { id?: string; name: string }) {
 		return (r.id && app.playerById(r.id)?.name) || r.name;
 	}
+
+	/* De opstelling per moment, teruggerekend uit de wissels. */
+	const momenten = $derived(a ? momentenVan(a, app.toestand.players) : []);
+	let moment = $state(0);
+	/* Blijft binnen de lijst als je een doelpunt weghaalt of een andere wedstrijd opent. */
+	const nu = $derived(Math.min(moment, Math.max(0, momenten.length - 1)));
 
 	let bewerken = $state(false);
 	let nieuwMinuut = $state('');
@@ -107,6 +116,28 @@
 					{text.archivedMatch.opponentLabel}
 					<input value={a.opponent} onchange={(e) => app.updateArchived(i, { opponent: e.currentTarget.value })} />
 				</label>
+			{/if}
+
+			<!-- Wie er begon staat nergens opgeslagen, maar is terug te rekenen uit de
+			     wissels. Sinds er een tweede trainer is, is dat het eerste wat je wilt
+			     zien van een wedstrijd waar je zelf niet bij was. -->
+			{#if momenten.length}
+				{@const m = momenten[nu]}
+				<h2>{text.archivedMatch.lineupHeading}</h2>
+				<p class="uitleg">{text.archivedMatch.lineupHint}</p>
+				<div class="veldrij">
+					<Veld formation={a.formation} lineup={m.lineup} />
+					<BankKolom bench={m.bench} formation={a.formation} ontik={() => {}} />
+				</div>
+				<div class="knoprij" style="padding-left: 0">
+					<button disabled={nu === 0} onclick={() => (moment = nu - 1)}>{text.archivedMatch.earlier}</button>
+					<button disabled={nu >= momenten.length - 1} onclick={() => (moment = nu + 1)}
+						>{text.archivedMatch.later}</button
+					>
+					<span class="uitleg" style="align-self: center; margin: 0">
+						{mmss(m.t)} · {m.tekst} · {text.archivedMatch.momentOf(nu + 1, momenten.length)}
+					</span>
+				</div>
 			{/if}
 
 			<h2>{text.archivedMatch.playingTimeHeading}</h2>

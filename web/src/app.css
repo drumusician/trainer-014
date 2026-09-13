@@ -114,7 +114,12 @@ main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height:
 	position: relative; background: var(--gras); border-radius: 10px; overflow: hidden;
 	margin: 0; flex: 0 0 auto; aspect-ratio: 5 / 8;
 	width: min(calc(100% - 106px), 470px);
-	width: min(calc(100% - 106px), calc((100dvh - var(--chroom)) * 0.625), 470px);
+	/* Met een terugval, want --chroom bestaat alleen op .veldscherm. Zonder die
+	   terugval is de hele regel ongeldig zodra het veld ergens anders staat — en
+	   dan valt de breedte niet terug op de regel erboven maar op auto, waarna het
+	   veld tot niets inklapt en onzichtbaar wordt. Zo staat het ook in het
+	   archief, waar je de opstelling terugkijkt. */
+	width: min(calc(100% - 106px), calc((100dvh - var(--chroom, 262px)) * 0.625), 470px);
 	container-type: inline-size;
 }
 .veld .strepen { position: absolute; inset: 0; width: 100%; height: 100%; }

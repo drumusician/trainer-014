@@ -301,6 +301,11 @@ const archivedMatch = {
 	opponentLabel: 'Tegenstander',
 	playingTimeHeading: 'Speeltijd',
 	keeperMinutes: (minutes: number) => `${minutes} min in het doel`,
+	lineupHeading: 'Opstelling',
+	lineupHint: 'Zo begon je. Tik door de wissels om te zien hoe het verder liep.',
+	momentOf: (n: number, total: number) => `${n} van ${total}`,
+	earlier: 'Terug',
+	later: 'Verder',
 	timelineHeading: 'Verloop',
 	/* Alleen de score is hier te wijzigen; zie actions/archive.ts voor waarom. */
 	editHint:

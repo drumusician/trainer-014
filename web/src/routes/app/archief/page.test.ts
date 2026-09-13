@@ -164,3 +164,73 @@ describe('het seizoen', () => {
 		expect(regels[0]).toContain('2×');
 	});
 });
+
+/*
+ * Terugkijken wie er begon.
+ *
+ * Deed een andere trainer de wedstrijd, dan zie je achteraf wel de wissels maar
+ * niet waar het team mee begon. Dat is terug te rekenen uit dezelfde gegevens
+ * waar de speeltijd al uit komt.
+ */
+describe('de opstelling van een bewaarde wedstrijd', () => {
+	const METOPSTELLING: Partial<ArchivedMatch> = {
+		formation: '1-2-1-1',
+		events: [
+			{ type: 'start', t: 0 },
+			{ type: 'goal', t: 300, player: 'a1' },
+			{ type: 'substitution', t: 1200, position: 'SP', off: 'a1', on: 'b1' }
+		] as never,
+		lineup: { K: 'k1', LV: 'v1', RV: 'v2', CM: 'm1', SP: 'b1' },
+		bench: ['a1'],
+		playingTime: [
+			{ id: 'k1', name: 'Bram', seconds: 2400, keeper: 2400 },
+			{ id: 'v1', name: 'Cas', seconds: 2400 },
+			{ id: 'v2', name: 'Dirk', seconds: 2400 },
+			{ id: 'm1', name: 'Eef', seconds: 2400 },
+			{ id: 'a1', name: 'Finn', seconds: 1200 },
+			{ id: 'b1', name: 'Gijs', seconds: 1200 }
+		] as never
+	};
+
+	const opHetVeld = () => [...document.querySelectorAll('.veld .bol')].map((e) => e.textContent);
+
+	it('laat zien wie er begon, ook al is alleen het eind bewaard', () => {
+		metArchief(METOPSTELLING);
+		render(Archief);
+		expect(screen.getByRole('heading', { name: 'Opstelling' })).toBeTruthy();
+		/* Finn begon en ging er later uit; Gijs kwam voor hem in de plaats */
+		expect(opHetVeld()).toContain('Finn');
+		expect(opHetVeld()).not.toContain('Gijs');
+	});
+
+	it('laat je door de wissels tikken', async () => {
+		metArchief(METOPSTELLING);
+		render(Archief);
+		expect(document.body.textContent).toContain('1 van 2');
+		screen.getByRole('button', { name: 'Verder' }).click();
+		await tick();
+		expect(opHetVeld()).toContain('Gijs');
+		expect(opHetVeld()).not.toContain('Finn');
+		expect(document.body.textContent).toContain('2 van 2');
+	});
+
+	it('kan niet verder dan de eerste en de laatste', async () => {
+		metArchief(METOPSTELLING);
+		render(Archief);
+		const knop = (naam: string) => screen.getByRole('button', { name: naam }) as HTMLButtonElement;
+		expect(knop('Terug').disabled).toBe(true);
+		knop('Verder').click();
+		await tick();
+		expect(knop('Verder').disabled).toBe(true);
+		expect(knop('Terug').disabled).toBe(false);
+	});
+
+	/* Wedstrijden van voordat de eindopstelling meeging: dan is er niets terug te
+	   rekenen, en hoort er ook niets te staan. */
+	it('zwijgt als de eindopstelling niet bewaard is', () => {
+		metArchief();
+		render(Archief);
+		expect(screen.queryByRole('heading', { name: 'Opstelling' })).toBeNull();
+		expect(document.querySelector('.veld')).toBeNull();
+	});
+});
