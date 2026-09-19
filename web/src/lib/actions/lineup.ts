@@ -1,6 +1,6 @@
 import { FORMATIONS } from '$lib/domain/formations';
 import { convertLineup } from '$lib/domain/lineup';
-import type { DefaultLineup, State, Match } from '$lib/domain/types';
+import type { DefaultLineup, Lineup, State, Match } from '$lib/domain/types';
 
 /**
  * Picking a lineup outside a running match: the default lineup, and the
@@ -41,6 +41,18 @@ export function swapPositions(t: State, bron: Bron, positionA: string, positionB
 	if (!a && !b) return false;
 	doel.lineup[positionA] = b;
 	doel.lineup[positionB] = a;
+	return true;
+}
+
+/**
+ * A whole lineup at once: a proposal from the assistant, checked beforehand by
+ * controleerVoorstel. Before kick-off only; the store sees to that.
+ */
+export function zetOpstelling(t: State, bron: Bron, lineup: Lineup, bench: string[]): boolean {
+	const doel = doelVan(t, bron);
+	if (!doel) return false;
+	doel.lineup = { ...lineup };
+	doel.bench = [...bench];
 	return true;
 }
 

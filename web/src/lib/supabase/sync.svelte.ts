@@ -1,6 +1,7 @@
 import { app } from '$lib/store.svelte';
 import { reportIssue } from '$lib/issues.svelte';
 import { SUPABASE_SLEUTEL, SUPABASE_URL } from './config';
+import type { CoachVoorstel, CoachVraag } from '$lib/domain/coach';
 
 const SESSIESLEUTEL = 'o14-sessie-v1';
 /* Blijft staan na uitloggen: daaraan zien we of er iemand anders inlogt. */
@@ -132,8 +133,8 @@ async function sb(pad: string, opties: RequestInit & { metToken?: boolean } = {}
 		data = tekst;
 	}
 	if (!r.ok) {
-		const d = data as { message?: string; msg?: string; error_description?: string; code?: string };
-		const fout = new Error(d?.message ?? d?.msg ?? d?.error_description ?? 'fout ' + r.status) as Fout;
+		const d = data as { message?: string; msg?: string; error_description?: string; code?: string; fout?: string };
+		const fout = new Error(d?.fout ?? d?.message ?? d?.msg ?? d?.error_description ?? 'fout ' + r.status) as Fout;
 		fout.status = r.status;
 		fout.data = d;
 		throw fout;
@@ -1126,6 +1127,29 @@ class Sync {
 		} finally {
 			this.bezigMetDuwen = false;
 		}
+	}
+
+	/**
+	 * De assistent om een voorstel vragen.
+	 *
+	 * Alleen ingelogd en met een team: de server telt de beurten per team af, en
+	 * kijkt aan de hand van je inlog of je daar trainer bent. Wat er op dit toestel
+	 * staat gaat mee zoals het nu is, ook als het nog niet is opgestuurd — het is
+	 * de opstelling van nu waar je over wilt praten.
+	 */
+	async vraagCoach(vraag: CoachVraag): Promise<{ voorstel: CoachVoorstel; over: number }> {
+		const token = await this.token();
+		const team = this.sessie?.teamId;
+		if (!token || !team) {
+			const fout = new Error('niet ingelogd') as Fout;
+			fout.status = 401;
+			throw fout;
+		}
+		return (await sb(
+			'/functions/v1/coach',
+			{ method: 'POST', body: JSON.stringify({ ...vraag, teamId: team }) },
+			token
+		)) as { voorstel: CoachVoorstel; over: number };
 	}
 
 	/** On opening the app, and when you come back from another screen. */

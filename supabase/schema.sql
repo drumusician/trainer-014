@@ -361,3 +361,64 @@ update public.team_leden l
    set email = u.email
   from auth.users u
  where u.id = l.gebruiker and l.email is null;
+
+-- ---------- de assistent ----------
+-- De assistent draait op een taalmodel dat per vraag geld kost, op de sleutel van
+-- wie dit project beheert. Inloggen kan iedereen met een e-mailadres, en een
+-- eigen team maken ook. Zonder rem is de functie dus een gratis taalmodel voor
+-- de hele wereld.
+--
+-- Daarom telt de functie hier eerst een beurt af, voordat hij iets vraagt: alleen
+-- voor een team waar je lid van bent, een handvol per dag per trainer, en een
+-- plafond voor alles bij elkaar. De tabel zelf is voor niemand leesbaar; alleen
+-- coach_beurt() komt erbij.
+create table if not exists public.coach_vragen (
+  id         bigint generated always as identity primary key,
+  gebruiker  uuid not null references auth.users (id) on delete cascade,
+  team_id    uuid not null references public.teams (id) on delete cascade,
+  gevraagd   timestamptz not null default now()
+);
+
+create index if not exists coach_vragen_gebruiker_idx on public.coach_vragen (gebruiker, gevraagd);
+create index if not exists coach_vragen_gevraagd_idx  on public.coach_vragen (gevraagd);
+
+alter table public.coach_vragen enable row level security;
+-- Geen enkele regel: niemand leest of schrijft hier rechtstreeks.
+
+-- Geeft terug hoeveel beurten je vandaag nog over hebt. Op is op: dan een fout
+-- met code PT429, en die geeft PostgREST door als HTTP 429.
+create or replace function public.coach_beurt(p_team uuid) returns integer
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  per_dag   constant int := 20;
+  plafond   constant int := 300;
+  mijn      int;
+  iedereen  int;
+begin
+  if auth.uid() is null then
+    raise exception 'niet ingelogd' using errcode = '42501';
+  end if;
+  if not public.is_lid(p_team) then
+    raise exception 'geen lid van dit team' using errcode = '42501';
+  end if;
+
+  select count(*) into mijn from public.coach_vragen
+   where gebruiker = auth.uid() and gevraagd > now() - interval '1 day';
+  if mijn >= per_dag then
+    raise exception 'je hebt de assistent vandaag al % keer gevraagd', per_dag using errcode = 'PT429';
+  end if;
+
+  select count(*) into iedereen from public.coach_vragen where gevraagd > now() - interval '1 day';
+  if iedereen >= plafond then
+    raise exception 'de assistent is vandaag te vaak gevraagd' using errcode = 'PT429';
+  end if;
+
+  insert into public.coach_vragen (gebruiker, team_id) values (auth.uid(), p_team);
+  return per_dag - mijn - 1;
+end;
+$$;
+
+revoke all on function public.coach_beurt(uuid) from public;
+grant execute on function public.coach_beurt(uuid) to authenticated;

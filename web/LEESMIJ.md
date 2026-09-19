@@ -43,7 +43,11 @@ Vier plekken onderin, en daaronder taken die het scherm helemaal pakken.
   seizoensoverzicht met speeltijd, topscorers en presentie.
 - **Meer** (`/meer`) — synchroniseren, back-up, overzetten.
 
-De balk verdwijnt op `/wedstrijd`, `/opstelling/*`, `/aanwezig` en `/afloop`.
+Vanaf het opstelscherm kom je bij de **assistent** (`/coach/*`): een voorstel
+voor de opstelling met uitleg, van een taalmodel op de server. Zie
+[supabase/LEESMIJ.md](../supabase/LEESMIJ.md#de-assistent).
+
+De balk verdwijnt op `/wedstrijd`, `/opstelling/*`, `/coach/*`, `/aanwezig` en `/afloop`.
 Daar ben je met één ding bezig en telt elke pixel.
 
 Een bewaarde wedstrijd kun je bijwerken: datum, tegenstander, thuis of uit, en

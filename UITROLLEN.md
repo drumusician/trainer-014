@@ -57,6 +57,14 @@ Wat je wél moet weten:
 - Terugrollen van de database is opnieuw een oudere `schema.sql` draaien. Dat
   herstelt regels en functies, geen gegevens.
 
+## De assistent
+
+De functie `supabase/functions/coach` gaat níét mee met Netlify. Die rol je apart
+uit, met de hand; hoe staat in [supabase/LEESMIJ.md](supabase/LEESMIJ.md#de-assistent).
+De app kan zonder: staat de functie er niet, dan zegt het scherm dat de assistent
+nog niet aanstaat, en de rest werkt gewoon. Terugrollen is een oudere versie
+opnieuw uitrollen, of de functie weghalen in het dashboard.
+
 ## Gegevens terughalen
 
 Er zijn drie kopieën, in deze volgorde van vertrouwen:

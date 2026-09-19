@@ -170,6 +170,8 @@
 						<button class="linkje" onclick={() => bankOverzicht?.scrollIntoView({ behavior: 'smooth' })}
 							>{text.lineupScreen.toBenchOverview}</button
 						>
+						·
+						<a class="linkje" href="/app/coach/{bron}">{text.lineupScreen.toCoach}</a>
 					{/if}
 				</p>
 			{/if}
@@ -210,6 +212,9 @@
 				<p class="uitleg">
 					{text.lineupScreen.benchHint(app.toestand.archive.length, app.toestand.trainings.length)}
 				</p>
+				<div class="knoprij" style="padding-left: 0">
+					<a class="knop" href="/app/coach/{bron}">{text.lineupScreen.toCoach}</a>
+				</div>
 				<table class="uitslag spelers">
 					<tbody>
 						{#each bankRijen as r (r.id)}

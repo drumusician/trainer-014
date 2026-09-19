@@ -394,6 +394,15 @@ class App {
 		this.save();
 	}
 
+	/** From the assistant. After kick-off the lineup follows from the substitutions, so not then. */
+	applyLineup(bron: opstellen.Bron, lineup: Lineup, bench: string[]): boolean {
+		if (bron === 'wedstrijd' && this.kickedOff) return false;
+		if (!opstellen.zetOpstelling(this.toestand, bron, lineup, bench)) return false;
+		this.chosenPosition = null;
+		this.save();
+		return true;
+	}
+
 	clearDefaultLineup() {
 		opstellen.clearDefaultLineup(this.toestand);
 		this.save();
