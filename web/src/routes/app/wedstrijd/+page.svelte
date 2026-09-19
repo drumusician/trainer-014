@@ -154,10 +154,22 @@
 			</div>
 		</button>
 		<div style="flex: 1"></div>
-		<button onclick={() => app.toggleRunning()}>{w.running ? text.match.pause : text.match.start}</button>
-		<button onclick={() => app.togglePart()} disabled={!app.canStartNextPart}>
-			{w.inBreak ? partName(w.part + 1, w.parts) : breakName(w.part, w.parts)}
-		</button>
+		<!-- Per moment alleen wat dan zin heeft. Vóór de aftrap één knop; in de rust
+		     alleen het volgende deel beginnen, want de klok laten lopen terwijl het
+		     nog rust is kan niet goed zijn; in het laatste deel geen deelknop, want
+		     afsluiten staat hieronder. -->
+		{#if !app.kickedOff}
+			<button class="prim" onclick={() => app.toggleRunning()}>{text.match.kickOff}</button>
+		{:else if w.inBreak}
+			<button class="prim" onclick={() => app.togglePart()}
+				>{text.match.startPart(partName(w.part + 1, w.parts))}</button
+			>
+		{:else}
+			<button onclick={() => app.toggleRunning()}>{w.running ? text.match.pause : text.match.start}</button>
+			{#if app.canStartNextPart}
+				<button onclick={() => app.togglePart()}>{text.match.endPart(partName(w.part, w.parts))}</button>
+			{/if}
+		{/if}
 	</div>
 
 	{#if klokBijstellen}

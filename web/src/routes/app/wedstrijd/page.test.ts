@@ -64,10 +64,42 @@ describe('het wedstrijdscherm tijdens een wedstrijd', () => {
 		expect(klok).toBe('02:05');
 	});
 
-	it('noemt de knop Stop zolang de klok loopt', () => {
+	it('noemt de knop Klok stil zolang de klok loopt', () => {
 		lopendeWedstrijd();
 		render(Wedstrijd);
-		expect(screen.getByRole('button', { name: 'Stop' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Klok stil' })).toBeTruthy();
+	});
+
+	/* Per moment alleen de knoppen die dan zin hebben, en elke knop zegt wat hij doet. */
+	it('heeft vóór de aftrap alleen de aftrap', () => {
+		metWedstrijd();
+		render(Wedstrijd);
+		const namen = [...document.querySelectorAll('.klokbalk button')].map((k) => k.textContent?.trim());
+		expect(namen.filter((n) => n !== '')).toEqual([expect.stringContaining(':'), 'Aftrap']);
+	});
+
+	it('heeft tijdens een deel de klok en het einde van het deel', () => {
+		lopendeWedstrijd(600);
+		render(Wedstrijd);
+		expect(screen.getByRole('button', { name: 'Klok stil' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Einde 1e kwart' })).toBeTruthy();
+	});
+
+	/* In de rust stonden Start en 2e helft naast elkaar; Start liet de klok lopen
+	   terwijl het nog rust was. */
+	it('heeft in de pauze alleen het volgende deel beginnen', () => {
+		lopendeWedstrijd(900, { running: false, inBreak: true, elapsed: 900, since: null });
+		render(Wedstrijd);
+		expect(screen.getByRole('button', { name: 'Start 2e kwart' })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Klok verder' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Klok stil' })).toBeNull();
+	});
+
+	it('heeft in het laatste deel geen deelknop', () => {
+		lopendeWedstrijd(3000, { part: 4 });
+		render(Wedstrijd);
+		expect(screen.getByRole('button', { name: 'Klok stil' })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: /Einde/ })).toBeNull();
 	});
 
 	/*
@@ -82,12 +114,12 @@ describe('het wedstrijdscherm tijdens een wedstrijd', () => {
 		expect(new Set(namen).size).toBe(namen.length);
 	});
 
-	it('noemt de knop Start als de klok stilstaat', () => {
+	it('noemt de knop Klok verder als de klok stilstaat', () => {
 		lopendeWedstrijd();
 		app.toestand.match!.running = false;
 		app.toestand.match!.elapsed = 60;
 		render(Wedstrijd);
-		expect(screen.getByRole('button', { name: 'Start' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Klok verder' })).toBeTruthy();
 	});
 
 	/*
@@ -301,25 +333,28 @@ describe('het wedstrijdscherm tijdens een wedstrijd', () => {
 	it('start en stopt de klok', async () => {
 		metWedstrijd();
 		render(Wedstrijd);
-		screen.getByRole('button', { name: 'Start' }).click();
+		screen.getByRole('button', { name: 'Aftrap' }).click();
 		await tick();
 		expect(app.toestand.match!.running).toBe(true);
 		expect(app.toestand.match!.events[0].type).toBe('start');
 
-		screen.getByRole('button', { name: 'Stop' }).click();
+		screen.getByRole('button', { name: 'Klok stil' }).click();
 		await tick();
 		expect(app.toestand.match!.running).toBe(false);
+		screen.getByRole('button', { name: 'Klok verder' }).click();
+		await tick();
+		expect(app.toestand.match!.running).toBe(true);
 	});
 
 	/* Naar het volgende deel en terug: bij vier kwarten drie keer per wedstrijd. */
 	it('gaat naar de pauze en het volgende kwart', async () => {
 		lopendeWedstrijd(900);
 		render(Wedstrijd);
-		screen.getByRole('button', { name: 'Pauze' }).click();
+		screen.getByRole('button', { name: 'Einde 1e kwart' }).click();
 		await tick();
 		expect(app.toestand.match!.inBreak).toBe(true);
 
-		screen.getByRole('button', { name: '2e kwart' }).click();
+		screen.getByRole('button', { name: 'Start 2e kwart' }).click();
 		await tick();
 		expect(app.toestand.match!.part).toBe(2);
 		expect(app.toestand.match!.inBreak).toBe(false);
@@ -356,7 +391,7 @@ describe('het wedstrijdscherm tijdens een wedstrijd', () => {
 		metWedstrijd();
 		app.whoIsKeeping = 'tjaco@voorbeeld.nl';
 		render(Wedstrijd);
-		screen.getByRole('button', { name: 'Start' }).click();
+		screen.getByRole('button', { name: 'Aftrap' }).click();
 		await tick();
 		expect(app.toestand.match!.keptBy).toBe('tjaco@voorbeeld.nl');
 	});
@@ -364,7 +399,7 @@ describe('het wedstrijdscherm tijdens een wedstrijd', () => {
 	it('laat het leeg als je niet ingelogd bent', async () => {
 		metWedstrijd();
 		render(Wedstrijd);
-		screen.getByRole('button', { name: 'Start' }).click();
+		screen.getByRole('button', { name: 'Aftrap' }).click();
 		await tick();
 		expect(app.toestand.match!.keptBy).toBeUndefined();
 	});
@@ -374,12 +409,12 @@ describe('het wedstrijdscherm tijdens een wedstrijd', () => {
 		metWedstrijd();
 		app.whoIsKeeping = 'tjaco@voorbeeld.nl';
 		render(Wedstrijd);
-		screen.getByRole('button', { name: 'Start' }).click();
+		screen.getByRole('button', { name: 'Aftrap' }).click();
 		await tick();
 		app.whoIsKeeping = 'matthijs@voorbeeld.nl';
-		screen.getByRole('button', { name: 'Stop' }).click();
+		screen.getByRole('button', { name: 'Klok stil' }).click();
 		await tick();
-		screen.getByRole('button', { name: 'Start' }).click();
+		screen.getByRole('button', { name: 'Klok verder' }).click();
 		await tick();
 		expect(app.toestand.match!.keptBy).toBe('tjaco@voorbeeld.nl');
 	});
