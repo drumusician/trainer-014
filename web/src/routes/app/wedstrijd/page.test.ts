@@ -532,6 +532,18 @@ describe('het wisselplan tijdens de wedstrijd', () => {
 		expect(screen.getByRole('button', { name: 'Overslaan' })).toBeTruthy();
 	});
 
+	it('zet een rustwissel klaar zodra je de rust aantikt', () => {
+		const w = metPlan(28);
+		w.plan = [{ id: 's1', minuut: 70, naDeel: 2, on: 'b1', off: 'a1' }];
+		render(Wedstrijd);
+		const regel = () => document.querySelector('.melding.plan')!;
+		expect(regel().textContent).toContain('Plan rust');
+		expect(regel().classList.contains('aandebeurt')).toBe(false);
+		w.part = 2;
+		w.inBreak = true;
+		return tick().then(() => expect(regel().classList.contains('aandebeurt')).toBe(true));
+	});
+
 	/* Een wissel die je aan het maken bent gaat voor: dan hoort daar de balk bij. */
 	it('maakt plaats als je zelf een wissel begint', async () => {
 		metPlan(27);

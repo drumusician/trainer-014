@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { planStappen, standOp } from '$lib/domain/plan';
+	import { planStappen, standOp, wanneer } from '$lib/domain/plan';
+	import { momentName } from '$lib/domain/parts';
 	import { groupOf, positionLabel } from '$lib/domain/formations';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
@@ -13,16 +14,27 @@
 	const stappen = $derived(planStappen(w, app.nu));
 	const naam = (id: string) => app.playerById(id)?.name ?? '?';
 
+	/* Een pauze ('na-1' is de pauze na het eerste deel) of een eigen minuut. */
+	let moment = $state('');
 	let minuut = $state<number | null>(null);
 	let erin = $state('');
 	let eruit = $state('');
+
+	const pauzes = $derived(
+		w ? Array.from({ length: w.parts - 1 }, (_, i) => ({ naDeel: i + 1, naam: momentName(i + 1, w.parts) })) : []
+	);
+	const naDeel = $derived(moment.startsWith('na-') ? Number(moment.slice(3)) : undefined);
+	/* De pauze telt voor de volgorde als het einde van dat deel. */
+	const opMinuut = $derived(
+		naDeel ? naDeel * app.toestand.minutesPerPart : moment === 'minuut' && minuut !== null ? minuut : null
+	);
 
 	/*
 	 * Niet iedereen, maar wie er rond die minuut kan: eruit wie dan in het veld
 	 * staat, erin wie dan op de bank zit. Met de stappen die al gepland staan erbij,
 	 * zodat na "35′ Casper voor Maher" Maher in een volgende stap bij de bank staat.
 	 */
-	const stand = $derived(standOp(w, minuut ?? 0));
+	const stand = $derived(standOp(w, opMinuut ?? 0));
 	const inHetVeld = $derived(
 		stand.veld.map((r) => ({ id: r.id, plek: r.plek })).sort((a, b) => naam(a.id).localeCompare(naam(b.id)))
 	);
@@ -44,11 +56,11 @@
 	});
 
 	function toevoegen() {
-		if (minuut === null || minuut < 0 || !erin || !eruit || erin === eruit) {
+		if (opMinuut === null || opMinuut < 0 || !erin || !eruit || erin === eruit) {
 			alert(text.plan.needAll);
 			return;
 		}
-		app.planAdd(minuut, erin, eruit);
+		app.planAdd(opMinuut, erin, eruit, naDeel);
 		erin = '';
 		eruit = '';
 	}
@@ -68,7 +80,7 @@
 				<ul class="log">
 					{#each stappen as s (s.stap.id)}
 						<li class:klaar={s.status !== 'open'}>
-							<b>{s.stap.minuut}′</b>
+							<b>{wanneer(s.stap, w.parts)}</b>
 							<span>
 								{text.plan.step(naam(s.stap.on), naam(s.stap.off))}
 								{#if s.status === 'gedaan'}<span class="sub">{text.plan.done}</span>
@@ -84,11 +96,25 @@
 				</ul>
 			{/if}
 
-			<div class="toevoegen">
-				<label class="vak minuut">
-					{text.plan.minuteLabel}
-					<input type="number" inputmode="numeric" min="0" max="200" bind:value={minuut} />
+			<!-- Een pauze is aan de beurt zodra je hem aantikt, niet op de klok: de
+			     rust valt zelden op 35:00 precies. -->
+			<div class="wanneer">
+				<label class="vak">
+					{text.plan.whenLabel}
+					<select bind:value={moment}>
+						<option value="">{text.plan.choose}</option>
+						{#each pauzes as p (p.naDeel)}<option value="na-{p.naDeel}">{p.naam}</option>{/each}
+						<option value="minuut">{text.plan.ownMinute}</option>
+					</select>
 				</label>
+				{#if moment === 'minuut'}
+					<label class="vak minuut">
+						{text.plan.minuteLabel}
+						<input type="number" inputmode="numeric" min="0" max="200" bind:value={minuut} />
+					</label>
+				{/if}
+			</div>
+			<div class="toevoegen">
 				<label class="vak">
 					{text.plan.offLabel}
 					<select bind:value={eruit}>
@@ -106,7 +132,13 @@
 					</select>
 				</label>
 			</div>
-			<p class="uitleg">{text.plan.optionsHint(minuut ?? 0)}</p>
+			{#if opMinuut !== null}
+				<p class="uitleg">
+					{text.plan.optionsHint(
+						naDeel ? text.plan.inBreak(momentName(naDeel, w.parts).toLowerCase()) : text.plan.aroundMinute(opMinuut)
+					)}
+				</p>
+			{/if}
 			<div class="knoprij" style="padding-left: 0">
 				<button onclick={toevoegen}>{text.plan.add}</button>
 				<a class="knop prim" href={terug}>{text.common.done}</a>
@@ -116,11 +148,16 @@
 </main>
 
 <style>
-	.toevoegen {
+	.wanneer {
 		display: grid;
-		grid-template-columns: 80px 1fr 1fr;
+		grid-template-columns: 1fr 90px;
 		gap: 8px;
 		margin-top: 16px;
+	}
+	.toevoegen {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
 	}
 	.klaar {
 		opacity: 0.55;

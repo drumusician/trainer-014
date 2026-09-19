@@ -9,13 +9,14 @@ function nieuwId(): string {
 	return 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
-export function voegToe(w: Match | null, minuut: number, on: string, off: string): boolean {
+/** Met `naDeel` is het een wissel in de pauze na dat deel; `minuut` is dan het einde ervan. */
+export function voegToe(w: Match | null, minuut: number, on: string, off: string, naDeel?: number): boolean {
 	if (!w || !on || !off || on === off || !Number.isFinite(minuut) || minuut < 0) return false;
 	/* Niet (w.plan ??= []).push(...): dat duwt in de kale lijst, buiten de
 	   reactieve toestand om, en dan is de stap in de app gewoon weg. Opnieuw
 	   lezen geeft de lijst zoals Svelte hem bijhoudt. */
 	if (!w.plan) w.plan = [];
-	w.plan.push({ id: nieuwId(), minuut: Math.round(minuut), on, off });
+	w.plan.push({ id: nieuwId(), minuut: Math.round(minuut), on, off, ...(naDeel ? { naDeel } : {}) });
 	return true;
 }
 

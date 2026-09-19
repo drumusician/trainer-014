@@ -7,7 +7,7 @@
 	import { homeFirst, keeperTimes, mmss, playingTimes, score, elapsed } from '$lib/domain/time';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
-	import { volgendeStap, nogOpen } from '$lib/domain/plan';
+	import { volgendeStap, nogOpen, wanneer } from '$lib/domain/plan';
 	import { text } from '$lib/text/nl';
 	import { sync } from '$lib/supabase/sync.svelte';
 
@@ -263,7 +263,13 @@
 				     oranje. Nooit een melding; het moment kiest de trainer. -->
 				<div class="melding plan" class:aandebeurt={volgende.aanDeBeurt}>
 					<span>
-						<a href="/app/wisselplan"><b>{text.plan.lineHead(volgende.stap.minuut)}</b></a>
+						<a href="/app/wisselplan"
+							><b
+								>{text.plan.lineHead(
+									volgende.stap.naDeel ? wanneer(volgende.stap, w.parts).toLowerCase() : wanneer(volgende.stap, w.parts)
+								)}</b
+							></a
+						>
 						{text.plan.step(planNaam(volgende.stap.on), planNaam(volgende.stap.off))}
 						{#if volgende.kanNiet === 'afwezig'}
 							· {text.plan.absent(planNaam(volgende.stap.on))}

@@ -12,6 +12,7 @@
  * moment kiest de trainer.
  */
 import { elapsed } from './time';
+import { momentName } from './parts';
 import type { Match, PlannedSub } from './types';
 
 export type StapStatus = 'gedaan' | 'overgeslagen' | 'open';
@@ -50,7 +51,11 @@ export function planStappen(w: Match | null, nu = Date.now()): PlanStap[] {
 					: !positie
 						? 'nietInHetVeld'
 						: null;
-			return { stap, status, positie, kanNiet, aanDeBeurt: seconden >= stap.minuut * 60 };
+			/* Een pauzewissel is aan de beurt zodra de pauze er is, niet op de klok. */
+			const aanDeBeurt = stap.naDeel
+				? w.part > stap.naDeel || (w.part === stap.naDeel && w.inBreak)
+				: seconden >= stap.minuut * 60;
+			return { stap, status, positie, kanNiet, aanDeBeurt };
 		});
 }
 
@@ -97,4 +102,9 @@ export function standOp(w: Match | null, minuut: number): Stand {
 			.map(([plek, id]) => ({ plek, id })),
 		bank
 	};
+}
+
+/** Wanneer een stap valt, zoals je het zegt: '25′', 'Rust' of 'Pauze na 1e kwart'. */
+export function wanneer(stap: PlannedSub, parts: number): string {
+	return stap.naDeel ? momentName(stap.naDeel, parts) : `${stap.minuut}′`;
 }

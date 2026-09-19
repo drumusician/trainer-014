@@ -145,7 +145,16 @@
 	}
 
 	/* Alleen bij een wedstrijd: een standaardopstelling heeft geen klok. */
-	const plan = $derived(bron === 'wedstrijd' && laatste ? planUitVoorstel(laatste.voorstel, app.toestand.players) : []);
+	const plan = $derived(
+		bron === 'wedstrijd' && laatste
+			? planUitVoorstel(
+					laatste.voorstel,
+					app.toestand.players,
+					app.toestand.minutesPerPart,
+					app.match?.parts ?? app.toestand.parts
+				)
+			: []
+	);
 
 	function neemOverMetPlan() {
 		if (!gecontroleerd || gecontroleerd.problemen.length || andereFormatie) return;

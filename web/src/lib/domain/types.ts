@@ -89,6 +89,12 @@ export interface PlannedSub {
 	minuut: number;
 	on: string;
 	off: string;
+	/**
+	 * In de pauze na dit deel (1 = na het eerste). Dan is hij aan de beurt zodra
+	 * de trainer de pauze aantikt, niet op een minuut: de rust valt zelden op
+	 * 35:00 precies. `minuut` is dan het einde van dat deel, alleen voor de volgorde.
+	 */
+	naDeel?: number;
 	/** met opzet overgeslagen */
 	skipped?: boolean;
 }

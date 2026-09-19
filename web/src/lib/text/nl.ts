@@ -494,7 +494,10 @@ const plan = {
 	skipped: 'overgeslagen',
 	remove: 'Weghalen',
 	undoSkip: 'Toch doen',
-	lineHead: (minute: number) => `Plan ${minute}′`,
+	lineHead: (when: string) => `Plan ${when}`,
+	atMinute: (minute: number) => `${minute}′`,
+	whenLabel: 'Wanneer',
+	ownMinute: 'Op een minuut…',
 	doIt: 'Wissel',
 	skip: 'Overslaan',
 	more: (n: number) => `nog ${n}`,
@@ -503,8 +506,10 @@ const plan = {
 	notOn: (name: string) => `${name} staat niet in het veld`,
 	toPlan: (n: number) => (n ? `Wisselplan (${n})` : 'Wisselplan'),
 	withPosition: (name: string, position: string) => `${name} (${position})`,
-	optionsHint: (minute: number) =>
-		`Je kiest uit wie er rond minuut ${minute} in het veld staat en op de bank zit, met wat je al gepland hebt erbij.`
+	optionsHint: (when: string) =>
+		`Je kiest uit wie er ${when} in het veld staat en op de bank zit, met wat je al gepland hebt erbij.`,
+	inBreak: (moment: string) => `in de ${moment}`,
+	aroundMinute: (minute: number) => `rond minuut ${minute}`
 } as const;
 
 /** De setup-wizard: drie stappen om te beginnen. */

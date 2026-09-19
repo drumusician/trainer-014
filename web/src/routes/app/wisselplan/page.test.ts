@@ -14,6 +14,9 @@ beforeEach(() => {
 	app.toestand = emptyState();
 });
 
+const opties = (label: string) =>
+	[...(screen.getByLabelText(label) as HTMLSelectElement).options].slice(1).map((o) => o.textContent);
+
 function kies(label: string, waarde: string) {
 	const veld = screen.getByLabelText(label) as HTMLSelectElement | HTMLInputElement;
 	veld.value = waarde;
@@ -21,6 +24,41 @@ function kies(label: string, waarde: string) {
 }
 
 describe('het wisselplan maken', () => {
+	/* De testwedstrijd speelt kwarten van 35 minuten (zie test/wedstrijd.ts). */
+	it('biedt de pauzes aan als wisselmoment', () => {
+		metWedstrijd();
+		render(Plan);
+		expect(opties('Wanneer')).toEqual(['Pauze na 1e kwart', 'Rust', 'Pauze na 3e kwart', 'Op een minuut…']);
+		expect(screen.queryByLabelText('Minuut')).toBeNull();
+	});
+
+	it('zet een wissel in de rust', async () => {
+		metWedstrijd();
+		app.toestand.minutesPerPart = 15;
+		render(Plan);
+		kies('Wanneer', 'na-2');
+		kies('Eruit', 'k1');
+		kies('Erin', 'b1');
+		await tick();
+		screen.getByRole('button', { name: 'Toevoegen' }).click();
+		await tick();
+		expect(app.match!.plan).toMatchObject([{ minuut: 30, naDeel: 2, on: 'b1', off: 'k1' }]);
+		expect(document.querySelector('ul.log')!.textContent).toContain('Rust');
+		expect(document.body.textContent).toContain('in de rust');
+	});
+
+	/* Eerst de keeper voor de tweede helft, dan de wissels voor de eerste: de lijst staat toch op tijd. */
+	it('zet de stappen op volgorde van tijd, hoe je ze ook invoert', () => {
+		const w = metWedstrijd();
+		w.plan = [
+			{ id: 's1', minuut: 70, naDeel: 2, on: 'b1', off: 'k1' },
+			{ id: 's2', minuut: 20, on: 'b1', off: 'a1' }
+		];
+		render(Plan);
+		const regels = [...document.querySelectorAll('ul.log li b')].map((b) => b.textContent);
+		expect(regels).toEqual(['20′', 'Rust']);
+	});
+
 	it('zegt het als er geen wedstrijd is', () => {
 		render(Plan);
 		expect(document.body.textContent).toContain('Er is geen wedstrijd om een wisselplan voor te maken');
@@ -30,6 +68,8 @@ describe('het wisselplan maken', () => {
 		metWedstrijd();
 		render(Plan);
 		expect(document.body.textContent).toContain('Nog niets gepland.');
+		kies('Wanneer', 'minuut');
+		await tick();
 		kies('Minuut', '25');
 		kies('Erin', 'b1');
 		kies('Eruit', 'a1');
@@ -39,9 +79,6 @@ describe('het wisselplan maken', () => {
 		expect(app.match!.plan).toMatchObject([{ minuut: 25, on: 'b1', off: 'a1' }]);
 		expect(document.querySelector('ul.log')!.textContent).toContain('Gijs voor Finn');
 	});
-
-	const opties = (label: string) =>
-		[...(screen.getByLabelText(label) as HTMLSelectElement).options].slice(1).map((o) => o.textContent);
 
 	/* Niet de hele selectie: eruit wie in het veld staat, erin wie op de bank zit. */
 	it('laat alleen kiezen wat kan', () => {
@@ -63,6 +100,8 @@ describe('het wisselplan maken', () => {
 		w.plan = [{ id: 's1', minuut: 25, on: 'b1', off: 'a1' }];
 		render(Plan);
 		expect(opties('Erin')).toEqual(['Gijs']);
+		kies('Wanneer', 'minuut');
+		await tick();
 		kies('Minuut', '30');
 		await tick();
 		expect(opties('Erin')).toEqual(['Finn']);
@@ -88,6 +127,8 @@ describe('het wisselplan maken', () => {
 		kies('Eruit', 'a1');
 		await tick();
 		expect((screen.getByLabelText('Eruit') as HTMLSelectElement).value).toBe('a1');
+		kies('Wanneer', 'minuut');
+		await tick();
 		kies('Minuut', '30');
 		await tick();
 		expect((screen.getByLabelText('Eruit') as HTMLSelectElement).value).toBe('');

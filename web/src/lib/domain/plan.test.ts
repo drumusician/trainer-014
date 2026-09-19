@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planStappen, volgendeStap, nogOpen, standOp } from './plan';
+import { planStappen, volgendeStap, nogOpen, standOp, wanneer } from './plan';
 import * as plan from '$lib/actions/plan';
 import { undoLast } from '$lib/actions/match-events';
 import type { Match } from './types';
@@ -212,5 +212,27 @@ describe('wie er rond een minuut staat', () => {
 		w.events = [];
 		plan.voegToe(w, 25, 'alain', 'maher');
 		expect(standOp(w, 30).bank).toEqual(['maher', 'alain']);
+	});
+});
+
+describe('een wissel in de pauze', () => {
+	/* De rust valt zelden op 35:00 precies. Hij is aan de beurt als je de rust aantikt. */
+	it('is aan de beurt zodra de pauze er is, niet op de klok', () => {
+		const w = wedstrijd(36);
+		plan.voegToe(w, 35, 'maher', 'kasper', 1);
+		expect(volgendeStap(w, NU)!.aanDeBeurt).toBe(false);
+		w.inBreak = true;
+		expect(volgendeStap(w, NU)!.aanDeBeurt).toBe(true);
+		/* en ook als het volgende deel al begonnen is */
+		w.inBreak = false;
+		w.part = 2;
+		expect(volgendeStap(w, NU)!.aanDeBeurt).toBe(true);
+	});
+
+	it('zegt wanneer, zoals je het zegt', () => {
+		expect(wanneer({ id: 'x', minuut: 25, on: 'a', off: 'b' }, 2)).toBe('25′');
+		expect(wanneer({ id: 'x', minuut: 35, naDeel: 1, on: 'a', off: 'b' }, 2)).toBe('Rust');
+		expect(wanneer({ id: 'x', minuut: 15, naDeel: 1, on: 'a', off: 'b' }, 4)).toBe('Pauze na 1e kwart');
+		expect(wanneer({ id: 'x', minuut: 30, naDeel: 2, on: 'a', off: 'b' }, 4)).toBe('Rust');
 	});
 });

@@ -273,9 +273,24 @@ export function controleerVoorstel(v: CoachVoorstel, players: Player[], doel: Co
  * met een naam die we niet kennen, of iemand die voor zichzelf wisselt, valt weg.
  * Of een stap tijdens de wedstrijd nog kan, bepaalt het plan zelf op het moment.
  */
-export function planUitVoorstel(v: CoachVoorstel, players: Player[]): Omit<PlannedSub, 'id'>[] {
+export function planUitVoorstel(
+	v: CoachVoorstel,
+	players: Player[],
+	minutenPerDeel: number,
+	delen: number
+): Omit<PlannedSub, 'id'>[] {
 	const idVan = new Map([...uniekeNamen(players)].map(([id, n]) => [n, id]));
 	return v.wisselplan
-		.map((w) => ({ minuut: Math.max(0, Math.round(w.minuut)), on: idVan.get(w.erin), off: idVan.get(w.eruit) }))
+		.map((w) => {
+			const minuut = Math.max(0, Math.round(w.minuut));
+			/* De assistent zet een rustwissel op het einde van het deel: dan is het er een. */
+			const naDeel = minuut % minutenPerDeel === 0 ? minuut / minutenPerDeel : 0;
+			return {
+				minuut,
+				on: idVan.get(w.erin),
+				off: idVan.get(w.eruit),
+				...(naDeel > 0 && naDeel < delen ? { naDeel } : {})
+			};
+		})
 		.filter((s): s is Omit<PlannedSub, 'id'> => !!s.on && !!s.off && s.on !== s.off);
 }

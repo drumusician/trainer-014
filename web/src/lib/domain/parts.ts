@@ -18,3 +18,8 @@ export function breakName(naDeel: number, parts: number): string {
 export function speelduur(minutenPerDeel: number, parts: number): number {
 	return minutenPerDeel * parts;
 }
+
+/** Een wisselmoment in een pauze, zoals je het zegt: 'Rust', of 'Pauze na 1e kwart'. */
+export function momentName(naDeel: number, parts: number): string {
+	return breakName(naDeel, parts) === 'Rust' ? 'Rust' : 'Pauze na ' + partName(naDeel, parts);
+}

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { coachVraag, controleerVoorstel, uniekeNamen, type CoachDoel, type CoachVoorstel } from './coach';
+import {
+	coachVraag,
+	controleerVoorstel,
+	planUitVoorstel,
+	uniekeNamen,
+	type CoachDoel,
+	type CoachVoorstel
+} from './coach';
 import { emptyState, type ArchivedMatch, type Player, type State } from './types';
 
 /*
@@ -226,5 +233,40 @@ describe('wat er terugkomt', () => {
 		);
 		expect(c.problemen).toEqual([]);
 		expect(c.opmerkingen).toEqual(['Cas staat in het doel, maar keept normaal niet.']);
+	});
+});
+
+describe('het wisselplan van de assistent', () => {
+	const met = (wisselplan: CoachVoorstel['wisselplan']): CoachVoorstel => ({
+		samenvatting: '',
+		opstelling: [],
+		bank: [],
+		wisselplan,
+		redenen: [],
+		aandachtspunten: []
+	});
+
+	it('maakt van een wissel op het einde van een deel een rustwissel', () => {
+		const plan = planUitVoorstel(
+			met([
+				{ minuut: 20, eruit: 'Finn', erin: 'Gijs', waarom: '' },
+				{ minuut: 35, eruit: 'Bram', erin: 'Cas', waarom: '' },
+				{ minuut: 70, eruit: 'Cas', erin: 'Bram', waarom: 'na het eindsignaal: geen pauze' }
+			]),
+			SPELERS,
+			35,
+			2
+		);
+		expect(plan).toEqual([
+			{ minuut: 20, on: 'b1', off: 'a1' },
+			{ minuut: 35, naDeel: 1, on: 'v1', off: 'k1' },
+			{ minuut: 70, on: 'k1', off: 'v1' }
+		]);
+	});
+
+	it('laat een stap met een onbekende naam vallen', () => {
+		expect(planUitVoorstel(met([{ minuut: 20, eruit: 'Zlatan', erin: 'Gijs', waarom: '' }]), SPELERS, 35, 2)).toEqual(
+			[]
+		);
 	});
 });
