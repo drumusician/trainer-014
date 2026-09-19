@@ -35,6 +35,7 @@ het is het enige deel dat bij gebruikers kan breken.
 | gebeurtenis | `event` | waar de speeltijd uit wordt teruggerekend |
 | wissel | `substitution` | iemand van de bank voor iemand in het veld |
 | ruil | `swap` | twee spelers wisselen van plek, de bank blijft gelijk |
+| wisselplan | `plan` / `PlannedSub` | wat je van plan bent; of een stap gedaan is volgt uit de wissels |
 | eruit / erin | `off` / `on` | bij een wissel: `playerOff`, `playerOn` |
 | doelpunt | `goal` | |
 | tegendoelpunt | `conceded` | |

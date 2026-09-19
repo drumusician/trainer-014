@@ -73,6 +73,24 @@ export interface Match {
 	 * zodat je het onderling regelt voordat het misgaat.
 	 */
 	keptBy?: string;
+	/** Het wisselplan: wat je van plan bent, niet wat er gebeurde. Zie domain/plan.ts. */
+	plan?: PlannedSub[];
+}
+
+/**
+ * Een geplande wissel: rond deze minuut komt `on` erin voor `off`.
+ *
+ * Bewust zonder plek. `on` komt op de plek waar `off` op dat moment staat, zodat
+ * het plan blijft kloppen als er intussen iets geschoven is.
+ */
+export interface PlannedSub {
+	id: string;
+	/** minuten na de aftrap, over de hele wedstrijd: de rust bij 2×35 is 35 */
+	minuut: number;
+	on: string;
+	off: string;
+	/** met opzet overgeslagen */
+	skipped?: boolean;
 }
 
 export interface DefaultLineup {

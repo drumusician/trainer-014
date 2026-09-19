@@ -153,7 +153,7 @@
 					<b class="mager">{text.lineupScreen.noSubstitute(zonderWissel.join(', '))}</b>
 				</p>
 			{/if}
-			{#if !app.chosenPosition && (mageren.length || app.toestand.archive.length)}
+			{#if !app.chosenPosition && (mageren.length || app.toestand.archive.length || bron === 'wedstrijd')}
 				<p class="uitleg" style="padding: 0 12px">
 					{#if mageren.length}
 						{text.lineupScreen.thinLead}
@@ -172,6 +172,10 @@
 						>
 						·
 						<a class="linkje" href="/app/coach/{bron}">{text.lineupScreen.toCoach}</a>
+					{/if}
+					{#if bron === 'wedstrijd'}
+						{#if app.toestand.archive.length}·{/if}
+						<a class="linkje" href="/app/wisselplan">{text.plan.toPlan(app.match?.plan?.length ?? 0)}</a>
 					{/if}
 				</p>
 			{/if}

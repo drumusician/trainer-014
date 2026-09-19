@@ -8,7 +8,8 @@ import type {
 	State,
 	Training,
 	FieldLine,
-	Match
+	Match,
+	PlannedSub
 } from './domain/types';
 import { emptyState } from './domain/types';
 import { migreerToestand as migrateStorage } from './domain/migrate-storage';
@@ -20,6 +21,7 @@ import * as match from './actions/match';
 import * as opstellen from './actions/lineup';
 import * as selectie from './actions/squad';
 import * as trainings from './actions/trainings';
+import * as plan from './actions/plan';
 
 const SLEUTEL = 'o14-app-v1';
 
@@ -317,6 +319,30 @@ class App {
 
 	concede() {
 		events.concede(this.toestand.match, this.nu);
+		this.save();
+	}
+
+	/* ---------- wisselplan ---------- */
+	planAdd(minuut: number, on: string, off: string) {
+		if (plan.voegToe(this.toestand.match, minuut, on, off)) this.save();
+	}
+
+	planRemove(id: string) {
+		if (plan.haalWeg(this.toestand.match, id)) this.save();
+	}
+
+	planReplace(stappen: Omit<PlannedSub, 'id'>[]) {
+		if (plan.vervang(this.toestand.match, stappen)) this.save();
+	}
+
+	planSkip(id: string, overslaan = true) {
+		if (plan.slaOver(this.toestand.match, id, overslaan)) this.save();
+	}
+
+	/** A planned substitution, carried out at the moment the coach picks. */
+	planDo(id: string) {
+		if (!plan.voerUit(this.toestand.match, this.nu, id)) return;
+		this.chosenPosition = null;
 		this.save();
 	}
 

@@ -246,6 +246,38 @@ describe('de assistent', () => {
 		expect(gegaanNaar).toContain('/app/opstelling/wedstrijd');
 	});
 
+	it('neemt opstelling en wisselplan in één keer over', async () => {
+		wedstrijd();
+		ingelogd();
+		antwoordtMet(200, {
+			voorstel: {
+				...VOORSTEL_1221,
+				wisselplan: [
+					{ minuut: 20, eruit: 'Gijs', erin: 'Finn', waarom: 'x' },
+					{ minuut: 30, eruit: 'Zlatan', erin: 'Finn', waarom: 'onbekend, valt weg' }
+				]
+			},
+			over: 19
+		});
+		render(Coach);
+		await vraag();
+		screen.getByRole('button', { name: 'Neem opstelling en wisselplan over' }).click();
+		expect(app.toestand.match!.lineup.SP).toBe('b1');
+		expect(app.toestand.match!.plan).toMatchObject([{ minuut: 20, on: 'a1', off: 'b1' }]);
+		expect(gegaanNaar).toContain('/app/opstelling/wedstrijd');
+	});
+
+	it('biedt bij de standaardopstelling geen wisselplan aan', async () => {
+		metSelectie();
+		app.toestand.defaultLineup = { formation: '1-2-2-1', lineup: {}, bench: [] };
+		page.params = { bron: 'standaard' };
+		ingelogd();
+		antwoordtMet(200, { voorstel: VOORSTEL_1221, over: 19 });
+		render(Coach);
+		await vraag();
+		expect(screen.queryByRole('button', { name: 'Neem opstelling en wisselplan over' })).toBeNull();
+	});
+
 	it('neemt een voorstel met een dubbele speler niet over', async () => {
 		wedstrijd();
 		ingelogd();

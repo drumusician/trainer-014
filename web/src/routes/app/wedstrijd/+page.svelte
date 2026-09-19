@@ -7,6 +7,7 @@
 	import { homeFirst, keeperTimes, mmss, playingTimes, score, elapsed } from '$lib/domain/time';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
+	import { volgendeStap, nogOpen } from '$lib/domain/plan';
 	import { text } from '$lib/text/nl';
 	import { sync } from '$lib/supabase/sync.svelte';
 
@@ -82,6 +83,12 @@
 	   helft van de wissels zoek. Zichtbaar maken is genoeg; onderling regelen ze
 	   het zelf. */
 	const anderTikt = $derived(w?.keptBy && sync.sessie?.email && w.keptBy !== sync.sessie.email ? w.keptBy : null);
+
+	/* Het wisselplan: alleen na de aftrap, en alleen als er een plan is. Zonder
+	   plan ziet dit scherm er precies zo uit als altijd. */
+	const volgende = $derived(app.kickedOff ? volgendeStap(w, app.nu) : null);
+	const planRest = $derived(volgende ? nogOpen(w, app.nu) - 1 : 0);
+	const planNaam = (id: string) => app.playerById(id)?.name ?? '?';
 
 	const uit = $derived(app.chosenPosition && w ? app.playerById(w.lineup[app.chosenPosition]) : null);
 	const keeperMin = $derived(uit ? Math.round((keeperTimes(w, app.nu)[uit.id] ?? 0) / 60) : 0);
@@ -251,7 +258,47 @@
 					{/if}
 					<button class="klein" onclick={() => (app.chosenPosition = null)}>{text.common.cancel}</button>
 				</div>
+			{:else if volgende}
+				<!-- Een spiekbriefje, geen wekker: grijs tot de minuut voorbij is, dan
+				     oranje. Nooit een melding; het moment kiest de trainer. -->
+				<div class="melding plan" class:aandebeurt={volgende.aanDeBeurt}>
+					<span>
+						<a href="/app/wisselplan"><b>{text.plan.lineHead(volgende.stap.minuut)}</b></a>
+						{text.plan.step(planNaam(volgende.stap.on), planNaam(volgende.stap.off))}
+						{#if volgende.kanNiet === 'afwezig'}
+							· {text.plan.absent(planNaam(volgende.stap.on))}
+						{:else if volgende.kanNiet === 'alInHetVeld'}
+							· {text.plan.alreadyOn(planNaam(volgende.stap.on))}
+						{:else if volgende.kanNiet === 'nietInHetVeld'}
+							· {text.plan.notOn(planNaam(volgende.stap.off))}
+						{/if}
+						{#if planRest > 0}<small>{text.plan.more(planRest)}</small>{/if}
+					</span>
+					{#if !volgende.kanNiet}
+						<button class="klein prim" onclick={() => app.planDo(volgende.stap.id)}>{text.plan.doIt}</button>
+					{/if}
+					<button class="klein" onclick={() => app.planSkip(volgende.stap.id)}>{text.plan.skip}</button>
+				</div>
 			{/if}
 		</div>
 	</main>
 {/if}
+
+<style>
+	/* Nog niet aan de beurt: rustig grijs. Oranje pas als de minuut voorbij is. */
+	.melding.plan:not(.aandebeurt) {
+		background: var(--bank);
+		border-top-color: var(--lijn);
+		color: inherit;
+	}
+	.melding.plan:not(.aandebeurt) b {
+		color: inherit;
+	}
+	.melding.plan a {
+		color: inherit;
+	}
+	.melding.plan small {
+		margin-left: 6px;
+		opacity: 0.7;
+	}
+</style>

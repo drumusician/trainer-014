@@ -31,6 +31,7 @@
 	const inTaak = $derived(
 		page.url.pathname.startsWith('/app/opstelling') ||
 			page.url.pathname.startsWith('/app/coach') ||
+			page.url.pathname.startsWith('/app/wisselplan') ||
 			(page.url.pathname.startsWith('/app/wedstrijd') && app.kickedOff && !app.match?.finished)
 	);
 

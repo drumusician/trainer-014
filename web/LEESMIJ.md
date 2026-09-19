@@ -47,7 +47,12 @@ Vanaf het opstelscherm kom je bij de **assistent** (`/coach/*`): een voorstel
 voor de opstelling met uitleg, van een taalmodel op de server. Zie
 [supabase/LEESMIJ.md](../supabase/LEESMIJ.md#de-assistent).
 
-De balk verdwijnt op `/wedstrijd`, `/opstelling/*`, `/coach/*`, `/aanwezig` en `/afloop`.
+Het **wisselplan** (`/wisselplan`) is een spiekbriefje, geen wekker: rond welke
+minuut wie erin komt voor wie. Tijdens de wedstrijd staat de volgende stap onder
+het veld, grijs tot de minuut voorbij is en dan oranje; de app wisselt nooit zelf.
+Of een stap gedaan is, volgt uit de wissels in het verloop. Zie `domain/plan.ts`.
+
+De balk verdwijnt op `/wedstrijd`, `/opstelling/*`, `/coach/*`, `/wisselplan`, `/aanwezig` en `/afloop`.
 Daar ben je met één ding bezig en telt elke pixel.
 
 Een bewaarde wedstrijd kun je bijwerken: datum, tegenstander, thuis of uit, en

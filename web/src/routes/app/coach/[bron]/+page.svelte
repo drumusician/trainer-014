@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import Veld from '$lib/components/Veld.svelte';
 	import BankKolom from '$lib/components/BankKolom.svelte';
-	import { coachVraag, controleerVoorstel, type CoachVoorstel } from '$lib/domain/coach';
+	import { coachVraag, controleerVoorstel, planUitVoorstel, type CoachVoorstel } from '$lib/domain/coach';
 	import { app } from '$lib/store.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
 	import { zetKop } from '$lib/header.svelte';
@@ -143,6 +143,16 @@
 		if (!gecontroleerd || gecontroleerd.problemen.length || andereFormatie) return;
 		if (app.applyLineup(bron, gecontroleerd.lineup, gecontroleerd.bench)) goto(terug);
 	}
+
+	/* Alleen bij een wedstrijd: een standaardopstelling heeft geen klok. */
+	const plan = $derived(bron === 'wedstrijd' && laatste ? planUitVoorstel(laatste.voorstel, app.toestand.players) : []);
+
+	function neemOverMetPlan() {
+		if (!gecontroleerd || gecontroleerd.problemen.length || andereFormatie) return;
+		if (!app.applyLineup(bron, gecontroleerd.lineup, gecontroleerd.bench)) return;
+		app.planReplace(plan);
+		goto(terug);
+	}
 </script>
 
 <main>
@@ -229,6 +239,9 @@
 					{:else}
 						<div class="knoprij" style="padding-left: 0">
 							<button class="prim" onclick={neemOver}>{text.coach.take}</button>
+							{#if plan.length}
+								<button onclick={neemOverMetPlan}>{text.coach.takeWithPlan}</button>
+							{/if}
 						</div>
 					{/if}
 					{#each gecontroleerd.opmerkingen as o (o)}

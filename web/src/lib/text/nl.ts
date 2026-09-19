@@ -455,6 +455,7 @@ const coach = {
 	resultHeading: 'Voorstel',
 	askedAt: (when: string) => `Gevraagd ${when}.`,
 	take: 'Neem deze opstelling over',
+	takeWithPlan: 'Neem opstelling en wisselplan over',
 	cannotTake: 'Overnemen kan niet, want het voorstel klopt niet helemaal:',
 	otherFormation: (formation: string) =>
 		`Dit voorstel is voor ${formation}, en je staat nu anders. Vraag opnieuw om een voorstel.`,
@@ -471,6 +472,36 @@ const coach = {
 	steeredHeading: 'Jouw wensen tot nu toe',
 	left: (n: number) =>
 		n === 1 ? 'Je kunt de assistent vandaag nog 1 keer vragen.' : `Je kunt de assistent vandaag nog ${n} keer vragen.`
+} as const;
+
+/**
+ * Het wisselplan: een spiekbriefje, geen wekker. Zie domain/plan.ts.
+ */
+const plan = {
+	title: 'Wisselplan',
+	intro:
+		'Wat je vooraf al weet: wie rond welke minuut erin komt, en voor wie. Tijdens de wedstrijd staat de volgende stap onder het veld. Het moment kies jij, en doe je dezelfde wissel met de hand, dan telt hij ook.',
+	noMatch: 'Er is geen wedstrijd om een wisselplan voor te maken. Begin er een op het startscherm.',
+	empty: 'Nog niets gepland.',
+	minuteLabel: 'Minuut',
+	onLabel: 'Erin',
+	offLabel: 'Eruit',
+	choose: 'Kies…',
+	add: 'Toevoegen',
+	needAll: 'Kies een minuut, wie erin komt en voor wie.',
+	step: (on: string, off: string) => `${on} voor ${off}`,
+	done: 'gedaan',
+	skipped: 'overgeslagen',
+	remove: 'Weghalen',
+	undoSkip: 'Toch doen',
+	lineHead: (minute: number) => `Plan ${minute}′`,
+	doIt: 'Wissel',
+	skip: 'Overslaan',
+	more: (n: number) => `nog ${n}`,
+	absent: (name: string) => `${name} is er niet`,
+	alreadyOn: (name: string) => `${name} staat al in het veld`,
+	notOn: (name: string) => `${name} staat niet in het veld`,
+	toPlan: (n: number) => (n ? `Wisselplan (${n})` : 'Wisselplan')
 } as const;
 
 /** De setup-wizard: drie stappen om te beginnen. */
@@ -810,6 +841,7 @@ export const text = {
 	players,
 	lineupScreen,
 	coach,
+	plan,
 	setup,
 	data,
 	install,

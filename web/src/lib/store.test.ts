@@ -471,6 +471,25 @@ describe('de naam van je team', () => {
 	});
 });
 
+describe('het wisselplan in de toestand', () => {
+	/* (w.plan ??= []).push duwde in de kale lijst, buiten de reactieve toestand:
+	   in de rekentests ging het goed, in de app was de stap weg. */
+	it('bewaart een geplande wissel echt', () => {
+		app.newMatch('Sparta', true);
+		app.planAdd(25, 'p1', 'p2');
+		app.planAdd(35, 'p2', 'p1');
+		expect(app.match!.plan!.map((s) => s.minuut)).toEqual([25, 35]);
+		expect(JSON.parse(localStorage.getItem('o14-app-v1')!).match.plan).toHaveLength(2);
+	});
+
+	/* Het plan hoort bij de wedstrijd, en die gaat mee naar het andere toestel. */
+	it('neemt het plan mee naar de server', () => {
+		app.newMatch('Sparta', true);
+		app.planAdd(25, 'p1', 'p2');
+		expect(JSON.parse(JSON.stringify(app.syncPayload())).match.plan).toHaveLength(1);
+	});
+});
+
 describe('wat er tussen je toestellen heen en weer gaat', () => {
 	/* De afspraken horen bij het team: de andere trainer vraagt ook met dezelfde regels. */
 	it('neemt de vaste afspraken voor de assistent mee', () => {

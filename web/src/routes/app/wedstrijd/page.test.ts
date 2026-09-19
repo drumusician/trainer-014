@@ -452,3 +452,91 @@ describe('het wedstrijdscherm tijdens een wedstrijd', () => {
 		expect(document.querySelector('.waarschuwing')).toBeNull();
 	});
 });
+
+/*
+ * Het wisselplan: een spiekbriefje onder het veld. Zonder plan hoort dit scherm
+ * er precies zo uit te zien als altijd; met plan staat er één regel, die pas
+ * oranje wordt als de minuut voorbij is, en die nooit zelf wisselt.
+ */
+describe('het wisselplan tijdens de wedstrijd', () => {
+	/* Finn staat op SP, Gijs zit op de bank. */
+	function metPlan(minuten: number, minuut = 25) {
+		const w = lopendeWedstrijd(minuten * 60);
+		w.plan = [{ id: 's1', minuut, on: 'b1', off: 'a1' }];
+		app.nu = Date.now();
+		return w;
+	}
+
+	it('laat niets zien als er geen plan is', () => {
+		lopendeWedstrijd(600);
+		render(Wedstrijd);
+		expect(document.querySelector('.melding.plan')).toBeNull();
+	});
+
+	it('laat niets zien vóór de aftrap', () => {
+		const w = metWedstrijd();
+		w.plan = [{ id: 's1', minuut: 0, on: 'b1', off: 'a1' }];
+		render(Wedstrijd);
+		expect(document.querySelector('.melding.plan')).toBeNull();
+	});
+
+	it('zet de volgende stap rustig onder het veld, zonder te wisselen', () => {
+		const w = metPlan(10);
+		render(Wedstrijd);
+		const regel = document.querySelector('.melding.plan')!;
+		expect(regel.textContent).toContain('Plan 25′');
+		expect(regel.textContent).toContain('Gijs voor Finn');
+		expect(regel.classList.contains('aandebeurt')).toBe(false);
+		expect(w.lineup.SP).toBe('a1');
+	});
+
+	it('kleurt de regel als de minuut voorbij is', () => {
+		metPlan(27);
+		render(Wedstrijd);
+		expect(document.querySelector('.melding.plan')!.classList.contains('aandebeurt')).toBe(true);
+	});
+
+	it('wisselt met één tik, als het moment er is', async () => {
+		const w = metPlan(27);
+		render(Wedstrijd);
+		screen.getByRole('button', { name: 'Wissel' }).click();
+		await tick();
+		expect(w.lineup.SP).toBe('b1');
+		expect(w.events.at(-1)).toMatchObject({ type: 'substitution', on: 'b1', off: 'a1', position: 'SP' });
+		expect(document.querySelector('.melding.plan')).toBeNull();
+	});
+
+	it('slaat een stap over', async () => {
+		const w = metPlan(27);
+		render(Wedstrijd);
+		screen.getByRole('button', { name: 'Overslaan' }).click();
+		await tick();
+		expect(w.plan![0].skipped).toBe(true);
+		expect(w.lineup.SP).toBe('a1');
+		expect(document.querySelector('.melding.plan')).toBeNull();
+	});
+
+	/* Hugo zou rond minuut 25 voor Finn komen, maar Finn ging er na tien minuten
+	   al uit met een blessure; Gijs kwam voor hem. */
+	it('zegt waarom een stap niet meer kan, en biedt dan geen wissel aan', () => {
+		const w = metPlan(27);
+		app.toestand.players.push({ id: 'h1', name: 'Hugo', line: 'A' });
+		w.lineup.SP = 'b1';
+		w.bench = ['a1', 'h1'];
+		w.events.push({ type: 'substitution', t: 600, on: 'b1', off: 'a1', position: 'SP' });
+		w.plan = [{ id: 's2', minuut: 25, on: 'h1', off: 'a1' }];
+		render(Wedstrijd);
+		const regel = document.querySelector('.melding.plan')!;
+		expect(regel.textContent).toContain('staat niet in het veld');
+		expect(screen.queryByRole('button', { name: 'Wissel' })).toBeNull();
+		expect(screen.getByRole('button', { name: 'Overslaan' })).toBeTruthy();
+	});
+
+	/* Een wissel die je aan het maken bent gaat voor: dan hoort daar de balk bij. */
+	it('maakt plaats als je zelf een wissel begint', async () => {
+		metPlan(27);
+		app.chosenPosition = 'SP';
+		render(Wedstrijd);
+		expect(document.querySelector('.melding.plan')).toBeNull();
+	});
+});

@@ -23,7 +23,7 @@ import { spelersOverzicht } from './players';
 import { homeFirst } from './time';
 import { sortTrainings } from './attendance';
 import { timelineRows } from './report';
-import type { Attendance, Lineup, Player, State } from './types';
+import type { Attendance, Lineup, PlannedSub, Player, State } from './types';
 
 /** Wat de assistent te zien krijgt. De vorm is dezelfde als in de functie op de server. */
 export interface CoachVraag {
@@ -266,4 +266,16 @@ export function controleerVoorstel(v: CoachVoorstel, players: Player[], doel: Co
 
 	const bench = players.map((p) => p.id).filter((id) => !opHetVeld.has(id) && !afwezig.has(id));
 	return { lineup, bench, problemen: [...new Set(problemen)], opmerkingen };
+}
+
+/**
+ * Het wisselplan van de assistent als plan in de app. Namen worden id's; een stap
+ * met een naam die we niet kennen, of iemand die voor zichzelf wisselt, valt weg.
+ * Of een stap tijdens de wedstrijd nog kan, bepaalt het plan zelf op het moment.
+ */
+export function planUitVoorstel(v: CoachVoorstel, players: Player[]): Omit<PlannedSub, 'id'>[] {
+	const idVan = new Map([...uniekeNamen(players)].map(([id, n]) => [n, id]));
+	return v.wisselplan
+		.map((w) => ({ minuut: Math.max(0, Math.round(w.minuut)), on: idVan.get(w.erin), off: idVan.get(w.eruit) }))
+		.filter((s): s is Omit<PlannedSub, 'id'> => !!s.on && !!s.off && s.on !== s.off);
 }
