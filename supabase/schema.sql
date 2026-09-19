@@ -77,9 +77,16 @@ begin
     return huidig;
   end if;
 
+  -- Niet 40001. Dat is 'serialization failure', en PostgREST (tot versie 16)
+  -- leest dat als een tijdelijk conflict en probeert de transactie opnieuw: op
+  -- de server, zonder ooit op te houden, want deze fout komt elke keer terug. Eén
+  -- botsing tussen twee toestellen werd zo duizenden pogingen per seconde en een
+  -- database op 95%, terwijl de app zelf maar één verzoek had gedaan. Daarom
+  -- vond de noodrem in de app het ook nooit: de lus zat hier.
+  -- PT409 is een gewone fout die PostgREST als HTTP 409 teruggeeft.
   if p_verwachte_versie is distinct from huidig.versie then
     raise exception 'versie loopt niet gelijk (hier %, jij %)', huidig.versie, p_verwachte_versie
-      using errcode = '40001';
+      using errcode = 'PT409';
   end if;
 
   update public.team_toestand

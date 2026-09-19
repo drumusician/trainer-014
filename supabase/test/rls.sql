@@ -396,3 +396,30 @@ end $$;
 commit;
 
 \echo 'RLS: lidmaatschap laat de juiste mensen binnen en de rest buiten'
+
+-- ---------- een botsing is een gewone fout ----------
+-- Met code 40001 probeerde PostgREST een botsing eindeloos opnieuw, op de server
+-- zelf: een database op 95% en een miljard pogingen. Een verouderde versie moet
+-- een fout geven waar PostgREST van afblijft.
+begin;
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","email":"tjaco@voorbeeld.nl"}';
+do $$
+declare staat text;
+begin
+  begin
+    perform public.toestand_opslaan('aaaaaaaa-0000-0000-0000-000000000001', '{"players":[]}'::jsonb, 0);
+    raise exception 'opslaan op een verouderde versie ging gewoon door';
+  exception when others then
+    get stacked diagnostics staat = returned_sqlstate;
+    if staat in ('40001', '40P01') then
+      raise exception 'een botsing geeft % terug, en die probeert PostgREST eindeloos opnieuw', staat;
+    end if;
+    if staat <> 'PT409' then
+      raise exception 'een botsing gaf % in plaats van PT409', staat;
+    end if;
+  end;
+end $$;
+commit;
+
+\echo 'RLS: een botsing is een gewone fout, geen reden om opnieuw te proberen'

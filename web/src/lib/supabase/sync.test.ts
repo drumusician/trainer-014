@@ -20,8 +20,8 @@ function nepFetch(
 				/* Zonder code: dan moet de tekst het doen. Dat is het pad dat stukging. */
 				const lijf = opties.zonderCode
 					? { message: 'versie loopt niet gelijk (hier 82, jij 78)' }
-					: { code: '40001', message: 'versie loopt niet gelijk (hier 82, jij 78)' };
-				return new Response(JSON.stringify(lijf), { status: 500 });
+					: { code: 'PT409', message: 'versie loopt niet gelijk (hier 82, jij 78)' };
+				return new Response(JSON.stringify(lijf), { status: 409 });
 			}
 			verstuurd.push(body.p_data);
 			return new Response(JSON.stringify({ versie: (opties.versie ?? 0) + 1 }), { status: 200 });

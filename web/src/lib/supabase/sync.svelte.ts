@@ -944,7 +944,7 @@ class Sync {
 		/* De tekst komt uit de database en is Nederlands; de hernoeming naar het
 		   Engels maakte er 'versie running niet gelijk' van, waardoor een conflict
 		   niet meer als conflict werd herkend en de rem er nooit op ging. */
-		return e.data?.code === '40001' || /versie loopt niet gelijk/.test(e.message ?? '');
+		return e.data?.code === 'PT409' || /versie loopt niet gelijk/.test(e.message ?? '');
 	}
 
 	async opsturen(overschrijven = false, stil = false) {
