@@ -544,6 +544,17 @@ describe('het wisselplan tijdens de wedstrijd', () => {
 		return tick().then(() => expect(regel().classList.contains('aandebeurt')).toBe(true));
 	});
 
+	it('ruilt twee spelers met één tik', async () => {
+		const w = metPlan(28);
+		w.plan = [{ id: 's1', minuut: 25, on: 'm1', off: 'k1', soort: 'ruil' }];
+		render(Wedstrijd);
+		expect(document.querySelector('.melding.plan')!.textContent).toContain('Bram en Eef ruilen van plek');
+		screen.getByRole('button', { name: 'Ruilen' }).click();
+		await tick();
+		expect(w.lineup).toMatchObject({ K: 'm1', CM: 'k1' });
+		expect(w.events.at(-1)).toMatchObject({ type: 'swap' });
+	});
+
 	/* Een wissel die je aan het maken bent gaat voor: dan hoort daar de balk bij. */
 	it('maakt plaats als je zelf een wissel begint', async () => {
 		metPlan(27);

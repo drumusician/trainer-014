@@ -95,6 +95,11 @@ export interface PlannedSub {
 	 * 35:00 precies. `minuut` is dan het einde van dat deel, alleen voor de volgorde.
 	 */
 	naDeel?: number;
+	/**
+	 * 'ruil': geen wissel met de bank, maar `on` en `off` staan allebei in het veld
+	 * en wisselen van plek. De keeperwissel met een veldspeler, bijvoorbeeld.
+	 */
+	soort?: 'ruil';
 	/** met opzet overgeslagen */
 	skipped?: boolean;
 }

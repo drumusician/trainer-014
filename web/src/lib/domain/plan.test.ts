@@ -236,3 +236,42 @@ describe('een wissel in de pauze', () => {
 		expect(wanneer({ id: 'x', minuut: 30, naDeel: 2, on: 'a', off: 'b' }, 4)).toBe('Rust');
 	});
 });
+
+/* De keeperwissel met een veldspeler: geen wissel met de bank, maar ruilen. */
+describe('twee spelers die van plek ruilen', () => {
+	it('ruilt ze als het moment er is, met een ruil in het verloop', () => {
+		const w = wedstrijd(35);
+		plan.voegToe(w, 35, 'zenith', 'kasper', 1, 'ruil');
+		const stap = volgendeStap(w, NU)!;
+		expect(stap.kanNiet).toBeNull();
+		expect(plan.voerUit(w, NU, stap.stap.id)).toBe(true);
+		expect(w.lineup).toMatchObject({ K: 'zenith', ML: 'kasper' });
+		expect(w.bench).toEqual(['maher', 'alain']);
+		expect(w.events.at(-1)).toMatchObject({ type: 'swap', playerA: 'zenith', playerB: 'kasper' });
+		expect(volgendeStap(w, NU)).toBeNull();
+	});
+
+	it('telt een ruil die je met de hand deed ook, in welke volgorde ook', () => {
+		const w = wedstrijd(35);
+		plan.voegToe(w, 35, 'zenith', 'kasper', 1, 'ruil');
+		w.events.push({ type: 'swap', t: 2100, positionA: 'K', positionB: 'ML', playerA: 'kasper', playerB: 'zenith' });
+		expect(planStappen(w, NU)[0].status).toBe('gedaan');
+	});
+
+	it('kan niet als een van beiden niet in het veld staat', () => {
+		const w = wedstrijd(35);
+		plan.voegToe(w, 35, 'maher', 'kasper', 1, 'ruil');
+		expect(volgendeStap(w, NU)!.kanNiet).toBe('nietBeideInHetVeld');
+		expect(plan.voerUit(w, NU, w.plan![0].id)).toBe(false);
+	});
+
+	it('rekent de ruil mee in wie er daarna waar staat', () => {
+		const w = wedstrijd();
+		w.events = [];
+		plan.voegToe(w, 35, 'zenith', 'kasper', 1, 'ruil');
+		const s = standOp(w, 35);
+		expect(s.veld.find((r) => r.plek === 'K')!.id).toBe('zenith');
+		expect(s.veld.find((r) => r.plek === 'ML')!.id).toBe('kasper');
+		expect(s.bank).toEqual(['maher', 'alain']);
+	});
+});

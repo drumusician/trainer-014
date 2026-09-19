@@ -270,18 +270,24 @@
 								)}</b
 							></a
 						>
-						{text.plan.step(planNaam(volgende.stap.on), planNaam(volgende.stap.off))}
+						{volgende.stap.soort === 'ruil'
+							? text.plan.swapStep(planNaam(volgende.stap.off), planNaam(volgende.stap.on))
+							: text.plan.step(planNaam(volgende.stap.on), planNaam(volgende.stap.off))}
 						{#if volgende.kanNiet === 'afwezig'}
 							· {text.plan.absent(planNaam(volgende.stap.on))}
 						{:else if volgende.kanNiet === 'alInHetVeld'}
 							· {text.plan.alreadyOn(planNaam(volgende.stap.on))}
 						{:else if volgende.kanNiet === 'nietInHetVeld'}
 							· {text.plan.notOn(planNaam(volgende.stap.off))}
+						{:else if volgende.kanNiet === 'nietBeideInHetVeld'}
+							· {text.plan.notBothOn(planNaam(volgende.stap.off), planNaam(volgende.stap.on))}
 						{/if}
 						{#if planRest > 0}<small>{text.plan.more(planRest)}</small>{/if}
 					</span>
 					{#if !volgende.kanNiet}
-						<button class="klein prim" onclick={() => app.planDo(volgende.stap.id)}>{text.plan.doIt}</button>
+						<button class="klein prim" onclick={() => app.planDo(volgende.stap.id)}
+							>{volgende.stap.soort === 'ruil' ? text.plan.doSwap : text.plan.doIt}</button
+						>
 					{/if}
 					<button class="klein" onclick={() => app.planSkip(volgende.stap.id)}>{text.plan.skip}</button>
 				</div>

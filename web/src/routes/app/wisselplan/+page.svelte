@@ -17,6 +17,8 @@
 	/* Een pauze ('na-1' is de pauze na het eerste deel) of een eigen minuut. */
 	let moment = $state('');
 	let minuut = $state<number | null>(null);
+	/* Wissel met de bank, of twee spelers in het veld die van plek ruilen. */
+	let soort = $state<'wissel' | 'ruil'>('wissel');
 	let erin = $state('');
 	let eruit = $state('');
 
@@ -49,10 +51,13 @@
 		return [...stand.bank].sort((a, b) => Number(zelfde(b)) - Number(zelfde(a)) || naam(a).localeCompare(naam(b)));
 	});
 
+	/* Bij een ruil: iedereen in het veld behalve wie je al koos. */
+	const metWie = $derived(inHetVeld.map((r) => r.id).filter((id) => id !== eruit));
+
 	/* Andere minuut, andere stand: een keuze die dan niet meer kan, valt weg. */
 	$effect(() => {
 		if (eruit && !inHetVeld.some((r) => r.id === eruit)) eruit = '';
-		if (erin && !opDeBank.includes(erin)) erin = '';
+		if (erin && !(soort === 'ruil' ? metWie : opDeBank).includes(erin)) erin = '';
 	});
 
 	function toevoegen() {
@@ -60,7 +65,7 @@
 			alert(text.plan.needAll);
 			return;
 		}
-		app.planAdd(opMinuut, erin, eruit, naDeel);
+		app.planAdd(opMinuut, erin, eruit, naDeel, soort === 'ruil' ? 'ruil' : undefined);
 		erin = '';
 		eruit = '';
 	}
@@ -82,7 +87,9 @@
 						<li class:klaar={s.status !== 'open'}>
 							<b>{wanneer(s.stap, w.parts)}</b>
 							<span>
-								{text.plan.step(naam(s.stap.on), naam(s.stap.off))}
+								{s.stap.soort === 'ruil'
+									? text.plan.swapStep(naam(s.stap.off), naam(s.stap.on))
+									: text.plan.step(naam(s.stap.on), naam(s.stap.off))}
 								{#if s.status === 'gedaan'}<span class="sub">{text.plan.done}</span>
 								{:else if s.status === 'overgeslagen'}<span class="sub">{text.plan.skipped}</span>{/if}
 							</span>
@@ -114,9 +121,16 @@
 					</label>
 				{/if}
 			</div>
+			<label class="vak">
+				{text.plan.kindLabel}
+				<select bind:value={soort}>
+					<option value="wissel">{text.plan.kindSub}</option>
+					<option value="ruil">{text.plan.kindSwap}</option>
+				</select>
+			</label>
 			<div class="toevoegen">
 				<label class="vak">
-					{text.plan.offLabel}
+					{soort === 'ruil' ? text.plan.swapALabel : text.plan.offLabel}
 					<select bind:value={eruit}>
 						<option value="">{text.plan.choose}</option>
 						{#each inHetVeld as r (r.id)}
@@ -125,10 +139,16 @@
 					</select>
 				</label>
 				<label class="vak">
-					{text.plan.onLabel}
+					{soort === 'ruil' ? text.plan.swapBLabel : text.plan.onLabel}
 					<select bind:value={erin}>
 						<option value="">{text.plan.choose}</option>
-						{#each opDeBank as id (id)}<option value={id}>{naam(id)}</option>{/each}
+						{#if soort === 'ruil'}
+							{#each inHetVeld.filter((r) => r.id !== eruit) as r (r.id)}
+								<option value={r.id}>{text.plan.withPosition(naam(r.id), positionLabel(r.plek, w.formation))}</option>
+							{/each}
+						{:else}
+							{#each opDeBank as id (id)}<option value={id}>{naam(id)}</option>{/each}
+						{/if}
 					</select>
 				</label>
 			</div>

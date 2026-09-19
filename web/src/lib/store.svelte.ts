@@ -324,8 +324,8 @@ class App {
 
 	/* ---------- wisselplan ---------- */
 	/** With `naDeel`: in the break after that part, whenever the coach calls it. */
-	planAdd(minuut: number, on: string, off: string, naDeel?: number) {
-		if (plan.voegToe(this.toestand.match, minuut, on, off, naDeel)) this.save();
+	planAdd(minuut: number, on: string, off: string, naDeel?: number, soort?: 'ruil') {
+		if (plan.voegToe(this.toestand.match, minuut, on, off, naDeel, soort)) this.save();
 	}
 
 	planRemove(id: string) {

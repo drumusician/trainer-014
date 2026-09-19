@@ -22,13 +22,23 @@ export interface PlanStap {
 	status: StapStatus;
 	/** waar `on` erin zou komen: de plek van `off`, nu */
 	positie: string | null;
+	/** bij een ruil: waar `on` nu staat */
+	positieOn: string | null;
 	/** waarom hij nu niet kan; null als hij kan */
-	kanNiet: 'afwezig' | 'alInHetVeld' | 'nietInHetVeld' | null;
+	kanNiet: 'afwezig' | 'alInHetVeld' | 'nietInHetVeld' | 'nietBeideInHetVeld' | null;
 	/** de minuut is voorbij */
 	aanDeBeurt: boolean;
 }
 
+/* Gedaan als het in het verloop staat, ook als je het met de hand deed. */
 function gedaan(w: Match, s: PlannedSub): boolean {
+	if (s.soort === 'ruil') {
+		return w.events.some(
+			(g) =>
+				g.type === 'swap' &&
+				((g.playerA === s.on && g.playerB === s.off) || (g.playerA === s.off && g.playerB === s.on))
+		);
+	}
 	return w.events.some((g) => g.type === 'substitution' && g.on === s.on && g.off === s.off);
 }
 
@@ -44,18 +54,24 @@ export function planStappen(w: Match | null, nu = Date.now()): PlanStap[] {
 		.map(({ stap }) => {
 			const status: StapStatus = gedaan(w, stap) ? 'gedaan' : stap.skipped ? 'overgeslagen' : 'open';
 			const positie = plekVan(stap.off);
-			const kanNiet = afwezig.has(stap.on)
-				? 'afwezig'
-				: plekVan(stap.on)
-					? 'alInHetVeld'
-					: !positie
-						? 'nietInHetVeld'
-						: null;
+			const positieOn = plekVan(stap.on);
+			const kanNiet =
+				stap.soort === 'ruil'
+					? !positie || !positieOn
+						? 'nietBeideInHetVeld'
+						: null
+					: afwezig.has(stap.on)
+						? 'afwezig'
+						: positieOn
+							? 'alInHetVeld'
+							: !positie
+								? 'nietInHetVeld'
+								: null;
 			/* Een pauzewissel is aan de beurt zodra de pauze er is, niet op de klok. */
 			const aanDeBeurt = stap.naDeel
 				? w.part > stap.naDeel || (w.part === stap.naDeel && w.inBreak)
 				: seconden >= stap.minuut * 60;
-			return { stap, status, positie, kanNiet, aanDeBeurt };
+			return { stap, status, positie, positieOn, kanNiet, aanDeBeurt };
 		});
 }
 
@@ -90,6 +106,13 @@ export function standOp(w: Match | null, minuut: number): Stand {
 	for (const s of planStappen(w)) {
 		if (s.status !== 'open' || s.stap.minuut > minuut) continue;
 		const plek = Object.entries(lineup).find(([, id]) => id === s.stap.off)?.[0];
+		if (s.stap.soort === 'ruil') {
+			const plekOn = Object.entries(lineup).find(([, id]) => id === s.stap.on)?.[0];
+			if (!plek || !plekOn) continue;
+			lineup[plek] = s.stap.on;
+			lineup[plekOn] = s.stap.off;
+			continue;
+		}
 		const opVeld = Object.values(lineup).includes(s.stap.on);
 		if (!plek || opVeld || !bank.includes(s.stap.on)) continue;
 		lineup[plek] = s.stap.on;

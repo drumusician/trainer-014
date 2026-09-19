@@ -47,6 +47,24 @@ describe('het wisselplan maken', () => {
 		expect(document.body.textContent).toContain('in de rust');
 	});
 
+	it('laat twee spelers in het veld van plek ruilen, zoals de keeper met een veldspeler', async () => {
+		metWedstrijd();
+		render(Plan);
+		kies('Wanneer', 'na-2');
+		kies('Wat', 'ruil');
+		await tick();
+		expect(opties('Ruilt')).toEqual(['Bram (K)', 'Cas (LV)', 'Dirk (RV)', 'Eef (CM)', 'Finn (SP)']);
+		kies('Ruilt', 'k1');
+		await tick();
+		expect(opties('Met')).not.toContain('Bram (K)');
+		kies('Met', 'm1');
+		await tick();
+		screen.getByRole('button', { name: 'Toevoegen' }).click();
+		await tick();
+		expect(app.match!.plan).toMatchObject([{ naDeel: 2, soort: 'ruil', on: 'm1', off: 'k1' }]);
+		expect(document.querySelector('ul.log')!.textContent).toContain('Bram en Eef ruilen van plek');
+	});
+
 	/* Eerst de keeper voor de tweede helft, dan de wissels voor de eerste: de lijst staat toch op tijd. */
 	it('zet de stappen op volgorde van tijd, hoe je ze ook invoert', () => {
 		const w = metWedstrijd();
