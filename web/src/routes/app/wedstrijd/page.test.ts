@@ -480,8 +480,15 @@ describe('het wisselplan tijdens de wedstrijd', () => {
 		expect(document.querySelector('.melding.plan')).toBeNull();
 	});
 
-	it('zet de volgende stap rustig onder het veld, zonder te wisselen', () => {
-		const w = metPlan(10);
+	/* In minuut 10 hoef je nog niet te lezen wat er rond minuut 25 gebeurt. */
+	it('laat een stap die nog ver weg is niet zien', () => {
+		metPlan(10);
+		render(Wedstrijd);
+		expect(document.querySelector('.melding.plan')).toBeNull();
+	});
+
+	it('zet de volgende stap rustig onder het veld als hij dichtbij komt, zonder te wisselen', () => {
+		const w = metPlan(21);
 		render(Wedstrijd);
 		const regel = document.querySelector('.melding.plan')!;
 		expect(regel.textContent).toContain('Plan 25′');
@@ -549,15 +556,27 @@ describe('het wisselplan tijdens de wedstrijd', () => {
 	});
 
 	it('zet een rustwissel klaar zodra je de rust aantikt', () => {
-		const w = metPlan(28);
+		/* Kwarten van 35: de rust is na het tweede kwart, rond minuut 70. */
+		const w = metPlan(66);
+		w.part = 2;
 		w.plan = [{ id: 's1', minuut: 70, naDeel: 2, on: 'b1', off: 'a1' }];
 		render(Wedstrijd);
 		const regel = () => document.querySelector('.melding.plan')!;
 		expect(regel().textContent).toContain('Plan rust');
 		expect(regel().classList.contains('aandebeurt')).toBe(false);
-		w.part = 2;
 		w.inBreak = true;
 		return tick().then(() => expect(regel().classList.contains('aandebeurt')).toBe(true));
+	});
+
+	/* De rust valt wanneer de scheidsrechter fluit, ook als dat vroeg is. */
+	it('laat een rustwissel zien zodra je de rust aantikt, hoe vroeg ook', async () => {
+		const w = metPlan(10);
+		w.plan = [{ id: 's1', minuut: 35, naDeel: 1, on: 'm1', off: 'k1', soort: 'ruil' }];
+		render(Wedstrijd);
+		expect(document.querySelector('.melding.plan')).toBeNull();
+		app.togglePart();
+		await tick();
+		expect(document.querySelector('.melding.plan')!.textContent).toContain('Plan pauze na 1e kwart');
 	});
 
 	it('ruilt twee spelers met één tik', async () => {

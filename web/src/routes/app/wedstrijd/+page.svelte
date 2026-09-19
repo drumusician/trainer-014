@@ -87,7 +87,9 @@
 
 	/* Het wisselplan: alleen na de aftrap, en alleen als er een plan is. Zonder
 	   plan ziet dit scherm er precies zo uit als altijd. */
-	const volgende = $derived(app.kickedOff ? volgendeStap(w, app.nu) : null);
+	const eerstvolgende = $derived(app.kickedOff ? volgendeStap(w, app.nu) : null);
+	/* Pas in beeld als hij dichtbij komt: in minuut 10 hoef je nog niet over de rust te lezen. */
+	const volgende = $derived(eerstvolgende?.inZicht ? eerstvolgende : null);
 	const planRest = $derived(volgende ? nogOpen(w, app.nu) - 1 : 0);
 	const planNaam = (id: string) => app.playerById(id)?.name ?? '?';
 	/* Waar iemand nú staat. De volgende stap kan altijd, dus de plek klopt. */

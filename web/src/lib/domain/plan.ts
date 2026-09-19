@@ -21,6 +21,12 @@ export type KanNiet = 'afwezig' | 'alInHetVeld' | 'nietInHetVeld' | 'nietBeideIn
 /** Binnen zoveel minuten na erin of eruit is een geplande stap met hem opvallend. */
 export const PAS_GELEDEN = 10;
 
+/**
+ * Zoveel minuten van tevoren komt een stap onder het veld in beeld. Eerder is
+ * het ruis: in minuut 10 hoef je nog niet te lezen wat er in de rust gebeurt.
+ */
+export const VOORUIT = 5;
+
 export interface PlanStap {
 	stap: PlannedSub;
 	status: StapStatus;
@@ -32,6 +38,8 @@ export interface PlanStap {
 	kanNiet: KanNiet;
 	/** de minuut is voorbij */
 	aanDeBeurt: boolean;
+	/** zo dichtbij dat hij onder het veld hoort te staan: VOORUIT minuten ervoor, of al aan de beurt */
+	inZicht: boolean;
 	/**
 	 * Kan wel, maar is vreemd: wie eruit moet kwam er pas zoveel minuten geleden
 	 * in, of wie erin moet ging er net uit. Na een rommelige wedstrijd met wissels
@@ -89,6 +97,7 @@ export function planStappen(w: Match | null, nu = Date.now()): PlanStap[] {
 			const aanDeBeurt = stap.naDeel
 				? w.part > stap.naDeel || (w.part === stap.naDeel && w.inBreak)
 				: seconden >= stap.minuut * 60;
+			const inZicht = aanDeBeurt || seconden >= (stap.minuut - VOORUIT) * 60;
 			const vreemd = status === 'open' && !kanNiet;
 			return {
 				stap,
@@ -97,6 +106,7 @@ export function planStappen(w: Match | null, nu = Date.now()): PlanStap[] {
 				positieOn,
 				kanNiet,
 				aanDeBeurt,
+				inZicht,
 				pasErin: vreemd ? pasGeleden(w, seconden, stap.off, 'on') : null,
 				pasEruit: vreemd && stap.soort !== 'ruil' ? pasGeleden(w, seconden, stap.on, 'off') : null
 			};

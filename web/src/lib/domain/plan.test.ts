@@ -339,3 +339,21 @@ describe('als er veel anders ging dan gepland', () => {
 		expect(kanNietOpMoment(w, derde)).toBe('afwezig');
 	});
 });
+
+describe('wanneer een stap in beeld komt', () => {
+	it('vanaf vijf minuten ervoor, en natuurlijk als hij aan de beurt is', () => {
+		const w = wedstrijd(19);
+		plan.voegToe(w, 25, 'alain', 'max');
+		expect(volgendeStap(w, NU)!.inZicht).toBe(false);
+		w.elapsed = 20 * 60;
+		expect(volgendeStap(w, NU)!.inZicht).toBe(true);
+	});
+
+	it('een pauzewissel zodra de pauze er is, ook als die vroeg valt', () => {
+		const w = wedstrijd(10);
+		plan.voegToe(w, 35, 'maher', 'kasper', 1);
+		expect(volgendeStap(w, NU)!.inZicht).toBe(false);
+		w.inBreak = true;
+		expect(volgendeStap(w, NU)!.inZicht).toBe(true);
+	});
+});
