@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { planStappen, standOp, wanneer } from '$lib/domain/plan';
 	import { momentName } from '$lib/domain/parts';
+	import { stapTekst } from '$lib/plan-tekst';
+	import type { PlannedSub } from '$lib/domain/types';
 	import { groupOf, positionLabel } from '$lib/domain/formations';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
@@ -51,6 +53,15 @@
 		return [...stand.bank].sort((a, b) => Number(zelfde(b)) - Number(zelfde(a)) || naam(a).localeCompare(naam(b)));
 	});
 
+	/* Waar iemand staat vlak vóór deze stap, met de eerdere stappen meegerekend. */
+	function plekOpMoment(stap: PlannedSub) {
+		const veld = standOp(w, stap.minuut, stap.id).veld;
+		return (id: string) => {
+			const r = veld.find((x) => x.id === id);
+			return r && w ? positionLabel(r.plek, w.formation) : null;
+		};
+	}
+
 	/* Bij een ruil: iedereen in het veld behalve wie je al koos. */
 	const metWie = $derived(inHetVeld.map((r) => r.id).filter((id) => id !== eruit));
 
@@ -87,9 +98,9 @@
 						<li class:klaar={s.status !== 'open'}>
 							<b>{wanneer(s.stap, w.parts)}</b>
 							<span>
-								{s.stap.soort === 'ruil'
-									? text.plan.swapStep(naam(s.stap.off), naam(s.stap.on))
-									: text.plan.step(naam(s.stap.on), naam(s.stap.off))}
+								{s.status === 'open'
+									? stapTekst(s.stap, naam, plekOpMoment(s.stap))
+									: stapTekst(s.stap, naam, () => null)}
 								{#if s.status === 'gedaan'}<span class="sub">{text.plan.done}</span>
 								{:else if s.status === 'overgeslagen'}<span class="sub">{text.plan.skipped}</span>{/if}
 							</span>

@@ -99,11 +99,13 @@ export interface Stand {
  * nu; overgeslagen stappen tellen niet. Een stap die op dat moment niet kan,
  * slaan we over in plaats van te gokken.
  */
-export function standOp(w: Match | null, minuut: number): Stand {
+export function standOp(w: Match | null, minuut: number, voorStap?: string): Stand {
 	if (!w) return { veld: [], bank: [] };
 	const lineup: Record<string, string | null> = { ...w.lineup };
 	const bank = [...w.bench];
 	for (const s of planStappen(w)) {
+		/* voorStap: hoe het ervoor staat vlak vóór die stap, voor de plekken in de lijst */
+		if (s.stap.id === voorStap) break;
 		if (s.status !== 'open' || s.stap.minuut > minuut) continue;
 		const plek = Object.entries(lineup).find(([, id]) => id === s.stap.off)?.[0];
 		if (s.stap.soort === 'ruil') {

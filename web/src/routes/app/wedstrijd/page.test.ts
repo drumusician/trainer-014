@@ -485,7 +485,7 @@ describe('het wisselplan tijdens de wedstrijd', () => {
 		render(Wedstrijd);
 		const regel = document.querySelector('.melding.plan')!;
 		expect(regel.textContent).toContain('Plan 25′');
-		expect(regel.textContent).toContain('Gijs voor Finn');
+		expect(regel.textContent).toContain('Gijs voor Finn (SP)');
 		expect(regel.classList.contains('aandebeurt')).toBe(false);
 		expect(w.lineup.SP).toBe('a1');
 	});
@@ -548,7 +548,7 @@ describe('het wisselplan tijdens de wedstrijd', () => {
 		const w = metPlan(28);
 		w.plan = [{ id: 's1', minuut: 25, on: 'm1', off: 'k1', soort: 'ruil' }];
 		render(Wedstrijd);
-		expect(document.querySelector('.melding.plan')!.textContent).toContain('Bram en Eef ruilen van plek');
+		expect(document.querySelector('.melding.plan')!.textContent).toContain('Bram naar CM, Eef naar K');
 		screen.getByRole('button', { name: 'Ruilen' }).click();
 		await tick();
 		expect(w.lineup).toMatchObject({ K: 'm1', CM: 'k1' });

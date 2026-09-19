@@ -62,7 +62,21 @@ describe('het wisselplan maken', () => {
 		screen.getByRole('button', { name: 'Toevoegen' }).click();
 		await tick();
 		expect(app.match!.plan).toMatchObject([{ naDeel: 2, soort: 'ruil', on: 'm1', off: 'k1' }]);
-		expect(document.querySelector('ul.log')!.textContent).toContain('Bram en Eef ruilen van plek');
+		/* met de plekken erbij, zoals het dan staat */
+		expect(document.querySelector('ul.log')!.textContent).toContain('Bram naar CM, Eef naar K');
+	});
+
+	/* De plekken zoals ze op dat moment zijn: na de ruil in de rust staat Bram op CM. */
+	it('zet bij elke stap de plekken zoals ze dan zijn', () => {
+		const w = metWedstrijd();
+		w.plan = [
+			{ id: 's1', minuut: 70, naDeel: 2, on: 'm1', off: 'k1', soort: 'ruil' },
+			{ id: 's2', minuut: 80, on: 'b1', off: 'k1' }
+		];
+		render(Plan);
+		const regels = [...document.querySelectorAll('ul.log li')].map((li) => li.textContent);
+		expect(regels[0]).toContain('Bram naar CM, Eef naar K');
+		expect(regels[1]).toContain('Gijs voor Bram (CM)');
 	});
 
 	/* Eerst de keeper voor de tweede helft, dan de wissels voor de eerste: de lijst staat toch op tijd. */

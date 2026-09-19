@@ -2,12 +2,13 @@
 	import { goto } from '$app/navigation';
 	import Veld from '$lib/components/Veld.svelte';
 	import BankKolom from '$lib/components/BankKolom.svelte';
-	import { LINES, positionLine } from '$lib/domain/formations';
+	import { LINES, positionLabel, positionLine } from '$lib/domain/formations';
 	import { partName, breakName } from '$lib/domain/parts';
 	import { homeFirst, keeperTimes, mmss, playingTimes, score, elapsed } from '$lib/domain/time';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
 	import { volgendeStap, nogOpen, wanneer } from '$lib/domain/plan';
+	import { stapTekst } from '$lib/plan-tekst';
 	import { text } from '$lib/text/nl';
 	import { sync } from '$lib/supabase/sync.svelte';
 
@@ -89,6 +90,12 @@
 	const volgende = $derived(app.kickedOff ? volgendeStap(w, app.nu) : null);
 	const planRest = $derived(volgende ? nogOpen(w, app.nu) - 1 : 0);
 	const planNaam = (id: string) => app.playerById(id)?.name ?? '?';
+	/* Waar iemand nú staat; alleen als de stap kan, anders klopt de plek niet. */
+	const planPlek = (id: string) => {
+		if (!w || volgende?.kanNiet) return null;
+		const plek = Object.entries(w.lineup).find(([, p]) => p === id)?.[0];
+		return plek ? positionLabel(plek, w.formation) : null;
+	};
 
 	const uit = $derived(app.chosenPosition && w ? app.playerById(w.lineup[app.chosenPosition]) : null);
 	const keeperMin = $derived(uit ? Math.round((keeperTimes(w, app.nu)[uit.id] ?? 0) / 60) : 0);
@@ -270,9 +277,7 @@
 								)}</b
 							></a
 						>
-						{volgende.stap.soort === 'ruil'
-							? text.plan.swapStep(planNaam(volgende.stap.off), planNaam(volgende.stap.on))
-							: text.plan.step(planNaam(volgende.stap.on), planNaam(volgende.stap.off))}
+						{stapTekst(volgende.stap, planNaam, planPlek)}
 						{#if volgende.kanNiet === 'afwezig'}
 							· {text.plan.absent(planNaam(volgende.stap.on))}
 						{:else if volgende.kanNiet === 'alInHetVeld'}

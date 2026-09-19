@@ -491,6 +491,8 @@ const plan = {
 	needAll: 'Kies een minuut, wie erin komt en voor wie.',
 	step: (on: string, off: string) => `${on} voor ${off}`,
 	swapStep: (a: string, b: string) => `${a} en ${b} ruilen van plek`,
+	stepAt: (on: string, off: string, position: string) => `${on} voor ${off} (${position})`,
+	swapTo: (a: string, toA: string, b: string, toB: string) => `${a} naar ${toA}, ${b} naar ${toB}`,
 	kindLabel: 'Wat',
 	kindSub: 'Wissel met de bank',
 	kindSwap: 'Twee spelers ruilen van plek',
