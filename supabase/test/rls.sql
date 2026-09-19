@@ -471,9 +471,14 @@ begin
   exception when sqlstate 'PT429' then null;
   end;
 
-  -- en de tabel zelf is dicht, ook voor wie er in staat
-  select count(*) into n from public.coach_vragen;
-  if n <> 0 then raise exception 'de beurtenlijst is rechtstreeks te lezen'; end if;
+  -- en de tabel zelf is dicht, ook voor wie er in staat. Zonder rechten op de
+  -- tabel is dat 'geen toegang'; mocht iemand ooit rechten geven, dan houdt RLS
+  -- zonder regels hem nog steeds leeg. Allebei goed, zolang er niets uit komt.
+  begin
+    select count(*) into n from public.coach_vragen;
+    if n <> 0 then raise exception 'de beurtenlijst is rechtstreeks te lezen'; end if;
+  exception when insufficient_privilege then null;
+  end;
   begin
     insert into public.coach_vragen (gebruiker, team_id)
     values ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001');
