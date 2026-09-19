@@ -62,7 +62,7 @@ async function vraag(tekst = 'Morgen tegen de nummer 1.') {
 	const vak = document.querySelector('textarea') as HTMLTextAreaElement;
 	vak.value = tekst;
 	vak.dispatchEvent(new Event('input', { bubbles: true }));
-	screen.getByRole('button', { name: /Vraag om een voorstel/ }).click();
+	screen.getByRole('button', { name: /Vraag om een voorstel|Opnieuw vragen/ }).click();
 	/* de fetch is een belofte, en daarna nog een render */
 	for (let i = 0; i < 10; i++) await tick();
 	await new Promise((r) => setTimeout(r, 0));
@@ -160,6 +160,64 @@ describe('de assistent', () => {
 		await tick();
 		expect(document.body.textContent).not.toContain('Gijs begint');
 		expect(screen.getByRole('status')).toBeTruthy();
+	});
+
+	it('stuurt bij: het vorige voorstel en alle wensen gaan mee', async () => {
+		wedstrijd();
+		ingelogd();
+		antwoordtMet(200, { voorstel: VOORSTEL_1221, over: 19 });
+		render(Coach);
+		await vraag('Tegen de nummer 1.');
+
+		const bijsturen = async (wens: string, samenvatting: string) => {
+			antwoordtMet(200, { voorstel: { ...VOORSTEL_1221, samenvatting }, over: 18 });
+			const vak = document.querySelectorAll('textarea')[1] as HTMLTextAreaElement;
+			vak.value = wens;
+			vak.dispatchEvent(new Event('input', { bubbles: true }));
+			await tick();
+			screen.getByRole('button', { name: 'Pas het voorstel aan' }).click();
+			for (let i = 0; i < 10; i++) await tick();
+			await new Promise((r) => setTimeout(r, 0));
+			await tick();
+		};
+
+		await bijsturen('Finn in de basis.', 'Finn begint nu.');
+		const eerste = gevraagd.at(-1)!.body as {
+			vraag: string;
+			vorige: { voorstel: CoachVoorstel; bijsturingen: string[] };
+		};
+		expect(eerste.vraag).toBe('Tegen de nummer 1.');
+		expect(eerste.vorige.voorstel.samenvatting).toBe('Gijs begint, Finn komt er in de rust in.');
+		expect(eerste.vorige.bijsturingen).toEqual(['Finn in de basis.']);
+		expect(document.body.textContent).toContain('Finn begint nu.');
+		expect(document.body.textContent).toContain('Finn in de basis.');
+
+		/* De tweede ronde vergeet de eerste wens niet. */
+		await bijsturen('Gijs liever links.', 'Gijs staat links.');
+		const tweede = gevraagd.at(-1)!.body as { vorige: { voorstel: CoachVoorstel; bijsturingen: string[] } };
+		expect(tweede.vorige.voorstel.samenvatting).toBe('Finn begint nu.');
+		expect(tweede.vorige.bijsturingen).toEqual(['Finn in de basis.', 'Gijs liever links.']);
+		/* het vakje is weer leeg voor de volgende wens */
+		expect((document.querySelectorAll('textarea')[1] as HTMLTextAreaElement).value).toBe('');
+	});
+
+	it('begint weer van nul als je opnieuw vraagt', async () => {
+		wedstrijd();
+		ingelogd();
+		antwoordtMet(200, { voorstel: VOORSTEL_1221, over: 19 });
+		render(Coach);
+		await vraag('Tegen de nummer 1.');
+		await vraag('Tegen de nummer 3.');
+		expect('vorige' in gevraagd.at(-1)!.body).toBe(false);
+	});
+
+	it('kan niet bijsturen zonder wens', async () => {
+		wedstrijd();
+		ingelogd();
+		antwoordtMet(200, { voorstel: VOORSTEL_1221, over: 19 });
+		render(Coach);
+		await vraag();
+		expect(screen.getByRole('button', { name: 'Pas het voorstel aan' }).hasAttribute('disabled')).toBe(true);
 	});
 
 	it('neemt een kloppend voorstel over en gaat terug naar de opstelling', async () => {

@@ -94,3 +94,45 @@ Deno.test('stuurt het team-id niet mee naar het taalmodel', () => {
 	assertFalse(tekst.includes(VRAAG.teamId));
 	assert(tekst.startsWith('De trainer vraagt:\nMorgen tegen de nummer 1.'));
 });
+
+Deno.test('stuurt bij het bijsturen het vorige voorstel en alle wensen mee', () => {
+	const vorige = {
+		voorstel: {
+			samenvatting: 'Eef begint op de bank.',
+			opstelling: [
+				{ plek: 'VL', speler: 'Bram' },
+				{ plek: 'VR', speler: 'Cas' },
+				{ plek: 'AL', speler: 'Dirk' },
+				{ plek: 'AR', speler: 'Finn' }
+			],
+			bank: ['Eef'],
+			wisselplan: [],
+			redenen: [],
+			aandachtspunten: []
+		},
+		bijsturingen: ['Eef moet beginnen.', 'Dirk liever rechts.']
+	};
+	const bijgestuurd = { ...VRAAG, vorige };
+	assert(CoachVraagSchema.safeParse(bijgestuurd).success);
+	const tekst = bericht(bijgestuurd);
+	assert(tekst.includes('Je eerdere voorstel:'));
+	assert(tekst.includes('Eef begint op de bank.'));
+	assert(tekst.indexOf('- Eef moet beginnen.') < tekst.indexOf('- Dirk liever rechts.'));
+	/* het voorstel staat niet ook nog tussen de gewone gegevens */
+	assertEquals(tekst.split('Eef begint op de bank.').length, 2);
+});
+
+Deno.test('vraagt zonder bijsturing gewoon om een nieuw voorstel', () => {
+	assertFalse(bericht(VRAAG).includes('Je eerdere voorstel'));
+});
+
+Deno.test('weigert bijsturen zonder wens', () => {
+	const leeg = {
+		...VRAAG,
+		vorige: {
+			voorstel: { samenvatting: '', opstelling: [], bank: [], wisselplan: [], redenen: [], aandachtspunten: [] },
+			bijsturingen: []
+		}
+	};
+	assertFalse(CoachVraagSchema.safeParse(leeg).success);
+});

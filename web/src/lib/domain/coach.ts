@@ -38,6 +38,8 @@ export interface CoachVraag {
 	opstellingNu: { plekken: Record<string, string | null>; bank: string[] };
 	/** nieuwste eerst */
 	wedstrijden: CoachWedstrijd[];
+	/** bij het bijsturen: het vorige voorstel en alle wensen tot nu toe, de nieuwste laatst */
+	vorige?: { voorstel: CoachVoorstel; bijsturingen: string[] };
 }
 
 export interface CoachSpeler {
@@ -110,7 +112,12 @@ export function uniekeNamen(players: Player[]): Map<string, string> {
 	return uit;
 }
 
-export function coachVraag(t: State, doel: CoachDoel, vraag: string): CoachVraag {
+export function coachVraag(
+	t: State,
+	doel: CoachDoel,
+	vraag: string,
+	vorige?: { voorstel: CoachVoorstel; bijsturingen: string[] }
+): CoachVraag {
 	const namen = uniekeNamen(t.players);
 	const naam = (id: string | null | undefined) => (id ? (namen.get(id) ?? null) : null);
 	const afwezig = new Set(doel.absent ?? []);
@@ -194,7 +201,8 @@ export function coachVraag(t: State, doel: CoachDoel, vraag: string): CoachVraag
 			plekken: Object.fromEntries(positionsOf(doel.formation).map(([code]) => [code, naam(doel.lineup[code]) ?? null])),
 			bank: doel.bench.map((id) => naam(id)).filter((n): n is string => !!n)
 		},
-		wedstrijden
+		wedstrijden,
+		...(vorige ? { vorige } : {})
 	};
 }
 

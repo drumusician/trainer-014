@@ -33,6 +33,8 @@
 		formation: string;
 		over: number;
 		wanneer: string;
+		/** wat de trainer daarna anders wilde, oudste eerst */
+		bijsturingen?: string[];
 	}
 	const SLEUTEL = 'o14-coach-v1';
 	function lees(): Record<string, Bewaard> {
@@ -53,6 +55,7 @@
 	let laatste = $state<Bewaard | null>(null);
 	let vraag = $state('');
 	let bezig = $state(false);
+	let bijsturing = $state('');
 	let melding = $state('');
 	/* Een halve minuut naar een stil scherm kijken voelt als kapot. Een klok die
 	   loopt zegt dat er iets gebeurt. */
@@ -94,8 +97,21 @@
 		return text.coach.failed;
 	}
 
-	async function vraagOm() {
+	/**
+	 * Zonder bijsturen een nieuw voorstel, van nul af. Met bijsturen gaat het
+	 * vorige voorstel mee, met alle wensen die er al waren plus de nieuwe: dan past
+	 * de assistent aan in plaats van opnieuw te beginnen.
+	 */
+	async function vraagOm(bijsturen = false) {
 		if (!doel || bezig) return;
+		const wens = bijsturing.trim();
+		if (bijsturen && (!laatste || !wens)) return;
+		const vorige =
+			bijsturen && laatste
+				? { voorstel: laatste.voorstel, bijsturingen: [...(laatste.bijsturingen ?? []), wens] }
+				: undefined;
+		/* De vraag waar het voorstel op antwoordde, niet wat er intussen in het vak staat. */
+		const context = bijsturen && laatste ? laatste.vraag : vraag;
 		bezig = true;
 		melding = '';
 		/* Toetsenbord dicht en het wachtblok in beeld, anders staat het onder het toetsenbord. */
@@ -104,16 +120,18 @@
 		wachtblok?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
 		try {
 			const absent = bron === 'wedstrijd' ? app.match?.absent : [];
-			const pakket = coachVraag(app.toestand, { ...doel, absent }, vraag);
+			const pakket = coachVraag(app.toestand, { ...doel, absent }, context, vorige);
 			const r = await sync.vraagCoach(pakket);
 			laatste = {
-				vraag,
+				vraag: context,
+				bijsturingen: vorige?.bijsturingen ?? [],
 				voorstel: r.voorstel,
 				formation: doel.formation,
 				over: r.over,
 				wanneer: new Date().toLocaleString('nl-NL', { weekday: 'long', hour: '2-digit', minute: '2-digit' })
 			};
 			bewaar(laatste);
+			if (bijsturen) bijsturing = '';
 		} catch (e) {
 			melding = uitleg(e);
 		} finally {
@@ -153,7 +171,7 @@
 			{/if}
 
 			<div class="knoprij" style="padding-left: 0">
-				<button class="prim" onclick={vraagOm} disabled={bezig}>
+				<button class="prim" onclick={() => vraagOm()} disabled={bezig}>
 					{bezig ? text.coach.busy : laatste ? text.coach.askAgain : text.coach.ask}
 				</button>
 			</div>
@@ -178,6 +196,12 @@
 					<h2>{text.coach.resultHeading}</h2>
 					<p class="uitleg">{text.coach.askedAt(laatste.wanneer)}</p>
 					<p>{v.samenvatting}</p>
+					{#if laatste.bijsturingen?.length}
+						<p class="uitleg">
+							<b>{text.coach.steeredHeading}:</b>
+							{laatste.bijsturingen.join(' · ')}
+						</p>
+					{/if}
 
 					<div class="veldrij">
 						<Veld formation={doel.formation} lineup={gecontroleerd.lineup} />
@@ -226,6 +250,19 @@
 						<ul class="punten">
 							{#each v.aandachtspunten as p, i (i)}<li>{p}</li>{/each}
 						</ul>
+					{/if}
+
+					{#if !andereFormatie}
+						<h2>{text.coach.steerHeading}</h2>
+						<p class="uitleg">{text.coach.steerHint}</p>
+						<label class="vak">
+							{text.coach.steerLabel}
+							<textarea bind:value={bijsturing} maxlength="1000" rows="2" placeholder={text.coach.steerPlaceholder}
+							></textarea>
+						</label>
+						<div class="knoprij" style="padding-left: 0">
+							<button onclick={() => vraagOm(true)} disabled={!bijsturing.trim()}>{text.coach.steer}</button>
+						</div>
 					{/if}
 
 					<p class="uitleg klein">{text.coach.left(laatste.over)}</p>

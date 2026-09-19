@@ -459,6 +459,13 @@ const coach = {
 	subsHeading: 'Wisselplan',
 	sub: (minute: number, on: string, off: string) => `${minute}′ ${on} erin voor ${off}`,
 	pointsHeading: 'Tijdens de wedstrijd',
+	steerHeading: 'Bijsturen',
+	steerHint:
+		'Wat wil je anders? De assistent past zijn voorstel aan en laat de rest zoveel mogelijk staan. Je eerdere wensen blijven gelden.',
+	steerLabel: 'Wat wil je anders?',
+	steerPlaceholder: 'Bijvoorbeeld: Casper in de basis, en Yassir liever linksvoor.',
+	steer: 'Pas het voorstel aan',
+	steeredHeading: 'Jouw wensen tot nu toe',
 	left: (n: number) =>
 		n === 1 ? 'Je kunt de assistent vandaag nog 1 keer vragen.' : `Je kunt de assistent vandaag nog ${n} keer vragen.`
 } as const;

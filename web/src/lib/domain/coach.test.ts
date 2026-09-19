@@ -115,6 +115,22 @@ describe('wat er naar de assistent gaat', () => {
 		});
 	});
 
+	it('stuurt bij het bijsturen het vorige voorstel en de wensen mee', () => {
+		const vorige = {
+			voorstel: {
+				samenvatting: 'Gijs op de bank.',
+				opstelling: [],
+				bank: ['Gijs'],
+				wisselplan: [],
+				redenen: [],
+				aandachtspunten: []
+			},
+			bijsturingen: ['Gijs moet beginnen.']
+		};
+		expect(coachVraag(toestand(), DOEL, 'Morgen.', vorige).vorige).toEqual(vorige);
+		expect('vorige' in coachVraag(toestand(), DOEL, 'Morgen.')).toBe(false);
+	});
+
 	/* Alleen wat nodig is voor een opstelling. */
 	it('stuurt geen teamnaam, id of e-mailadres mee', () => {
 		const t = toestand();
