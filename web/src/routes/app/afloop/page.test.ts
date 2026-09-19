@@ -49,6 +49,16 @@ describe('het scherm na afloop', () => {
 		expect(document.body.textContent).toContain('2 – 1');
 	});
 
+	it('zet bij een uitwedstrijd de stand van de thuisploeg voorop', () => {
+		gespeeldeWedstrijd().home = false;
+		render(Afloop);
+		const uitslag = screen
+			.getByText(/Kampong/, { selector: 'p' })
+			.textContent?.replace(/\s+/g, ' ')
+			.trim();
+		expect(uitslag).toBe('Kampong 1 – 2 O14-3');
+	});
+
 	/* De speeltijd wordt teruggerekend uit de wissels. Finn stond twintig minuten
 	   op het veld en Gijs de laatste twintig; dat moet je hier terugzien. */
 	it('rekent de speeltijd uit de wissels terug', () => {

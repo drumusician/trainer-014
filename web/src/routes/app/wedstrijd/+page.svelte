@@ -4,7 +4,7 @@
 	import BankKolom from '$lib/components/BankKolom.svelte';
 	import { LINES, positionLine } from '$lib/domain/formations';
 	import { partName, breakName } from '$lib/domain/parts';
-	import { keeperTimes, mmss, playingTimes, score, elapsed } from '$lib/domain/time';
+	import { homeFirst, keeperTimes, mmss, playingTimes, score, elapsed } from '$lib/domain/time';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
 	import { text } from '$lib/text/nl';
@@ -30,7 +30,7 @@
 				w.home ? ons + ' – ' + w.opponent : w.opponent + ' – ' + ons,
 				'/app',
 				text.common.toStart,
-				uitslag[0] + ' – ' + uitslag[1],
+				homeFirst(uitslag, w.home).join(' – '),
 				true
 			);
 		} else {

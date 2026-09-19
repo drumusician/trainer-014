@@ -40,6 +40,11 @@ describe('verslag', () => {
 		expect(reportText({ ...bron, home: false }, players)).toContain('Ajax – JO11-2 1–2');
 	});
 
+	it('zet ook de tussenstanden met de thuisploeg voorop', () => {
+		const tekst = reportText({ ...bron, home: false }, players);
+		expect(tekst.split('\n').slice(3)).toEqual(['15′  0–1  Aad', '30′  1–1  tegendoelpunt', '50′  1–2  doelpunt']);
+	});
+
 	it('valt terug op een neutrale naam als er geen teamnaam is', () => {
 		expect(reportText({ ...bron, teamName: undefined }, players)).toContain('Ons team – Ajax');
 		expect(reportText({ ...bron, teamName: '  ' }, players)).toContain('Ons team – Ajax');

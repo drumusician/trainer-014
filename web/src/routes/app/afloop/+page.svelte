@@ -3,7 +3,7 @@
 	import Speeltijd from '$lib/components/Speeltijd.svelte';
 	import Verloop from '$lib/components/Verloop.svelte';
 	import Verslag from '$lib/components/Verslag.svelte';
-	import { endTime, mmss, positionText, positionTimes, playingTimes, score } from '$lib/domain/time';
+	import { endTime, homeFirst, mmss, positionText, positionTimes, playingTimes, score } from '$lib/domain/time';
 	import { bronVanWedstrijd } from '$lib/domain/report';
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
@@ -28,11 +28,11 @@
 		{#if !w}
 			<p class="uitleg">{text.afterMatch.noMatch}</p>
 		{:else}
-			{@const [v, t] = score(w)}
+			{@const [links, rechts] = homeFirst(score(w), w.home)}
 			<h2>{text.afterMatch.resultHeading}</h2>
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
 				{w.home ? app.toestand.teamName : w.opponent}
-				{v} – {t}
+				{links} – {rechts}
 				{w.home ? w.opponent : app.toestand.teamName}
 			</p>
 			<p class="uitleg">{text.afterMatch.details(datumMetJaar(w.date), mmss(endTime(w)), w.formation)}</p>

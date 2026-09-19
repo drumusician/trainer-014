@@ -1,6 +1,6 @@
 import { positionLabel } from './formations';
 import type { ArchivedMatch, MatchEvent, Player, Match } from './types';
-import { endTime, score } from './time';
+import { endTime, homeFirst, score } from './time';
 import { partName, breakName } from './parts';
 
 /** Everything you need to read a match back, live or from the archive. */
@@ -118,7 +118,7 @@ export function reportText(bron: ReportSource, players: Player[], metWissels = f
 	const ons = bron.teamName?.trim() || 'Ons team';
 	const regels: string[] = [];
 	regels.push(
-		(home ? ons + ' – ' + bron.opponent : bron.opponent + ' – ' + ons) + ' ' + (home ? v + '–' + t : t + '–' + v)
+		(home ? ons + ' – ' + bron.opponent : bron.opponent + ' – ' + ons) + ' ' + homeFirst([v, t], home).join('–')
 	);
 	regels.push(dateText(bron.date));
 	regels.push('');
@@ -134,12 +134,12 @@ export function reportText(bron: ReportSource, players: Player[], metWissels = f
 				const name = g.player ? nameOf(g.player, players, bron.names) : null;
 				const assist = g.assist ? nameOf(g.assist, players, bron.names) : null;
 				regels.push(
-					`${min}  ${voor}–${tegen}  ${name && name !== 'onbekend' ? name : 'doelpunt'}` +
+					`${min}  ${homeFirst([voor, tegen], home).join('–')}  ${name && name !== 'onbekend' ? name : 'doelpunt'}` +
 						(assist && assist !== 'onbekend' ? ` (assist ${assist})` : '')
 				);
 			} else if (g.type === 'conceded') {
 				tegen++;
-				regels.push(`${min}  ${voor}–${tegen}  tegendoelpunt`);
+				regels.push(`${min}  ${homeFirst([voor, tegen], home).join('–')}  tegendoelpunt`);
 			} else if (g.type === 'substitution' && metWissels) {
 				regels.push(`${min}       ${nameOf(g.on, players, bron.names)} voor ${nameOf(g.off, players, bron.names)}`);
 			}

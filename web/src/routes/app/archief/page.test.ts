@@ -65,6 +65,18 @@ describe('een bewaarde wedstrijd', () => {
 		expect(document.body.textContent).toContain('2 – 1');
 	});
 
+	/* Uit wordt de thuisploeg eerst genoemd, en de stand draait mee. Stonden de
+	   namen al om maar de cijfers niet, dan las een 5–3 winst als een verlies. */
+	it('zet bij een uitwedstrijd de stand van de thuisploeg voorop', () => {
+		metArchief({ home: false, teamName: 'O14-3' });
+		render(Archief);
+		const uitslag = screen
+			.getByText(/Kampong/, { selector: 'p' })
+			.textContent?.replace(/\s+/g, ' ')
+			.trim();
+		expect(uitslag).toBe('Kampong 1 – 2 O14-3');
+	});
+
 	/* Wie na de wedstrijd hernoemd is, staat hier onder zijn nieuwe naam. */
 	it('gebruikt de naam van nu, niet die van toen', () => {
 		metArchief();
@@ -96,8 +108,10 @@ describe('een bewaarde wedstrijd', () => {
 		const vak = [...document.querySelectorAll('input')].find(
 			(i) => (i as HTMLInputElement).value === 'Kampong'
 		) as HTMLInputElement;
+		/* Alleen typen, geen change: zo gaat het op een iPhone als je meteen op
+		   Klaar tikt. */
 		vak.value = 'Hercules';
-		vak.dispatchEvent(new Event('change', { bubbles: true }));
+		vak.dispatchEvent(new Event('input', { bubbles: true }));
 		await tick();
 		expect(app.toestand.archive[0].opponent).toBe('Hercules');
 	});

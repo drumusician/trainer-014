@@ -93,6 +93,23 @@ describe('het aanwezigheidsscherm', () => {
 		expect(app.toestand.match!.opponent).toBe('Hercules');
 	});
 
+	/* Op een iPhone verlaat je het veld niet als je meteen op een knop tikt, en
+	   komt er dus nooit een change. De naam moet er dan toch al staan. */
+	it('bewaart de tegenstander al tijdens het typen', async () => {
+		metWedstrijd();
+		render(Aanwezig);
+		const vak = document.querySelector('input') as HTMLInputElement;
+		vak.value = 'Buitenboys ';
+		vak.dispatchEvent(new Event('input', { bubbles: true }));
+		await tick();
+		/* de spatie blijft staan, anders kun je geen tweede woord typen */
+		expect(app.toestand.match!.opponent).toBe('Buitenboys ');
+		expect(vak.value).toBe('Buitenboys ');
+		vak.dispatchEvent(new Event('change', { bubbles: true }));
+		await tick();
+		expect(app.toestand.match!.opponent).toBe('Buitenboys');
+	});
+
 	it('toont Nederlands, geen Engelse resten van de hernoeming', () => {
 		metWedstrijd();
 		render(Aanwezig);

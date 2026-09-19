@@ -7,7 +7,7 @@
 	import { momentenVan } from '$lib/domain/momenten';
 	import Verloop from '$lib/components/Verloop.svelte';
 	import Verslag from '$lib/components/Verslag.svelte';
-	import { mmss, positionText } from '$lib/domain/time';
+	import { homeFirst, mmss, positionText } from '$lib/domain/time';
 	import { shortDate, datumMetJaar } from '$lib/domain/dates';
 	import { timelineRows } from '$lib/domain/report';
 	import { bronVanArchief } from '$lib/domain/report';
@@ -78,10 +78,11 @@
 		{:else}
 			{@const home = a.home !== false}
 			{@const ons = a.teamName?.trim() || app.toestand.teamName}
+			{@const [links, rechts] = homeFirst(a.score, home)}
 			<h2>{text.archivedMatch.resultHeading}</h2>
 			<p style="font-size: 22px; font-weight: 700; margin: 0 0 4px">
 				{home ? ons : a.opponent}
-				{a.score[0]} – {a.score[1]}
+				{links} – {rechts}
 				{home ? a.opponent : ons}
 			</p>
 			<p class="uitleg">{text.archivedMatch.details(datumMetJaar(a.date), mmss(a.duration ?? 0), a.formation)}</p>
@@ -114,7 +115,10 @@
 				</div>
 				<label class="vak">
 					{text.archivedMatch.opponentLabel}
-					<input value={a.opponent} onchange={(e) => app.updateArchived(i, { opponent: e.currentTarget.value })} />
+					<!-- Bij elke letter, niet pas bij het verlaten van het veld: op een iPhone
+					     verlaat je het veld niet als je meteen op Klaar tikt, en dan was de
+					     nieuwe naam weg. -->
+					<input value={a.opponent} oninput={(e) => app.updateArchived(i, { opponent: e.currentTarget.value })} />
 				</label>
 			{/if}
 

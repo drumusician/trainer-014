@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { mmss, elapsed } from '$lib/domain/time';
+	import { mmss, elapsed, homeFirst } from '$lib/domain/time';
 	import { partName, breakName } from '$lib/domain/parts';
 	import { shortDate } from '$lib/domain/dates';
 	import { seizoenStand } from '$lib/domain/season';
@@ -143,12 +143,13 @@
 				</p>
 				<ul class="log">
 					{#each t.archive as a, i (a)}
+						{@const [links, rechts] = homeFirst(a.score ?? [0, 0], a.home !== false)}
 						<li class="klikbaar">
 							<a href="/app/archief/{i}">
 								<b>{shortDate(a.date)}</b>
 								<span>{text.home.matchLine(a.home !== false, a.opponent)}</span>
 								<span style="flex: none; font-weight: 700; font-variant-numeric: tabular-nums">
-									{a.score?.[0] ?? 0}–{a.score?.[1] ?? 0}
+									{links}–{rechts}
 								</span>
 								<em>›</em>
 							</a>

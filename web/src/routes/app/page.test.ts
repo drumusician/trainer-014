@@ -63,14 +63,26 @@ describe('het startscherm', () => {
 		metSelectie();
 		render(Start);
 		expect(screen.getByText('Zo spelen jullie')).toBeTruthy();
-		expect(screen.queryByText('Wie is er?')).toBeNull();
+		expect(screen.queryByText('Tegenstander en wie er is')).toBeNull();
 	});
 
 	it('geeft tijdens een wedstrijd de snelkoppelingen', () => {
 		lopendeWedstrijd();
 		render(Start);
-		expect(screen.getByRole('link', { name: 'Wie is er?' }).getAttribute('href')).toBe('/app/aanwezig');
+		expect(screen.getByRole('link', { name: 'Tegenstander en wie er is' }).getAttribute('href')).toBe('/app/aanwezig');
 		expect(screen.getByRole('link', { name: 'Opstelling' }).getAttribute('href')).toBe('/app/opstelling/wedstrijd');
+	});
+
+	it('zet in de lijst gespeelde wedstrijden de thuisploeg voorop', () => {
+		metSelectie();
+		app.toestand.archive = [
+			{ date: '2026-09-13', opponent: 'Buitenboys', home: false, score: [5, 3] },
+			{ date: '2026-09-06', opponent: 'De Meer', home: true, score: [9, 0] }
+		] as never;
+		render(Start);
+		const regels = [...document.querySelectorAll('ul.log li')].map((li) => li.textContent?.replace(/\s+/g, ' '));
+		expect(regels[0]).toContain('uit tegen Buitenboys 3–5');
+		expect(regels[1]).toContain('thuis tegen De Meer 9–0');
 	});
 
 	it('toont Nederlands, geen Engelse resten van de hernoeming', () => {

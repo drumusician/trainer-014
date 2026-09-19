@@ -23,9 +23,13 @@
 			<div class="tweekolom">
 				<label class="vak">
 					{text.attendance.opponentLabel}
+					<!-- Opslaan bij elke letter. Alleen bij het verlaten van het veld ging
+					     mis op een iPhone: tik je meteen op Door naar de opstelling, dan
+					     verlaat je het veld niet en was de naam weg. -->
 					<input
 						value={w.opponent === 'Tegenstander' ? '' : w.opponent}
 						placeholder={text.attendance.opponentPlaceholder}
+						oninput={(e) => app.setOpponent(e.currentTarget.value, true)}
 						onchange={(e) => app.setOpponent(e.currentTarget.value)}
 					/>
 				</label>

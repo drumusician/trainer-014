@@ -257,10 +257,15 @@ class App {
 		return klok.canStartNextPart(this.toestand.match);
 	}
 
-	setOpponent(name: string) {
+	/**
+	 * `typing` while the trainer is still in the field: keep what they typed, spaces
+	 * included, or 'Sparta ' becomes 'Sparta' under their fingers. Tidied up once
+	 * they leave the field.
+	 */
+	setOpponent(name: string, typing = false) {
 		const w = this.toestand.match;
 		if (!w) return;
-		w.opponent = name.trim() || 'Tegenstander';
+		w.opponent = (typing ? name : name.trim()) || 'Tegenstander';
 		this.save();
 	}
 

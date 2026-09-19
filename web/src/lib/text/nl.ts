@@ -259,7 +259,9 @@ const home = {
 	nowSetup: (formation: string, parts: number, minutes: number) =>
 		`${formation} · ${parts === 4 ? '4 kwarten' : '2 helften'} van ${minutes} min`,
 
-	whoIsThere: 'Wie is er?',
+	/* Niet alleen 'Wie is er?': achter deze knop zit ook de tegenstander, en
+	   anders zoekt niemand hem daar. */
+	whoIsThere: 'Tegenstander en wie er is',
 	lineup: 'Opstelling',
 	discard: 'Weggooien',
 	confirmDiscard: (opponent: string) =>

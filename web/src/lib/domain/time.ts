@@ -147,6 +147,17 @@ export function positionText(perPlek: Record<string, number> | undefined, format
 	return eerste.join(' · ');
 }
 
+/**
+ * The score the way it is said out loud: the home team first.
+ *
+ * `score` and every stored score stay ours first, because that is what all the
+ * counting runs on. Only the moment it goes on a screen or into the report does it
+ * turn around for an away match: 3–5 at Buitenboys, not 5–3.
+ */
+export function homeFirst(s: [number, number], home: boolean): [number, number] {
+	return home ? s : [s[1], s[0]];
+}
+
 export function score(w: Match | null): [number, number] {
 	if (!w) return [0, 0];
 	const g: MatchEvent[] = w.events;
