@@ -451,7 +451,10 @@ class App {
 		if (knowsFormation(pakket.formation)) t.formation = pakket.formation!;
 		if (pakket.minutesPerPart) t.minutesPerPart = pakket.minutesPerPart;
 		if (pakket.parts === 2 || pakket.parts === 4) t.parts = pakket.parts;
-		if ('standaard' in pakket) t.defaultLineup = pakket.defaultLineup ?? null;
+		/* Niet 'standaard': zo heette het veld vóór de omzetting naar het Engels, en
+		   wat hier binnenkomt is al omgezet. Met de oude naam kwam de
+		   standaardopstelling bij terugzetten nooit mee. */
+		if ('defaultLineup' in pakket) t.defaultLineup = pakket.defaultLineup ?? null;
 		if (Array.isArray(pakket.trainings)) t.trainings = pakket.trainings;
 		if (Array.isArray(pakket.archive)) t.archive = pakket.archive;
 		if (typeof pakket.reportSubs === 'boolean') t.reportSubs = pakket.reportSubs;

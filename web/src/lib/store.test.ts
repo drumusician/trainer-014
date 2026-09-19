@@ -864,6 +864,21 @@ describe('opstellen, opruimen en overnemen', () => {
 		expect(app.match).not.toBeNull();
 	});
 
+	/* Keek naar het veld 'standaard', dat na de omzetting naar het Engels niet meer
+	   bestaat. Selectie en archief kwamen terug, de standaardopstelling nooit. */
+	it('zet ook de standaardopstelling terug', () => {
+		const opstelling = { formation: '4-3-3', lineup: { K: 'x' }, bench: [] };
+		app.adoptPackage({ players: [{ id: 'x', name: 'Nieuw', line: '' }], defaultLineup: opstelling });
+		expect(app.toestand.defaultLineup).toEqual(opstelling);
+	});
+
+	it('laat de standaardopstelling staan als hij niet in het pakket zit', () => {
+		const opstelling = { formation: '4-3-3', lineup: { K: 'x' }, bench: [] };
+		app.toestand.defaultLineup = opstelling;
+		app.adoptPackage({ teamName: 'JO13-1' });
+		expect(app.toestand.defaultLineup).toEqual(opstelling);
+	});
+
 	it('laat een lege teamnaam of een onbekende formatie met rust', () => {
 		app.toestand.teamName = 'JO13-1';
 		app.toestand.formation = '4-3-3';
