@@ -1,3 +1,4 @@
+import type { KanNiet } from '$lib/domain/plan';
 import type { PlannedSub } from '$lib/domain/types';
 import { text } from '$lib/text/nl';
 
@@ -19,4 +20,20 @@ export function stapTekst(stap: PlannedSub, naam: (id: string) => string, plek: 
 	return plekOff
 		? text.plan.stepAt(naam(stap.on), naam(stap.off), plekOff)
 		: text.plan.step(naam(stap.on), naam(stap.off));
+}
+
+/** Waarom een stap niet kan, in woorden; leeg als hij wel kan. */
+export function redenTekst(kanNiet: KanNiet, stap: PlannedSub, naam: (id: string) => string): string {
+	switch (kanNiet) {
+		case 'afwezig':
+			return text.plan.absent(naam(stap.on));
+		case 'alInHetVeld':
+			return text.plan.alreadyOn(naam(stap.on));
+		case 'nietInHetVeld':
+			return text.plan.notOn(naam(stap.off));
+		case 'nietBeideInHetVeld':
+			return text.plan.notBothOn(naam(stap.off), naam(stap.on));
+		default:
+			return '';
+	}
 }

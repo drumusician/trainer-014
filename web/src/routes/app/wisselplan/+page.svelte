@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { planStappen, standOp, wanneer } from '$lib/domain/plan';
+	import { kanNietOpMoment, planStappen, standOp, wanneer } from '$lib/domain/plan';
 	import { momentName } from '$lib/domain/parts';
-	import { stapTekst } from '$lib/plan-tekst';
+	import { redenTekst, stapTekst } from '$lib/plan-tekst';
 	import type { PlannedSub } from '$lib/domain/types';
 	import { groupOf, positionLabel } from '$lib/domain/formations';
 	import { app } from '$lib/store.svelte';
@@ -95,14 +95,19 @@
 			{:else}
 				<ul class="log">
 					{#each stappen as s (s.stap.id)}
-						<li class:klaar={s.status !== 'open'}>
+						<!-- Vervallen op zijn eigen moment, met de stappen ervoor meegerekend:
+						     niet op hoe het nu staat, anders is de tweede helft van een
+						     keeperwissel vooraf al 'vervallen'. -->
+						{@const reden = s.status === 'open' ? kanNietOpMoment(w, s.stap) : null}
+						<li class:klaar={s.status !== 'open' || !!reden}>
 							<b>{wanneer(s.stap, w.parts)}</b>
 							<span>
-								{s.status === 'open'
+								{s.status === 'open' && !reden
 									? stapTekst(s.stap, naam, plekOpMoment(s.stap))
 									: stapTekst(s.stap, naam, () => null)}
 								{#if s.status === 'gedaan'}<span class="sub">{text.plan.done}</span>
-								{:else if s.status === 'overgeslagen'}<span class="sub">{text.plan.skipped}</span>{/if}
+								{:else if s.status === 'overgeslagen'}<span class="sub">{text.plan.skipped}</span>
+								{:else if reden}<span class="sub">{text.plan.voided(redenTekst(reden, s.stap, naam))}</span>{/if}
 							</span>
 							{#if s.status === 'overgeslagen'}
 								<button class="klein" onclick={() => app.planSkip(s.stap.id, false)}>{text.plan.undoSkip}</button>

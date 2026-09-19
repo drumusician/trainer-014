@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planStappen, volgendeStap, nogOpen, standOp, wanneer } from './plan';
+import { planStappen, volgendeStap, nogOpen, standOp, wanneer, kanNietOpMoment } from './plan';
 import * as plan from '$lib/actions/plan';
 import { undoLast } from '$lib/actions/match-events';
 import type { Match } from './types';
@@ -261,7 +261,7 @@ describe('twee spelers die van plek ruilen', () => {
 	it('kan niet als een van beiden niet in het veld staat', () => {
 		const w = wedstrijd(35);
 		plan.voegToe(w, 35, 'maher', 'kasper', 1, 'ruil');
-		expect(volgendeStap(w, NU)!.kanNiet).toBe('nietBeideInHetVeld');
+		expect(planStappen(w, NU)[0].kanNiet).toBe('nietBeideInHetVeld');
 		expect(plan.voerUit(w, NU, w.plan![0].id)).toBe(false);
 	});
 
@@ -273,5 +273,69 @@ describe('twee spelers die van plek ruilen', () => {
 		expect(s.veld.find((r) => r.plek === 'K')!.id).toBe('zenith');
 		expect(s.veld.find((r) => r.plek === 'ML')!.id).toBe('kasper');
 		expect(s.bank).toEqual(['maher', 'alain']);
+	});
+});
+
+/* Na een rommelige wedstrijd met wissels die niet gepland waren. */
+describe('als er veel anders ging dan gepland', () => {
+	it('schuift een stap die niet meer kan stil opzij', () => {
+		const w = wedstrijd(30);
+		plan.voegToe(w, 25, 'alain', 'maher'); /* Maher staat niet in het veld */
+		plan.voegToe(w, 28, 'alain', 'max');
+		expect(volgendeStap(w, NU)!.stap.off).toBe('max');
+		expect(nogOpen(w, NU)).toBe(1);
+		/* en in het plan staat hij er nog, met de reden */
+		expect(planStappen(w, NU)[0]).toMatchObject({ status: 'open', kanNiet: 'nietInHetVeld' });
+	});
+
+	it('laat een opzij geschoven stap terugkomen als hij weer kan', () => {
+		const w = wedstrijd(30);
+		plan.voegToe(w, 25, 'alain', 'maher');
+		expect(volgendeStap(w, NU)).toBeNull();
+		/* Maher komt alsnog het veld in */
+		w.lineup.SP = 'maher';
+		w.bench = ['alain', 'max'];
+		w.events.push({ type: 'substitution', t: 1800, on: 'maher', off: 'max', position: 'SP' });
+		expect(volgendeStap(w, NU)!.stap.on).toBe('alain');
+	});
+
+	it('zegt het als wie eruit moet er pas net in kwam', () => {
+		const w = wedstrijd(30);
+		w.lineup.SP = 'alain';
+		w.bench = ['maher', 'max'];
+		w.events.push({ type: 'substitution', t: 26 * 60, on: 'alain', off: 'max', position: 'SP' });
+		plan.voegToe(w, 28, 'max', 'alain');
+		plan.voegToe(w, 29, 'maher', 'gijs');
+		const [terug, gewoon] = planStappen(w, NU);
+		expect(terug.kanNiet).toBeNull();
+		/* Alain kwam 4 minuten geleden in, Max ging er 4 minuten geleden uit */
+		expect(terug.pasErin).toBe(4);
+		expect(terug.pasEruit).toBe(4);
+		expect(gewoon.pasErin).toBeNull();
+		expect(gewoon.pasEruit).toBeNull();
+	});
+
+	it('vindt tien minuten geleden niet meer opvallend', () => {
+		const w = wedstrijd(40);
+		w.lineup.SP = 'alain';
+		w.bench = ['maher', 'max'];
+		w.events.push({ type: 'substitution', t: 30 * 60, on: 'alain', off: 'max', position: 'SP' });
+		plan.voegToe(w, 40, 'maher', 'alain');
+		expect(planStappen(w, NU)[0].pasErin).toBeNull();
+	});
+
+	/* In het plan zelf telt het moment van de stap, niet hoe het nu staat. */
+	it('beoordeelt een stap in het plan op zijn eigen moment', () => {
+		const w = wedstrijd();
+		w.events = [];
+		plan.voegToe(w, 35, 'maher', 'kasper', 1);
+		plan.voegToe(w, 35, 'kasper', 'zenith', 1);
+		plan.voegToe(w, 40, 'siem', 'max');
+		const [eerste, tweede, derde] = planStappen(w, NU).map((s) => s.stap);
+		expect(kanNietOpMoment(w, eerste)).toBeNull();
+		/* nu staat Kasper nog in het doel, maar na de eerste stap zit hij op de bank */
+		expect(planStappen(w, NU)[1].kanNiet).toBe('alInHetVeld');
+		expect(kanNietOpMoment(w, tweede)).toBeNull();
+		expect(kanNietOpMoment(w, derde)).toBe('afwezig');
 	});
 });

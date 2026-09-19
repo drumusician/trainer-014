@@ -90,9 +90,9 @@
 	const volgende = $derived(app.kickedOff ? volgendeStap(w, app.nu) : null);
 	const planRest = $derived(volgende ? nogOpen(w, app.nu) - 1 : 0);
 	const planNaam = (id: string) => app.playerById(id)?.name ?? '?';
-	/* Waar iemand nú staat; alleen als de stap kan, anders klopt de plek niet. */
+	/* Waar iemand nú staat. De volgende stap kan altijd, dus de plek klopt. */
 	const planPlek = (id: string) => {
-		if (!w || volgende?.kanNiet) return null;
+		if (!w) return null;
 		const plek = Object.entries(w.lineup).find(([, p]) => p === id)?.[0];
 		return plek ? positionLabel(plek, w.formation) : null;
 	};
@@ -278,22 +278,19 @@
 							></a
 						>
 						{stapTekst(volgende.stap, planNaam, planPlek)}
-						{#if volgende.kanNiet === 'afwezig'}
-							· {text.plan.absent(planNaam(volgende.stap.on))}
-						{:else if volgende.kanNiet === 'alInHetVeld'}
-							· {text.plan.alreadyOn(planNaam(volgende.stap.on))}
-						{:else if volgende.kanNiet === 'nietInHetVeld'}
-							· {text.plan.notOn(planNaam(volgende.stap.off))}
-						{:else if volgende.kanNiet === 'nietBeideInHetVeld'}
-							· {text.plan.notBothOn(planNaam(volgende.stap.off), planNaam(volgende.stap.on))}
+						<!-- Kan wel, maar is vreemd na wissels die niet gepland waren. Zeggen,
+						     niet tegenhouden. -->
+						{#if volgende.pasErin}
+							· <em>{text.plan.justOn(planNaam(volgende.stap.off), volgende.pasErin)}</em>
+						{/if}
+						{#if volgende.pasEruit}
+							· <em>{text.plan.justOff(planNaam(volgende.stap.on), volgende.pasEruit)}</em>
 						{/if}
 						{#if planRest > 0}<small>{text.plan.more(planRest)}</small>{/if}
 					</span>
-					{#if !volgende.kanNiet}
-						<button class="klein prim" onclick={() => app.planDo(volgende.stap.id)}
-							>{volgende.stap.soort === 'ruil' ? text.plan.doSwap : text.plan.doIt}</button
-						>
-					{/if}
+					<button class="klein prim" onclick={() => app.planDo(volgende.stap.id)}
+						>{volgende.stap.soort === 'ruil' ? text.plan.doSwap : text.plan.doIt}</button
+					>
 					<button class="klein" onclick={() => app.planSkip(volgende.stap.id)}>{text.plan.skip}</button>
 				</div>
 			{/if}

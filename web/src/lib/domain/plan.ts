@@ -16,6 +16,10 @@ import { momentName } from './parts';
 import type { Match, PlannedSub } from './types';
 
 export type StapStatus = 'gedaan' | 'overgeslagen' | 'open';
+export type KanNiet = 'afwezig' | 'alInHetVeld' | 'nietInHetVeld' | 'nietBeideInHetVeld' | null;
+
+/** Binnen zoveel minuten na erin of eruit is een geplande stap met hem opvallend. */
+export const PAS_GELEDEN = 10;
 
 export interface PlanStap {
 	stap: PlannedSub;
@@ -25,9 +29,34 @@ export interface PlanStap {
 	/** bij een ruil: waar `on` nu staat */
 	positieOn: string | null;
 	/** waarom hij nu niet kan; null als hij kan */
-	kanNiet: 'afwezig' | 'alInHetVeld' | 'nietInHetVeld' | 'nietBeideInHetVeld' | null;
+	kanNiet: KanNiet;
 	/** de minuut is voorbij */
 	aanDeBeurt: boolean;
+	/**
+	 * Kan wel, maar is vreemd: wie eruit moet kwam er pas zoveel minuten geleden
+	 * in, of wie erin moet ging er net uit. Na een rommelige wedstrijd met wissels
+	 * die niet gepland waren. Null als er niets opvalt.
+	 */
+	pasErin: number | null;
+	pasEruit: number | null;
+}
+
+function redenKanNiet(stap: PlannedSub, plekVan: (id: string) => string | null, afwezig: Set<string>): KanNiet {
+	const plekOff = plekVan(stap.off);
+	const plekOn = plekVan(stap.on);
+	if (stap.soort === 'ruil') return !plekOff || !plekOn ? 'nietBeideInHetVeld' : null;
+	if (afwezig.has(stap.on)) return 'afwezig';
+	if (plekOn) return 'alInHetVeld';
+	if (!plekOff) return 'nietInHetVeld';
+	return null;
+}
+
+/** Hoeveel minuten geleden, als het minder is dan PAS_GELEDEN; anders null. */
+function pasGeleden(w: Match, seconden: number, id: string, kant: 'on' | 'off'): number | null {
+	const laatste = [...w.events].reverse().find((g) => g.type === 'substitution' && g[kant] === id);
+	if (!laatste) return null;
+	const min = Math.floor((seconden - (laatste.t ?? 0)) / 60);
+	return min < PAS_GELEDEN ? Math.max(1, min) : null;
 }
 
 /* Gedaan als het in het verloop staat, ook als je het met de hand deed. */
@@ -55,33 +84,49 @@ export function planStappen(w: Match | null, nu = Date.now()): PlanStap[] {
 			const status: StapStatus = gedaan(w, stap) ? 'gedaan' : stap.skipped ? 'overgeslagen' : 'open';
 			const positie = plekVan(stap.off);
 			const positieOn = plekVan(stap.on);
-			const kanNiet =
-				stap.soort === 'ruil'
-					? !positie || !positieOn
-						? 'nietBeideInHetVeld'
-						: null
-					: afwezig.has(stap.on)
-						? 'afwezig'
-						: positieOn
-							? 'alInHetVeld'
-							: !positie
-								? 'nietInHetVeld'
-								: null;
+			const kanNiet = redenKanNiet(stap, plekVan, afwezig);
 			/* Een pauzewissel is aan de beurt zodra de pauze er is, niet op de klok. */
 			const aanDeBeurt = stap.naDeel
 				? w.part > stap.naDeel || (w.part === stap.naDeel && w.inBreak)
 				: seconden >= stap.minuut * 60;
-			return { stap, status, positie, positieOn, kanNiet, aanDeBeurt };
+			const vreemd = status === 'open' && !kanNiet;
+			return {
+				stap,
+				status,
+				positie,
+				positieOn,
+				kanNiet,
+				aanDeBeurt,
+				pasErin: vreemd ? pasGeleden(w, seconden, stap.off, 'on') : null,
+				pasEruit: vreemd && stap.soort !== 'ruil' ? pasGeleden(w, seconden, stap.on, 'off') : null
+			};
 		});
 }
 
-/** De eerstvolgende stap die nog open staat, of niets. */
+/**
+ * De eerstvolgende stap die nu kan. Wat niet meer kan schuift stil opzij in
+ * plaats van dat je het langs de lijn moet wegtikken; wordt hij later weer
+ * mogelijk, dan komt hij vanzelf terug.
+ */
 export function volgendeStap(w: Match | null, nu = Date.now()): PlanStap | null {
-	return planStappen(w, nu).find((s) => s.status === 'open') ?? null;
+	return planStappen(w, nu).find((s) => s.status === 'open' && !s.kanNiet) ?? null;
 }
 
+/** Hoeveel stappen er nu nog kunnen, de volgende meegeteld. */
 export function nogOpen(w: Match | null, nu = Date.now()): number {
-	return planStappen(w, nu).filter((s) => s.status === 'open').length;
+	return planStappen(w, nu).filter((s) => s.status === 'open' && !s.kanNiet).length;
+}
+
+/**
+ * Kan deze stap op zijn eigen moment, met de stappen daarvoor meegerekend? Voor
+ * de lijst in het plan: vóór de wedstrijd staat Kasper nog in het doel, maar na
+ * de keeperwissel in de rust kan hij best het veld in.
+ */
+export function kanNietOpMoment(w: Match | null, stap: PlannedSub): KanNiet {
+	if (!w) return null;
+	const stand = standOp(w, stap.minuut, stap.id);
+	const plekVan = (id: string) => stand.veld.find((r) => r.id === id)?.plek ?? null;
+	return redenKanNiet(stap, plekVan, new Set(w.absent ?? []));
 }
 
 export interface Stand {

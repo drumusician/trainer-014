@@ -79,6 +79,25 @@ describe('het wisselplan maken', () => {
 		expect(regels[1]).toContain('Gijs voor Bram (CM)');
 	});
 
+	it('zegt bij een stap die op zijn moment niet kan dat hij vervallen is, en waarom', () => {
+		const w = metWedstrijd({ absent: ['b1'] });
+		w.bench = [];
+		w.plan = [{ id: 's1', minuut: 25, on: 'b1', off: 'a1' }];
+		render(Plan);
+		expect(document.querySelector('ul.log')!.textContent).toContain('vervallen: Gijs is er niet');
+	});
+
+	/* Vooraf staat Bram nog in het doel; na de ruil in de rust staat hij op CM. */
+	it('noemt de tweede stap van een keeperwissel niet vervallen', () => {
+		const w = metWedstrijd();
+		w.plan = [
+			{ id: 's1', minuut: 70, naDeel: 2, on: 'b1', off: 'k1' },
+			{ id: 's2', minuut: 70, naDeel: 2, on: 'k1', off: 'a1' }
+		];
+		render(Plan);
+		expect(document.querySelector('ul.log')!.textContent).not.toContain('vervallen');
+	});
+
 	/* Eerst de keeper voor de tweede helft, dan de wissels voor de eerste: de lijst staat toch op tijd. */
 	it('zet de stappen op volgorde van tijd, hoe je ze ook invoert', () => {
 		const w = metWedstrijd();

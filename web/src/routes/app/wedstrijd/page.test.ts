@@ -517,19 +517,35 @@ describe('het wisselplan tijdens de wedstrijd', () => {
 	});
 
 	/* Hugo zou rond minuut 25 voor Finn komen, maar Finn ging er na tien minuten
-	   al uit met een blessure; Gijs kwam voor hem. */
-	it('zegt waarom een stap niet meer kan, en biedt dan geen wissel aan', () => {
+	   al uit met een blessure; Gijs kwam voor hem. Die stap staat niet in de weg. */
+	it('schuift een stap die niet meer kan stil opzij', () => {
 		const w = metPlan(27);
 		app.toestand.players.push({ id: 'h1', name: 'Hugo', line: 'A' });
 		w.lineup.SP = 'b1';
 		w.bench = ['a1', 'h1'];
 		w.events.push({ type: 'substitution', t: 600, on: 'b1', off: 'a1', position: 'SP' });
-		w.plan = [{ id: 's2', minuut: 25, on: 'h1', off: 'a1' }];
+		w.plan = [
+			{ id: 's2', minuut: 25, on: 'h1', off: 'a1' },
+			{ id: 's3', minuut: 30, on: 'h1', off: 'v1' }
+		];
 		render(Wedstrijd);
 		const regel = document.querySelector('.melding.plan')!;
-		expect(regel.textContent).toContain('staat niet in het veld');
-		expect(screen.queryByRole('button', { name: 'Wissel' })).toBeNull();
-		expect(screen.getByRole('button', { name: 'Overslaan' })).toBeTruthy();
+		expect(regel.textContent).toContain('Hugo voor Cas');
+		expect(regel.textContent).not.toContain('Finn');
+	});
+
+	/* Na een wissel die niet gepland was: de stap kan, maar is vreemd. */
+	it('zegt het als wie eruit moet er pas net in kwam', () => {
+		const w = metPlan(28);
+		w.lineup.SP = 'b1';
+		w.bench = ['a1'];
+		w.events.push({ type: 'substitution', t: 25 * 60, on: 'b1', off: 'a1', position: 'SP' });
+		w.plan = [{ id: 's4', minuut: 28, on: 'a1', off: 'b1' }];
+		render(Wedstrijd);
+		const regel = document.querySelector('.melding.plan')!;
+		expect(regel.textContent).toContain('Gijs kwam er pas 3 min geleden in');
+		expect(regel.textContent).toContain('Finn ging er pas 3 min geleden uit');
+		expect(screen.getByRole('button', { name: 'Wissel' })).toBeTruthy();
 	});
 
 	it('zet een rustwissel klaar zodra je de rust aantikt', () => {
