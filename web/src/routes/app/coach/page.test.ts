@@ -171,7 +171,7 @@ describe('de assistent', () => {
 
 		const bijsturen = async (wens: string, samenvatting: string) => {
 			antwoordtMet(200, { voorstel: { ...VOORSTEL_1221, samenvatting }, over: 18 });
-			const vak = document.querySelectorAll('textarea')[1] as HTMLTextAreaElement;
+			const vak = screen.getByLabelText('Wat wil je anders?') as HTMLTextAreaElement;
 			vak.value = wens;
 			vak.dispatchEvent(new Event('input', { bubbles: true }));
 			await tick();
@@ -198,7 +198,7 @@ describe('de assistent', () => {
 		expect(tweede.vorige.voorstel.samenvatting).toBe('Finn begint nu.');
 		expect(tweede.vorige.bijsturingen).toEqual(['Finn in de basis.', 'Gijs liever links.']);
 		/* het vakje is weer leeg voor de volgende wens */
-		expect((document.querySelectorAll('textarea')[1] as HTMLTextAreaElement).value).toBe('');
+		expect((screen.getByLabelText('Wat wil je anders?') as HTMLTextAreaElement).value).toBe('');
 	});
 
 	it('begint weer van nul als je opnieuw vraagt', async () => {
@@ -209,6 +209,20 @@ describe('de assistent', () => {
 		await vraag('Tegen de nummer 1.');
 		await vraag('Tegen de nummer 3.');
 		expect('vorige' in gevraagd.at(-1)!.body).toBe(false);
+	});
+
+	it('bewaart de vaste afspraken en stuurt ze mee', async () => {
+		wedstrijd();
+		ingelogd();
+		antwoordtMet(200, { voorstel: VOORSTEL_1221, over: 19 });
+		render(Coach);
+		const vak = screen.getByPlaceholderText(/wie keept, begint niet op de bank/i) as HTMLTextAreaElement;
+		vak.value = 'Wie keept, begint niet op de bank.';
+		vak.dispatchEvent(new Event('input', { bubbles: true }));
+		await tick();
+		expect(app.toestand.coachAfspraken).toBe('Wie keept, begint niet op de bank.');
+		await vraag();
+		expect(gevraagd[0].body.afspraken).toBe('Wie keept, begint niet op de bank.');
 	});
 
 	it('kan niet bijsturen zonder wens', async () => {

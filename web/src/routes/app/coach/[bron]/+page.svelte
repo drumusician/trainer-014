@@ -170,6 +170,17 @@
 				<p class="uitleg">{text.coach.absentHint}</p>
 			{/if}
 
+			<label class="vak">
+				{text.coach.rulesLabel}
+				<textarea
+					value={app.toestand.coachAfspraken ?? ''}
+					oninput={(e) => app.setCoachAfspraken(e.currentTarget.value)}
+					maxlength="2000"
+					rows="2"
+					placeholder={text.coach.rulesPlaceholder}></textarea>
+			</label>
+			<p class="uitleg klein">{text.coach.rulesHint}</p>
+
 			<div class="knoprij" style="padding-left: 0">
 				<button class="prim" onclick={() => vraagOm()} disabled={bezig}>
 					{bezig ? text.coach.busy : laatste ? text.coach.askAgain : text.coach.ask}

@@ -29,6 +29,8 @@ import type { Attendance, Lineup, Player, State } from './types';
 export interface CoachVraag {
 	/** de vraag of het verhaal van de trainer, in zijn eigen woorden */
 	vraag: string;
+	/** vaste afspraken van het team, bij elke vraag; leeg als er geen zijn */
+	afspraken: string;
 	formatie: string;
 	delen: number;
 	minutenPerDeel: number;
@@ -51,6 +53,11 @@ export interface CoachSpeler {
 	training: { aanwezig: number; van: number; laatste: string[] };
 	bank: { wedstrijden: number; bankMinuten: number; begonOpBank: number; beginBekend: number };
 	minutenGespeeld: number;
+	/**
+	 * Waarvan in het doel. Zonder dit ziet een keeper eruit als iemand die nooit op
+	 * de bank zat en dus eens aan de beurt is, terwijl dat juist de afspraak is.
+	 */
+	keeperMinuten: number;
 	doelpunten: number;
 	assists: number;
 }
@@ -146,6 +153,7 @@ export function coachVraag(
 				beginBekend: b.startsKnown
 			},
 			minutenGespeeld: Math.round(o.seconds / 60),
+			keeperMinuten: Math.round(o.keeperSeconds / 60),
 			doelpunten: o.goals,
 			assists: o.assists
 		};
@@ -192,6 +200,7 @@ export function coachVraag(
 
 	return {
 		vraag: vraag.trim(),
+		afspraken: t.coachAfspraken?.trim() ?? '',
 		formatie: doel.formation,
 		delen: t.parts,
 		minutenPerDeel: t.minutesPerPart,

@@ -436,6 +436,9 @@ const coach = {
 	questionLabel: 'Wat speelt er?',
 	questionPlaceholder:
 		'Bijvoorbeeld: morgen tegen de nummer 1, wij staan tweede. Siem is er niet. Jack wil ik centraal naast Mirza.',
+	rulesLabel: 'Vaste afspraken van het team',
+	rulesHint: 'Gelden bij elke vraag, ook als een andere trainer van dit team het vraagt.',
+	rulesPlaceholder: 'Bijvoorbeeld: wie keept, begint niet op de bank en speelt de andere helft in het veld.',
 	absentHint:
 		'Dit is de standaardopstelling, dus de app weet niet wie er morgen is. Zet erbij wie er niet is, of begin de wedstrijd en tik bij Wie is er? weg wie er ontbreekt.',
 	ask: 'Vraag om een voorstel',

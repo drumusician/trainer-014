@@ -86,6 +86,18 @@ describe('wat er naar de assistent gaat', () => {
 		expect(finn.training.laatste).toEqual(['niet gekomen', 'aanwezig']);
 	});
 
+	it('zet de keeperminuten bij de speler', () => {
+		expect(coachVraag(toestand(), DOEL, '').spelers.find((s) => s.naam === 'Bram')!.keeperMinuten).toBe(40);
+		expect(coachVraag(toestand(), DOEL, '').spelers.find((s) => s.naam === 'Gijs')!.keeperMinuten).toBe(0);
+	});
+
+	it('stuurt de vaste afspraken van het team mee', () => {
+		const t = toestand();
+		expect(coachVraag(t, DOEL, '').afspraken).toBe('');
+		t.coachAfspraken = '  Wie keept, begint niet op de bank.  ';
+		expect(coachVraag(t, DOEL, '').afspraken).toBe('Wie keept, begint niet op de bank.');
+	});
+
 	it('zegt wie er vandaag niet is', () => {
 		const v = coachVraag(toestand(), DOEL, '');
 		expect(v.spelers.find((s) => s.naam === 'Siem')!.afwezig).toBe(true);

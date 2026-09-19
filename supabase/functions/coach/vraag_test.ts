@@ -136,3 +136,21 @@ Deno.test('weigert bijsturen zonder wens', () => {
 	};
 	assertFalse(CoachVraagSchema.safeParse(leeg).success);
 });
+
+Deno.test('zet de vaste afspraken apart boven de gegevens', () => {
+	const tekst = bericht({ ...VRAAG, afspraken: 'Wie keept, begint niet op de bank.' });
+	assert(tekst.includes('Vaste afspraken van dit team:\nWie keept, begint niet op de bank.'));
+	assert(tekst.indexOf('Vaste afspraken') < tekst.indexOf('De gegevens:'));
+	assertEquals(tekst.split('Wie keept').length, 2);
+	assertFalse(bericht(VRAAG).includes('Vaste afspraken'));
+});
+
+Deno.test('neemt een vraag van een oudere app zonder afspraken en keeperminuten aan', () => {
+	assert(CoachVraagSchema.safeParse(VRAAG).success);
+	const nieuw = {
+		...VRAAG,
+		afspraken: 'x',
+		spelers: VRAAG.spelers.map((s) => ({ ...s, keeperMinuten: 35 }))
+	};
+	assert(CoachVraagSchema.safeParse(nieuw).success);
+});

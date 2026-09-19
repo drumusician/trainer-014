@@ -42,6 +42,15 @@ function volleToestand() {
 }
 
 describe('back-up', () => {
+	it('bewaart de vaste afspraken voor de assistent', () => {
+		const t = volleToestand();
+		t.coachAfspraken = 'Wie keept, begint niet op de bank.';
+		expect(readBackup(makeBackup(t, '2026-09-03T10:00:00.000Z')).coachAfspraken).toBe(
+			'Wie keept, begint niet op de bank.'
+		);
+		expect(readBackup(makeBackup(volleToestand(), '2026-09-03T10:00:00.000Z')).coachAfspraken).toBeUndefined();
+	});
+
 	it('houdt selectie, trainingen en archief vast, maar niet de lopende wedstrijd', () => {
 		const terug = readBackup(makeBackup(volleToestand(), '2026-09-03T10:00:00.000Z'));
 		expect(terug.players).toHaveLength(2);

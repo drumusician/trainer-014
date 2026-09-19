@@ -394,6 +394,12 @@ class App {
 		this.save();
 	}
 
+	/** Kept as typed, spaces and all; only empty becomes undefined. */
+	setCoachAfspraken(tekst: string) {
+		this.toestand.coachAfspraken = tekst.trim() ? tekst : undefined;
+		this.save();
+	}
+
 	/** From the assistant. After kick-off the lineup follows from the substitutions, so not then. */
 	applyLineup(bron: opstellen.Bron, lineup: Lineup, bench: string[]): boolean {
 		if (bron === 'wedstrijd' && this.kickedOff) return false;
@@ -449,6 +455,9 @@ class App {
 		if (Array.isArray(pakket.trainings)) t.trainings = pakket.trainings;
 		if (Array.isArray(pakket.archive)) t.archive = pakket.archive;
 		if (typeof pakket.reportSubs === 'boolean') t.reportSubs = pakket.reportSubs;
+		if (typeof pakket.coachAfspraken === 'string') {
+			t.coachAfspraken = pakket.coachAfspraken.trim() ? pakket.coachAfspraken : undefined;
+		}
 		this.save();
 	}
 
@@ -491,6 +500,7 @@ class App {
 			trainings: t.trainings,
 			archive: t.archive,
 			reportSubs: t.reportSubs,
+			coachAfspraken: t.coachAfspraken,
 			match: t.match
 		};
 	}
@@ -510,6 +520,7 @@ class App {
 		t.trainings = Array.isArray(d.trainings) ? d.trainings : [];
 		t.archive = Array.isArray(d.archive) ? d.archive : [];
 		t.reportSubs = !!d.reportSubs;
+		t.coachAfspraken = typeof d.coachAfspraken === 'string' && d.coachAfspraken.trim() ? d.coachAfspraken : undefined;
 		/*
 		 * Where the line sits: kick-off.
 		 *
