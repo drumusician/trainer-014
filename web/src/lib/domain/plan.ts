@@ -62,3 +62,39 @@ export function volgendeStap(w: Match | null, nu = Date.now()): PlanStap | null 
 export function nogOpen(w: Match | null, nu = Date.now()): number {
 	return planStappen(w, nu).filter((s) => s.status === 'open').length;
 }
+
+export interface Stand {
+	/** wie er in het veld staat, per plek */
+	veld: { plek: string; id: string }[];
+	bank: string[];
+}
+
+/**
+ * Hoe het er rond deze minuut voor staat als het plan doorgaat: de opstelling
+ * van nu, met de open stappen tot en met die minuut erop toegepast, op volgorde.
+ *
+ * Voor het maken van een plan. Wie rond minuut 35 erin kan, is wie er dan op de
+ * bank zit, niet wie er nu zit. Gedane stappen zitten al in de opstelling van
+ * nu; overgeslagen stappen tellen niet. Een stap die op dat moment niet kan,
+ * slaan we over in plaats van te gokken.
+ */
+export function standOp(w: Match | null, minuut: number): Stand {
+	if (!w) return { veld: [], bank: [] };
+	const lineup: Record<string, string | null> = { ...w.lineup };
+	const bank = [...w.bench];
+	for (const s of planStappen(w)) {
+		if (s.status !== 'open' || s.stap.minuut > minuut) continue;
+		const plek = Object.entries(lineup).find(([, id]) => id === s.stap.off)?.[0];
+		const opVeld = Object.values(lineup).includes(s.stap.on);
+		if (!plek || opVeld || !bank.includes(s.stap.on)) continue;
+		lineup[plek] = s.stap.on;
+		bank.splice(bank.indexOf(s.stap.on), 1);
+		bank.push(s.stap.off);
+	}
+	return {
+		veld: Object.entries(lineup)
+			.filter((r): r is [string, string] => !!r[1])
+			.map(([plek, id]) => ({ plek, id })),
+		bank
+	};
+}

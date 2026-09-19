@@ -40,12 +40,57 @@ describe('het wisselplan maken', () => {
 		expect(document.querySelector('ul.log')!.textContent).toContain('Gijs voor Finn');
 	});
 
-	it('laat wie er vandaag niet is niet kiezen', () => {
-		metWedstrijd({ absent: ['b1'] });
+	const opties = (label: string) =>
+		[...(screen.getByLabelText(label) as HTMLSelectElement).options].slice(1).map((o) => o.textContent);
+
+	/* Niet de hele selectie: eruit wie in het veld staat, erin wie op de bank zit. */
+	it('laat alleen kiezen wat kan', () => {
+		metWedstrijd();
 		render(Plan);
-		const opties = [...(screen.getByLabelText('Erin') as HTMLSelectElement).options].map((o) => o.textContent);
-		expect(opties).not.toContain('Gijs');
-		expect(opties).toContain('Finn');
+		expect(opties('Eruit')).toEqual(['Bram (K)', 'Cas (LV)', 'Dirk (RV)', 'Eef (CM)', 'Finn (SP)']);
+		expect(opties('Erin')).toEqual(['Gijs']);
+	});
+
+	it('laat wie er vandaag niet is niet kiezen', () => {
+		metWedstrijd({ absent: ['b1'], bench: [] });
+		render(Plan);
+		expect(opties('Erin')).not.toContain('Gijs');
+	});
+
+	/* Na "25′ Gijs voor Finn" staat Finn vanaf minuut 25 op de bank. */
+	it('rekent de stappen die al gepland staan mee', async () => {
+		const w = metWedstrijd();
+		w.plan = [{ id: 's1', minuut: 25, on: 'b1', off: 'a1' }];
+		render(Plan);
+		expect(opties('Erin')).toEqual(['Gijs']);
+		kies('Minuut', '30');
+		await tick();
+		expect(opties('Erin')).toEqual(['Finn']);
+		expect(opties('Eruit')).toContain('Gijs (SP)');
+		expect(opties('Eruit')).not.toContain('Finn (SP)');
+	});
+
+	it('zet wie in dezelfde linie speelt bovenaan', async () => {
+		const w = metWedstrijd();
+		app.toestand.players.push({ id: 'v3', name: 'Aad', line: 'V' });
+		w.bench = ['b1', 'v3'];
+		render(Plan);
+		expect(opties('Erin')).toEqual(['Aad', 'Gijs']);
+		kies('Eruit', 'a1');
+		await tick();
+		expect(opties('Erin')).toEqual(['Gijs', 'Aad']);
+	});
+
+	it('laat een keuze vallen die bij een andere minuut niet meer kan', async () => {
+		const w = metWedstrijd();
+		w.plan = [{ id: 's1', minuut: 25, on: 'b1', off: 'a1' }];
+		render(Plan);
+		kies('Eruit', 'a1');
+		await tick();
+		expect((screen.getByLabelText('Eruit') as HTMLSelectElement).value).toBe('a1');
+		kies('Minuut', '30');
+		await tick();
+		expect((screen.getByLabelText('Eruit') as HTMLSelectElement).value).toBe('');
 	});
 
 	it('haalt een stap weg', async () => {

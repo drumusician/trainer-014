@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planStappen, volgendeStap, nogOpen } from './plan';
+import { planStappen, volgendeStap, nogOpen, standOp } from './plan';
 import * as plan from '$lib/actions/plan';
 import { undoLast } from '$lib/actions/match-events';
 import type { Match } from './types';
@@ -163,5 +163,54 @@ describe('het wisselplan', () => {
 	it('is leeg zonder plan', () => {
 		expect(planStappen(wedstrijd(), NU)).toEqual([]);
 		expect(volgendeStap(null, NU)).toBeNull();
+	});
+});
+
+describe('wie er rond een minuut staat', () => {
+	it('is bij minuut 0 de opstelling van nu', () => {
+		const w = wedstrijd();
+		w.events = [];
+		const s = standOp(w, 0);
+		expect(s.bank).toEqual(['maher', 'alain']);
+		expect(s.veld.find((r) => r.plek === 'K')!.id).toBe('kasper');
+	});
+
+	it('past de geplande stappen tot en met die minuut toe', () => {
+		const w = wedstrijd();
+		w.events = [];
+		plan.voegToe(w, 25, 'alain', 'max');
+		plan.voegToe(w, 50, 'max', 'jack');
+		expect(standOp(w, 20).bank).toContain('alain');
+		expect(standOp(w, 25).bank).toEqual(['maher', 'max']);
+		expect(standOp(w, 25).veld.find((r) => r.plek === 'SP')!.id).toBe('alain');
+		expect(standOp(w, 50).veld.find((r) => r.plek === 'RV')!.id).toBe('max');
+	});
+
+	/* De keeperwissel in de rust: daarna staat Kasper op de bank en kan hij weer het veld in. */
+	it('rekent stappen in dezelfde minuut na elkaar door', () => {
+		const w = wedstrijd();
+		w.events = [];
+		plan.voegToe(w, 35, 'maher', 'kasper');
+		const s = standOp(w, 35);
+		expect(s.bank).toContain('kasper');
+		expect(s.veld.find((r) => r.plek === 'K')!.id).toBe('maher');
+	});
+
+	it('telt een overgeslagen stap niet, en een gedane zit al in de opstelling', () => {
+		const w = wedstrijd(30);
+		plan.voegToe(w, 25, 'alain', 'max');
+		plan.voegToe(w, 26, 'maher', 'gijs');
+		plan.voerUit(w, NU, w.plan![0].id);
+		plan.slaOver(w, w.plan![1].id);
+		const s = standOp(w, 40);
+		expect(s.veld.find((r) => r.plek === 'SP')!.id).toBe('alain');
+		expect(s.veld.find((r) => r.plek === 'LV')!.id).toBe('gijs');
+	});
+
+	it('slaat een stap die niet kan over in plaats van te gokken', () => {
+		const w = wedstrijd();
+		w.events = [];
+		plan.voegToe(w, 25, 'alain', 'maher');
+		expect(standOp(w, 30).bank).toEqual(['maher', 'alain']);
 	});
 });

@@ -501,7 +501,10 @@ const plan = {
 	absent: (name: string) => `${name} is er niet`,
 	alreadyOn: (name: string) => `${name} staat al in het veld`,
 	notOn: (name: string) => `${name} staat niet in het veld`,
-	toPlan: (n: number) => (n ? `Wisselplan (${n})` : 'Wisselplan')
+	toPlan: (n: number) => (n ? `Wisselplan (${n})` : 'Wisselplan'),
+	withPosition: (name: string, position: string) => `${name} (${position})`,
+	optionsHint: (minute: number) =>
+		`Je kiest uit wie er rond minuut ${minute} in het veld staat en op de bank zit, met wat je al gepland hebt erbij.`
 } as const;
 
 /** De setup-wizard: drie stappen om te beginnen. */
