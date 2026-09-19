@@ -65,6 +65,7 @@ het is het enige deel dat bij gebruikers kan breken.
 | presentie / aanwezigheid | `attendance` |
 | aanwezig / afgemeld / niet gekomen | `present` / `excused` / `absent` |
 | bezetting | `coverage` — hoeveel spelers je per linie hebt tegenover het aantal plekken |
+| bankoverzicht | `benchOverview` — hoe lang iemand op de bank zat en hoe vaak hij daar begon |
 
 ## Om de app heen
 

@@ -390,6 +390,22 @@ const lineupScreen = {
 	thinLead: 'Weinig getraind:',
 	thinPlayer: (name: string, came: number, total: number) => `${name} ${came}/${total}`,
 
+	/* Onder het veld: wie zat er al veel op de bank. Zodat niet elke week
+	   dezelfde jongens op de bank beginnen. */
+	toBenchOverview: 'Wie zat er op de bank? ↓',
+	benchHeading: 'Bank en training tot nu toe',
+	benchHint: (matches: number, sessions: number) =>
+		`Over ${matches} ${matches === 1 ? 'bewaarde wedstrijd' : 'bewaarde wedstrijden'} en ${sessions} ${sessions === 1 ? 'training' : 'trainingen'}. Wie het langst op de bank zat staat bovenaan. Alleen wedstrijden waarbij hij er was tellen mee.`,
+	benchNothingYet: 'Nog geen bewaarde wedstrijden, dus nog niets te zeggen over de bank.',
+	benchMinutes: (minutes: number) => `${minutes} min bank`,
+	benchStarts: (onBench: number, known: number) =>
+		onBench ? `${onBench} van de ${known} keer begonnen op de bank` : `${known}× in de basis`,
+	benchNoMatch: 'nog geen wedstrijd',
+	benchNow: 'nu op de bank',
+	benchAgain: 'nu wéér op de bank',
+	benchTraining: (came: number, total: number) => `training ${came}/${total}`,
+	benchNoTraining: 'geen training',
+
 	formationLabel: 'Formatie',
 	saveDefault: 'Bewaren',
 	doneToMatch: 'Klaar — naar de wedstrijd',

@@ -3,7 +3,7 @@ import { tick } from 'svelte';
 import { render, screen } from '@testing-library/svelte';
 import Opstelling from './+page.svelte';
 import { app } from '$lib/store.svelte';
-import { emptyState } from '$lib/domain/types';
+import { emptyState, type ArchivedMatch } from '$lib/domain/types';
 import { metSelectie, metWedstrijd } from '../../../../test/wedstrijd';
 import { page } from '../../../../test/sveltekit/state.svelte';
 import { gegaanNaar } from '../../../../test/sveltekit/navigation';
@@ -113,5 +113,79 @@ describe('het opstelscherm', () => {
 		for (const woord of ['lineup', 'bench', 'player', 'position', 'undefined']) {
 			expect(tekst).not.toContain(woord);
 		}
+	});
+});
+
+/*
+ * Onder het veld: wie zat er al veel op de bank, en hoe vaak was hij op de
+ * training. Zodat niet elke week dezelfde jongens op de bank beginnen.
+ */
+describe('wie zat er op de bank', () => {
+	/* Gijs begon op de bank en kwam er na twintig minuten in voor Finn. */
+	const VORIGE: ArchivedMatch = {
+		date: '2026-09-13',
+		opponent: 'Buitenboys',
+		home: false,
+		score: [1, 0],
+		formation: '1-2-1-1',
+		duration: 2400,
+		parts: 2,
+		absent: [],
+		events: [
+			{ type: 'start', t: 0 },
+			{ type: 'substitution', t: 1200, position: 'SP', off: 'a1', on: 'b1' }
+		] as never,
+		lineup: { K: 'k1', LV: 'v1', RV: 'v2', CM: 'm1', SP: 'b1' },
+		bench: ['a1'],
+		playingTime: [
+			{ id: 'k1', name: 'Bram', seconds: 2400, keeper: 2400 },
+			{ id: 'v1', name: 'Cas', seconds: 2400 },
+			{ id: 'v2', name: 'Dirk', seconds: 2400 },
+			{ id: 'm1', name: 'Eef', seconds: 2400 },
+			{ id: 'a1', name: 'Finn', seconds: 1200 },
+			{ id: 'b1', name: 'Gijs', seconds: 1200 }
+		] as never
+	};
+
+	function rijVan(naam: string) {
+		return [...document.querySelectorAll('.bankoverzicht tr')].find((tr) =>
+			tr.querySelector('td')?.textContent?.trim().startsWith(naam)
+		);
+	}
+
+	it('zegt het als er nog niets te tellen is', () => {
+		metWedstrijd();
+		render(Opstelling);
+		expect(document.querySelector('.bankoverzicht')?.textContent).toContain('Nog geen bewaarde wedstrijden');
+	});
+
+	it('zegt het als iemand die vorige keer op de bank begon er nu weer op staat', () => {
+		metWedstrijd();
+		app.toestand.archive = [VORIGE];
+		app.toestand.trainings = [{ id: 't1', date: '2026-09-18', status: { b1: 'present', a1: 'absent' } }];
+		render(Opstelling);
+		const gijs = rijVan('Gijs')?.textContent ?? '';
+		expect(gijs).toContain('1 van de 1 keer begonnen op de bank');
+		expect(gijs).toContain('nu wéér op de bank');
+		expect(gijs).toContain('20 min bank');
+		expect(gijs).toContain('training 1/1');
+		expect(rijVan('Finn')?.textContent).toContain('1× in de basis');
+		expect(rijVan('Finn')?.textContent).toContain('training 0/1');
+	});
+
+	it('laat wie vandaag is afgemeld weg', () => {
+		metWedstrijd({ absent: ['b1'], bench: [] });
+		app.toestand.archive = [VORIGE];
+		render(Opstelling);
+		expect(rijVan('Gijs')).toBeUndefined();
+		expect(rijVan('Finn')).toBeTruthy();
+	});
+
+	it('staat ook onder de standaardopstelling', () => {
+		metSelectie();
+		app.toestand.archive = [VORIGE];
+		page.params = { bron: 'standaard' };
+		render(Opstelling);
+		expect(rijVan('Gijs')?.textContent).toContain('20 min bank');
 	});
 });
