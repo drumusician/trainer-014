@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Veld from '$lib/components/Veld.svelte';
@@ -53,6 +54,17 @@
 	let vraag = $state('');
 	let bezig = $state(false);
 	let melding = $state('');
+	/* Een halve minuut naar een stil scherm kijken voelt als kapot. Een klok die
+	   loopt zegt dat er iets gebeurt. */
+	let seconden = $state(0);
+	let wachtblok = $state<HTMLElement>();
+
+	$effect(() => {
+		if (!bezig) return;
+		seconden = 0;
+		const klok = setInterval(() => seconden++, 1000);
+		return () => clearInterval(klok);
+	});
 
 	$effect(() => {
 		const b = lees()[bron] ?? null;
@@ -86,6 +98,10 @@
 		if (!doel || bezig) return;
 		bezig = true;
 		melding = '';
+		/* Toetsenbord dicht en het wachtblok in beeld, anders staat het onder het toetsenbord. */
+		(document.activeElement as HTMLElement | null)?.blur?.();
+		await tick();
+		wachtblok?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
 		try {
 			const absent = bron === 'wedstrijd' ? app.match?.absent : [];
 			const pakket = coachVraag(app.toestand, { ...doel, absent }, vraag);
@@ -138,18 +154,25 @@
 
 			<div class="knoprij" style="padding-left: 0">
 				<button class="prim" onclick={vraagOm} disabled={bezig}>
-					{laatste ? text.coach.askAgain : text.coach.ask}
+					{bezig ? text.coach.busy : laatste ? text.coach.askAgain : text.coach.ask}
 				</button>
 			</div>
 			{#if bezig}
-				<p class="uitleg" role="status">{text.coach.thinking}</p>
+				<div class="wacht" role="status" bind:this={wachtblok}>
+					<div class="balk"><i></i></div>
+					<p><b>{text.coach.thinking}</b></p>
+					<p class="uitleg">{text.coach.waited(seconden)}</p>
+					{#if seconden >= 75}<p class="uitleg">{text.coach.slow}</p>{/if}
+				</div>
 			{/if}
 			{#if melding}
 				<p class="uitleg" role="alert"><b class="mager">{melding}</b></p>
 			{/if}
 			<p class="uitleg klein">{text.coach.whatGoes}</p>
 
-			{#if laatste && gecontroleerd}
+			<!-- Tijdens het vragen niet het vorige voorstel laten staan: dan lijkt het
+			     alsof er niets gebeurt. -->
+			{#if laatste && gecontroleerd && !bezig}
 				{@const v = laatste.voorstel}
 				<section class="voorstel">
 					<h2>{text.coach.resultHeading}</h2>
@@ -233,5 +256,42 @@
 	}
 	.klein {
 		font-size: 12px;
+	}
+	.wacht {
+		margin: 12px 0;
+		padding: 12px;
+		border: 1px solid var(--lijn);
+		border-radius: 10px;
+	}
+	.wacht p {
+		margin: 8px 0 0;
+	}
+	.balk {
+		height: 4px;
+		border-radius: 2px;
+		overflow: hidden;
+		background: var(--lijn);
+	}
+	.balk i {
+		display: block;
+		width: 35%;
+		height: 100%;
+		background: var(--gras);
+		animation: heen 1.4s ease-in-out infinite;
+	}
+	@keyframes heen {
+		from {
+			transform: translateX(-100%);
+		}
+		to {
+			transform: translateX(300%);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.balk i {
+			animation: none;
+			width: 100%;
+			opacity: 0.5;
+		}
 	}
 </style>

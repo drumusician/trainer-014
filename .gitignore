@@ -9,3 +9,6 @@ node_modules/
 web/node_modules/
 web/.svelte-kit/
 web/build/
+
+# Wat de Supabase-CLI lokaal bijhoudt na inloggen en uitrollen
+supabase/.temp/

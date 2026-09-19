@@ -115,6 +115,53 @@ describe('de assistent', () => {
 		expect(tekst).toContain('vandaag nog 19 keer');
 	});
 
+	/* Een halve minuut naar een stil scherm kijken voelt als kapot. */
+	it('laat zien dat hij bezig is, met een klok die loopt', async () => {
+		vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+		wedstrijd();
+		ingelogd();
+		let antwoord!: (r: Response) => void;
+		globalThis.fetch = vi.fn(() => new Promise<Response>((r) => (antwoord = r))) as unknown as typeof fetch;
+		render(Coach);
+		(document.querySelector('textarea') as HTMLTextAreaElement).value = 'Morgen.';
+		screen.getByRole('button', { name: /Vraag om een voorstel/ }).click();
+		await tick();
+		await tick();
+
+		expect(screen.getByRole('button', { name: 'Bezig…' }).hasAttribute('disabled')).toBe(true);
+		expect(screen.getByRole('status').textContent).toContain('De assistent denkt na');
+		vi.advanceTimersByTime(23_000);
+		await tick();
+		expect(screen.getByRole('status').textContent).toContain('23 seconden');
+		expect(screen.getByRole('status').textContent).not.toContain('langer dan normaal');
+		vi.advanceTimersByTime(60_000);
+		await tick();
+		expect(screen.getByRole('status').textContent).toContain('langer dan normaal');
+
+		antwoord(new Response(JSON.stringify({ voorstel: VOORSTEL_1221, over: 19 }), { status: 200 }));
+		for (let i = 0; i < 10; i++) await tick();
+		await vi.waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+		expect(document.body.textContent).toContain('Gijs begint, Finn komt er in de rust in.');
+		vi.useRealTimers();
+	});
+
+	/* Anders kijk je naar het vorige antwoord en denk je dat er niets gebeurt. */
+	it('laat het vorige voorstel niet staan terwijl hij opnieuw nadenkt', async () => {
+		wedstrijd();
+		ingelogd();
+		antwoordtMet(200, { voorstel: VOORSTEL_1221, over: 19 });
+		render(Coach);
+		await vraag();
+		expect(document.body.textContent).toContain('Gijs begint');
+
+		globalThis.fetch = vi.fn(() => new Promise<Response>(() => {})) as unknown as typeof fetch;
+		screen.getByRole('button', { name: /Opnieuw vragen/ }).click();
+		await tick();
+		await tick();
+		expect(document.body.textContent).not.toContain('Gijs begint');
+		expect(screen.getByRole('status')).toBeTruthy();
+	});
+
 	it('neemt een kloppend voorstel over en gaat terug naar de opstelling', async () => {
 		wedstrijd();
 		ingelogd();

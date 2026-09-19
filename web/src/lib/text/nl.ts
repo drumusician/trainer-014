@@ -440,7 +440,10 @@ const coach = {
 		'Dit is de standaardopstelling, dus de app weet niet wie er morgen is. Zet erbij wie er niet is, of begin de wedstrijd en tik bij Wie is er? weg wie er ontbreekt.',
 	ask: 'Vraag om een voorstel',
 	askAgain: 'Opnieuw vragen',
+	busy: 'Bezig…',
 	thinking: 'De assistent denkt na. Dat duurt meestal een halve minuut tot een minuut.',
+	waited: (seconds: number) => (seconds === 1 ? '1 seconde' : `${seconds} seconden`),
+	slow: 'Het duurt langer dan normaal. Nog even geduld: lukt het niet, dan zie je hier waarom.',
 	whatGoes:
 		'Wat er meegaat: voornamen, linies, speeltijd, bankminuten, trainingsopkomst, de gespeelde wedstrijden en je notities. Geen achternamen, e-mailadressen of teamnaam. Het gaat naar Claude, het taalmodel van Anthropic.',
 	offline: 'Geen verbinding. De assistent draait op de server, dus zonder bereik gaat het niet.',
