@@ -1,6 +1,7 @@
 -- Bewijst dat het model in tabellen (../model.sql) net zo dicht zit als het
 -- blok: een trainer komt alleen bij zijn eigen team, en wie de link voor ouders
--- heeft ziet precies wat op die pagina hoort en geen letter meer.
+-- heeft ziet precies wat op die pagina hoort en geen letter meer. Speeltijd
+-- hoort daar niet bij.
 --
 -- Draait na rls.sql in dezelfde database, met eigen mensen en eigen teams, zodat
 -- de twee proeven elkaar niet in de weg zitten.
@@ -273,11 +274,11 @@ begin
     raise exception 'de uitslag klopt niet';
   end if;
 
-  -- Per kind: Bram speelde alles en keepte de helft, Finn scoorde twee keer,
-  -- Gijs was er niet. Wat er in de lopende wedstrijd gebeurde telt nog niet mee.
+  -- Per kind: Bram gaf een assist, Finn scoorde twee keer, Gijs was er niet.
+  -- Wat er in de lopende wedstrijd gebeurde telt nog niet mee.
   if jsonb_array_length(p -> 'spelers') <> 3 then raise exception 'niet alle drie de spelers staan erop'; end if;
-  if (p -> 'spelers' -> 0 ->> 'naam') <> 'Bram' or (p -> 'spelers' -> 0 ->> 'seconden')::int <> 4200
-     or (p -> 'spelers' -> 0 ->> 'keeper_seconden')::int <> 2100 or (p -> 'spelers' -> 0 ->> 'assists')::int <> 1 then
+  if (p -> 'spelers' -> 0 ->> 'naam') <> 'Bram' or (p -> 'spelers' -> 0 ->> 'wedstrijden')::int <> 1
+     or (p -> 'spelers' -> 0 ->> 'assists')::int <> 1 then
     raise exception 'Bram klopt niet: %', p -> 'spelers' -> 0;
   end if;
   if (p -> 'spelers' -> 1 ->> 'naam') <> 'Finn' or (p -> 'spelers' -> 1 ->> 'doelpunten')::int <> 2
@@ -285,7 +286,7 @@ begin
     raise exception 'Finn klopt niet: %', p -> 'spelers' -> 1;
   end if;
   if (p -> 'spelers' -> 2 ->> 'naam') <> 'Gijs' or (p -> 'spelers' -> 2 ->> 'wedstrijden')::int <> 0
-     or (p -> 'spelers' -> 2 ->> 'seconden')::int <> 0 or (p -> 'spelers' -> 2 ->> 'doelpunten')::int <> 0 then
+     or (p -> 'spelers' -> 2 ->> 'doelpunten')::int <> 0 then
     raise exception 'Gijs klopt niet: afwezig is nul wedstrijden, en de lopende wedstrijd telt niet: %', p -> 'spelers' -> 2;
   end if;
 
@@ -293,6 +294,14 @@ begin
   if (p ->> 'bijdragen')::int <> 2 then raise exception 'er staan % bijdragen, het zijn er twee', p ->> 'bijdragen'; end if;
 
   -- En wat er niet op mag staan.
+  -- Speeltijd is voor de trainers. Niet het woord, en ook niet de getallen:
+  -- 4200, 3000 en 2100 seconden, of 70, 50 en 35 minuten onder een andere naam.
+  if tekst like '%seconden%' or tekst like '%minuten%' or tekst like '%speeltijd%' then
+    raise exception 'de speeltijd staat op de pagina voor ouders';
+  end if;
+  if tekst ~ '(4200|3000|2100|: ?70[,}]|: ?50[,}]|: ?35[,}])' then
+    raise exception 'er staat een getal op de pagina dat de speeltijd verraadt';
+  end if;
   if tekst like '%GEHEIM%' then raise exception 'de notitie van de trainer staat op de pagina voor ouders'; end if;
   if tekst like '%opstelling%' or tekst like '%wisselplan%' then raise exception 'de opstelling of het wisselplan staat op de pagina'; end if;
   if tekst like '%voorbeeld.nl%' then raise exception 'er staat een e-mailadres op de pagina'; end if;
@@ -301,7 +310,7 @@ begin
 end $$;
 commit;
 
-\echo 'Model: de link voor ouders laat de speeltijd zien en de notities niet'
+\echo 'Model: de link voor ouders laat uitslagen en doelpunten zien, geen speeltijd en geen notities'
 
 -- ---------- intrekken ----------
 begin;

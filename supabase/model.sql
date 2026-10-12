@@ -322,11 +322,13 @@ grant update (ingetrokken) on public.deellinks to authenticated;
 
 -- ---------- de pagina voor ouders ----------
 -- Wat iemand met de link te zien krijgt, en niets anders: de uitslagen van dit
--- seizoen, en per kind hoe vaak het erbij was, hoe lang het speelde en wat het
--- scoorde. Voornamen staan erbij, want het is de groepsapp van het team zelf.
+-- seizoen, en per kind hoe vaak het erbij was en wat het scoorde. Voornamen
+-- staan erbij, want het is de groepsapp van het team zelf.
 --
--- Wat er met opzet níét in zit: de notities van de trainer, de opstelling, het
--- wisselplan, de trainingsopkomst, en wie de trainers zijn.
+-- Wat er met opzet níét in zit: de speeltijd, ook niet die van je eigen kind.
+-- Dat klinkt als openheid en levert langs de lijn alleen discussie op; het is
+-- een gegeven voor de trainers. Verder ook niet: de notities van de trainer, de
+-- opstelling, het wisselplan, de trainingsopkomst, en wie de trainers zijn.
 --
 -- 'security definer', want wie de link opent is niet ingelogd en mag van de
 -- regels hierboven nergens bij. Deze functie is de enige deur, en de code is de
@@ -365,16 +367,12 @@ begin
       select jsonb_agg(jsonb_build_object(
                'naam', r.naam,
                'wedstrijden', r.wedstrijden,
-               'seconden', r.seconden,
-               'keeper_seconden', r.keeper_seconden,
                'doelpunten', r.doelpunten,
                'assists', r.assists
              ) order by r.naam)
         from (
           select s.naam,
                  count(*) filter (where ws.aanwezig)                as wedstrijden,
-                 coalesce(sum(ws.seconden), 0)                      as seconden,
-                 coalesce(sum(ws.keeper_seconden), 0)               as keeper_seconden,
                  (select count(*) from public.gebeurtenissen g
                     join public.wedstrijden gw on gw.id = g.wedstrijd_id
                    where g.soort = 'doelpunt' and g.speler = s.id

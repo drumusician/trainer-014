@@ -117,8 +117,9 @@ toestel zelf maakt, overal `team_id`, een verwijzing is altijd (id, team) samen,
 en de app rekent de speeltijd uit terwijl de server alleen optelt.
 
 Wie de link heeft komt via één functie binnen, `ouderpagina(code)`: uitslagen
-van dit seizoen en per kind wedstrijden, speeltijd, doelpunten en assists. Geen
-notities, geen opstelling, geen wisselplan, geen trainingsopkomst.
+van dit seizoen en per kind wedstrijden, doelpunten en assists. Geen speeltijd,
+ook niet van je eigen kind: dat is voor de trainers. En geen notities, geen
+opstelling, geen wisselplan, geen trainingsopkomst.
 
 ## Wat er nooit in mag
 
