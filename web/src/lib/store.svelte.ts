@@ -8,8 +8,7 @@ import type {
 	State,
 	Training,
 	FieldLine,
-	Match,
-	PlannedSub
+	Match
 } from './domain/types';
 import { emptyState } from './domain/types';
 import { migreerToestand as migrateStorage } from './domain/migrate-storage';
@@ -332,10 +331,6 @@ class App {
 		if (plan.haalWeg(this.toestand.match, id)) this.save();
 	}
 
-	planReplace(stappen: Omit<PlannedSub, 'id'>[]) {
-		if (plan.vervang(this.toestand.match, stappen)) this.save();
-	}
-
 	planSkip(id: string, overslaan = true) {
 		if (plan.slaOver(this.toestand.match, id, overslaan)) this.save();
 	}
@@ -421,21 +416,6 @@ class App {
 		this.save();
 	}
 
-	/** Kept as typed, spaces and all; only empty becomes undefined. */
-	setCoachAfspraken(tekst: string) {
-		this.toestand.coachAfspraken = tekst.trim() ? tekst : undefined;
-		this.save();
-	}
-
-	/** From the assistant. After kick-off the lineup follows from the substitutions, so not then. */
-	applyLineup(bron: opstellen.Bron, lineup: Lineup, bench: string[]): boolean {
-		if (bron === 'wedstrijd' && this.kickedOff) return false;
-		if (!opstellen.zetOpstelling(this.toestand, bron, lineup, bench)) return false;
-		this.chosenPosition = null;
-		this.save();
-		return true;
-	}
-
 	clearDefaultLineup() {
 		opstellen.clearDefaultLineup(this.toestand);
 		this.save();
@@ -485,9 +465,6 @@ class App {
 		if (Array.isArray(pakket.trainings)) t.trainings = pakket.trainings;
 		if (Array.isArray(pakket.archive)) t.archive = pakket.archive;
 		if (typeof pakket.reportSubs === 'boolean') t.reportSubs = pakket.reportSubs;
-		if (typeof pakket.coachAfspraken === 'string') {
-			t.coachAfspraken = pakket.coachAfspraken.trim() ? pakket.coachAfspraken : undefined;
-		}
 		this.save();
 	}
 
@@ -530,7 +507,6 @@ class App {
 			trainings: t.trainings,
 			archive: t.archive,
 			reportSubs: t.reportSubs,
-			coachAfspraken: t.coachAfspraken,
 			match: t.match
 		};
 	}
@@ -550,7 +526,6 @@ class App {
 		t.trainings = Array.isArray(d.trainings) ? d.trainings : [];
 		t.archive = Array.isArray(d.archive) ? d.archive : [];
 		t.reportSubs = !!d.reportSubs;
-		t.coachAfspraken = typeof d.coachAfspraken === 'string' && d.coachAfspraken.trim() ? d.coachAfspraken : undefined;
 		/*
 		 * Where the line sits: kick-off.
 		 *

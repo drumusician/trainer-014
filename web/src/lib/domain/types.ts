@@ -172,13 +172,6 @@ export interface State {
 	archive: ArchivedMatch[];
 	trainings: Training[];
 	reportSubs: boolean;
-	/**
-	 * Vaste afspraken voor de assistent, in de woorden van de trainer. Gelden bij
-	 * elke vraag, bijvoorbeeld 'wie keept, begint niet op de bank'. Hoort bij het
-	 * team en gaat dus mee naar de server. Leeg is undefined, niet '', zodat een
-	 * team zonder afspraken hetzelfde pakket opstuurt als voorheen.
-	 */
-	coachAfspraken?: string;
 }
 
 export function emptyState(): State {

@@ -491,28 +491,6 @@ describe('het wisselplan in de toestand', () => {
 });
 
 describe('wat er tussen je toestellen heen en weer gaat', () => {
-	/* De afspraken horen bij het team: de andere trainer vraagt ook met dezelfde regels. */
-	it('neemt de vaste afspraken voor de assistent mee', () => {
-		app.setCoachAfspraken('Wie keept, begint niet op de bank.');
-		const pakket = JSON.parse(JSON.stringify(app.syncPayload()));
-		app.setCoachAfspraken('');
-		expect(app.adoptSyncPayload(pakket)).toBe(true);
-		expect(app.toestand.coachAfspraken).toBe('Wie keept, begint niet op de bank.');
-	});
-
-	/* Leeg is weg, niet een lege tekst: dan stuurt een team zonder afspraken
-	   hetzelfde pakket op als voordat die er waren. */
-	it('stuurt geen lege afspraken mee', () => {
-		app.setCoachAfspraken('   ');
-		expect(app.toestand.coachAfspraken).toBeUndefined();
-		expect(JSON.stringify(app.syncPayload())).not.toContain('coachAfspraken');
-	});
-
-	it('bewaart de afspraken zoals ze getypt zijn, spaties en al', () => {
-		app.setCoachAfspraken('Wie keept ');
-		expect(app.toestand.coachAfspraken).toBe('Wie keept ');
-	});
-
 	/* This was missing: you set the lineup at home and your phone showed nothing. */
 	it('neemt een wedstrijd die klaarstaat mee', () => {
 		app.newMatch('Sparta', true);

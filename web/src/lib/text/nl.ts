@@ -396,7 +396,6 @@ const lineupScreen = {
 	/* Onder het veld: wie zat er al veel op de bank. Zodat niet elke week
 	   dezelfde jongens op de bank beginnen. */
 	toBenchOverview: 'Wie zat er op de bank? ↓',
-	toCoach: 'Vraag de assistent →',
 	benchHeading: 'Bank en training tot nu toe',
 	benchHint: (matches: number, sessions: number) =>
 		`Over ${matches} ${matches === 1 ? 'bewaarde wedstrijd' : 'bewaarde wedstrijden'} en ${sessions} ${sessions === 1 ? 'training' : 'trainingen'}. Wie het langst op de bank zat staat bovenaan. Alleen wedstrijden waarbij hij er was tellen mee.`,
@@ -419,62 +418,6 @@ const lineupScreen = {
 	filled: (filled: number, needed: number) => `${filled} van de ${needed} ingevuld`,
 	confirmIncomplete: (filled: number, needed: number) =>
 		`Er staan er ${filled} op het veld in plaats van ${needed}. Toch doorgaan?`
-} as const;
-
-/**
- * De assistent: een voorstel voor de opstelling, met uitleg. Het denkwerk
- * gebeurt op de server; zie supabase/functions/coach.
- */
-const coach = {
-	title: 'Assistent',
-	noTarget: 'Er is geen opstelling om over mee te denken. Begin een wedstrijd of maak een standaardopstelling.',
-	needLoginHeading: 'Eerst inloggen',
-	needLogin:
-		'De assistent draait op de server, en die moet weten dat jij trainer bent van dit team. Log in bij Synchroniseren, dan kan het.',
-	toLogin: 'Naar inloggen',
-	intro:
-		'Vertel wat er speelt, en de assistent doet een voorstel. Hij kijkt naar wie er op de bank zat, naar de trainingen, de gespeelde wedstrijden en je notities. Jij beslist.',
-	fewMatches: (n: number) =>
-		`Er ${n === 1 ? 'is nog maar 1 wedstrijd' : `zijn nog maar ${n} wedstrijden`} bewaard. Veel valt daar nog niet uit af te leiden, dus wat je hieronder vertelt telt extra.`,
-	questionLabel: 'Wat speelt er?',
-	questionPlaceholder:
-		'Bijvoorbeeld: morgen tegen de nummer 1, wij staan tweede. Siem is er niet. Jack wil ik centraal naast Mirza.',
-	rulesLabel: 'Vaste afspraken van het team',
-	rulesHint: 'Gelden bij elke vraag, ook als een andere trainer van dit team het vraagt.',
-	rulesPlaceholder: 'Bijvoorbeeld: wie keept, begint niet op de bank en speelt de andere helft in het veld.',
-	absentHint:
-		'Dit is de standaardopstelling, dus de app weet niet wie er morgen is. Zet erbij wie er niet is, of begin de wedstrijd en tik bij Wie is er? weg wie er ontbreekt.',
-	ask: 'Vraag om een voorstel',
-	askAgain: 'Opnieuw vragen',
-	busy: 'Bezig…',
-	thinking: 'De assistent denkt na. Dat duurt meestal een halve minuut tot een minuut.',
-	waited: (seconds: number) => (seconds === 1 ? '1 seconde' : `${seconds} seconden`),
-	slow: 'Het duurt langer dan normaal. Nog even geduld: lukt het niet, dan zie je hier waarom.',
-	whatGoes:
-		'Wat er meegaat: voornamen, linies, speeltijd, bankminuten, trainingsopkomst, de gespeelde wedstrijden en je notities. Geen achternamen, e-mailadressen of teamnaam. Het gaat naar Claude, het taalmodel van Anthropic.',
-	offline: 'Geen verbinding. De assistent draait op de server, dus zonder bereik gaat het niet.',
-	notDeployed: 'De assistent staat nog niet aan op de server.',
-	failed: 'Dat lukte niet. Probeer het zo nog eens.',
-	resultHeading: 'Voorstel',
-	askedAt: (when: string) => `Gevraagd ${when}.`,
-	take: 'Neem deze opstelling over',
-	takeWithPlan: 'Neem opstelling en wisselplan over',
-	cannotTake: 'Overnemen kan niet, want het voorstel klopt niet helemaal:',
-	otherFormation: (formation: string) =>
-		`Dit voorstel is voor ${formation}, en je staat nu anders. Vraag opnieuw om een voorstel.`,
-	reasonsHeading: 'Waarom',
-	subsHeading: 'Wisselplan',
-	sub: (minute: number, on: string, off: string) => `${minute}′ ${on} erin voor ${off}`,
-	pointsHeading: 'Tijdens de wedstrijd',
-	steerHeading: 'Bijsturen',
-	steerHint:
-		'Wat wil je anders? De assistent past zijn voorstel aan en laat de rest zoveel mogelijk staan. Je eerdere wensen blijven gelden.',
-	steerLabel: 'Wat wil je anders?',
-	steerPlaceholder: 'Bijvoorbeeld: Casper in de basis, en Yassir liever linksvoor.',
-	steer: 'Pas het voorstel aan',
-	steeredHeading: 'Jouw wensen tot nu toe',
-	left: (n: number) =>
-		n === 1 ? 'Je kunt de assistent vandaag nog 1 keer vragen.' : `Je kunt de assistent vandaag nog ${n} keer vragen.`
 } as const;
 
 /**
@@ -864,7 +807,6 @@ export const text = {
 	season,
 	players,
 	lineupScreen,
-	coach,
 	plan,
 	setup,
 	data,

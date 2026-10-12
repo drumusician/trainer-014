@@ -1,7 +1,7 @@
 import { kickedOff } from './clock';
 import { putOnPosition, ruil } from './match-events';
 import { planStappen } from '$lib/domain/plan';
-import type { Match, PlannedSub } from '$lib/domain/types';
+import type { Match } from '$lib/domain/types';
 
 /** Het wisselplan bijhouden, en een stap doorvoeren als de trainer het moment kiest. */
 
@@ -42,13 +42,6 @@ export function haalWeg(w: Match | null, id: string): boolean {
 	const voor = w.plan.length;
 	w.plan = w.plan.filter((s) => s.id !== id);
 	return w.plan.length < voor;
-}
-
-/** Het hele plan in één keer, van de assistent. Vervangt wat er stond. */
-export function vervang(w: Match | null, plan: Omit<PlannedSub, 'id'>[]): boolean {
-	if (!w) return false;
-	w.plan = plan.map((s) => ({ ...s, id: nieuwId() }));
-	return true;
 }
 
 export function slaOver(w: Match | null, id: string, overslaan = true): boolean {

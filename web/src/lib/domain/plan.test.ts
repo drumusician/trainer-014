@@ -147,17 +147,11 @@ describe('het wisselplan', () => {
 		expect(w.plan ?? []).toEqual([]);
 	});
 
-	it('haalt een stap weg en vervangt het hele plan', () => {
+	it('haalt een stap weg', () => {
 		const w = wedstrijd();
 		plan.voegToe(w, 25, 'alain', 'max');
 		plan.haalWeg(w, w.plan![0].id);
 		expect(w.plan).toEqual([]);
-		plan.vervang(w, [
-			{ minuut: 35, on: 'maher', off: 'kasper' },
-			{ minuut: 50, on: 'alain', off: 'max' }
-		]);
-		expect(w.plan!.map((s) => s.on)).toEqual(['maher', 'alain']);
-		expect(new Set(w.plan!.map((s) => s.id)).size).toBe(2);
 	});
 
 	it('is leeg zonder plan', () => {

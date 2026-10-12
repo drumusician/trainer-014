@@ -83,7 +83,6 @@ het is het enige deel dat bij gebruikers kan breken.
 | toestel    | `device`                                                                  |
 | problemen  | `issues`                                                                  |
 | meten      | `analytics`                                                               |
-| assistent  | `coach` — het voorstel voor de opstelling, van een taalmodel op de server |
 
 ## Wat er níet verandert
 

@@ -37,8 +37,7 @@ export function readBackup(tekst: string): Omit<State, 'match'> {
 		defaultLineup: t.defaultLineup ?? null,
 		archive: Array.isArray(t.archive) ? t.archive : [],
 		trainings: Array.isArray(t.trainings) ? t.trainings : [],
-		reportSubs: !!t.reportSubs,
-		coachAfspraken: typeof t.coachAfspraken === 'string' && t.coachAfspraken.trim() ? t.coachAfspraken : undefined
+		reportSubs: !!t.reportSubs
 	};
 }
 
