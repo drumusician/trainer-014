@@ -94,6 +94,32 @@ Botst het, dan zegt de app dat er iets nieuwers op de server staat en doet hij n
 "Code maken / Code invoeren" blijft bestaan voor als je geen zin hebt in een account, of geen bereik hebt.
 
 
+## Het model in tabellen
+
+`model.sql` komt bovenop `schema.sql` en laat het blok met rust. Het is waar de
+apps voor iOS en Android tegenaan gaan werken en waar de pagina voor ouders uit
+leest. **Het staat nog niet op de echte database**: eerst de proef met het
+synchroniseren, dan pas uitrollen.
+
+| Tabel | Wat erin staat |
+|---|---|
+| `team_instellingen` | formatie, delen, minuten per deel, standaardopstelling |
+| `spelers` | naam, linie, keept; wie weggaat krijgt `weg` en blijft staan |
+| `wedstrijden` | datum, tegenstander, uitslag, status; klok, opstelling en wisselplan als JSON |
+| `wedstrijd_spelers` | per speler per wedstrijd: was hij er, en hoe lang speelde hij |
+| `gebeurtenissen` | aftrap, pauze, wissel, doelpunt; erbij en eraf, nooit wijzigen |
+| `trainingen`, `training_spelers` | wie er was |
+| `deellinks` | de link voor ouders, in te trekken |
+| `bijdragen` | de teambijdrage; alleen de server schrijft |
+
+Vier afspraken, bovenin `model.sql` uitgelegd: één `id` per tabel die het
+toestel zelf maakt, overal `team_id`, een verwijzing is altijd (id, team) samen,
+en de app rekent de speeltijd uit terwijl de server alleen optelt.
+
+Wie de link heeft komt via één functie binnen, `ouderpagina(code)`: uitslagen
+van dit seizoen en per kind wedstrijden, speeltijd, doelpunten en assists. Geen
+notities, geen opstelling, geen wisselplan, geen trainingsopkomst.
+
 ## Wat er nooit in mag
 
 Namen van kinderen horen bij de trainer, niet in een openbare tabel. Alles hierboven staat achter RLS op `auth.uid()`. Zet dat nooit uit "om even te testen"; maak dan liever een tweede account aan.

@@ -32,3 +32,17 @@ Zes manieren om de regels stuk te maken, allemaal gevangen: leesregel op `teams`
 te ruim, leesregel op de gegevens te ruim, bijwerken door iedereen op elk van de
 twee tabellen, verwijderen toegekend aan iedereen, en Row Level Security
 helemaal uitgezet.
+
+## Het model in tabellen
+
+Na `rls.sql` draait `../model.sql` en daarna `model.sql` hier: dezelfde proef
+voor de tabellen, plus de pagina voor ouders. Met `MODEL=/pad/naar/kapot.sql
+./draai.sh` draai je met opzet een gesloopte versie.
+
+Zeventien manieren om het stuk te maken, allemaal gevangen: lezen, bijwerken,
+weghalen en erbij zetten open voor iedereen; de instellingen open; Row Level
+Security uit; een gebeurtenis of de code van een link te wijzigen; een speler,
+een doelpunt of een wedstrijd die naar een ander team mag wijzen; de notitie op
+de pagina voor ouders; de lopende wedstrijd of een vorig seizoen die meetelt;
+een ingetrokken link die nog werkt; de bijdragen open; een openstaande bijdrage
+die meetelt.

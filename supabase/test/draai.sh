@@ -28,3 +28,8 @@ opruimen
 "$psql" -q -v ON_ERROR_STOP=1 -d "$db" -f "$hier/supabase-staketsel.sql"
 "$psql" -q -v ON_ERROR_STOP=1 -c "set client_min_messages = warning" -d "$db" -f "$hier/../schema.sql"
 "$psql" -q -t -A -v ON_ERROR_STOP=1 -d "$db" -f "$hier/rls.sql"
+
+# Het model in tabellen komt er bovenop en heeft zijn eigen proef. MODEL is er
+# om met opzet een kapotte versie te kunnen draaien en te zien of de proef bijt.
+"$psql" -q -v ON_ERROR_STOP=1 -c "set client_min_messages = warning" -d "$db" -f "${MODEL:-$hier/../model.sql}"
+"$psql" -q -t -A -v ON_ERROR_STOP=1 -d "$db" -f "$hier/model.sql"
