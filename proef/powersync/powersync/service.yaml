@@ -1,0 +1,34 @@
+telemetry:
+  disable_telemetry_sharing: true
+
+replication:
+  connections:
+    - type: postgresql
+      uri: postgres://postgres:proef@pg-db:5432/postgres
+      sslmode: disable
+
+# De dienst houdt zijn eigen boekhouding bij in een aparte database.
+storage:
+  type: postgresql
+  uri: postgres://postgres:proef@pg-db:5432/powersync_opslag
+  sslmode: disable
+
+port: 8089
+
+sync_config:
+  path: sync-config.yaml
+
+# Hetzelfde gedeelde geheim als PostgREST, zoals bij Supabase: één token opent
+# zowel de REST-laag als de synchronisatie.
+client_auth:
+  jwks:
+    keys:
+      - kty: oct
+        alg: HS256
+        kid: proef
+        k: YmxhYWRqZS1wcm9lZi1nZWhlaW0tdmFuLW1pbnN0ZW5zLTMyLXRla2Vucw
+  audience: ["powersync"]
+
+api:
+  tokens:
+    - proef

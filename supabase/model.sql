@@ -50,6 +50,13 @@ begin
 end;
 $$;
 
+-- ---------- van wie een team is ----------
+-- De app maakt een team aan zonder te zeggen van wie het is; de database vult
+-- in wie er op dat moment is ingelogd. Dat moet zo, omdat een team ook zonder
+-- account gemaakt kan worden: op het toestel is er dan nog geen 'wie'. Pas bij
+-- het opsturen, na het inloggen, staat vast van wie het is.
+alter table public.teams alter column eigenaar set default auth.uid();
+
 -- ---------- instellingen van het team ----------
 -- Los van `teams`, want die mag alleen de eigenaar wijzigen (naam, weggooien),
 -- en de formatie kiest ook de trainer die zaterdag invalt. De sleutel is die

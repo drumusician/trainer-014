@@ -113,8 +113,14 @@ set local request.jwt.claims = '{"sub":"55555555-5555-5555-5555-555555555555","e
 -- Hier meteen, zodat elke poging hieronder zijn eigen fout geeft.
 set constraints all immediate;
 
-insert into public.teams (id, naam, eigenaar)
-values ('bbbbbbbb-0000-0000-0000-00000000000b', 'JO11-4', '55555555-5555-5555-5555-555555555555');
+-- Zonder te zeggen van wie: de database vult in wie er is ingelogd.
+insert into public.teams (id, naam)
+values ('bbbbbbbb-0000-0000-0000-00000000000b', 'JO11-4');
+do $$ begin
+  if (select eigenaar from public.teams where id = 'bbbbbbbb-0000-0000-0000-00000000000b') <> '55555555-5555-5555-5555-555555555555' then
+    raise exception 'een team zonder eigenaar aangemaakt is niet van wie inlogde';
+  end if;
+end $$;
 insert into public.spelers (id, team_id, naam)
 values ('a0000000-0000-0000-0000-0000000000b1', 'bbbbbbbb-0000-0000-0000-00000000000b', 'Daan');
 insert into public.wedstrijden (id, team_id, datum, status)

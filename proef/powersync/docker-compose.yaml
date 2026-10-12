@@ -1,0 +1,47 @@
+# De proefopstelling voor synchroniseren: wat Supabase doet, nagebouwd met drie
+# containers. Postgres met het model, PostgREST (de REST-laag die Supabase ook
+# gebruikt) en de PowerSync-dienst. Geen geheimen: alles hierin is voor de proef.
+services:
+  pg-db:
+    image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: proef
+    command: ["postgres", "-c", "wal_level=logical"]
+    ports: ["5466:5432"]
+    volumes:
+      - ../../supabase/test/supabase-staketsel.sql:/docker-entrypoint-initdb.d/01-staketsel.sql:ro
+      - ../../supabase/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql:ro
+      - ../../supabase/model.sql:/docker-entrypoint-initdb.d/03-model.sql:ro
+      - ./init/04-proef.sql:/docker-entrypoint-initdb.d/04-proef.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "psql -U postgres -d postgres -Atc \"select 1 from pg_publication where pubname = 'powersync'\" | grep -q 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  rest:
+    image: postgrest/postgrest:v13.0.5
+    environment:
+      PGRST_DB_URI: postgres://postgres:proef@pg-db:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      # Hetzelfde geheim als in powersync/service.yaml, als sleutel met een naam:
+      # het toegangsbewijs noemt de sleutel waarmee het getekend is.
+      PGRST_JWT_SECRET: '{"kty":"oct","alg":"HS256","kid":"proef","k":"YmxhYWRqZS1wcm9lZi1nZWhlaW0tdmFuLW1pbnN0ZW5zLTMyLXRla2Vucw"}'
+    ports: ["3055:3000"]
+    depends_on:
+      pg-db:
+        condition: service_healthy
+
+  powersync:
+    image: journeyapps/powersync-service:latest
+    command: ["start", "-r", "unified"]
+    environment:
+      POWERSYNC_CONFIG_PATH: /config/service.yaml
+      NODE_OPTIONS: --max-old-space-size=1000
+    volumes:
+      - ./powersync:/config:ro
+    ports: ["8089:8089"]
+    depends_on:
+      pg-db:
+        condition: service_healthy

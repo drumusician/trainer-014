@@ -1,0 +1,18 @@
+# Wie krijgt wat: alles van de teams waar je lid van bent, en niets anders.
+# Dezelfde vraag als de regels in de database stellen (is_lid), hier nog een keer
+# omdat de dienst buiten die regels om leest.
+config:
+  edition: 3
+
+streams:
+  mijn_teams:
+    auto_subscribe: true
+    queries:
+      - SELECT * FROM teams WHERE id IN (SELECT team_id FROM team_leden WHERE gebruiker = auth.user_id())
+      - SELECT * FROM team_instellingen WHERE id IN (SELECT team_id FROM team_leden WHERE gebruiker = auth.user_id())
+      - SELECT * FROM spelers WHERE team_id IN (SELECT team_id FROM team_leden WHERE gebruiker = auth.user_id())
+      - SELECT * FROM wedstrijden WHERE team_id IN (SELECT team_id FROM team_leden WHERE gebruiker = auth.user_id())
+      - SELECT * FROM wedstrijd_spelers WHERE team_id IN (SELECT team_id FROM team_leden WHERE gebruiker = auth.user_id())
+      - SELECT * FROM gebeurtenissen WHERE team_id IN (SELECT team_id FROM team_leden WHERE gebruiker = auth.user_id())
+      - SELECT * FROM trainingen WHERE team_id IN (SELECT team_id FROM team_leden WHERE gebruiker = auth.user_id())
+      - SELECT * FROM training_spelers WHERE team_id IN (SELECT team_id FROM team_leden WHERE gebruiker = auth.user_id())
