@@ -69,8 +69,10 @@ values ('e0000000-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-0000000
 insert into public.training_spelers (id, team_id, training_id, speler_id, status)
 values ('f0000000-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-00000000000a', 'e0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', 'afwezig');
 
-insert into public.deellinks (id, team_id, code)
-values ('99999999-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-00000000000a', 'link-van-het-team-van-anna');
+-- Elk kind zijn eigen link, voor zijn eigen ouder.
+insert into public.deellinks (id, team_id, speler_id, code) values
+  ('99999999-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-00000000000a', 'a0000000-0000-0000-0000-000000000002', 'de-link-voor-de-ouder-van-finn'),
+  ('99999999-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-00000000000a', 'a0000000-0000-0000-0000-000000000003', 'de-link-voor-de-ouder-van-gijs');
 
 do $$
 declare n int;
@@ -92,6 +94,15 @@ begin
     update public.deellinks set code = 'een-zelfgekozen-code-van-twintig';
     raise exception 'de code van een link was te wijzigen';
   exception when insufficient_privilege then null;
+  end;
+
+  -- Een kind heeft één link die werkt. Een tweede ernaast zou betekenen dat je
+  -- er een intrekt en de andere blijft rondgaan.
+  begin
+    insert into public.deellinks (team_id, speler_id)
+    values ('aaaaaaaa-0000-0000-0000-00000000000a', 'a0000000-0000-0000-0000-000000000002');
+    raise exception 'een kind kreeg een tweede werkende link';
+  exception when unique_violation then null;
   end;
 
   -- Wie nog in een wedstrijd voorkomt, gooi je niet weg.
@@ -174,9 +185,18 @@ begin
   exception when insufficient_privilege then null;
   end;
   begin
-    insert into public.deellinks (team_id) values ('aaaaaaaa-0000-0000-0000-00000000000a');
-    raise exception 'een ander kon een link maken naar een team dat niet van hem is';
+    insert into public.deellinks (team_id, speler_id)
+    values ('aaaaaaaa-0000-0000-0000-00000000000a', 'a0000000-0000-0000-0000-000000000001');
+    raise exception 'een ander kon een link maken naar een kind van een team dat niet van hem is';
   exception when insufficient_privilege then null;
+  end;
+  -- En via zijn eigen team naar een kind van een ander: de link zou dan de
+  -- trainingen van dat kind laten zien.
+  begin
+    insert into public.deellinks (team_id, speler_id)
+    values ('bbbbbbbb-0000-0000-0000-00000000000b', 'a0000000-0000-0000-0000-000000000001');
+    raise exception 'een link in een eigen team kon naar een kind van een ander team wijzen';
+  exception when foreign_key_violation then null;
   end;
   begin
     insert into public.team_instellingen (id) values ('aaaaaaaa-0000-0000-0000-00000000000a');
@@ -258,7 +278,7 @@ do $$ begin
   end;
 end $$;
 
--- ---------- wie de link heeft, en niet is ingelogd ----------
+-- ---------- wie de link van een kind heeft, en niet is ingelogd ----------
 begin;
 set local role anon;
 
@@ -268,9 +288,6 @@ declare
   n int;
   p jsonb;
   tekst text;
-  finn constant uuid := 'a0000000-0000-0000-0000-000000000002';
-  gijs constant uuid := 'a0000000-0000-0000-0000-000000000003';
-  daan constant uuid := 'a0000000-0000-0000-0000-0000000000b1';
 begin
   -- Rechtstreeks in de tabellen: niets.
   foreach t in array array['team_instellingen', 'spelers', 'wedstrijden', 'wedstrijd_spelers', 'gebeurtenissen', 'trainingen', 'training_spelers', 'deellinks', 'bijdragen']
@@ -284,32 +301,25 @@ begin
 
   if public.ouderpagina('bestaat-niet') is not null then raise exception 'een verzonnen code levert een pagina op'; end if;
   if public.ouderpagina(null) is not null then raise exception 'zonder code komt er een pagina'; end if;
-  if public.ouderpagina('bestaat-niet', finn) is not null then raise exception 'een verzonnen code met een echt kind levert een pagina op'; end if;
 
-  -- Zonder kind, en het team is niet rond: je ziet wat je nodig hebt om te
-  -- betalen, en verder niets.
-  p := public.ouderpagina('link-van-het-team-van-anna');
-  if p is null then raise exception 'de link van het team geeft geen pagina'; end if;
-  if p ->> 'team' <> 'JO14-2' then raise exception 'de teamnaam klopt niet: %', p ->> 'team'; end if;
-  if (p ->> 'toegang')::boolean then raise exception 'zonder betaling is er toegang'; end if;
+  -- De ouder van Gijs: nog niet betaald (zijn betaling staat open) en het team
+  -- is niet rond. Hij ziet wat hij nodig heeft om te betalen, en verder niets.
+  p := public.ouderpagina('de-link-voor-de-ouder-van-gijs');
+  if p is null then raise exception 'de link van Gijs geeft geen pagina'; end if;
+  if p ->> 'team' <> 'JO14-2' or p ->> 'kind' <> 'Gijs' then raise exception 'team of kind klopt niet: % %', p ->> 'team', p ->> 'kind'; end if;
+  if (p ->> 'toegang')::boolean then raise exception 'een openstaande betaling geeft toegang'; end if;
   if p ? 'wedstrijden' or p ? 'trainingen' or p ? 'gemist' then raise exception 'zonder toegang staan de wedstrijden of trainingen er al'; end if;
-  if jsonb_array_length(p -> 'spelers') <> 3 or p -> 'spelers' -> 1 ->> 'naam' <> 'Finn' then raise exception 'de kinderen om uit te kiezen kloppen niet: %', p -> 'spelers'; end if;
   -- Twee euro binnen: de openstaande, de dubbele melding en die van een ander seizoen tellen niet.
   if (p -> 'bijdrage' ->> 'opgehaald_cent')::int <> 200 then raise exception 'er is % cent opgehaald, het is 200', p -> 'bijdrage' ->> 'opgehaald_cent'; end if;
   if (p -> 'bijdrage' ->> 'nog_cent')::int <> 800 then raise exception 'voor het team ontbreekt nog % cent, het is 800', p -> 'bijdrage' ->> 'nog_cent'; end if;
   if (p -> 'bijdrage' ->> 'team_rond')::boolean then raise exception 'het team is rond bij twee euro'; end if;
+  if p::text like '%Finn%' or p::text like '%Bram%' then raise exception 'er staat een ander kind op de pagina van Gijs'; end if;
 
-  -- Gijs: niet voor betaald (zijn betaling staat nog open). Dicht.
-  p := public.ouderpagina('link-van-het-team-van-anna', gijs);
-  if (p ->> 'toegang')::boolean or p ? 'trainingen' then raise exception 'een openstaande betaling geeft toegang'; end if;
-
-  -- Een kind van een ander team kiezen: alsof er niets gekozen is.
-  p := public.ouderpagina('link-van-het-team-van-anna', daan);
-  if (p ->> 'toegang')::boolean or p ? 'trainingen' then raise exception 'een kind van een ander team geeft toegang'; end if;
-
-  -- Finn: betaald. Open, met de wedstrijden van dit seizoen en zijn trainingen.
-  p := public.ouderpagina('link-van-het-team-van-anna', finn);
+  -- De ouder van Finn: betaald. Open, met de wedstrijden van dit seizoen en de
+  -- trainingen van Finn.
+  p := public.ouderpagina('de-link-voor-de-ouder-van-finn');
   tekst := p::text;
+  if p ->> 'kind' <> 'Finn' then raise exception 'de link van Finn gaat over %', p ->> 'kind'; end if;
   if not (p ->> 'toegang')::boolean then raise exception 'voor Finn is betaald en de pagina is dicht'; end if;
   -- De gespeelde en de lopende; die van twee seizoenen terug niet.
   if jsonb_array_length(p -> 'wedstrijden') <> 2 then
@@ -323,13 +333,14 @@ begin
                   where w ->> 'status' = 'bezig' and w ->> 'voor' is null) then
     raise exception 'van een wedstrijd die nog loopt staat de stand er al';
   end if;
-  -- Eén training dit seizoen, en Finn was er.
+  -- Eén training dit seizoen, en Finn was er. Gijs miste hem; dat staat hier niet.
   if jsonb_array_length(p -> 'trainingen') <> 1 or p -> 'trainingen' -> 0 ->> 'status' <> 'aanwezig' then
     raise exception 'de trainingen van Finn kloppen niet: %', p -> 'trainingen';
   end if;
   if (p -> 'gemist' ->> 'afwezig')::int <> 0 or (p -> 'gemist' ->> 'afgemeld')::int <> 0 then raise exception 'Finn miste niets en er staat: %', p -> 'gemist'; end if;
 
   -- En wat er nooit op mag staan, ook niet met toegang.
+  if tekst like '%Gijs%' or tekst like '%Bram%' then raise exception 'er staat een ander kind op de pagina van Finn'; end if;
   if tekst like '%seconden%' or tekst like '%minuten%' or tekst like '%speeltijd%' then raise exception 'de speeltijd staat op de pagina voor ouders'; end if;
   if tekst ~ '(4200|3000|2100|: ?70[,}]|: ?50[,}]|: ?35[,}])' then raise exception 'er staat een getal op de pagina dat de speeltijd verraadt'; end if;
   if tekst like '%GEHEIM%' then raise exception 'de notitie van de trainer staat op de pagina voor ouders'; end if;
@@ -337,11 +348,11 @@ begin
   if tekst like '%doelpunt%' or tekst like '%assist%' then raise exception 'wie er scoorde staat op de pagina'; end if;
   if tekst like '%voorbeeld.nl%' then raise exception 'er staat een e-mailadres op de pagina'; end if;
   if tekst like '%Daan%' or tekst like '%gekaapt%' then raise exception 'er staat iets van een ander team op de pagina'; end if;
-  if tekst like '%aaaaaaaa-%' or tekst like '%b0000000-%' then raise exception 'er staat een id van het team of van een wedstrijd op de pagina'; end if;
+  if tekst ~ '[0-9a-f]{8}-[0-9a-f]{4}-' then raise exception 'er staat een id op de pagina'; end if;
 end $$;
 commit;
 
-\echo 'Model: de pagina voor ouders is dicht tot er betaald is, en laat dan alleen het eigen kind zien'
+\echo 'Model: de pagina voor ouders is dicht tot er betaald is, en gaat alleen over het eigen kind'
 
 -- ---------- iemand legt de rest bij: het team is rond ----------
 insert into public.bijdragen (team_id, seizoen, bedrag_cent, betaling, status, betaald_op)
@@ -352,46 +363,45 @@ set local role anon;
 do $$
 declare p jsonb;
 begin
-  -- Nu mag iedereen erin, ook zonder kind te kiezen.
-  p := public.ouderpagina('link-van-het-team-van-anna');
-  if not (p ->> 'toegang')::boolean or not (p -> 'bijdrage' ->> 'team_rond')::boolean then raise exception 'het team is rond en de pagina is dicht'; end if;
-  if (p -> 'bijdrage' ->> 'nog_cent')::int <> 0 then raise exception 'er ontbreekt nog iets terwijl het team rond is'; end if;
-  if p -> 'trainingen' -> 0 ->> 'status' is not null or p -> 'gemist' <> 'null'::jsonb then
-    raise exception 'zonder gekozen kind staat er opkomst op de pagina: % %', p -> 'trainingen', p -> 'gemist';
-  end if;
-
-  -- Een kind van een ander team kiezen is niets kiezen, ook nu de deur openstaat.
-  p := public.ouderpagina('link-van-het-team-van-anna', 'a0000000-0000-0000-0000-0000000000b1');
-  if p -> 'gemist' <> 'null'::jsonb then raise exception 'een kind van een ander team telt als gekozen kind: %', p -> 'gemist'; end if;
-
-  -- Gijs, waar niemand apart voor betaalde: open, en hij miste de training.
+  -- Gijs, waar niemand apart voor betaalde: nu open, en hij miste de training.
   -- Die van een vorig seizoen, waar hij zich afmeldde, telt niet mee.
-  p := public.ouderpagina('link-van-het-team-van-anna', 'a0000000-0000-0000-0000-000000000003');
-  if not (p ->> 'toegang')::boolean then raise exception 'het team is rond en Gijs is dicht'; end if;
+  p := public.ouderpagina('de-link-voor-de-ouder-van-gijs');
+  if not (p ->> 'toegang')::boolean or not (p -> 'bijdrage' ->> 'team_rond')::boolean then raise exception 'het team is rond en Gijs is dicht'; end if;
+  if (p -> 'bijdrage' ->> 'nog_cent')::int <> 0 then raise exception 'er ontbreekt nog iets terwijl het team rond is'; end if;
   if p -> 'trainingen' -> 0 ->> 'status' <> 'afwezig' then raise exception 'de gemiste training van Gijs staat er niet: %', p -> 'trainingen'; end if;
   if (p -> 'gemist' ->> 'afwezig')::int <> 1 or (p -> 'gemist' ->> 'afgemeld')::int <> 0 then raise exception 'Gijs miste er een dit seizoen en er staat: %', p -> 'gemist'; end if;
+  if p::text like '%Finn%' then raise exception 'op de pagina van Gijs staat Finn'; end if;
 end $$;
 commit;
 
-\echo 'Model: is het team rond, dan mag iedereen erin'
+\echo 'Model: is het team rond, dan mag elke ouder erin, bij zijn eigen kind'
 
 -- ---------- intrekken ----------
+-- De link van Finn is in verkeerde handen. Intrekken, en een nieuwe maken.
 begin;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"44444444-4444-4444-4444-444444444444","email":"anna@voorbeeld.nl"}';
-update public.deellinks set ingetrokken = now() where id = '99999999-0000-0000-0000-000000000001';
+update public.deellinks set ingetrokken = now() where id = '99999999-0000-0000-0000-000000000002';
+insert into public.deellinks (team_id, speler_id, code)
+values ('aaaaaaaa-0000-0000-0000-00000000000a', 'a0000000-0000-0000-0000-000000000002', 'de-nieuwe-link-voor-de-ouder-van-finn');
 commit;
 
 begin;
 set local role anon;
 do $$ begin
-  if public.ouderpagina('link-van-het-team-van-anna') is not null then
+  if public.ouderpagina('de-link-voor-de-ouder-van-finn') is not null then
     raise exception 'een ingetrokken link geeft nog steeds een pagina';
+  end if;
+  if public.ouderpagina('de-nieuwe-link-voor-de-ouder-van-finn') ->> 'kind' <> 'Finn' then
+    raise exception 'de nieuwe link van Finn werkt niet';
+  end if;
+  if public.ouderpagina('de-link-voor-de-ouder-van-gijs') is null then
+    raise exception 'het intrekken van de link van Finn sloot ook die van Gijs';
   end if;
 end $$;
 commit;
 
-\echo 'Model: een ingetrokken link is dicht'
+\echo 'Model: een ingetrokken link is dicht, en een nieuwe werkt'
 
 -- ---------- een team weggooien ruimt alles op ----------
 begin;
