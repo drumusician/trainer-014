@@ -228,15 +228,35 @@ commit;
 
 \echo 'Model: een trainer komt alleen bij zijn eigen team, in elke tabel'
 
--- ---------- de betaalprovider meldt twee bijdragen ----------
--- Als beheerder, zoals de server dat doet. Dezelfde melding twee keer telt één keer.
-insert into public.bijdragen (team_id, seizoen, bedrag_cent, betaling, status, betaald_op) values
-  ('aaaaaaaa-0000-0000-0000-00000000000a', public.seizoen_van(current_date), 100, 'tr_een', 'betaald', now()),
-  ('aaaaaaaa-0000-0000-0000-00000000000a', public.seizoen_van(current_date), 100, 'tr_twee', 'betaald', now()),
-  ('aaaaaaaa-0000-0000-0000-00000000000a', public.seizoen_van(current_date), 100, 'tr_open', 'open', null);
+-- ---------- de betaalprovider meldt bijdragen ----------
+-- Als beheerder, zoals de server dat doet. Eén euro voor Finn, één los voor het
+-- team, één die nog openstaat. Dezelfde melding twee keer telt één keer.
+-- Bij elkaar twee euro: het team is nog niet rond.
+insert into public.trainingen (id, team_id, datum) values
+  ('e0000000-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-00000000000a', current_date - 800);
+insert into public.training_spelers (id, team_id, training_id, speler_id, status) values
+  ('f0000000-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-00000000000a', 'e0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', 'aanwezig'),
+  ('f0000000-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-00000000000a', 'e0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', 'afgemeld');
+
+insert into public.bijdragen (team_id, speler_id, seizoen, bedrag_cent, betaling, status, betaald_op) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'a0000000-0000-0000-0000-000000000002', public.seizoen_van(current_date), 100, 'tr_finn', 'betaald', now()),
+  ('aaaaaaaa-0000-0000-0000-00000000000a', null, public.seizoen_van(current_date), 100, 'tr_los', 'betaald', now()),
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'a0000000-0000-0000-0000-000000000003', public.seizoen_van(current_date), 100, 'tr_open', 'open', null),
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'a0000000-0000-0000-0000-000000000003', '2001/02', 5000, 'tr_oud', 'betaald', now());
 insert into public.bijdragen (team_id, seizoen, bedrag_cent, betaling, status)
-values ('aaaaaaaa-0000-0000-0000-00000000000a', public.seizoen_van(current_date), 100, 'tr_een', 'betaald')
+values ('aaaaaaaa-0000-0000-0000-00000000000a', public.seizoen_van(current_date), 100, 'tr_finn', 'betaald')
 on conflict (betaling) do nothing;
+
+-- Betalen voor een kind van een ander team bij dit team: dat bestaat niet.
+do $$ begin
+  begin
+    insert into public.bijdragen (team_id, speler_id, seizoen, bedrag_cent, betaling, status)
+    values ('aaaaaaaa-0000-0000-0000-00000000000a', 'a0000000-0000-0000-0000-0000000000b1', '2026/27', 100, 'tr_fout', 'betaald');
+    set constraints all immediate;
+    raise exception 'een bijdrage kon op een kind van een ander team';
+  exception when foreign_key_violation then null;
+  end;
+end $$;
 
 -- ---------- wie de link heeft, en niet is ingelogd ----------
 begin;
@@ -248,6 +268,9 @@ declare
   n int;
   p jsonb;
   tekst text;
+  finn constant uuid := 'a0000000-0000-0000-0000-000000000002';
+  gijs constant uuid := 'a0000000-0000-0000-0000-000000000003';
+  daan constant uuid := 'a0000000-0000-0000-0000-0000000000b1';
 begin
   -- Rechtstreeks in de tabellen: niets.
   foreach t in array array['team_instellingen', 'spelers', 'wedstrijden', 'wedstrijd_spelers', 'gebeurtenissen', 'trainingen', 'training_spelers', 'deellinks', 'bijdragen']
@@ -259,64 +282,98 @@ begin
     end;
   end loop;
 
-  if public.ouderpagina('bestaat-niet') is not null then
-    raise exception 'een verzonnen code levert een pagina op';
-  end if;
-  if public.ouderpagina(null) is not null then
-    raise exception 'zonder code komt er een pagina';
-  end if;
+  if public.ouderpagina('bestaat-niet') is not null then raise exception 'een verzonnen code levert een pagina op'; end if;
+  if public.ouderpagina(null) is not null then raise exception 'zonder code komt er een pagina'; end if;
+  if public.ouderpagina('bestaat-niet', finn) is not null then raise exception 'een verzonnen code met een echt kind levert een pagina op'; end if;
 
+  -- Zonder kind, en het team is niet rond: je ziet wat je nodig hebt om te
+  -- betalen, en verder niets.
   p := public.ouderpagina('link-van-het-team-van-anna');
   if p is null then raise exception 'de link van het team geeft geen pagina'; end if;
-  tekst := p::text;
-
   if p ->> 'team' <> 'JO14-2' then raise exception 'de teamnaam klopt niet: %', p ->> 'team'; end if;
+  if (p ->> 'toegang')::boolean then raise exception 'zonder betaling is er toegang'; end if;
+  if p ? 'wedstrijden' or p ? 'trainingen' or p ? 'gemist' then raise exception 'zonder toegang staan de wedstrijden of trainingen er al'; end if;
+  if jsonb_array_length(p -> 'spelers') <> 3 or p -> 'spelers' -> 1 ->> 'naam' <> 'Finn' then raise exception 'de kinderen om uit te kiezen kloppen niet: %', p -> 'spelers'; end if;
+  -- Twee euro binnen: de openstaande, de dubbele melding en die van een ander seizoen tellen niet.
+  if (p -> 'bijdrage' ->> 'opgehaald_cent')::int <> 200 then raise exception 'er is % cent opgehaald, het is 200', p -> 'bijdrage' ->> 'opgehaald_cent'; end if;
+  if (p -> 'bijdrage' ->> 'nog_cent')::int <> 800 then raise exception 'voor het team ontbreekt nog % cent, het is 800', p -> 'bijdrage' ->> 'nog_cent'; end if;
+  if (p -> 'bijdrage' ->> 'team_rond')::boolean then raise exception 'het team is rond bij twee euro'; end if;
 
-  -- Alleen de gespeelde wedstrijd van dit seizoen.
-  if jsonb_array_length(p -> 'wedstrijden') <> 1 then
-    raise exception 'er staan % wedstrijden op de pagina, en er is er een gespeeld dit seizoen', jsonb_array_length(p -> 'wedstrijden');
-  end if;
-  if (p -> 'wedstrijden' -> 0 ->> 'voor')::int <> 2 or (p -> 'wedstrijden' -> 0 ->> 'tegen')::int <> 1 then
-    raise exception 'de uitslag klopt niet';
-  end if;
+  -- Gijs: niet voor betaald (zijn betaling staat nog open). Dicht.
+  p := public.ouderpagina('link-van-het-team-van-anna', gijs);
+  if (p ->> 'toegang')::boolean or p ? 'trainingen' then raise exception 'een openstaande betaling geeft toegang'; end if;
 
-  -- Per kind: Bram gaf een assist, Finn scoorde twee keer, Gijs was er niet.
-  -- Wat er in de lopende wedstrijd gebeurde telt nog niet mee.
-  if jsonb_array_length(p -> 'spelers') <> 3 then raise exception 'niet alle drie de spelers staan erop'; end if;
-  if (p -> 'spelers' -> 0 ->> 'naam') <> 'Bram' or (p -> 'spelers' -> 0 ->> 'wedstrijden')::int <> 1
-     or (p -> 'spelers' -> 0 ->> 'assists')::int <> 1 then
-    raise exception 'Bram klopt niet: %', p -> 'spelers' -> 0;
-  end if;
-  if (p -> 'spelers' -> 1 ->> 'naam') <> 'Finn' or (p -> 'spelers' -> 1 ->> 'doelpunten')::int <> 2
-     or (p -> 'spelers' -> 1 ->> 'wedstrijden')::int <> 1 then
-    raise exception 'Finn klopt niet: %', p -> 'spelers' -> 1;
-  end if;
-  if (p -> 'spelers' -> 2 ->> 'naam') <> 'Gijs' or (p -> 'spelers' -> 2 ->> 'wedstrijden')::int <> 0
-     or (p -> 'spelers' -> 2 ->> 'doelpunten')::int <> 0 then
-    raise exception 'Gijs klopt niet: afwezig is nul wedstrijden, en de lopende wedstrijd telt niet: %', p -> 'spelers' -> 2;
-  end if;
+  -- Een kind van een ander team kiezen: alsof er niets gekozen is.
+  p := public.ouderpagina('link-van-het-team-van-anna', daan);
+  if (p ->> 'toegang')::boolean or p ? 'trainingen' then raise exception 'een kind van een ander team geeft toegang'; end if;
 
-  -- Twee betaalde bijdragen; de openstaande en de dubbele melding tellen niet.
-  if (p ->> 'bijdragen')::int <> 2 then raise exception 'er staan % bijdragen, het zijn er twee', p ->> 'bijdragen'; end if;
+  -- Finn: betaald. Open, met de wedstrijden van dit seizoen en zijn trainingen.
+  p := public.ouderpagina('link-van-het-team-van-anna', finn);
+  tekst := p::text;
+  if not (p ->> 'toegang')::boolean then raise exception 'voor Finn is betaald en de pagina is dicht'; end if;
+  -- De gespeelde en de lopende; die van twee seizoenen terug niet.
+  if jsonb_array_length(p -> 'wedstrijden') <> 2 then
+    raise exception 'er staan % wedstrijden, dit seizoen zijn het er twee', jsonb_array_length(p -> 'wedstrijden');
+  end if;
+  if not exists (select 1 from jsonb_array_elements(p -> 'wedstrijden') w
+                  where w ->> 'status' = 'afgelopen' and (w ->> 'voor')::int = 2 and (w ->> 'tegen')::int = 1) then
+    raise exception 'de uitslag van de gespeelde wedstrijd klopt niet';
+  end if;
+  if not exists (select 1 from jsonb_array_elements(p -> 'wedstrijden') w
+                  where w ->> 'status' = 'bezig' and w ->> 'voor' is null) then
+    raise exception 'van een wedstrijd die nog loopt staat de stand er al';
+  end if;
+  -- Eén training dit seizoen, en Finn was er.
+  if jsonb_array_length(p -> 'trainingen') <> 1 or p -> 'trainingen' -> 0 ->> 'status' <> 'aanwezig' then
+    raise exception 'de trainingen van Finn kloppen niet: %', p -> 'trainingen';
+  end if;
+  if (p -> 'gemist' ->> 'afwezig')::int <> 0 or (p -> 'gemist' ->> 'afgemeld')::int <> 0 then raise exception 'Finn miste niets en er staat: %', p -> 'gemist'; end if;
 
-  -- En wat er niet op mag staan.
-  -- Speeltijd is voor de trainers. Niet het woord, en ook niet de getallen:
-  -- 4200, 3000 en 2100 seconden, of 70, 50 en 35 minuten onder een andere naam.
-  if tekst like '%seconden%' or tekst like '%minuten%' or tekst like '%speeltijd%' then
-    raise exception 'de speeltijd staat op de pagina voor ouders';
-  end if;
-  if tekst ~ '(4200|3000|2100|: ?70[,}]|: ?50[,}]|: ?35[,}])' then
-    raise exception 'er staat een getal op de pagina dat de speeltijd verraadt';
-  end if;
+  -- En wat er nooit op mag staan, ook niet met toegang.
+  if tekst like '%seconden%' or tekst like '%minuten%' or tekst like '%speeltijd%' then raise exception 'de speeltijd staat op de pagina voor ouders'; end if;
+  if tekst ~ '(4200|3000|2100|: ?70[,}]|: ?50[,}]|: ?35[,}])' then raise exception 'er staat een getal op de pagina dat de speeltijd verraadt'; end if;
   if tekst like '%GEHEIM%' then raise exception 'de notitie van de trainer staat op de pagina voor ouders'; end if;
   if tekst like '%opstelling%' or tekst like '%wisselplan%' then raise exception 'de opstelling of het wisselplan staat op de pagina'; end if;
+  if tekst like '%doelpunt%' or tekst like '%assist%' then raise exception 'wie er scoorde staat op de pagina'; end if;
   if tekst like '%voorbeeld.nl%' then raise exception 'er staat een e-mailadres op de pagina'; end if;
   if tekst like '%Daan%' or tekst like '%gekaapt%' then raise exception 'er staat iets van een ander team op de pagina'; end if;
-  if tekst like '%a0000000-%' or tekst like '%aaaaaaaa-%' then raise exception 'er staan id''s op de pagina'; end if;
+  if tekst like '%aaaaaaaa-%' or tekst like '%b0000000-%' then raise exception 'er staat een id van het team of van een wedstrijd op de pagina'; end if;
 end $$;
 commit;
 
-\echo 'Model: de link voor ouders laat uitslagen en doelpunten zien, geen speeltijd en geen notities'
+\echo 'Model: de pagina voor ouders is dicht tot er betaald is, en laat dan alleen het eigen kind zien'
+
+-- ---------- iemand legt de rest bij: het team is rond ----------
+insert into public.bijdragen (team_id, seizoen, bedrag_cent, betaling, status, betaald_op)
+values ('aaaaaaaa-0000-0000-0000-00000000000a', public.seizoen_van(current_date), 800, 'tr_rest', 'betaald', now());
+
+begin;
+set local role anon;
+do $$
+declare p jsonb;
+begin
+  -- Nu mag iedereen erin, ook zonder kind te kiezen.
+  p := public.ouderpagina('link-van-het-team-van-anna');
+  if not (p ->> 'toegang')::boolean or not (p -> 'bijdrage' ->> 'team_rond')::boolean then raise exception 'het team is rond en de pagina is dicht'; end if;
+  if (p -> 'bijdrage' ->> 'nog_cent')::int <> 0 then raise exception 'er ontbreekt nog iets terwijl het team rond is'; end if;
+  if p -> 'trainingen' -> 0 ->> 'status' is not null or p -> 'gemist' <> 'null'::jsonb then
+    raise exception 'zonder gekozen kind staat er opkomst op de pagina: % %', p -> 'trainingen', p -> 'gemist';
+  end if;
+
+  -- Een kind van een ander team kiezen is niets kiezen, ook nu de deur openstaat.
+  p := public.ouderpagina('link-van-het-team-van-anna', 'a0000000-0000-0000-0000-0000000000b1');
+  if p -> 'gemist' <> 'null'::jsonb then raise exception 'een kind van een ander team telt als gekozen kind: %', p -> 'gemist'; end if;
+
+  -- Gijs, waar niemand apart voor betaalde: open, en hij miste de training.
+  -- Die van een vorig seizoen, waar hij zich afmeldde, telt niet mee.
+  p := public.ouderpagina('link-van-het-team-van-anna', 'a0000000-0000-0000-0000-000000000003');
+  if not (p ->> 'toegang')::boolean then raise exception 'het team is rond en Gijs is dicht'; end if;
+  if p -> 'trainingen' -> 0 ->> 'status' <> 'afwezig' then raise exception 'de gemiste training van Gijs staat er niet: %', p -> 'trainingen'; end if;
+  if (p -> 'gemist' ->> 'afwezig')::int <> 1 or (p -> 'gemist' ->> 'afgemeld')::int <> 0 then raise exception 'Gijs miste er een dit seizoen en er staat: %', p -> 'gemist'; end if;
+end $$;
+commit;
+
+\echo 'Model: is het team rond, dan mag iedereen erin'
 
 -- ---------- intrekken ----------
 begin;

@@ -110,16 +110,25 @@ synchroniseren, dan pas uitrollen.
 | `gebeurtenissen` | aftrap, pauze, wissel, doelpunt; erbij en eraf, nooit wijzigen |
 | `trainingen`, `training_spelers` | wie er was |
 | `deellinks` | de link voor ouders, in te trekken |
-| `bijdragen` | de teambijdrage; alleen de server schrijft |
+| `bijdragen` | wat ouders betaalden, per kind of voor het team; alleen de server schrijft |
 
 Vier afspraken, bovenin `model.sql` uitgelegd: één `id` per tabel die het
 toestel zelf maakt, overal `team_id`, een verwijzing is altijd (id, team) samen,
 en de app rekent de speeltijd uit terwijl de server alleen optelt.
 
-Wie de link heeft komt via één functie binnen, `ouderpagina(code)`: uitslagen
-van dit seizoen en per kind wedstrijden, doelpunten en assists. Geen speeltijd,
-ook niet van je eigen kind: dat is voor de trainers. En geen notities, geen
-opstelling, geen wisselplan, geen trainingsopkomst.
+Wie de link heeft komt via één functie binnen, `ouderpagina(code, kind)`.
+
+- **Altijd:** de teamnaam, de voornamen om je kind te kiezen, en hoe het met de
+  bijdrage staat.
+- **Met toegang:** de wedstrijden van dit seizoen (gespeeld en gepland) en de
+  trainingen, met erbij of het gekozen kind er was en hoe vaak het er een miste.
+- **Nooit:** speeltijd, ook niet van je eigen kind; notities, opstelling,
+  wisselplan, wie er scoorde.
+
+Toegang is er voor een kind waarvoor een euro betaald is, en voor iedereen
+zodra het team rond is: tien euro bij elkaar dit seizoen, hoe dan ook. Wie voor
+het team betaalt, betaalt wat er nog ontbreekt; er wordt nooit iets terugbetaald.
+De prijzen staan op één plek, `prijs_kind_cent()` en `prijs_team_cent()`.
 
 ## Wat er nooit in mag
 

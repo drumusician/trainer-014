@@ -239,26 +239,41 @@ create table if not exists public.deellinks (
 
 create index if not exists deellinks_team_idx on public.deellinks (team_id);
 
--- ---------- de teambijdrage ----------
--- Een ouder die meedoet voor een euro. Geen naam en geen adres: we willen
--- weten dát er is bijgedragen, niet door wie. `betaling` is het nummer van de
--- betaling bij de betaalprovider, en maakt dat dezelfde melding twee keer
--- binnenkrijgen niet twee bijdragen oplevert.
+-- ---------- de bijdrage van ouders ----------
+-- Een ouder betaalt een euro voor zijn eigen kind, of in één keer voor het hele
+-- team. De pagina voor ouders gaat open voor een kind waarvoor betaald is, en
+-- voor iedereen zodra het team rond is.
+--
+-- Het team is rond als er dit seizoen bij elkaar tien euro binnen is, hoe dan
+-- ook: tien losse euro's, of drie losse en iemand die de rest bijlegt. Daardoor
+-- hoeft er nooit iets terugbetaald te worden. Wie voor het team betaalt, betaalt
+-- wat er nog ontbreekt, en wat anderen al gaven telt gewoon mee.
+--
+-- `speler_id` zegt voor welk kind; leeg is voor het team. Geen naam en geen
+-- adres van wie betaalt: we willen weten dát er betaald is, niet door wie.
+-- `betaling` is het nummer bij de betaalprovider, en maakt dat dezelfde melding
+-- twee keer binnenkrijgen niet twee bijdragen oplevert.
 --
 -- Niemand komt hier rechtstreeks bij. De server schrijft, met de sleutel die
 -- langs de regels heen mag, zodra de betaalprovider meldt dat het rond is.
 create table if not exists public.bijdragen (
   id           uuid primary key default gen_random_uuid(),
   team_id      uuid not null references public.teams (id) on delete cascade,
+  speler_id    uuid,
   seizoen      text not null,
   bedrag_cent  integer not null check (bedrag_cent > 0),
   betaling     text not null unique,
   status       text not null default 'open' check (status in ('open', 'betaald', 'mislukt')),
   gemaakt      timestamptz not null default now(),
-  betaald_op   timestamptz
+  betaald_op   timestamptz,
+  foreign key (speler_id, team_id) references public.spelers (id, team_id) deferrable initially deferred
 );
 
 create index if not exists bijdragen_team_idx on public.bijdragen (team_id, seizoen);
+
+-- De prijzen, op één plek.
+create or replace function public.prijs_kind_cent() returns integer language sql immutable as $$ select 100 $$;
+create or replace function public.prijs_team_cent() returns integer language sql immutable as $$ select 1000 $$;
 
 -- ---------- bijgewerkt bijhouden ----------
 do $$
@@ -328,25 +343,41 @@ grant select, insert, delete         on public.deellinks         to authenticate
 grant update (ingetrokken) on public.deellinks to authenticated;
 
 -- ---------- de pagina voor ouders ----------
--- Wat iemand met de link te zien krijgt, en niets anders: de uitslagen van dit
--- seizoen, en per kind hoe vaak het erbij was en wat het scoorde. Voornamen
--- staan erbij, want het is de groepsapp van het team zelf.
+-- Wat iemand met de link te zien krijgt, en niets anders.
 --
--- Wat er met opzet níét in zit: de speeltijd, ook niet die van je eigen kind.
+-- Altijd: de naam van het team, de voornamen om je kind uit te kiezen, en hoe
+-- het met de bijdrage staat. Dat is wat je nodig hebt om te kunnen betalen.
+--
+-- Met toegang (er is voor dit kind betaald, of het team is rond): de
+-- wedstrijden van dit seizoen, gespeeld en gepland, en de trainingen met
+-- daarbij of jouw kind er was. Alleen van het gekozen kind, niet van de rest.
+--
+-- Wat er met opzet nooit in zit: de speeltijd, ook niet die van je eigen kind.
 -- Dat klinkt als openheid en levert langs de lijn alleen discussie op; het is
 -- een gegeven voor de trainers. Verder ook niet: de notities van de trainer, de
--- opstelling, het wisselplan, de trainingsopkomst, en wie de trainers zijn.
+-- opstelling, het wisselplan, wie er scoorde, en wie de trainers zijn.
+--
+-- Je kind kies je zelf uit de lijst. Dat is geen slot: wie de link heeft kan
+-- ook een ander kind kiezen. De link is voor de groepsapp van het team, en daar
+-- weet iedereen toch al wie er op de training was.
 --
 -- 'security definer', want wie de link opent is niet ingelogd en mag van de
 -- regels hierboven nergens bij. Deze functie is de enige deur, en de code is de
 -- sleutel. Klopt de code niet of is hij ingetrokken, dan komt er niets terug.
-create or replace function public.ouderpagina(p_code text) returns jsonb
+drop function if exists public.ouderpagina(text);
+
+create or replace function public.ouderpagina(p_code text, p_speler uuid default null) returns jsonb
 language plpgsql security definer stable
 set search_path = public
 as $$
 declare
-  v_team    uuid;
-  v_seizoen text := public.seizoen_van(current_date);
+  v_team       uuid;
+  v_seizoen    text := public.seizoen_van(current_date);
+  v_speler     uuid;
+  v_opgehaald  integer;
+  v_rond       boolean;
+  v_toegang    boolean;
+  v_uit        jsonb;
 begin
   select d.team_id into v_team
     from public.deellinks d
@@ -355,55 +386,76 @@ begin
     return null;
   end if;
 
-  return jsonb_build_object(
+  -- Een kind van een ander team is geen kind van dit team: dan is er niets gekozen.
+  select s.id into v_speler from public.spelers s
+   where s.id = p_speler and s.team_id = v_team and s.weg is null;
+
+  select coalesce(sum(b.bedrag_cent), 0) into v_opgehaald
+    from public.bijdragen b
+   where b.team_id = v_team and b.seizoen = v_seizoen and b.status = 'betaald';
+  v_rond := v_opgehaald >= public.prijs_team_cent();
+  v_toegang := v_rond or (v_speler is not null and exists (
+    select 1 from public.bijdragen b
+     where b.team_id = v_team and b.seizoen = v_seizoen and b.status = 'betaald' and b.speler_id = v_speler
+  ));
+
+  v_uit := jsonb_build_object(
     'team', (select t.naam from public.teams t where t.id = v_team),
     'seizoen', v_seizoen,
+    'spelers', coalesce((
+      select jsonb_agg(jsonb_build_object('id', s.id, 'naam', s.naam) order by s.naam)
+        from public.spelers s where s.team_id = v_team and s.weg is null
+    ), '[]'::jsonb),
+    'bijdrage', jsonb_build_object(
+      'opgehaald_cent', v_opgehaald,
+      'team_cent', public.prijs_team_cent(),
+      'kind_cent', public.prijs_kind_cent(),
+      -- wat iemand nu betaalt om het voor het hele team rond te maken
+      'nog_cent', greatest(public.prijs_team_cent() - v_opgehaald, 0),
+      'team_rond', v_rond
+    ),
+    'toegang', v_toegang
+  );
+  if not v_toegang then
+    return v_uit;
+  end if;
+
+  return v_uit || jsonb_build_object(
     'wedstrijden', coalesce((
       select jsonb_agg(jsonb_build_object(
                'datum', w.datum,
                'tegenstander', w.tegenstander,
                'thuis', w.thuis,
-               'voor', w.doelpunten_voor,
-               'tegen', w.doelpunten_tegen
+               'status', w.status,
+               -- de uitslag pas als hij vaststaat
+               'voor', case when w.status = 'afgelopen' then w.doelpunten_voor end,
+               'tegen', case when w.status = 'afgelopen' then w.doelpunten_tegen end
              ) order by w.datum, w.gemaakt)
         from public.wedstrijden w
-       where w.team_id = v_team and w.status = 'afgelopen'
-         and public.seizoen_van(w.datum) = v_seizoen
+       where w.team_id = v_team and public.seizoen_van(w.datum) = v_seizoen
     ), '[]'::jsonb),
-    'spelers', coalesce((
+    -- Elke training van dit seizoen. Is er een kind gekozen, dan met erbij of
+    -- het er was; zonder kind alleen de data.
+    'trainingen', coalesce((
       select jsonb_agg(jsonb_build_object(
-               'naam', r.naam,
-               'wedstrijden', r.wedstrijden,
-               'doelpunten', r.doelpunten,
-               'assists', r.assists
-             ) order by r.naam)
-        from (
-          select s.naam,
-                 count(*) filter (where ws.aanwezig)                as wedstrijden,
-                 (select count(*) from public.gebeurtenissen g
-                    join public.wedstrijden gw on gw.id = g.wedstrijd_id
-                   where g.soort = 'doelpunt' and g.speler = s.id
-                     and gw.status = 'afgelopen' and public.seizoen_van(gw.datum) = v_seizoen) as doelpunten,
-                 (select count(*) from public.gebeurtenissen g
-                    join public.wedstrijden gw on gw.id = g.wedstrijd_id
-                   where g.soort = 'doelpunt' and g.assist = s.id
-                     and gw.status = 'afgelopen' and public.seizoen_van(gw.datum) = v_seizoen) as assists
-            from public.spelers s
-            join public.wedstrijd_spelers ws on ws.speler_id = s.id
-            join public.wedstrijden w on w.id = ws.wedstrijd_id
-           where s.team_id = v_team and w.status = 'afgelopen'
-             and public.seizoen_van(w.datum) = v_seizoen
-           group by s.id, s.naam
-        ) r
+               'datum', tr.datum,
+               'status', (select ts.status from public.training_spelers ts
+                           where ts.training_id = tr.id and ts.speler_id = v_speler)
+             ) order by tr.datum, tr.gemaakt)
+        from public.trainingen tr
+       where tr.team_id = v_team and public.seizoen_van(tr.datum) = v_seizoen
     ), '[]'::jsonb),
-    -- hoeveel ouders dit seizoen hebben meegedaan; geen bedragen, geen namen
-    'bijdragen', (
-      select count(*) from public.bijdragen b
-       where b.team_id = v_team and b.seizoen = v_seizoen and b.status = 'betaald'
-    )
+    'gemist', case when v_speler is null then null else (
+      select jsonb_build_object(
+               'afgemeld', count(*) filter (where ts.status = 'afgemeld'),
+               'afwezig',  count(*) filter (where ts.status = 'afwezig'))
+        from public.training_spelers ts
+        join public.trainingen tr on tr.id = ts.training_id
+       where ts.speler_id = v_speler and public.seizoen_van(tr.datum) = v_seizoen
+    ) end
   );
 end;
 $$;
 
-revoke all on function public.ouderpagina(text) from public;
-grant execute on function public.ouderpagina(text) to anon, authenticated;
+revoke all on function public.ouderpagina(text, uuid) from public;
+grant execute on function public.ouderpagina(text, uuid) to anon, authenticated;
