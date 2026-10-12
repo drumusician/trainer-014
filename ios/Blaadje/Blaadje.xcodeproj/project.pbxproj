@@ -1,0 +1,638 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		21622C2D01E83FF5076277AB /* Wedstrijd.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4424A584E87CAA5425F28E7C /* Wedstrijd.swift */; };
+		22956932CCE0E1579572F126 /* Team.swift in Sources */ = {isa = PBXBuildFile; fileRef = 507553B6D971A4DC931F05D4 /* Team.swift */; };
+		2C71E1252F5BF02E0BBA1537 /* VeldMetBank.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41A5ACBABDB377A0F6B6B51 /* VeldMetBank.swift */; };
+		35ED9DBCA50194558EF1BA4D /* WedstrijddagTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0CA45AD96156CFCB5A401E /* WedstrijddagTests.swift */; };
+		5A7BAE8BB78A2DFA3885CC2A /* Seizoen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C382E273EA78C31F751D1A4 /* Seizoen.swift */; };
+		7DF8D3B7044ACBE88D7823BC /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D04AB54B3CB0A1CD75448E /* AppModel.swift */; };
+		89D4AFC883231A9DB6C15303 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BDAB35B1D9433403ED54F846 /* Assets.xcassets */; };
+		945E34631E12B93E8FFFD405 /* Thema.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE2AF97C5670424D98052815 /* Thema.swift */; };
+		9462F13A7838692467C25647 /* BewarenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E038E801763516CF87A1E4FF /* BewarenTests.swift */; };
+		AC7D0C7B891C4BAD44963372 /* Meer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB80EC168D35E79CCAB93B9 /* Meer.swift */; };
+		AEFA4331A55ADE8564317F3C /* Afloop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F2CE664A43B40A7C5A6FE0B /* Afloop.swift */; };
+		B4C970CA9F4082E7B421C96E /* Start.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7DCDE25B2D9C7AF31989D79 /* Start.swift */; };
+		C5212DB42F1340FAB961CA9C /* Opstelling.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5A9D8F1E083F837E57CCBB0 /* Opstelling.swift */; };
+		CE592AF0733085B8D6281579 /* BlaadjeKern in Frameworks */ = {isa = PBXBuildFile; productRef = 7864956EF02EE0323107578D /* BlaadjeKern */; };
+		E41BA669013E1E4EC9FAD3FA /* Veld.swift in Sources */ = {isa = PBXBuildFile; fileRef = F06AA5B7A4B4C15FDCE9B211 /* Veld.swift */; };
+		EB640E9F8FD46B0E257A2744 /* WedstrijdStroom.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A369046203866D1E62DA22 /* WedstrijdStroom.swift */; };
+		F5A5626BDF26A76424FF932A /* Proefstand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06AA30D34B27B26F6E11748A /* Proefstand.swift */; };
+		F82027F3FA6C62014B36364E /* BlaadjeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F1966BD75A5410756B4CD9 /* BlaadjeApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		90D5325D03F13BA15D9866A4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 39195CE0C4FC0CCD6B2D4EEA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B6CDB5AA52D6C4CC7B412F41;
+			remoteInfo = Blaadje;
+		};
+		D4D6F61A608BA19A46547B0E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 39195CE0C4FC0CCD6B2D4EEA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B6CDB5AA52D6C4CC7B412F41;
+			remoteInfo = Blaadje;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		06AA30D34B27B26F6E11748A /* Proefstand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Proefstand.swift; sourceTree = "<group>"; };
+		0A0CA45AD96156CFCB5A401E /* WedstrijddagTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WedstrijddagTests.swift; sourceTree = "<group>"; };
+		10D04AB54B3CB0A1CD75448E /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		14F1966BD75A5410756B4CD9 /* BlaadjeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlaadjeApp.swift; sourceTree = "<group>"; };
+		4424A584E87CAA5425F28E7C /* Wedstrijd.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wedstrijd.swift; sourceTree = "<group>"; };
+		507553B6D971A4DC931F05D4 /* Team.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Team.swift; sourceTree = "<group>"; };
+		6F2CE664A43B40A7C5A6FE0B /* Afloop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Afloop.swift; sourceTree = "<group>"; };
+		75649EB9F7354A660683E621 /* BlaadjeSchermTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BlaadjeSchermTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8304AF1BD3F4F5E097480466 /* BlaadjeTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BlaadjeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8C382E273EA78C31F751D1A4 /* Seizoen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Seizoen.swift; sourceTree = "<group>"; };
+		99615BFC579B585FAA240675 /* BlaadjeKern */ = {isa = PBXFileReference; lastKnownFileType = folder; name = BlaadjeKern; path = ../BlaadjeKern; sourceTree = SOURCE_ROOT; };
+		A7A369046203866D1E62DA22 /* WedstrijdStroom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WedstrijdStroom.swift; sourceTree = "<group>"; };
+		A7DCDE25B2D9C7AF31989D79 /* Start.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Start.swift; sourceTree = "<group>"; };
+		AE2AF97C5670424D98052815 /* Thema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thema.swift; sourceTree = "<group>"; };
+		BDAB35B1D9433403ED54F846 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C5A9D8F1E083F837E57CCBB0 /* Opstelling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Opstelling.swift; sourceTree = "<group>"; };
+		CBB80EC168D35E79CCAB93B9 /* Meer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Meer.swift; sourceTree = "<group>"; };
+		E038E801763516CF87A1E4FF /* BewarenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BewarenTests.swift; sourceTree = "<group>"; };
+		E9A05C8D48DDF32F33AD5CE7 /* Blaadje.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Blaadje.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F06AA5B7A4B4C15FDCE9B211 /* Veld.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Veld.swift; sourceTree = "<group>"; };
+		F41A5ACBABDB377A0F6B6B51 /* VeldMetBank.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VeldMetBank.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		59AB23C0D054E8E21D88FE25 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CE592AF0733085B8D6281579 /* BlaadjeKern in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0E8E5635DFB6722BF3219BBB /* Bron */ = {
+			isa = PBXGroup;
+			children = (
+				14F1966BD75A5410756B4CD9 /* BlaadjeApp.swift */,
+				0FE704C067706F078899E49B /* Model */,
+				DB09D82D242D25506F5FEFE1 /* Onderdelen */,
+				78010E6E69053ADD3BFAFFAC /* Schermen */,
+			);
+			path = Bron;
+			sourceTree = "<group>";
+		};
+		0FE704C067706F078899E49B /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				10D04AB54B3CB0A1CD75448E /* AppModel.swift */,
+				06AA30D34B27B26F6E11748A /* Proefstand.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		59C6FBE04C7C689CFD6E42C2 = {
+			isa = PBXGroup;
+			children = (
+				BDAB35B1D9433403ED54F846 /* Assets.xcassets */,
+				0E8E5635DFB6722BF3219BBB /* Bron */,
+				A52896FD4EE67E573C14FA26 /* Packages */,
+				8564BEF6DF460AB54A7034AC /* SchermTests */,
+				B9FC69B2174742473735A5D7 /* Tests */,
+				F52316242E4BA311EF722055 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		78010E6E69053ADD3BFAFFAC /* Schermen */ = {
+			isa = PBXGroup;
+			children = (
+				6F2CE664A43B40A7C5A6FE0B /* Afloop.swift */,
+				CBB80EC168D35E79CCAB93B9 /* Meer.swift */,
+				C5A9D8F1E083F837E57CCBB0 /* Opstelling.swift */,
+				8C382E273EA78C31F751D1A4 /* Seizoen.swift */,
+				A7DCDE25B2D9C7AF31989D79 /* Start.swift */,
+				507553B6D971A4DC931F05D4 /* Team.swift */,
+				4424A584E87CAA5425F28E7C /* Wedstrijd.swift */,
+				A7A369046203866D1E62DA22 /* WedstrijdStroom.swift */,
+			);
+			path = Schermen;
+			sourceTree = "<group>";
+		};
+		8564BEF6DF460AB54A7034AC /* SchermTests */ = {
+			isa = PBXGroup;
+			children = (
+				0A0CA45AD96156CFCB5A401E /* WedstrijddagTests.swift */,
+			);
+			path = SchermTests;
+			sourceTree = "<group>";
+		};
+		A52896FD4EE67E573C14FA26 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				99615BFC579B585FAA240675 /* BlaadjeKern */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		B9FC69B2174742473735A5D7 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				E038E801763516CF87A1E4FF /* BewarenTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		DB09D82D242D25506F5FEFE1 /* Onderdelen */ = {
+			isa = PBXGroup;
+			children = (
+				AE2AF97C5670424D98052815 /* Thema.swift */,
+				F06AA5B7A4B4C15FDCE9B211 /* Veld.swift */,
+				F41A5ACBABDB377A0F6B6B51 /* VeldMetBank.swift */,
+			);
+			path = Onderdelen;
+			sourceTree = "<group>";
+		};
+		F52316242E4BA311EF722055 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E9A05C8D48DDF32F33AD5CE7 /* Blaadje.app */,
+				75649EB9F7354A660683E621 /* BlaadjeSchermTests.xctest */,
+				8304AF1BD3F4F5E097480466 /* BlaadjeTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2DF43A45E765E7A1742C6D3F /* BlaadjeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D89E8462A132487716CFD857 /* Build configuration list for PBXNativeTarget "BlaadjeTests" */;
+			buildPhases = (
+				A84AC1D76D13C2620216EF09 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DE9AF99EF6F225A3660EB80B /* PBXTargetDependency */,
+			);
+			name = BlaadjeTests;
+			packageProductDependencies = (
+			);
+			productName = BlaadjeTests;
+			productReference = 8304AF1BD3F4F5E097480466 /* BlaadjeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		B6CDB5AA52D6C4CC7B412F41 /* Blaadje */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 166BE917B80BFE6800E340BD /* Build configuration list for PBXNativeTarget "Blaadje" */;
+			buildPhases = (
+				E8A3B7CB696B036123129405 /* Sources */,
+				571FE6B0E4EC4EC81A2CA719 /* Resources */,
+				59AB23C0D054E8E21D88FE25 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Blaadje;
+			packageProductDependencies = (
+				7864956EF02EE0323107578D /* BlaadjeKern */,
+			);
+			productName = Blaadje;
+			productReference = E9A05C8D48DDF32F33AD5CE7 /* Blaadje.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C410378FABC9BC255D3978EF /* BlaadjeSchermTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8BC6615860C1823D49105D22 /* Build configuration list for PBXNativeTarget "BlaadjeSchermTests" */;
+			buildPhases = (
+				70967B5D3057ABCFC297E3BF /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7E6898971006340B57BD6945 /* PBXTargetDependency */,
+			);
+			name = BlaadjeSchermTests;
+			packageProductDependencies = (
+			);
+			productName = BlaadjeSchermTests;
+			productReference = 75649EB9F7354A660683E621 /* BlaadjeSchermTests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		39195CE0C4FC0CCD6B2D4EEA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					B6CDB5AA52D6C4CC7B412F41 = {
+						ProvisioningStyle = Automatic;
+					};
+					C410378FABC9BC255D3978EF = {
+						TestTargetID = B6CDB5AA52D6C4CC7B412F41;
+					};
+				};
+			};
+			buildConfigurationList = 1E0AB6C418165B55ACB283EA /* Build configuration list for PBXProject "Blaadje" */;
+			developmentRegion = nl;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				nl,
+			);
+			mainGroup = 59C6FBE04C7C689CFD6E42C2;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C02865661EBC18F4EC937C2D /* XCLocalSwiftPackageReference "../BlaadjeKern" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F52316242E4BA311EF722055 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B6CDB5AA52D6C4CC7B412F41 /* Blaadje */,
+				2DF43A45E765E7A1742C6D3F /* BlaadjeTests */,
+				C410378FABC9BC255D3978EF /* BlaadjeSchermTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		571FE6B0E4EC4EC81A2CA719 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				89D4AFC883231A9DB6C15303 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		70967B5D3057ABCFC297E3BF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				35ED9DBCA50194558EF1BA4D /* WedstrijddagTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A84AC1D76D13C2620216EF09 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9462F13A7838692467C25647 /* BewarenTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E8A3B7CB696B036123129405 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AEFA4331A55ADE8564317F3C /* Afloop.swift in Sources */,
+				7DF8D3B7044ACBE88D7823BC /* AppModel.swift in Sources */,
+				F82027F3FA6C62014B36364E /* BlaadjeApp.swift in Sources */,
+				AC7D0C7B891C4BAD44963372 /* Meer.swift in Sources */,
+				C5212DB42F1340FAB961CA9C /* Opstelling.swift in Sources */,
+				F5A5626BDF26A76424FF932A /* Proefstand.swift in Sources */,
+				5A7BAE8BB78A2DFA3885CC2A /* Seizoen.swift in Sources */,
+				B4C970CA9F4082E7B421C96E /* Start.swift in Sources */,
+				22956932CCE0E1579572F126 /* Team.swift in Sources */,
+				945E34631E12B93E8FFFD405 /* Thema.swift in Sources */,
+				E41BA669013E1E4EC9FAD3FA /* Veld.swift in Sources */,
+				2C71E1252F5BF02E0BBA1537 /* VeldMetBank.swift in Sources */,
+				21622C2D01E83FF5076277AB /* Wedstrijd.swift in Sources */,
+				EB640E9F8FD46B0E257A2744 /* WedstrijdStroom.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7E6898971006340B57BD6945 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B6CDB5AA52D6C4CC7B412F41 /* Blaadje */;
+			targetProxy = 90D5325D03F13BA15D9866A4 /* PBXContainerItemProxy */;
+		};
+		DE9AF99EF6F225A3660EB80B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B6CDB5AA52D6C4CC7B412F41 /* Blaadje */;
+			targetProxy = D4D6F61A608BA19A46547B0E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0B8F1E76B1FAB5315D66A01D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Blaadje;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = app.blaadje.ios;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		1E39DF256880DD00E6B8948C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.blaadje.BlaadjeSchermTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Blaadje;
+			};
+			name = Debug;
+		};
+		2F9128C916EC0175440F107B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		7D122581F6A7123A226E8EC6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.blaadje.BlaadjeTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Blaadje.app/Blaadje";
+			};
+			name = Release;
+		};
+		9CB6897B485A170E2F237AF0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Blaadje;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = app.blaadje.ios;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A2DB086327D1CCDA7F73FD99 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.blaadje.BlaadjeTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Blaadje.app/Blaadje";
+			};
+			name = Debug;
+		};
+		CBE493B7D83727CAE6158EA3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F6EE091DCA0553BC164D5804 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.blaadje.BlaadjeSchermTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Blaadje;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		166BE917B80BFE6800E340BD /* Build configuration list for PBXNativeTarget "Blaadje" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9CB6897B485A170E2F237AF0 /* Debug */,
+				0B8F1E76B1FAB5315D66A01D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		1E0AB6C418165B55ACB283EA /* Build configuration list for PBXProject "Blaadje" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CBE493B7D83727CAE6158EA3 /* Debug */,
+				2F9128C916EC0175440F107B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8BC6615860C1823D49105D22 /* Build configuration list for PBXNativeTarget "BlaadjeSchermTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1E39DF256880DD00E6B8948C /* Debug */,
+				F6EE091DCA0553BC164D5804 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D89E8462A132487716CFD857 /* Build configuration list for PBXNativeTarget "BlaadjeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A2DB086327D1CCDA7F73FD99 /* Debug */,
+				7D122581F6A7123A226E8EC6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		C02865661EBC18F4EC937C2D /* XCLocalSwiftPackageReference "../BlaadjeKern" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../BlaadjeKern;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7864956EF02EE0323107578D /* BlaadjeKern */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BlaadjeKern;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 39195CE0C4FC0CCD6B2D4EEA /* Project object */;
+}
