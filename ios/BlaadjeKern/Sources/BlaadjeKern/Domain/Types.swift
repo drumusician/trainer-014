@@ -219,6 +219,8 @@ public struct Lineup: JSONModel, Equatable, Sendable, ExpressibleByDictionaryLit
 }
 
 public struct Match: JSONModel, Equatable, Sendable {
+	/** Vast kenmerk, voor het synchroniseren. Oudere opslag heeft het niet. */
+	public var id: String?
 	public var date: String
 	public var opponent: String
 	public var home: Bool
@@ -275,8 +277,10 @@ public struct Match: JSONModel, Equatable, Sendable {
 		archived: Bool? = nil,
 		absent: [String]? = nil,
 		keptBy: String? = nil,
-		plan: [PlannedSub]? = nil
+		plan: [PlannedSub]? = nil,
+		id: String? = nil
 	) {
+		self.id = id
 		self.date = date
 		self.opponent = opponent
 		self.home = home
@@ -300,6 +304,7 @@ public struct Match: JSONModel, Equatable, Sendable {
 
 	public init(json: JSONValue) throws {
 		let o = try alsObject(json, "wedstrijd")
+		id = o.str("id")
 		date = o.str("date") ?? ""
 		opponent = o.str("opponent") ?? ""
 		home = o.bool("home") ?? true
@@ -342,6 +347,7 @@ public struct Match: JSONModel, Equatable, Sendable {
 		o.zet("archived", archived)
 		o.zet("keptBy", keptBy)
 		if let plan { o["plan"] = .array(plan.map(\.json)) }
+		o.zet("id", id)
 		return .object(o)
 	}
 }
@@ -542,6 +548,8 @@ public struct Score: Equatable, Sendable, Codable, ExpressibleByArrayLiteral {
 }
 
 public struct ArchivedMatch: JSONModel, Equatable, Sendable {
+	/** Vast kenmerk, voor het synchroniseren. Oudere opslag heeft het niet. */
+	public var id: String?
 	public var date: String
 	public var opponent: String
 	public var home: Bool
@@ -585,8 +593,10 @@ public struct ArchivedMatch: JSONModel, Equatable, Sendable {
 		absent: [String]? = nil,
 		playingTime: [PlayingTimeRow] = [],
 		lineup: Lineup? = nil,
-		bench: [String]? = nil
+		bench: [String]? = nil,
+		id: String? = nil
 	) {
+		self.id = id
 		self.date = date
 		self.opponent = opponent
 		self.home = home
@@ -606,6 +616,7 @@ public struct ArchivedMatch: JSONModel, Equatable, Sendable {
 
 	public init(json: JSONValue) throws {
 		let o = try alsObject(json, "bewaarde wedstrijd")
+		id = o.str("id")
 		date = o.str("date") ?? ""
 		opponent = o.str("opponent") ?? ""
 		home = o.bool("home") ?? true
@@ -646,6 +657,7 @@ public struct ArchivedMatch: JSONModel, Equatable, Sendable {
 		if let lineup { o["lineup"] = lineup.json }
 		o.zet("bench", bench)
 		o["playingTime"] = .array(playingTime.map(\.json))
+		o.zet("id", id)
 		return .object(o)
 	}
 }

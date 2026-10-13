@@ -139,7 +139,8 @@ public enum MatchActions {
 				)
 			},
 			lineup: w.lineup,
-			bench: w.bench
+			bench: w.bench,
+			id: w.id
 		)
 		t.archive.insert(regel, at: 0)
 		w.archived = true
