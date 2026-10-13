@@ -57,6 +57,12 @@ final class VolgenTests: XCTestCase {
         XCTAssertEqual(daarna.kinderen.map(\.code), ["code-van-sem-0123456789"])
     }
 
+    func testDeLinkVanHetTeamGaatOverGeenEnkelKind() throws {
+        let pagina = try JSONDecoder().decode(Volgen.Pagina.self, from: Data(#"{"team":"JO14-1","kind":null,"seizoen":"2026/27","wedstrijden":[],"trainingen":[]}"#.utf8))
+        XCTAssertNil(pagina.kind)
+        XCTAssertEqual(pagina.naam, "JO14-1", "dan heet wat je volgt naar het team")
+    }
+
     func testEenLinkDieNietKloptVolgtNiemand() async {
         let server = Server()
         let (volgen, _) = maak(server)

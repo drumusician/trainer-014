@@ -138,13 +138,24 @@ declare
   m jsonb;
 begin
   if public.melding_voor('f5000000-0000-0000-0000-000000000012') is not null then raise exception 'een assist erbij geeft een tweede melding van hetzelfde doelpunt'; end if;
-  if public.melding_voor('f5000000-0000-0000-0000-000000000020') is not null then raise exception 'een doelpunt van een kwartier geleden wordt nog gemeld'; end if;
+  -- Een doelpunt van een kwartier geleden: geen losse melding, maar straks een samenvatting.
+  m := public.melding_voor('f5000000-0000-0000-0000-000000000020');
+  if m is null or (m->>'inhalen')::boolean is not true or m ? 'tokens' then raise exception 'een doelpunt van een kwartier geleden hoort om inhalen te vragen: %', m; end if;
   m := public.melding_voor('f5000000-0000-0000-0000-000000000021');
   if m->>'tekst' <> 'Tegendoelpunt' or m->>'titel' <> 'Sparta – JO14-1  1–2' then raise exception 'het tegendoelpunt klopt niet: %', m; end if;
   m := public.melding_voor('f5000000-0000-0000-0000-000000000022');
   if m->>'tekst' <> 'Rust' then raise exception 'de rust geeft geen melding: %', m; end if;
   m := public.melding_voor('f5000000-0000-0000-0000-000000000023');
-  if m->>'tekst' <> 'Afgelopen' then raise exception 'de eindstand van een uur geleden hoort nog te komen: %', m; end if;
+  if (m->>'inhalen')::boolean is not true then raise exception 'het einde van een uur geleden hoort in de samenvatting te komen: %', m; end if;
+
+  -- De samenvatting: wat nog niet gemeld was, in één bericht, met de stand van nu.
+  m := public.inhaalmelding('f0000000-0000-0000-0000-000000000001');
+  if m->>'titel' <> 'Sparta – JO14-1  1–2' then raise exception 'de stand in de samenvatting klopt niet: %', m->>'titel'; end if;
+  if m->>'tekst' <> 'Afgelopen: 1 doelpunt' then raise exception 'de samenvatting klopt niet: %', m->>'tekst'; end if;
+  if jsonb_array_length(m->'tokens') <> 2 then raise exception 'de samenvatting gaat niet naar beide telefoons'; end if;
+  -- Wie daarna nog om een samenvatting vraagt (de rest van de stapel) krijgt niets.
+  if public.inhaalmelding('f0000000-0000-0000-0000-000000000001') is not null then raise exception 'de samenvatting komt twee keer'; end if;
+  if public.inhaalmelding('00000000-0000-0000-0000-000000000000') is not null then raise exception 'een wedstrijd die niet bestaat geeft een samenvatting'; end if;
 
   -- Een telefoon die Apple niet meer kent, verdwijnt overal.
   perform public.vergeet_token('telefoon-van-papa-0123456789abcdef0123456789');
@@ -177,3 +188,50 @@ do $$ begin
   end if;
 end $$;
 \echo 'Volgen: een ingetrokken link is dicht, en ontvolgen haalt je weg'
+
+-- ---------- de link van het team ----------
+begin;
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"66666666-6666-6666-6666-666666666666","email":"carla@voorbeeld.nl"}';
+insert into public.deellinks (id, team_id, speler_id, code)
+values ('f4000000-0000-0000-0000-000000000009', 'cccccccc-0000-0000-0000-00000000000c', null, 'code-van-het-team-0123456789');
+do $$ begin
+  begin
+    insert into public.deellinks (team_id, speler_id) values ('cccccccc-0000-0000-0000-00000000000c', null);
+    raise exception 'een team kan twee links tegelijk hebben';
+  exception when unique_violation then null;
+  end;
+  begin
+    insert into public.deellinks (team_id, speler_id) values ('aaaaaaaa-1111-0000-0000-00000000000a', null);
+    raise exception 'je kunt een link maken voor een team dat niet van jou is';
+  exception when insufficient_privilege or foreign_key_violation then null;
+  end;
+end $$;
+commit;
+
+set role anon;
+do $$
+declare
+  p jsonb := public.volgpagina('code-van-het-team-0123456789');
+begin
+  if p is null or p->>'team' <> 'JO14-1' then raise exception 'de link van het team geeft niets: %', p; end if;
+  if p->>'kind' is not null then raise exception 'de link van het team noemt een kind'; end if;
+  if jsonb_array_length(p->'wedstrijden') <> 3 then raise exception 'de wedstrijden staan niet op de teampagina'; end if;
+  if jsonb_array_length(p->'trainingen') <> 0 then raise exception 'op de teampagina staan trainingen, en die zijn per kind'; end if;
+  if p::text like '%Sem%' or p::text like '%Noah%' then raise exception 'op de teampagina staat een kind bij naam'; end if;
+  if not public.volg('code-van-het-team-0123456789', 'telefoon-van-opa-0123456789abcdef0123456789') then raise exception 'het team volgen lukt niet'; end if;
+end $$;
+reset role;
+
+insert into public.gebeurtenissen (id, team_id, wedstrijd_id, soort, t)
+values ('f5000000-0000-0000-0000-000000000040', 'cccccccc-0000-0000-0000-00000000000c', 'f0000000-0000-0000-0000-000000000001', 'tegendoelpunt', 1800);
+set role service_role;
+do $$
+declare m jsonb := public.melding_voor('f5000000-0000-0000-0000-000000000040');
+begin
+  if m is null or not (m->'tokens') @> '[{"token":"telefoon-van-opa-0123456789abcdef0123456789"}]' then
+    raise exception 'wie het team volgt krijgt geen melding: %', m;
+  end if;
+end $$;
+reset role;
+\echo 'Volgen: één link voor het hele team, zonder iets over een los kind'

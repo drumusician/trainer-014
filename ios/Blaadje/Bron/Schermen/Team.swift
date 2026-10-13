@@ -40,7 +40,7 @@ struct Team: View {
                         }
                         .padding(.vertical, 2)
                         .swipeActions(edge: .leading) {
-                            Button { deel(p) } label: { Label("Link voor ouders", systemImage: "link") }.tint(Kleur.groen)
+                            Button { deel(p) } label: { Label("Eigen link", systemImage: "link") }.tint(Kleur.groen)
                         }
                         .swipeActions {
                             Button(role: .destructive) { app.verwijder(p) } label: { Label("Verwijder", systemImage: "trash") }
@@ -51,7 +51,15 @@ struct Team: View {
                     Text("\(app.spelers.count) spelers")
                 } footer: {
                     if !app.spelers.isEmpty {
-                        Text("De linie bepaalt wie de app voorstelt bij een wissel. Het handje betekent: kan keepen. Veeg naar links om een naam te wijzigen of iemand te verwijderen, en naar rechts voor de link waarmee ouders kunnen volgen.")
+                        Text("De linie bepaalt wie de app voorstelt bij een wissel. Het handje betekent: kan keepen. Veeg naar links om een naam te wijzigen of iemand te verwijderen, en naar rechts voor een eigen link van dat kind, waar ook zijn trainingen op staan.")
+                    }
+                }
+
+                if !app.spelers.isEmpty {
+                    Section {
+                        Button { deel(nil) } label: { Label("Link voor ouders", systemImage: "square.and.arrow.up") }
+                    } footer: {
+                        Text("Eén link voor de groepsapp. Wie hem opent volgt de wedstrijden en krijgt een melding bij de aftrap, een doelpunt, de rust en het eindsignaal. Speeltijd en wissels staan er niet op.")
                     }
                 }
 
@@ -110,11 +118,13 @@ struct Team: View {
                 NavigationStack {
                     Form {
                         Section {
-                            ShareLink(item: l.url, message: Text("Volg \(l.naam) bij \(app.toestand.teamName) in de Blaadje-app.")) {
+                            ShareLink(item: l.url, message: Text(l.kind ? "Volg \(l.naam) bij \(app.toestand.teamName) in de Blaadje-app." : "Volg de wedstrijden van \(l.naam) in de Blaadje-app.")) {
                                 Label("Stuur de link", systemImage: "square.and.arrow.up")
                             }
                         } footer: {
-                            Text("Stuur deze link alleen naar de ouders van \(l.naam). Wie hem heeft, volgt de wedstrijden en ziet de trainingen van \(l.naam), en van niemand anders. Speeltijd en wissels staan er niet op.")
+                            Text(l.kind
+                                ? "Stuur deze link alleen naar de ouders van \(l.naam). Wie hem heeft, volgt de wedstrijden en ziet ook de trainingen van \(l.naam), en van niemand anders."
+                                : "Zet deze link in de groepsapp van het team. Over een los kind staat er niets op.")
                         }
                     }
                     .navigationTitle("Link voor \(l.naam)")
@@ -137,16 +147,18 @@ struct Team: View {
 
 private struct Ouderlink: Identifiable {
     let naam: String
+    /// De eigen link van één kind, in plaats van die van het team.
+    let kind: Bool
     let url: URL
     var id: String { url.absoluteString }
 }
 
 extension Team {
     /// De link hangt aan je account: zonder inloggen is er niets om naar te verwijzen.
-    fileprivate func deel(_ p: Player) {
+    fileprivate func deel(_ p: Player?) {
         Task {
             do {
-                link = Ouderlink(naam: p.name, url: try await account.ouderlink(speler: p.id))
+                link = Ouderlink(naam: p?.name ?? app.toestand.teamName, kind: p != nil, url: try await account.ouderlink(speler: p?.id))
             } catch Account.LinkFout.nietIngelogd {
                 linkMelding = "Log eerst in bij Meer. De link verwijst naar je team in je account."
             } catch {

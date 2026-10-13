@@ -28,7 +28,10 @@ final class Volgen {
 
     struct Pagina: Decodable, Equatable {
         let team: String
-        let kind: String
+        /// Leeg bij de link van het hele team: die gaat over geen enkel kind.
+        let kind: String?
+        /// Wie of wat je volgt, in woorden.
+        var naam: String { kind ?? team }
         let wedstrijden: [Wedstrijd]
         let trainingen: [Training]
     }

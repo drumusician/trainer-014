@@ -30,7 +30,7 @@ struct Start: View {
                     if !app.toestand.archive.isEmpty { seizoen }
                     if !app.spelers.isEmpty, !volgen.kinderen.isEmpty {
                         Button { volgTonen = true } label: {
-                            Label("Je volgt \(volgen.kinderen.compactMap { $0.pagina?.kind }.joined(separator: " en "))", systemImage: "bell")
+                            Label("Je volgt \(volgen.kinderen.compactMap { $0.pagina?.naam }.joined(separator: " en "))", systemImage: "bell")
                         }
                         .buttonStyle(TweedeKnop())
                     }
@@ -68,7 +68,7 @@ struct Start: View {
     private var ouder: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Ben je ouder?").font(.title3.bold())
-            Text("Tik op de link die je van de trainer kreeg, of plak hem hier. Dan volg je de wedstrijden van je kind.")
+            Text("Tik op de link die de trainer deelde, of plak hem hier. Dan volg je de wedstrijden van het team.")
                 .foregroundStyle(.secondary)
             Button("Ik heb een link") { linkPlakken = true }.buttonStyle(TweedeKnop())
         }

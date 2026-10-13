@@ -20,7 +20,7 @@ struct VolgScherm: View {
             .navigationTitle("Volgen")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button { toevoegen = true } label: { Label("Nog een kind volgen", systemImage: "plus") }
+                    Button { toevoegen = true } label: { Label("Nog een team volgen", systemImage: "plus") }
                 }
             }
             .refreshable { await volgen.ververs() }
@@ -53,7 +53,7 @@ struct VolgScherm: View {
                 Text("Er staat nog geen wedstrijd klaar.").foregroundStyle(.secondary)
             }
         } header: {
-            Text("\(p.kind) · \(p.team)")
+            Text(p.kind.map { "\($0) · \(p.team)" } ?? p.team)
         } footer: {
             Text("Je krijgt een melding bij de aftrap, een doelpunt, de rust en het eindsignaal.")
         }
@@ -67,17 +67,20 @@ struct VolgScherm: View {
             }
         }
         Section {
-            if p.trainingen.isEmpty {
-                Text("De trainer heeft nog geen trainingen bijgehouden.").foregroundStyle(.secondary)
-            } else if gemist.isEmpty {
-                Text("\(p.kind) was er elke keer.")
+            // De trainingen zijn per kind; met de link van het team staan ze er niet.
+            if let kind = p.kind {
+                if p.trainingen.isEmpty {
+                    Text("De trainer heeft nog geen trainingen bijgehouden.").foregroundStyle(.secondary)
+                } else if gemist.isEmpty {
+                    Text("\(kind) was er elke keer.")
+                }
+                ForEach(gemist.reversed()) { t in
+                    LabeledContent(dateText(t.datum), value: t.status == "afgemeld" ? "afgemeld" : "niet gekomen")
+                }
             }
-            ForEach(gemist.reversed()) { t in
-                LabeledContent(dateText(t.datum), value: t.status == "afgemeld" ? "afgemeld" : "niet gekomen")
-            }
-            Button("Stop met volgen van \(p.kind)", role: .destructive) { Task { await volgen.stop(kind) } }
+            Button("Stop met volgen van \(p.naam)", role: .destructive) { Task { await volgen.stop(kind) } }
         } header: {
-            Text("Trainingen: \(p.trainingen.count - gemist.count) van de \(p.trainingen.count) geweest")
+            if p.kind != nil { Text("Trainingen: \(p.trainingen.count - gemist.count) van de \(p.trainingen.count) geweest") }
         }
     }
 
@@ -104,10 +107,10 @@ struct LinkPlakken: View {
                         Task { @MainActor in link = tekst.first ?? "" }
                     }
                 } footer: {
-                    Text(volgen.melding ?? "De trainer stuurt je een eigen link voor je kind. Daarmee volg je de wedstrijden; een account heb je niet nodig.")
+                    Text(volgen.melding ?? "De trainer deelt een link van het team. Daarmee volg je de wedstrijden; een account heb je niet nodig.")
                 }
             }
-            .navigationTitle("Een kind volgen")
+            .navigationTitle("Een team volgen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Annuleer") { dismiss() } }

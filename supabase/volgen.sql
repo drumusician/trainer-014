@@ -12,6 +12,23 @@
 --
 -- Te herhalen: alles staat achter 'if not exists' of 'or replace'.
 
+-- ---------- de link voor het hele team ----------
+-- Een link per kind is voor de trainer veertien berichten sturen. Wat een volger
+-- vooral wil — de wedstrijd, de stand, de meldingen — is voor het hele team
+-- hetzelfde. Dus kan een link ook van het team zijn: `speler_id` is dan leeg, en
+-- hij gaat zo de groepsapp in. Wie hem opent ziet niets over een los kind.
+-- De link per kind blijft, voor wie ook de trainingen van zijn eigen kind wil zien.
+alter table public.deellinks alter column speler_id drop not null;
+create unique index if not exists deellinks_een_per_team
+  on public.deellinks (team_id) where speler_id is null and ingetrokken is null;
+-- Zonder kind hangt de link alleen nog aan het team; gaat het team weg, dan hij ook.
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'deellinks_team_fkey') then
+    alter table public.deellinks
+      add constraint deellinks_team_fkey foreign key (team_id) references public.teams (id) on delete cascade;
+  end if;
+end $$;
+
 -- ---------- wie er volgt ----------
 -- `token` is het adres van de telefoon bij Apple. `omgeving` zegt via welke
 -- deur Apple hem aanneemt: een app uit Xcode zit in de proefomgeving, een app
@@ -73,8 +90,9 @@ grant execute on function public.volg(text, text, text) to anon, authenticated;
 grant execute on function public.ontvolg(text, text) to anon, authenticated;
 
 -- ---------- wat een volger ziet ----------
--- Het team, de voornaam van het kind, de wedstrijden van dit seizoen (ook die
--- nu loopt, met de stand), en de trainingen met of dit kind er was.
+-- Het team en de wedstrijden van dit seizoen (ook die nu loopt, met de stand).
+-- Met de link van een kind ook de voornaam van dat kind en de trainingen met of
+-- het er was; met de link van het team staat er over geen enkel kind iets op.
 -- Klopt de code niet of is hij ingetrokken, dan komt er niets terug.
 create or replace function public.volgpagina(p_code text) returns jsonb
 language plpgsql security definer stable
@@ -117,6 +135,8 @@ begin
              ) order by tr.datum, tr.gemaakt)
         from public.trainingen tr
        where tr.team_id = v_team and public.seizoen_van(tr.datum) = v_seizoen
+         -- alleen met de link van een kind
+         and v_speler is not null
     ), '[]'::jsonb)
   );
 end;
@@ -132,9 +152,10 @@ grant execute on function public.volgpagina(text) to anon, authenticated;
 -- - alleen de aftrap, een doelpunt, de rust en het einde; geen wissels;
 -- - alleen bij een wedstrijd die bezig is. Wie een oud seizoen in zijn account
 --   zet, stuurt geen honderd meldingen over wedstrijden van weken geleden;
--- - niet als het langer dan tien minuten geleden gebeurde. Had de trainer geen
---   bereik, dan komt alles na afloop tegelijk aan, en acht meldingen achter
---   elkaar is geen dienst. De eindstand komt dan nog wel, tot drie uur later;
+-- - gebeurde het langer dan tien minuten geleden, dan geen losse melding. Had de
+--   trainer geen bereik, dan komt alles tegelijk aan, en acht meldingen achter
+--   elkaar is geen dienst. Dan komt er 'inhalen' terug, en volgt er even later
+--   één samenvatting (`inhaalmelding`). Na drie uur is het geen nieuws meer;
 -- - nooit twee keer hetzelfde.
 create or replace function public.melding_voor(p_gebeurtenis uuid) returns jsonb
 language plpgsql security definer
@@ -160,12 +181,15 @@ begin
   if not found or w.status <> 'bezig' then
     return null;
   end if;
-  if g.gemaakt < now() - (case when g.soort = 'einde' then interval '3 hours' else interval '10 minutes' end) then
-    return null;
-  end if;
   -- Alleen de rust: bij vier kwarten zijn de andere pauzes geen nieuws.
   if g.soort = 'pauze' and coalesce(g.deel, 1) <> w.delen / 2 then
     return null;
+  end if;
+  if g.gemaakt < now() - interval '3 hours' then
+    return null;
+  end if;
+  if g.gemaakt < now() - interval '10 minutes' then
+    return jsonb_build_object('inhalen', true, 'wedstrijd', w.id);
   end if;
 
   select jsonb_agg(distinct jsonb_build_object('token', v.token, 'omgeving', v.omgeving)) into v_tokens
@@ -208,6 +232,100 @@ begin
 end;
 $$;
 
+-- ---------- de samenvatting na even geen bereik ----------
+-- Alles wat er in deze wedstrijd te melden viel en nog niet gemeld is, in één
+-- bericht, met de stand van nu. De serverfunctie roept dit een paar tellen na
+-- een 'inhalen' aan, zodat de rest van de stapel er dan ook is. Komen er tien
+-- gebeurtenissen tegelijk binnen, dan vragen er tien om een samenvatting: de
+-- eerste krijgt hem, de andere negen krijgen niets.
+create or replace function public.inhaalmelding(p_wedstrijd uuid) returns jsonb
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  w          public.wedstrijden%rowtype;
+  v_team     text;
+  v_voor     integer;
+  v_tegen    integer;
+  v_stand    text;
+  v_tokens   jsonb;
+  v_makers   text[];
+  v_zonder   integer;
+  v_tegens   integer;
+  v_einde    boolean;
+  v_delen    text[] := '{}';
+begin
+  -- Eén tegelijk per wedstrijd, anders verdelen twee aanroepen de stapel onder elkaar.
+  perform pg_advisory_xact_lock(hashtext(p_wedstrijd::text));
+  select * into w from public.wedstrijden where id = p_wedstrijd;
+  if not found then
+    return null;
+  end if;
+
+  with nieuw as (
+    insert into public.meldingen (sleutel)
+    select e.wedstrijd_id || '|' || e.soort || '|' || e.t || '|' || coalesce(e.speler::text, '') || '|' || coalesce(e.deel::text, '')
+      from public.gebeurtenissen e
+     where e.wedstrijd_id = p_wedstrijd
+       and e.soort in ('doelpunt', 'tegendoelpunt', 'einde')
+       and e.gemaakt >= now() - interval '3 hours'
+    on conflict do nothing
+    returning sleutel
+  ), gemist as (
+    select e.soort, s.naam
+      from public.gebeurtenissen e
+      left join public.spelers s on s.id = e.speler
+     where e.wedstrijd_id = p_wedstrijd
+       and (e.wedstrijd_id || '|' || e.soort || '|' || e.t || '|' || coalesce(e.speler::text, '') || '|' || coalesce(e.deel::text, ''))
+           in (select sleutel from nieuw)
+  )
+  select array_agg(naam order by naam) filter (where soort = 'doelpunt' and naam is not null),
+         count(*) filter (where soort = 'doelpunt' and naam is null),
+         count(*) filter (where soort = 'tegendoelpunt'),
+         coalesce(bool_or(soort = 'einde'), false)
+    into v_makers, v_zonder, v_tegens, v_einde
+    from gemist;
+  if v_makers is null and v_zonder = 0 and v_tegens = 0 and not v_einde then
+    return null;
+  end if;
+
+  select jsonb_agg(distinct jsonb_build_object('token', v.token, 'omgeving', v.omgeving)) into v_tokens
+    from public.volgers v
+    join public.deellinks d on d.id = v.deellink_id
+   where d.team_id = w.team_id and d.ingetrokken is null;
+  if v_tokens is null then
+    return null;
+  end if;
+
+  select t.naam into v_team from public.teams t where t.id = w.team_id;
+  select count(*) filter (where e.soort = 'doelpunt'), count(*) filter (where e.soort = 'tegendoelpunt')
+    into v_voor, v_tegen
+    from public.gebeurtenissen e where e.wedstrijd_id = w.id;
+  v_stand := case when w.thuis
+    then v_team || ' – ' || w.tegenstander || '  ' || v_voor || '–' || v_tegen
+    else w.tegenstander || ' – ' || v_team || '  ' || v_tegen || '–' || v_voor end;
+
+  if v_makers is not null then
+    v_delen := v_delen || ('gescoord door ' || array_to_string(v_makers, ', '));
+  end if;
+  if v_zonder > 0 then
+    v_delen := v_delen || (v_zonder || case when v_zonder = 1 then ' doelpunt' else ' doelpunten' end
+                           || case when v_makers is not null then ' erbij' else '' end);
+  end if;
+  if v_tegens > 0 then
+    v_delen := v_delen || (v_tegens || case when v_tegens = 1 then ' tegendoelpunt' else ' tegendoelpunten' end);
+  end if;
+
+  return jsonb_build_object(
+    'titel', v_stand,
+    'tekst', case when v_einde then 'Afgelopen' else 'Bijgewerkt' end
+             || case when cardinality(v_delen) > 0 then ': ' || array_to_string(v_delen, ', ') else '' end,
+    'wedstrijd', w.id,
+    'tokens', v_tokens
+  );
+end;
+$$;
+
 -- Een adres dat Apple niet meer kent: die telefoon heeft de app niet meer.
 create or replace function public.vergeet_token(p_token text) returns void
 language sql security definer
@@ -219,5 +337,7 @@ $$;
 -- Alleen de serverfunctie mag hierbij, met de sleutel die langs de regels heen mag.
 revoke all on function public.melding_voor(uuid) from public, anon, authenticated;
 revoke all on function public.vergeet_token(text) from public, anon, authenticated;
+revoke all on function public.inhaalmelding(uuid) from public, anon, authenticated;
+grant execute on function public.inhaalmelding(uuid) to service_role;
 grant execute on function public.melding_voor(uuid) to service_role;
 grant execute on function public.vergeet_token(text) to service_role;

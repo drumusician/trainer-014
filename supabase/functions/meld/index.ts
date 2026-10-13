@@ -35,7 +35,13 @@ Deno.serve(async (verzoek) => {
     const { type, table, record } = await verzoek.json();
     if (type !== "INSERT" || table !== "gebeurtenissen" || !record?.id) return Response.json({ gemeld: false });
 
-    const melding = await rpc("melding_voor", { p_gebeurtenis: record.id });
+    let melding = await rpc("melding_voor", { p_gebeurtenis: record.id });
+    if (melding?.inhalen) {
+      // Dit gebeurde al even geleden: de trainer had geen bereik en nu komt alles
+      // tegelijk binnen. Even wachten tot de stapel er is, en dan één samenvatting.
+      await new Promise((klaar) => setTimeout(klaar, 8000));
+      melding = await rpc("inhaalmelding", { p_wedstrijd: melding.wedstrijd });
+    }
     if (!melding) return Response.json({ gemeld: false });
 
     const uitkomst = await verstuur(melding, melding.tokens, {

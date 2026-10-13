@@ -30,11 +30,11 @@ struct Meer: View {
                 }
                 if Account.beschikbaar { accountDeel }
                 Section {
-                    Button { linkPlakken = true } label: { Label("Een kind volgen", systemImage: "bell") }
+                    Button { linkPlakken = true } label: { Label("Een team volgen", systemImage: "bell") }
                 } footer: {
                     Text(volgen.kinderen.isEmpty
-                        ? "Heb je van een trainer een link gekregen? Daarmee volg je de wedstrijden van je kind."
-                        : "Je volgt \(volgen.kinderen.compactMap { $0.pagina?.kind }.joined(separator: " en ")). Je vindt het op het beginscherm.")
+                        ? "Heb je van een trainer een link gekregen? Daarmee volg je de wedstrijden van het team."
+                        : "Je volgt \(volgen.kinderen.compactMap { $0.pagina?.naam }.joined(separator: " en ")). Je vindt het op het beginscherm.")
                 }
                 Section {
                     Button { bestandKiezen = true } label: { Label("Kies een back-up", systemImage: "doc") }

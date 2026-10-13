@@ -238,8 +238,10 @@ final class Account {
 
     enum LinkFout: Error { case nietIngelogd, mislukt }
 
-    /// De eigen link van een kind. Bestaat hij al, dan dezelfde; anders een nieuwe.
-    func ouderlink(speler: String) async throws -> URL {
+    /// De link waarmee anderen kunnen volgen: van het hele team, of (met `speler`)
+    /// de eigen link van één kind, waar ook de trainingen van dat kind op staan.
+    /// Bestaat hij al, dan dezelfde; anders een nieuwe.
+    func ouderlink(speler: String? = nil) async throws -> URL {
         guard case .aan = fase, let team = teamId else { throw LinkFout.nietIngelogd }
         let bewijs = try await inlog.bewijs()
         func vraag(_ methode: String, _ pad: String, _ inhoud: [String: String]? = nil) async throws -> [[String: Any]] {
@@ -254,8 +256,13 @@ final class Account {
             guard let status = (antwoord as? HTTPURLResponse)?.statusCode, (200..<300).contains(status) else { throw LinkFout.mislukt }
             return (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] ?? []
         }
-        var rijen = try await vraag("GET", "deellinks?select=code&speler_id=eq.\(speler)&ingetrokken=is.null")
-        if rijen.isEmpty { rijen = try await vraag("POST", "deellinks?select=code", ["team_id": team, "speler_id": speler]) }
+        let wie = speler.map { "speler_id=eq.\($0)" } ?? "speler_id=is.null"
+        var rijen = try await vraag("GET", "deellinks?select=code&team_id=eq.\(team)&\(wie)&ingetrokken=is.null")
+        if rijen.isEmpty {
+            var nieuw = ["team_id": team]
+            if let speler { nieuw["speler_id"] = speler }
+            rijen = try await vraag("POST", "deellinks?select=code", nieuw)
+        }
         guard let code = rijen.first?["code"] as? String, let url = URL(string: "https://blaadje.app/volg/?c=\(code)") else { throw LinkFout.mislukt }
         return url
     }
