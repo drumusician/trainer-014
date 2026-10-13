@@ -9,6 +9,8 @@ struct Meer: View {
     @State private var email = ""
     @State private var inlogcode = ""
     @State private var uitloggenVragen = false
+    @State private var linkPlakken = false
+    @Environment(Volgen.self) private var volgen
     @State private var teamnaam = ""
     @State private var code = ""
     @State private var bestandKiezen = false
@@ -27,6 +29,13 @@ struct Meer: View {
                         }
                 }
                 if Account.beschikbaar { accountDeel }
+                Section {
+                    Button { linkPlakken = true } label: { Label("Een kind volgen", systemImage: "bell") }
+                } footer: {
+                    Text(volgen.kinderen.isEmpty
+                        ? "Heb je van een trainer een link gekregen? Daarmee volg je de wedstrijden van je kind."
+                        : "Je volgt \(volgen.kinderen.compactMap { $0.pagina?.kind }.joined(separator: " en ")). Je vindt het op het beginscherm.")
+                }
                 Section {
                     Button { bestandKiezen = true } label: { Label("Kies een back-up", systemImage: "doc") }
                     TextField("Of plak hier een overzetcode", text: $code, axis: .vertical)
@@ -58,6 +67,7 @@ struct Meer: View {
                 }
             }
             .toetsenbordWeg()
+            .sheet(isPresented: $linkPlakken) { LinkPlakken() }
             .navigationTitle("Meer")
             .onAppear { teamnaam = app.toestand.teamName }
             .fileImporter(isPresented: $bestandKiezen, allowedContentTypes: [.json, .plainText]) { resultaat in
