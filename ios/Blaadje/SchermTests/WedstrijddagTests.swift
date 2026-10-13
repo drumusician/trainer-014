@@ -97,6 +97,89 @@ final class WedstrijddagTests: XCTestCase {
         XCTAssertTrue(bewaard.waitForExistence(timeout: 5), "de bewaarde wedstrijd hoort bij Seizoen te staan")
         XCTAssertTrue(bewaard.label.contains("1 – 0"))
         beeld("8-seizoen")
+
+        // Terugkijken, en een doelpunt bijwerken dat je langs de lijn miste.
+        bewaard.tap()
+        XCTAssertTrue(app.buttons["Bijwerken"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["SP: Thijs"].exists, "de opstelling bij de aftrap hoort terug te rekenen te zijn")
+        beeld("9-bewaard")
+        app.buttons["Bijwerken"].tap()
+        app.swipeUp()
+        let minuut = app.textFields["Minuut"]
+        XCTAssertTrue(minuut.waitForExistence(timeout: 5))
+        minuut.tap()
+        minuut.typeText("20")
+        app.buttons["Tegen"].tap()
+        beeld("9-bijwerken")
+        app.buttons["Voeg doelpunt toe"].tap()
+        app.swipeDown()
+        app.swipeDown()
+        XCTAssertTrue(app.staticTexts["1 – 1"].waitForExistence(timeout: 5), "de stand telt opnieuw na een doelpunt erbij")
+    }
+
+    func testEenTrainingBijhouden() {
+        app.launchArguments = ["-proef-team"]
+        app.launch()
+
+        app.tabBars.buttons["Trainingen"].tap()
+        beeld("t1-leeg")
+        app.buttons["Training van vandaag"].tap()
+        XCTAssertTrue(app.buttons["Sem, aanwezig"].waitForExistence(timeout: 5))
+        app.buttons["Noah, aanwezig"].tap()
+        XCTAssertTrue(app.buttons["Noah, afgemeld"].waitForExistence(timeout: 5))
+        app.buttons["Luuk, aanwezig"].tap()
+        app.buttons["Luuk, afgemeld"].tap()
+        XCTAssertTrue(app.buttons["Luuk, niet gekomen"].waitForExistence(timeout: 5))
+        beeld("t2-training")
+        app.navigationBars.buttons.firstMatch.tap()
+
+        let regel = app.staticTexts["12 aanwezig, 1 afgemeld, 1 niet gekomen"]
+        XCTAssertTrue(regel.waitForExistence(timeout: 5), "de lijst hoort te tellen wie er was")
+        beeld("t3-lijst")
+    }
+
+    func testEenWisselUitHetPlan() {
+        app.launchArguments = ["-proef-team"]
+        app.launch()
+
+        app.buttons["Nieuwe wedstrijd"].tap()
+        XCTAssertTrue(app.buttons["Begin"].waitForExistence(timeout: 5))
+        app.buttons["Begin"].tap()
+        XCTAssertTrue(app.buttons["Naar de opstelling"].waitForExistence(timeout: 5))
+        app.buttons["Naar de opstelling"].tap()
+
+        // Vooraf: wie zat er al veel op de bank, en wat weten we al over de rust.
+        XCTAssertTrue(app.buttons["Bank tot nu toe"].waitForExistence(timeout: 5))
+        beeld("p1-opstelling")
+        app.buttons["Bank tot nu toe"].tap()
+        XCTAssertTrue(app.staticTexts["nu op de bank"].firstMatch.waitForExistence(timeout: 5))
+        beeld("p2-bank")
+        app.buttons["Klaar"].tap()
+
+        app.buttons["Wisselplan"].tap()
+        XCTAssertTrue(app.staticTexts["Nog niets gepland."].waitForExistence(timeout: 5))
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Eruit")).firstMatch.tap()
+        app.buttons["Thijs (SP)"].tap()
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Erin")).firstMatch.tap()
+        app.buttons["Stijn"].tap()
+        app.buttons["Zet in het plan"].tap()
+        XCTAssertTrue(app.staticTexts["Stijn voor Thijs (SP)"].waitForExistence(timeout: 5))
+        beeld("p3-plan")
+        app.buttons["Klaar"].tap()
+
+        app.buttons["Naar de wedstrijd"].tap()
+        XCTAssertTrue(app.buttons["Aftrap"].waitForExistence(timeout: 5))
+        app.buttons["Aftrap"].tap()
+        XCTAssertFalse(app.buttons["Wissel"].exists, "in minuut 0 hoef je nog niet te lezen wat er in de rust gebeurt")
+
+        // Rust: nu staat de stap onder het veld, en één tik voert hem uit.
+        app.buttons["Einde 1e helft"].tap()
+        XCTAssertTrue(app.buttons["Wissel"].waitForExistence(timeout: 5))
+        beeld("p4-rust")
+        app.buttons["Wissel"].tap()
+        XCTAssertTrue(app.buttons["SP: Stijn"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Bank: Thijs"].exists)
+        XCTAssertFalse(app.buttons["Wissel"].exists, "een gedane stap hoort weg te zijn")
     }
 
     func testEenNieuwTeamOpzetten() {

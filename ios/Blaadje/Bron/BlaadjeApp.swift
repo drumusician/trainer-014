@@ -21,6 +21,7 @@ struct Hoofdscherm: View {
     var body: some View {
         TabView {
             Start().tabItem { Label("Wedstrijd", systemImage: "sportscourt") }
+            Trainingen().tabItem { Label("Trainingen", systemImage: "figure.run") }
             Team().tabItem { Label("Team", systemImage: "person.3") }
             Seizoen().tabItem { Label("Seizoen", systemImage: "chart.bar") }
             Meer().tabItem { Label("Meer", systemImage: "ellipsis.circle") }

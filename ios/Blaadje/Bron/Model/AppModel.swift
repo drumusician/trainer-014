@@ -272,6 +272,92 @@ final class AppModel {
         return true
     }
 
+    // MARK: - het wisselplan
+
+    func planVoegToe(minuut: Int, erin: String, eruit: String, naDeel: Int?, ruil: Bool) {
+        guard PlanActions.voegToe(
+            &toestand.match, minuut: Double(minuut), on: erin, off: eruit, naDeel: naDeel, soort: ruil ? .ruil : nil)
+        else { return }
+        bewaar()
+    }
+
+    func planHaalWeg(_ id: String) {
+        if PlanActions.haalWeg(&toestand.match, id: id) { bewaar() }
+    }
+
+    func planSlaOver(_ id: String, _ overslaan: Bool = true) {
+        if PlanActions.slaOver(&toestand.match, id: id, overslaan: overslaan) { bewaar() }
+    }
+
+    /// De stap doorvoeren. Het moment kiest de trainer; de app wisselt nooit zelf.
+    func planVoerUit(_ id: String) {
+        guard PlanActions.voerUit(&toestand.match, nu: nu, id: id) else { return }
+        gekozenPlek = nil
+        bewaar()
+    }
+
+    // MARK: - trainingen
+
+    /// Iedereen staat op aanwezig; je tikt alleen wie er niet is.
+    func nieuweTraining() -> String {
+        let training = TrainingActions.newTraining(&toestand, vandaag: vandaag)
+        bewaar()
+        return training.id
+    }
+
+    func training(_ id: String) -> Training? { TrainingActions.trainingById(toestand, id) }
+
+    func tikAanwezigheid(_ trainingId: String, _ spelerId: String) {
+        if TrainingActions.cycleAttendance(&toestand, trainingId: trainingId, spelerId) { bewaar() }
+    }
+
+    func zetTrainingDatum(_ trainingId: String, _ datum: Date) {
+        if TrainingActions.setTrainingDate(&toestand, trainingId: trainingId, date: AppModel.tekst(datum)) { bewaar() }
+    }
+
+    func verwijderTraining(_ trainingId: String) {
+        TrainingActions.removeTraining(&toestand, trainingId: trainingId)
+        bewaar()
+    }
+
+    // MARK: - een bewaarde wedstrijd bijwerken
+
+    func wijzigBewaard(_ i: Int, datum: Date? = nil, tegenstander: String? = nil, thuis: Bool? = nil) {
+        if ArchiveActions.wijzig(&toestand, i, date: datum.map(AppModel.tekst), opponent: tegenstander, home: thuis) { bewaar() }
+    }
+
+    func zetBewaardeNotitie(_ i: Int, _ tekst: String) {
+        if ArchiveActions.setNote(&toestand, i, tekst) { bewaar() }
+    }
+
+    func verwijderBewaard(_ i: Int) {
+        ArchiveActions.verwijderWedstrijd(&toestand, i)
+        bewaar()
+    }
+
+    /// Alleen doelpunten: aan de wissels hangt de speeltijd, die blijven staan.
+    func haalDoelpuntWeg(_ i: Int, _ index: Int) {
+        if ArchiveActions.removeGoal(&toestand, i, index) { bewaar() }
+    }
+
+    func doelpuntErbij(_ i: Int, minuut: Int, maker: String?, tegen: Bool) {
+        if ArchiveActions.addGoal(&toestand, i, minuut: Double(minuut), spelerId: tegen ? nil : maker, tegen: tegen) { bewaar() }
+    }
+
+    // MARK: - datums
+
+    /// Datums staan bewaard als "2026-09-04", net als op het web.
+    private static let dagvorm: DateFormatter = {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    static func tekst(_ datum: Date) -> String { dagvorm.string(from: datum) }
+    static func datum(_ tekst: String) -> Date? { dagvorm.date(from: tekst) }
+
     // MARK: - overzetten
 
     /// Een back-up of overzetcode van de webversie inlezen. Geeft terug wat erin zat.

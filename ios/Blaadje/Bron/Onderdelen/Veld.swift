@@ -6,6 +6,8 @@ struct Veld: View {
     let formatie: String
     let opstelling: Lineup
     var gekozen: String?
+    /// Plekken waar net iets veranderde, bij het terugkijken van een wedstrijd.
+    var gemarkeerd: Set<String> = []
     /// Seconden gespeeld per speler; tijdens een wedstrijd staan de minuten onder de naam.
     var tijden: [String: Double]?
     let naam: (String?) -> String?
@@ -36,6 +38,7 @@ struct Veld: View {
                                     in: RoundedRectangle(cornerRadius: 8)
                                 )
                                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(.white, lineWidth: gekozen == plek.id ? 2 : 0))
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Kleur.oranje, lineWidth: gemarkeerd.contains(plek.id) ? 3 : 0))
                             HStack(spacing: 4) {
                                 Text(plek.label)
                                 if let id, let tijden {

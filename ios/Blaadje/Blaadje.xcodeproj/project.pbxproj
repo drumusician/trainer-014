@@ -11,7 +11,9 @@
 		22956932CCE0E1579572F126 /* Team.swift in Sources */ = {isa = PBXBuildFile; fileRef = 507553B6D971A4DC931F05D4 /* Team.swift */; };
 		2C71E1252F5BF02E0BBA1537 /* VeldMetBank.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41A5ACBABDB377A0F6B6B51 /* VeldMetBank.swift */; };
 		35ED9DBCA50194558EF1BA4D /* WedstrijddagTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0CA45AD96156CFCB5A401E /* WedstrijddagTests.swift */; };
+		421023759AC75F62D978C585 /* Wisselplan.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D1F4C07758799E61367E1C /* Wisselplan.swift */; };
 		5A7BAE8BB78A2DFA3885CC2A /* Seizoen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C382E273EA78C31F751D1A4 /* Seizoen.swift */; };
+		5ADE009AA8E21B2509CE3157 /* Trainingen.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0CC566E3568FDF8629AAC1A /* Trainingen.swift */; };
 		7DF8D3B7044ACBE88D7823BC /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D04AB54B3CB0A1CD75448E /* AppModel.swift */; };
 		89D4AFC883231A9DB6C15303 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BDAB35B1D9433403ED54F846 /* Assets.xcassets */; };
 		945E34631E12B93E8FFFD405 /* Thema.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE2AF97C5670424D98052815 /* Thema.swift */; };
@@ -21,6 +23,7 @@
 		B4C970CA9F4082E7B421C96E /* Start.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7DCDE25B2D9C7AF31989D79 /* Start.swift */; };
 		C5212DB42F1340FAB961CA9C /* Opstelling.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5A9D8F1E083F837E57CCBB0 /* Opstelling.swift */; };
 		CE592AF0733085B8D6281579 /* BlaadjeKern in Frameworks */ = {isa = PBXBuildFile; productRef = 7864956EF02EE0323107578D /* BlaadjeKern */; };
+		D37C67CCF8C28F81B6D153A8 /* SnelheidTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE837B0C604D3E434DC8A92F /* SnelheidTests.swift */; };
 		E41BA669013E1E4EC9FAD3FA /* Veld.swift in Sources */ = {isa = PBXBuildFile; fileRef = F06AA5B7A4B4C15FDCE9B211 /* Veld.swift */; };
 		EB640E9F8FD46B0E257A2744 /* WedstrijdStroom.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A369046203866D1E62DA22 /* WedstrijdStroom.swift */; };
 		F5A5626BDF26A76424FF932A /* Proefstand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06AA30D34B27B26F6E11748A /* Proefstand.swift */; };
@@ -59,12 +62,15 @@
 		A7A369046203866D1E62DA22 /* WedstrijdStroom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WedstrijdStroom.swift; sourceTree = "<group>"; };
 		A7DCDE25B2D9C7AF31989D79 /* Start.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Start.swift; sourceTree = "<group>"; };
 		AE2AF97C5670424D98052815 /* Thema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thema.swift; sourceTree = "<group>"; };
+		AE837B0C604D3E434DC8A92F /* SnelheidTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnelheidTests.swift; sourceTree = "<group>"; };
 		BDAB35B1D9433403ED54F846 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C5A9D8F1E083F837E57CCBB0 /* Opstelling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Opstelling.swift; sourceTree = "<group>"; };
 		CBB80EC168D35E79CCAB93B9 /* Meer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Meer.swift; sourceTree = "<group>"; };
+		D0CC566E3568FDF8629AAC1A /* Trainingen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trainingen.swift; sourceTree = "<group>"; };
 		E038E801763516CF87A1E4FF /* BewarenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BewarenTests.swift; sourceTree = "<group>"; };
 		E9A05C8D48DDF32F33AD5CE7 /* Blaadje.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Blaadje.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F06AA5B7A4B4C15FDCE9B211 /* Veld.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Veld.swift; sourceTree = "<group>"; };
+		F2D1F4C07758799E61367E1C /* Wisselplan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wisselplan.swift; sourceTree = "<group>"; };
 		F41A5ACBABDB377A0F6B6B51 /* VeldMetBank.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VeldMetBank.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -121,8 +127,10 @@
 				8C382E273EA78C31F751D1A4 /* Seizoen.swift */,
 				A7DCDE25B2D9C7AF31989D79 /* Start.swift */,
 				507553B6D971A4DC931F05D4 /* Team.swift */,
+				D0CC566E3568FDF8629AAC1A /* Trainingen.swift */,
 				4424A584E87CAA5425F28E7C /* Wedstrijd.swift */,
 				A7A369046203866D1E62DA22 /* WedstrijdStroom.swift */,
+				F2D1F4C07758799E61367E1C /* Wisselplan.swift */,
 			);
 			path = Schermen;
 			sourceTree = "<group>";
@@ -147,6 +155,7 @@
 			isa = PBXGroup;
 			children = (
 				E038E801763516CF87A1E4FF /* BewarenTests.swift */,
+				AE837B0C604D3E434DC8A92F /* SnelheidTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -296,6 +305,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9462F13A7838692467C25647 /* BewarenTests.swift in Sources */,
+				D37C67CCF8C28F81B6D153A8 /* SnelheidTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,10 +323,12 @@
 				B4C970CA9F4082E7B421C96E /* Start.swift in Sources */,
 				22956932CCE0E1579572F126 /* Team.swift in Sources */,
 				945E34631E12B93E8FFFD405 /* Thema.swift in Sources */,
+				5ADE009AA8E21B2509CE3157 /* Trainingen.swift in Sources */,
 				E41BA669013E1E4EC9FAD3FA /* Veld.swift in Sources */,
 				2C71E1252F5BF02E0BBA1537 /* VeldMetBank.swift in Sources */,
 				21622C2D01E83FF5076277AB /* Wedstrijd.swift in Sources */,
 				EB640E9F8FD46B0E257A2744 /* WedstrijdStroom.swift in Sources */,
+				421023759AC75F62D978C585 /* Wisselplan.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

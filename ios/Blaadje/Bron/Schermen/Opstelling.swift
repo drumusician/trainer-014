@@ -9,6 +9,8 @@ struct Opstelling: View {
     var klaar: () -> Void
 
     @State private var onvolledigVragen = false
+    @State private var bankTonen = false
+    @State private var planTonen = false
 
     var body: some View {
         if let doel = LineupActions.doelVan(app.toestand, bron) {
@@ -50,6 +52,18 @@ struct Opstelling: View {
                             .font(.subheadline).foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    HStack(spacing: 8) {
+                        Button { bankTonen = true } label: { Label("Bank tot nu toe", systemImage: "chart.bar.xaxis") }
+                        if bron == .wedstrijd {
+                            let n = app.match?.plan?.count ?? 0
+                            Button { planTonen = true } label: {
+                                Label(n > 0 ? "Wisselplan (\(n))" : "Wisselplan", systemImage: "list.bullet.clipboard")
+                            }
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     Button(klaarTitel) {
                         if bron == .wedstrijd, bezet < nodig { onvolledigVragen = true } else { klaar() }
                     }
@@ -66,6 +80,12 @@ struct Opstelling: View {
                 Button("Toch doorgaan") { klaar() }
                 Button("Terug", role: .cancel) {}
             }
+            .sheet(isPresented: $bankTonen) {
+                Bankoverzicht(
+                    nuOpDeBank: Set(doel.bench),
+                    afwezig: Set(bron == .wedstrijd ? app.match?.absent ?? [] : []))
+            }
+            .sheet(isPresented: $planTonen) { Wisselplan() }
             .onDisappear { app.gekozenPlek = nil }
         }
     }

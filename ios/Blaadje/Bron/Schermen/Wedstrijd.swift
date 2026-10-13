@@ -15,6 +15,7 @@ struct Wedstrijd: View {
     @State private var maker: String?
     @State private var klokBijstellen = false
     @State private var afsluitenVragen = false
+    @State private var planTonen = false
 
     var body: some View {
         if let w = app.match {
@@ -43,6 +44,7 @@ struct Wedstrijd: View {
                 knoppen
             }
             .background(Color(.systemBackground))
+            .sheet(isPresented: $planTonen) { Wisselplan() }
             .sheet(isPresented: $klokBijstellen) { KlokBijstellen().presentationDetents([.height(250)]) }
             .confirmationDialog("Wedstrijd afsluiten?", isPresented: $afsluitenVragen, titleVisibility: .visible) {
                 Button("Afsluiten", role: .destructive) {
@@ -186,10 +188,30 @@ struct Wedstrijd: View {
                 }
                 kleineKnop("Annuleer") { app.gekozenPlek = nil }
             }
+        } else if app.afgetrapt, let s = volgendeStap(w, nu: app.nu), s.inZicht {
+            // Het wisselplan: alleen na de aftrap, en alleen als er een plan is.
+            // Zonder plan ziet dit scherm er precies zo uit als altijd.
+            let naam: (String) -> String = { app.speler($0)?.name ?? "?" }
+            let moment = wanneer(s.stap, w.parts)
+            let rest = nogOpen(w, nu: app.nu) - 1
+            balk(
+                "Plan \(s.stap.naDeel != nil ? moment.lowercased() : moment): "
+                    + stapTekst(s.stap, naam: naam) { id in w.lineup.positionOf(id).map { positionLabel($0, w.formation) } }
+                    // Kan wel, maar is vreemd na wissels die niet gepland waren.
+                    + (s.pasErin.map { " · \(naam(s.stap.off)) kwam er pas \($0) min geleden in" } ?? "")
+                    + (s.pasEruit.map { " · \(naam(s.stap.on)) ging er pas \($0) min geleden uit" } ?? "")
+                    + (rest > 0 ? " · nog \(rest)" : ""),
+                rustig: !s.aanDeBeurt
+            ) {
+                kleineKnop(s.stap.soort == .ruil ? "Ruilen" : "Wissel") { app.planVoerUit(s.stap.id); Tik.stevig() }
+                kleineKnop("Overslaan") { app.planSlaOver(s.stap.id) }
+                kleineKnop("Plan") { planTonen = true }
+            }
         }
     }
 
-    private func balk(_ tekst: String, @ViewBuilder knoppen: () -> some View) -> some View {
+    /// - Parameter rustig: nog niet aan de beurt; dan hoort het niet om aandacht te vragen.
+    private func balk(_ tekst: String, rustig: Bool = false, @ViewBuilder knoppen: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(tekst).font(.subheadline).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) { knoppen() }
@@ -197,8 +219,8 @@ struct Wedstrijd: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .foregroundStyle(Color(red: 0.09, green: 0.13, blue: 0.11))
-        .background(Kleur.oranjeLicht)
-        .overlay(alignment: .top) { Rectangle().fill(Kleur.oranje).frame(height: 2) }
+        .background(rustig ? Color(red: 0.93, green: 0.94, blue: 0.93) : Kleur.oranjeLicht)
+        .overlay(alignment: .top) { Rectangle().fill(rustig ? Color.secondary.opacity(0.4) : Kleur.oranje).frame(height: 2) }
     }
 
     private func kleineKnop(_ titel: String, _ doe: @escaping () -> Void) -> some View {
@@ -247,6 +269,10 @@ struct Wedstrijd: View {
                 // tijdens het coachen.
                 if !app.afgetrapt {
                     Button { naarAanwezig() } label: { Label("Wie is er?", systemImage: "person.2") }
+                }
+                Button { planTonen = true } label: {
+                    let n = nogOpen(app.match, nu: app.nu)
+                    Label(n > 0 ? "Wisselplan (\(n))" : "Wisselplan", systemImage: "list.bullet.clipboard")
                 }
                 Button(role: .destructive) { afsluitenVragen = true } label: {
                     Label("Wedstrijd afsluiten", systemImage: "flag.checkered")
