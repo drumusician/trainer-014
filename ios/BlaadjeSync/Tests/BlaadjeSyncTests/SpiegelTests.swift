@@ -167,4 +167,97 @@ final class SpiegelTests: XCTestCase {
 		try await telefoon.sluit()
 		try await tablet.sluit()
 	}
+
+	/// Een toestel in het klein: een toestand, en de motor die hem gelijk houdt met de tabellen.
+	@MainActor
+	final class Toestel {
+		var toestand: AppState
+		var onthouden: AppState?
+		let spiegel: Spiegel
+		var motor: Motor!
+
+		init(_ spiegel: Spiegel, team: String, toestand: AppState) {
+			self.spiegel = spiegel
+			self.toestand = toestand
+			motor = Motor(
+				spiegel: spiegel, team: team, gespiegeld: nil,
+				toestand: { [unowned self] in self.toestand },
+				neemOver: { [unowned self] in self.toestand = $0 },
+				onthoud: { [unowned self] in self.onthouden = $0 })
+		}
+
+		/// De trainer doet iets.
+		func doe(_ wat: (inout AppState) -> Void) {
+			wat(&toestand)
+			motor.lokaalGewijzigd()
+		}
+	}
+
+	@MainActor
+	func testTweeToestellenHoudenElkaarBij() async throws {
+		let team = UUID().uuidString.lowercased()
+		let telefoon = Toestel(toestel("telefoon"), team: team, toestand: Self.seizoen())
+		try await telefoon.spiegel.verbind(adres: Self.adres, toegang: Proefbewijs(gebruiker: Self.anna))
+		telefoon.motor.start()
+		try await tot("de telefoon heeft alles opgestuurd") {
+			let wachtrij = try await telefoon.spiegel.wachtrij()
+			return telefoon.motor.rustig && wachtrij == 0 && telefoon.onthouden != nil
+		}
+		XCTAssertEqual(telefoon.spiegel.geweigerd, [])
+		// Na de eerste keer hebben de spelers hun kenmerk voor de server.
+		try await tot("de telefoon werkt met de kenmerken van de server") { telefoon.toestand.players.allSatisfy { $0.id.count == 36 } }
+		XCTAssertEqual(telefoon.toestand.players.map(\.name).prefix(3), ["Sem", "Noah", "Luuk"])
+		XCTAssertEqual(telefoon.toestand.archive.count, 2)
+
+		// De tablet begint leeg en krijgt het seizoen.
+		let tablet = Toestel(toestel("tablet"), team: team, toestand: emptyState())
+		try await tablet.spiegel.verbind(adres: Self.adres, toegang: Proefbewijs(gebruiker: Self.anna))
+		try await tablet.spiegel.wachtOpEersteKeer()
+		/* Een leeg toestel dat een team uit het account overneemt: wat er staat is van de server. */
+		let gelezen = try await tablet.spiegel.lees()
+		tablet.toestand = try XCTUnwrap(SyncModel.toestand(uit: gelezen, team: team))
+		tablet.motor = Motor(
+			spiegel: tablet.spiegel, team: team, gespiegeld: tablet.toestand,
+			toestand: { tablet.toestand }, neemOver: { tablet.toestand = $0 }, onthoud: { tablet.onthouden = $0 })
+		tablet.motor.start()
+		try await tot("de tablet heeft hetzelfde als de telefoon") { tablet.toestand == telefoon.toestand }
+
+		// Een doelpunt op de telefoon.
+		let ruben = try XCTUnwrap(telefoon.toestand.players.first { $0.name == "Ruben" })
+		telefoon.doe { MatchEventActions.goal(&$0.match, nu: 1_760_002_000_000, spelerId: ruben.id) }
+		try await tot("het doelpunt staat op de tablet") { score(tablet.toestand.match) == Score(2, 0) }
+		XCTAssertEqual(tablet.toestand, telefoon.toestand)
+
+		// De tablet zet iemand op afgemeld bij de training, de telefoon wisselt tegelijk.
+		let training = try XCTUnwrap(tablet.toestand.trainings.first)
+		let stijn = try XCTUnwrap(telefoon.toestand.players.first { $0.name == "Stijn" })
+		tablet.doe { TrainingActions.cycleAttendance(&$0, trainingId: training.id, ruben.id) }
+		telefoon.doe { MatchEventActions.putOnPosition(&$0.match, nu: 1_760_002_300_000, position: "SP", spelerId: stijn.id) }
+		try await tot("allebei hebben ze allebei de wijzigingen") {
+			tablet.toestand == telefoon.toestand
+				&& telefoon.toestand.trainings.first?.status[ruben.id] == .excused
+				&& tablet.toestand.match?.lineup["SP"] == stijn.id
+		}
+
+		// Terugdraaien op de tablet haalt de wissel ook op de telefoon weg.
+		tablet.doe { _ = MatchEventActions.undoLast(&$0.match) }
+		try await tot("de wissel is op de telefoon teruggedraaid") {
+			telefoon.toestand.match?.lineup["SP"] != stijn.id && tablet.toestand == telefoon.toestand
+		}
+
+		// Veel tikken achter elkaar raken niets kwijt.
+		for i in 0..<12 {
+			telefoon.doe { MatchEventActions.concede(&$0.match, nu: 1_760_002_400_000 + Double(i) * 1000) }
+		}
+		try await tot("alle twaalf tegendoelpunten staan op de tablet") { score(tablet.toestand.match).tegen == 12 }
+		try await tot("en ze zijn weer gelijk") { tablet.toestand == telefoon.toestand }
+		XCTAssertEqual(telefoon.spiegel.geweigerd + tablet.spiegel.geweigerd, [])
+		XCTAssertNil(telefoon.motor.fout)
+		XCTAssertNil(tablet.motor.fout)
+
+		telefoon.motor.stop()
+		tablet.motor.stop()
+		try await telefoon.spiegel.sluit()
+		try await tablet.spiegel.sluit()
+	}
 }
