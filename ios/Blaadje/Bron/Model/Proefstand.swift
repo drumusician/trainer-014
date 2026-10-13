@@ -7,8 +7,10 @@ enum Proefstand {
     @MainActor
     static func model() -> AppModel {
         let args = ProcessInfo.processInfo.arguments
+        if args.contains("-proef-klok") { Vergrendelklok.aan = true }
         if args.contains("-proef-leeg") { return AppModel(bestand: nil, toestand: emptyState()) }
         if args.contains("-proef-team") { return AppModel(bestand: nil, toestand: team()) }
+        Vergrendelklok.aan = true
         return AppModel()
     }
 

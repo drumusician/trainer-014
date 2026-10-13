@@ -55,6 +55,7 @@ final class AppModel {
     /// een telefoon die halverwege uitvalt nooit een half bestand achterlaat.
     private func bewaar() {
         regelTikker()
+        Vergrendelklok.werkBij(toestand, nu: echtNu)
         guard let bestand else { return }
         try? Opslag.schrijf(toestand).write(to: bestand, atomically: true, encoding: .utf8)
     }
@@ -84,7 +85,10 @@ final class AppModel {
     }
 
     /// Als de app weer in beeld komt: de tijd is intussen doorgelopen.
-    func bijDeTijd() { nu = echtNu }
+    func bijDeTijd() {
+        nu = echtNu
+        Vergrendelklok.werkBij(toestand, nu: nu)
+    }
 
     // MARK: - lezen
 

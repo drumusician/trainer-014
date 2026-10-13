@@ -117,6 +117,47 @@ final class WedstrijddagTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["1 – 1"].waitForExistence(timeout: 5), "de stand telt opnieuw na een doelpunt erbij")
     }
 
+    func testDeKlokStaatBuitenDeApp() {
+        app.launchArguments = ["-proef-team", "-proef-klok"]
+        app.launch()
+
+        app.buttons["Nieuwe wedstrijd"].tap()
+        XCTAssertTrue(app.buttons["Begin"].waitForExistence(timeout: 5))
+        app.textFields["Tegenstander"].typeText("Sparta")
+        app.buttons["Begin"].tap()
+        app.buttons["Naar de opstelling"].tap()
+        app.buttons["Naar de wedstrijd"].tap()
+        XCTAssertTrue(app.buttons["Aftrap"].waitForExistence(timeout: 5))
+        app.buttons["Aftrap"].tap()
+        app.buttons["Doelpunt"].tap()
+        app.buttons["Weet ik niet"].tap()
+
+        // De app uit beeld: de stand en de klok horen bovenin te blijven staan.
+        XCUIDevice.shared.press(.home)
+        let buiten = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let stand = buiten.staticTexts["1–0"]
+        XCTAssertTrue(stand.waitForExistence(timeout: 10), "de stand hoort buiten de app zichtbaar te zijn")
+        beeld("k1-eiland")
+        stand.press(forDuration: 1.2)
+        sleep(2)
+        beeld("k2-eiland-open")
+
+        // Terug in de app en afsluiten: dan hoort hij weg te zijn.
+        XCUIDevice.shared.press(.home)
+        sleep(2)
+        app.activate()
+        XCTAssertTrue(app.buttons["Meer opties"].waitForExistence(timeout: 10))
+        sleep(1)
+        app.buttons["Meer opties"].tap()
+        XCTAssertTrue(app.buttons["Wedstrijd afsluiten"].waitForExistence(timeout: 5))
+        app.buttons["Wedstrijd afsluiten"].tap()
+        app.buttons["Afsluiten"].tap()
+        XCTAssertTrue(app.buttons["Bewaar in het archief"].waitForExistence(timeout: 5))
+        XCUIDevice.shared.press(.home)
+        sleep(2)
+        XCTAssertFalse(buiten.staticTexts["1–0"].exists, "na het laatste fluitsignaal hoort de klok weg te zijn")
+    }
+
     func testEenTrainingBijhouden() {
         app.launchArguments = ["-proef-team"]
         app.launch()
