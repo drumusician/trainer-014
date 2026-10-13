@@ -50,7 +50,11 @@ struct Meer: View {
                         Label("Maak een back-up", systemImage: "square.and.arrow.up")
                     }
                 } footer: {
-                    Text("Alles staat alleen op dit toestel. Bewaar af en toe een back-up, bijvoorbeeld in Bestanden.")
+                    if case .aan = account.fase {
+                        Text("Je seizoen staat ook in je account. Een back-up is een los bestand dat je zelf bewaart, bijvoorbeeld in Bestanden.")
+                    } else {
+                        Text("Alles staat alleen op dit toestel. Bewaar af en toe een back-up, bijvoorbeeld in Bestanden.")
+                    }
                 }
             }
             .toetsenbordWeg()
