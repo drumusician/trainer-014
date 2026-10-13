@@ -48,6 +48,8 @@ final class Account {
     private(set) var bezig = false
     /// Hoeveel wijzigingen nog naar de server moeten.
     private(set) var wachtend = 0
+    /// Hoeveel wijzigingen de server niet wilde hebben, sinds het openen van de app.
+    private(set) var geweigerd = 0
 
     static var beschikbaar: Bool { !Adressen.powersync.isEmpty }
 
@@ -226,9 +228,36 @@ final class Account {
         teller = Task { [weak self] in
             while !Task.isCancelled {
                 if let n = try? await spiegel.wachtrij() { self?.wachtend = n }
+                self?.geweigerd = spiegel.geweigerd.count
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
             }
         }
+    }
+
+    // MARK: - de link voor een ouder
+
+    enum LinkFout: Error { case nietIngelogd, mislukt }
+
+    /// De eigen link van een kind. Bestaat hij al, dan dezelfde; anders een nieuwe.
+    func ouderlink(speler: String) async throws -> URL {
+        guard case .aan = fase, let team = teamId else { throw LinkFout.nietIngelogd }
+        let bewijs = try await inlog.bewijs()
+        func vraag(_ methode: String, _ pad: String, _ inhoud: [String: String]? = nil) async throws -> [[String: Any]] {
+            var verzoek = URLRequest(url: URL(string: Adressen.supabase.absoluteString + "/rest/v1/" + pad)!)
+            verzoek.httpMethod = methode
+            verzoek.setValue(Adressen.sleutel, forHTTPHeaderField: "apikey")
+            verzoek.setValue("Bearer \(bewijs)", forHTTPHeaderField: "Authorization")
+            verzoek.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            verzoek.setValue("return=representation", forHTTPHeaderField: "Prefer")
+            if let inhoud { verzoek.httpBody = try JSONSerialization.data(withJSONObject: inhoud) }
+            let (data, antwoord) = try await URLSession.shared.data(for: verzoek)
+            guard let status = (antwoord as? HTTPURLResponse)?.statusCode, (200..<300).contains(status) else { throw LinkFout.mislukt }
+            return (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] ?? []
+        }
+        var rijen = try await vraag("GET", "deellinks?select=code&speler_id=eq.\(speler)&ingetrokken=is.null")
+        if rijen.isEmpty { rijen = try await vraag("POST", "deellinks?select=code", ["team_id": team, "speler_id": speler]) }
+        guard let code = rijen.first?["code"] as? String, let url = URL(string: "https://blaadje.app/volg/?c=\(code)") else { throw LinkFout.mislukt }
+        return url
     }
 
     // MARK: - uitloggen

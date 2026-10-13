@@ -129,6 +129,14 @@ struct Meer: View {
                     systemImage: account.wachtend == 0 ? "checkmark.icloud" : "icloud.and.arrow.up"
                 )
                 .foregroundStyle(.secondary)
+                if account.geweigerd > 0 {
+                    // Niet verzwijgen: dan klopt 'alles staat in je account' niet.
+                    Label(
+                        "\(account.geweigerd) \(account.geweigerd == 1 ? "wijziging is" : "wijzigingen zijn") door de server geweigerd en staan niet in je account. Maak een back-up en meld het.",
+                        systemImage: "exclamationmark.triangle"
+                    )
+                    .foregroundStyle(Kleur.oranje)
+                }
                 Button("Log uit", role: .destructive) { uitloggenVragen = true }
             }
         } header: {

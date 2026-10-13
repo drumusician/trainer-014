@@ -4,6 +4,9 @@ import SwiftUI
 /// De selectie: wie er zijn, in welke linie, en wie kan keepen.
 struct Team: View {
     @Environment(AppModel.self) private var app
+    @Environment(Account.self) private var account
+    @State private var link: Ouderlink?
+    @State private var linkMelding: String?
     @State private var toevoegen = false
     @State private var namen = ""
     @State private var hernoemen: Player?
@@ -36,6 +39,9 @@ struct Team: View {
                             .pickerStyle(.segmented)
                         }
                         .padding(.vertical, 2)
+                        .swipeActions(edge: .leading) {
+                            Button { deel(p) } label: { Label("Link voor ouders", systemImage: "link") }.tint(Kleur.groen)
+                        }
                         .swipeActions {
                             Button(role: .destructive) { app.verwijder(p) } label: { Label("Verwijder", systemImage: "trash") }
                             Button { nieuweNaam = p.name; hernoemen = p } label: { Label("Naam", systemImage: "pencil") }
@@ -45,7 +51,7 @@ struct Team: View {
                     Text("\(app.spelers.count) spelers")
                 } footer: {
                     if !app.spelers.isEmpty {
-                        Text("De linie bepaalt wie de app voorstelt bij een wissel. Het handje betekent: kan keepen. Veeg naar links om een naam te wijzigen of iemand te verwijderen.")
+                        Text("De linie bepaalt wie de app voorstelt bij een wissel. Het handje betekent: kan keepen. Veeg naar links om een naam te wijzigen of iemand te verwijderen, en naar rechts voor de link waarmee ouders kunnen volgen.")
                     }
                 }
 
@@ -100,10 +106,51 @@ struct Team: View {
                 }
                 .presentationDetents([.medium, .large])
             }
+            .sheet(item: $link) { l in
+                NavigationStack {
+                    Form {
+                        Section {
+                            ShareLink(item: l.url, message: Text("Volg \(l.naam) bij \(app.toestand.teamName) in de Blaadje-app.")) {
+                                Label("Stuur de link", systemImage: "square.and.arrow.up")
+                            }
+                        } footer: {
+                            Text("Stuur deze link alleen naar de ouders van \(l.naam). Wie hem heeft, volgt de wedstrijden en ziet de trainingen van \(l.naam), en van niemand anders. Speeltijd en wissels staan er niet op.")
+                        }
+                    }
+                    .navigationTitle("Link voor \(l.naam)")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Klaar") { link = nil } } }
+                }
+                .presentationDetents([.medium])
+            }
+            .alert("Link voor ouders", isPresented: Binding(get: { linkMelding != nil }, set: { if !$0 { linkMelding = nil } })) {
+                Button("Oké") { linkMelding = nil }
+            } message: { Text(linkMelding ?? "") }
             .alert("Naam wijzigen", isPresented: Binding(get: { hernoemen != nil }, set: { if !$0 { hernoemen = nil } })) {
                 TextField("Naam", text: $nieuweNaam)
                 Button("Bewaar") { if let p = hernoemen { app.hernoem(p.id, nieuweNaam) }; hernoemen = nil }
                 Button("Annuleer", role: .cancel) { hernoemen = nil }
+            }
+        }
+    }
+}
+
+private struct Ouderlink: Identifiable {
+    let naam: String
+    let url: URL
+    var id: String { url.absoluteString }
+}
+
+extension Team {
+    /// De link hangt aan je account: zonder inloggen is er niets om naar te verwijzen.
+    fileprivate func deel(_ p: Player) {
+        Task {
+            do {
+                link = Ouderlink(naam: p.name, url: try await account.ouderlink(speler: p.id))
+            } catch Account.LinkFout.nietIngelogd {
+                linkMelding = "Log eerst in bij Meer. De link verwijst naar je team in je account."
+            } catch {
+                linkMelding = "De link maken lukte niet. Heb je bereik?"
             }
         }
     }

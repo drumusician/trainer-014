@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Volgen in Blaadje</title>
+<style>
+  body { font: 17px/1.5 -apple-system, system-ui, sans-serif; margin: 0; background: #f4f6f4; color: #17211c; }
+  main { max-width: 26rem; margin: 0 auto; padding: 2.5rem 1.25rem; }
+  h1 { font-size: 1.6rem; margin: 0 0 .5rem; }
+  p { margin: 0 0 1rem; }
+  a.knop { display: block; text-align: center; background: #2f5d4a; color: #fff; padding: .9rem 1rem; border-radius: 14px; font-weight: 600; text-decoration: none; margin: 1.5rem 0 .75rem; }
+  small { color: #5b6a62; display: block; }
+  @media (prefers-color-scheme: dark) { body { background: #0f1512; color: #eef3f0; } small { color: #9fb0a7; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Volg de wedstrijden van je kind</h1>
+  <p>De trainer houdt de wedstrijd bij in Blaadje. Met deze link krijg jij een melding bij de aftrap, een doelpunt, de rust en het eindsignaal.</p>
+  <a class="knop" id="open" href="#">Open in Blaadje</a>
+  <small id="uitleg">Heb je de app nog niet? Installeer Blaadje eerst en tik daarna opnieuw op de link van de trainer.</small>
+</main>
+<script>
+  // De code blijft in het adres staan: er gaat niets naar een server vanaf deze pagina.
+  var code = new URLSearchParams(location.search).get('c') || '';
+  var knop = document.getElementById('open');
+  if (/^[A-Za-z0-9-]{20,80}$/.test(code)) {
+    knop.href = 'blaadje://volg/' + code;
+  } else {
+    knop.remove();
+    document.getElementById('uitleg').textContent = 'Deze link is niet compleet. Vraag de trainer om hem opnieuw te sturen.';
+  }
+</script>
+</body>
+</html>

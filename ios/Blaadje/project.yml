@@ -30,6 +30,9 @@ targets:
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: YES
+        # Wat niet als losse instelling kan (de link blaadje://) staat in dit bestand; de rest komt hieronder.
+        INFOPLIST_FILE: Info-erbij.plist
+        CODE_SIGN_ENTITLEMENTS: Blaadje.entitlements
         INFOPLIST_KEY_CFBundleDisplayName: Blaadje
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait

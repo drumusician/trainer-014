@@ -183,6 +183,32 @@ final class WedstrijddagTests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
     }
 
+    func testEenOuderVolgtMetDeLinkVanDeTrainer() {
+        app.launchArguments = ["-proef-leeg"]
+        app.launch()
+
+        // Niet iedereen die de app opent is trainer.
+        XCTAssertTrue(app.buttons["Ik heb een link"].waitForExistence(timeout: 5))
+        beeld("v1-begin")
+        app.buttons["Ik heb een link"].tap()
+        let veld = app.textViews["Plak hier de link"].exists ? app.textViews["Plak hier de link"] : app.textFields["Plak hier de link"]
+        XCTAssertTrue(veld.waitForExistence(timeout: 5))
+        veld.tap()
+        veld.typeText("https://blaadje.app/volg/?c=code-van-sem-0123456789")
+        app.buttons["Volg"].tap()
+
+        // Het scherm voor wie volgt: de wedstrijd van nu, wat er komt, en de trainingen.
+        XCTAssertTrue(app.staticTexts["Sparta – JO14-1"].waitForExistence(timeout: 5), "uit: de thuisploeg staat eerst")
+        XCTAssertTrue(app.staticTexts["JO14-1 – Feyenoord"].exists)
+        beeld("v2-volgen")
+        let gemist = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "afgemeld")).firstMatch
+        XCTAssertTrue(gemist.waitForExistence(timeout: 5), "een gemiste training van het eigen kind hoort erop te staan")
+        // Een ouder ziet geen tabs voor een team dat hij niet heeft.
+        XCTAssertTrue(app.tabBars.buttons["Volgen"].exists)
+        XCTAssertTrue(app.tabBars.buttons["Meer"].exists)
+        XCTAssertFalse(app.tabBars.buttons["Seizoen"].exists)
+    }
+
     func testEenTrainingBijhouden() {
         app.launchArguments = ["-proef-team"]
         app.launch()

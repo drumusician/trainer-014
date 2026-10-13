@@ -7,6 +7,9 @@ struct Start: View {
     @State private var nieuw = false
     @State private var stroom: WedstrijdStroom.Stap?
     @State private var opzetten = false
+    @State private var linkPlakken = false
+    @State private var volgTonen = false
+    @Environment(Volgen.self) private var volgen
     /// De wedstrijd pas openen als het blad van 'nieuwe wedstrijd' echt weg is;
     /// twee dingen tegelijk tonen kan iOS niet, en dan gebeurt er niets.
     @State private var naNieuw = false
@@ -17,6 +20,7 @@ struct Start: View {
                 VStack(spacing: 16) {
                     if app.spelers.isEmpty {
                         leegTeam
+                        if volgen.kinderen.isEmpty { ouder }
                     } else if let w = app.match {
                         lopend(w)
                     } else {
@@ -24,6 +28,12 @@ struct Start: View {
                             .buttonStyle(HoofdKnop())
                     }
                     if !app.toestand.archive.isEmpty { seizoen }
+                    if !app.spelers.isEmpty, !volgen.kinderen.isEmpty {
+                        Button { volgTonen = true } label: {
+                            Label("Je volgt \(volgen.kinderen.compactMap { $0.pagina?.kind }.joined(separator: " en "))", systemImage: "bell")
+                        }
+                        .buttonStyle(TweedeKnop())
+                    }
                 }
                 .padding(16)
             }
@@ -36,6 +46,8 @@ struct Start: View {
             NieuweWedstrijd { naNieuw = true }
         }
         .sheet(isPresented: $opzetten) { Opzetten() }
+        .sheet(isPresented: $linkPlakken) { LinkPlakken() }
+        .sheet(isPresented: $volgTonen) { VolgScherm() }
         .fullScreenCover(item: $stroom) { begin in
             WedstrijdStroom(begin: begin)
         }
@@ -47,6 +59,18 @@ struct Start: View {
             Text("Plak de namen van je spelers en kies hoe jullie spelen. Daarna kun je meteen een wedstrijd beginnen.")
                 .foregroundStyle(.secondary)
             Button("Aan de slag") { opzetten = true }.buttonStyle(HoofdKnop())
+        }
+        .padding(16)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    /// Niet iedereen die de app opent is trainer.
+    private var ouder: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Ben je ouder?").font(.title3.bold())
+            Text("Tik op de link die je van de trainer kreeg, of plak hem hier. Dan volg je de wedstrijden van je kind.")
+                .foregroundStyle(.secondary)
+            Button("Ik heb een link") { linkPlakken = true }.buttonStyle(TweedeKnop())
         }
         .padding(16)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))

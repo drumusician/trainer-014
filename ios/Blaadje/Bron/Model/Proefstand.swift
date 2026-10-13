@@ -16,6 +16,26 @@ enum Proefstand {
         return AppModel()
     }
 
+    /// Met `-proef-volgt`: iemand die al een kind volgt, met een server die altijd hetzelfde antwoordt.
+    @MainActor
+    static func volgen() -> Volgen {
+        guard isProef else { return Volgen() }
+        let opslag = UserDefaults(suiteName: "proef-volgen-\(UUID().uuidString)")!
+        if ProcessInfo.processInfo.arguments.contains("-proef-volgt") { opslag.set(["code-van-sem-0123456789"], forKey: "volgen.codes") }
+        let v = Volgen(verkeer: { functie, inhoud in
+            guard functie == "volgpagina", inhoud["p_code"]?.hasPrefix("code-van-") == true else { return Data("null".utf8) }
+            return Data("""
+            {"team":"JO14-1","kind":"Sem","seizoen":"2026/27",
+             "wedstrijden":[{"datum":"2026-09-05","tegenstander":"Excelsior","thuis":true,"status":"afgelopen","voor":3,"tegen":1},
+                            {"datum":"2026-09-12","tegenstander":"Sparta","thuis":false,"status":"bezig","voor":1,"tegen":0},
+                            {"datum":"2026-09-19","tegenstander":"Feyenoord","thuis":true,"status":"gepland","voor":null,"tegen":null}],
+             "trainingen":[{"datum":"2026-09-01","status":"aanwezig"},{"datum":"2026-09-03","status":"afgemeld"}]}
+            """.utf8)
+        }, opslag: opslag)
+        v.vraagMeldingen = {}
+        return v
+    }
+
     static func team() -> AppState {
         var t = emptyState()
         t.teamName = "JO14-1"
