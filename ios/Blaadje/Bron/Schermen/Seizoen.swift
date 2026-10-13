@@ -254,6 +254,7 @@ private struct Bewaard: View {
                 }
             }
         }
+        .toetsenbordWeg()
         .navigationTitle("\(shortDate(a.date)) · \(a.opponent)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

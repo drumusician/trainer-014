@@ -123,7 +123,7 @@ struct Aanwezig: View {
                             HStack {
                                 Image(systemName: weg ? "circle" : "checkmark.circle.fill")
                                     .font(.title3)
-                                    .foregroundStyle(weg ? Color.secondary : Kleur.groen)
+                                    .foregroundStyle(weg ? Color.secondary : Kleur.accent)
                                 Text(p.name).foregroundStyle(weg ? .secondary : .primary)
                                     .strikethrough(weg)
                                 Spacer()

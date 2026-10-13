@@ -16,7 +16,11 @@ struct Meer: View {
             Form {
                 Section("Team") {
                     TextField("Teamnaam", text: $teamnaam)
-                        .onSubmit { app.zetTeamnaam(teamnaam) }
+                        .submitLabel(.done)
+                        // Bij elke letter bewaren: je tikt daarna zo naar een ander scherm.
+                        .onChange(of: teamnaam) { _, nieuw in
+                            if nieuw != app.toestand.teamName { app.zetTeamnaam(nieuw) }
+                        }
                 }
                 Section {
                     Button { bestandKiezen = true } label: { Label("Kies een back-up", systemImage: "doc") }
@@ -25,7 +29,11 @@ struct Meer: View {
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                     if !code.isEmpty {
-                        Button("Lees de code in") { leesIn(code); code = "" }
+                        Button("Lees de code in") {
+                            Toetsenbord.weg()
+                            leesIn(code)
+                            code = ""
+                        }
                     }
                 } header: {
                     Text("Overzetten van blaadje.app")
@@ -40,6 +48,7 @@ struct Meer: View {
                     Text("Alles staat alleen op dit toestel. Bewaar af en toe een back-up, bijvoorbeeld in Bestanden.")
                 }
             }
+            .toetsenbordWeg()
             .navigationTitle("Meer")
             .onAppear { teamnaam = app.toestand.teamName }
             .fileImporter(isPresented: $bestandKiezen, allowedContentTypes: [.json, .plainText]) { resultaat in

@@ -58,6 +58,7 @@ struct Afloop: View {
                     }
                 }
             }
+            .toetsenbordWeg()
             .safeAreaInset(edge: .bottom) {
                 Button("Bewaar in het archief") {
                     if app.bewaarInArchief() { Tik.gelukt() }

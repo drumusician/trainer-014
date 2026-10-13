@@ -57,7 +57,7 @@ struct Start: View {
         let ons = app.toestand.teamName
         return VStack(alignment: .leading, spacing: 12) {
             Text(w.finished ? "Nog te bewaren" : app.afgetrapt ? "Bezig" : "Klaargezet")
-                .font(.caption.bold()).kerning(1).textCase(.uppercase).foregroundStyle(Kleur.groen)
+                .font(.caption.bold()).kerning(1).textCase(.uppercase).foregroundStyle(Kleur.accent)
             Text(w.home ? "\(ons) – \(w.opponent)" : "\(w.opponent) – \(ons)").font(.title3.bold())
             if app.afgetrapt {
                 HStack(spacing: 14) {

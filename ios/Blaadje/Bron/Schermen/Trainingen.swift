@@ -171,7 +171,7 @@ private struct EenTraining: View {
 
     private func kleur(_ st: Attendance) -> Color {
         switch st {
-        case .present: Kleur.groen
+        case .present: Kleur.accent
         case .excused: Kleur.oranje
         case .absent: .red
         }

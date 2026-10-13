@@ -158,6 +158,31 @@ final class WedstrijddagTests: XCTestCase {
         XCTAssertFalse(buiten.staticTexts["1–0"].exists, "na het laatste fluitsignaal hoort de klok weg te zijn")
     }
 
+    func testHetToetsenbordGaatWeerWeg() {
+        app.launchArguments = ["-proef-team"]
+        app.launch()
+
+        app.tabBars.buttons["Meer"].tap()
+        let code = app.textViews["Of plak hier een overzetcode"].exists
+            ? app.textViews["Of plak hier een overzetcode"] : app.textFields["Of plak hier een overzetcode"]
+        XCTAssertTrue(code.waitForExistence(timeout: 5))
+        code.tap()
+        code.typeText("geen echte code")
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+        beeld("m1-toetsenbord")
+
+        // Een veld van meer regels heeft geen toets om te sluiten: dan de knop erboven.
+        app.toolbars.buttons["Klaar"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "het toetsenbord hoort weg te kunnen")
+        XCTAssertTrue(app.tabBars.buttons["Team"].isHittable, "anders kom je niet meer bij de andere schermen")
+
+        // Een code die niet klopt: dat zeggen, en het toetsenbord blijft weg.
+        app.buttons["Lees de code in"].tap()
+        XCTAssertTrue(app.alerts["Dat lukte niet"].waitForExistence(timeout: 5))
+        app.alerts.buttons["Oké"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+    }
+
     func testEenTrainingBijhouden() {
         app.launchArguments = ["-proef-team"]
         app.launch()

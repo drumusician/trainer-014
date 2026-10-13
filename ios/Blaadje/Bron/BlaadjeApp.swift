@@ -9,7 +9,7 @@ struct BlaadjeApp: App {
         WindowGroup {
             Hoofdscherm()
                 .environment(app)
-                .tint(Kleur.groen)
+                .tint(Kleur.accent)
                 .onChange(of: fase) { _, nieuw in
                     if nieuw == .active { app.bijDeTijd() }
                 }

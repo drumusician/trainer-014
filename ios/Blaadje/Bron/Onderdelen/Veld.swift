@@ -109,7 +109,7 @@ struct Bank: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("BANK").font(.caption.bold()).kerning(1).foregroundStyle(Kleur.groen)
+            Text("BANK").font(.caption.bold()).kerning(1).foregroundStyle(Kleur.accent)
                 .padding(.bottom, 4)
             ScrollView {
                 VStack(alignment: .leading, spacing: 5) {

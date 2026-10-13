@@ -21,7 +21,7 @@ struct Team: View {
                                 Button { app.wisselKeeper(p.id) } label: {
                                     Label("Keept", systemImage: p.keeper == true ? "hand.raised.fill" : "hand.raised")
                                         .labelStyle(.iconOnly)
-                                        .foregroundStyle(p.keeper == true ? Kleur.groen : .secondary)
+                                        .foregroundStyle(p.keeper == true ? Kleur.accent : .secondary)
                                 }
                                 .buttonStyle(.borderless)
                                 .accessibilityLabel("\(p.name) kan keepen")
