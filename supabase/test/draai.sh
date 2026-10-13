@@ -33,3 +33,7 @@ opruimen
 # om met opzet een kapotte versie te kunnen draaien en te zien of de proef bijt.
 "$psql" -q -v ON_ERROR_STOP=1 -c "set client_min_messages = warning" -d "$db" -f "${MODEL:-$hier/../model.sql}"
 "$psql" -q -t -A -v ON_ERROR_STOP=1 -d "$db" -f "$hier/model.sql"
+
+# Volgen en meldingen: wat een ouder ziet, en welke melding bij welke gebeurtenis hoort.
+"$psql" -q -v ON_ERROR_STOP=1 -c "set client_min_messages = warning" -d "$db" -f "${VOLGEN:-$hier/../volgen.sql}"
+"$psql" -q -t -A -v ON_ERROR_STOP=1 -d "$db" -f "$hier/volgen.sql"
