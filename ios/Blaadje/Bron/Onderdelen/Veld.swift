@@ -59,7 +59,6 @@ struct Veld: View {
                 }
             }
         }
-        .aspectRatio(5 / 8, contentMode: .fit)
     }
 }
 

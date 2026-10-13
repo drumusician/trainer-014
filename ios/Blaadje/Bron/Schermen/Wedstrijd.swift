@@ -40,7 +40,14 @@ struct Wedstrijd: View {
                 .padding(.horizontal, 10)
                 .padding(.top, 8)
 
-                melding(w)
+                // Een vaste strook, ook als hij leeg is: anders verspringt het veld
+                // bij elke tik op een speler, en tik je de tweede keer mis.
+                VStack(spacing: 0) {
+                    melding(w)
+                    Spacer(minLength: 0)
+                }
+                .frame(minHeight: Self.strook)
+                .fixedSize(horizontal: false, vertical: true)
                 knoppen
             }
             .background(Color(.systemBackground))
@@ -158,6 +165,8 @@ struct Wedstrijd: View {
 
     // MARK: - wat je nu aan het doen bent
 
+    static var strook: CGFloat { 112 }
+
     @ViewBuilder
     private func melding(_ w: Match) -> some View {
         if doelpuntKiezen {
@@ -216,8 +225,8 @@ struct Wedstrijd: View {
             Text(tekst).font(.subheadline).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) { knoppen() }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
+        .frame(maxWidth: .infinity, minHeight: Self.strook, alignment: .topLeading)
         .foregroundStyle(Color(red: 0.09, green: 0.13, blue: 0.11))
         .background(rustig ? Color(red: 0.93, green: 0.94, blue: 0.93) : Kleur.oranjeLicht)
         .overlay(alignment: .top) { Rectangle().fill(rustig ? Color.secondary.opacity(0.4) : Kleur.oranje).frame(height: 2) }

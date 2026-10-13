@@ -71,11 +71,13 @@ final class BewarenTests: XCTestCase {
 
     func testHetVeldPastNaastDeBankOpElkScherm() {
         // iPhone SE, iPhone 17, iPhone Pro Max, iPad: breedte en hoogte van het vak voor veld en bank.
-        for (b, h) in [(355.0, 380.0), (382.0, 560.0), (420.0, 640.0), (800.0, 900.0)] as [(CGFloat, CGFloat)] {
+        for (b, h) in [(355.0, 363.0), (382.0, 560.0), (420.0, 640.0), (800.0, 900.0)] as [(CGFloat, CGFloat)] {
             let m = VeldMetBank<EmptyView, EmptyView>.maten(breedte: b, hoogte: h)
-            XCTAssertLessThanOrEqual(m.veld * 1.6, h + 0.5, "het veld is hoger dan het scherm bij \(b)×\(h)")
+            XCTAssertLessThanOrEqual(m.hoog, h + 0.5, "het veld is hoger dan het scherm bij \(b)×\(h)")
             XCTAssertLessThanOrEqual(m.veld + m.bank + 10, b + 0.5, "veld en bank passen niet naast elkaar bij \(b)×\(h)")
             XCTAssertGreaterThanOrEqual(m.bank, 92, "de bank is te smal voor een naam bij \(b)×\(h)")
+            XCTAssertGreaterThanOrEqual(m.hoog, m.veld * 1.6 - 0.5, "het veld is platter dan een veld bij \(b)×\(h)")
+            XCTAssertLessThanOrEqual(m.hoog, m.veld * 1.9 + 0.5, "het veld is te ver uitgerekt bij \(b)×\(h)")
             XCTAssertGreaterThan(m.veld, 200, "het veld is te klein om op te tikken bij \(b)×\(h)")
         }
     }

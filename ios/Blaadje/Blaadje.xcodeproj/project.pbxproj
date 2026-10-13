@@ -249,6 +249,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					B6CDB5AA52D6C4CC7B412F41 = {
+						DevelopmentTeam = N72Z597PXN;
 						ProvisioningStyle = Automatic;
 					};
 					C410378FABC9BC255D3978EF = {
@@ -356,6 +357,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = N72Z597PXN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Blaadje;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
@@ -474,6 +476,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = N72Z597PXN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Blaadje;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
