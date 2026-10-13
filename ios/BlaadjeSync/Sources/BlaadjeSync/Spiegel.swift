@@ -183,6 +183,29 @@ public final class Spiegel: @unchecked Sendable {
 	/// Wacht tot alles wat de server voor dit toestel heeft er ook staat.
 	public func wachtOpEersteKeer() async throws { try await db.waitForFirstSync() }
 
+	/// Wacht op de eerste keer, maar niet eindeloos: wijst de dienst het bewijs af
+	/// of staat hij verkeerd ingesteld, dan komt die eerste keer nooit.
+	public func wachtOpEersteKeer(hooguit seconden: Double) async throws {
+		try await withThrowingTaskGroup(of: Void.self) { groep in
+			groep.addTask { try await self.db.waitForFirstSync() }
+			groep.addTask {
+				try await Task.sleep(nanoseconds: UInt64(seconden * 1_000_000_000))
+				throw SyncFout(self.storing ?? "de dienst gaf binnen \(Int(seconden)) seconden geen antwoord")
+			}
+			defer { groep.cancelAll() }
+			try await groep.next()
+		}
+	}
+
+	/// Is er nu verbinding met de dienst?
+	public var verbonden: Bool { db.currentStatus.connected }
+
+	/// Wat de dienst als laatste fout gaf bij het ophalen of opsturen, in zijn eigen woorden.
+	public var storing: String? {
+		let stand = db.currentStatus
+		return (stand.downloadError ?? stand.uploadError).map { String(describing: $0) }
+	}
+
 	public func verbreek() async throws { try await db.disconnect() }
 
 	/// Uitloggen: de verbinding weg, en het toestel leeg.

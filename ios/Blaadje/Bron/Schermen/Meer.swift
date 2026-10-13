@@ -105,6 +105,10 @@ struct Meer: View {
                     ProgressView()
                     Text("Verbinden met je account").foregroundStyle(.secondary).padding(.leading, 6)
                 }
+            case .hapert(let adres):
+                LabeledContent("Ingelogd", value: adres)
+                Button("Probeer opnieuw") { Task { await account.probeerOpnieuw() } }
+                Button("Log uit", role: .destructive) { uitloggenVragen = true }
             case .kiezen(let teams):
                 Text("Er staat al een team in je account, en er staat ook iets op dit toestel. Waar ga je mee verder?")
                     .font(.subheadline)

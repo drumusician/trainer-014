@@ -30,6 +30,8 @@ final class Account {
         case verbinden
         /// Er staat iets op dit toestel én er staat een team in het account.
         case kiezen([Team])
+        /// Ingelogd, maar de dienst die alles gelijk houdt antwoordt niet.
+        case hapert(email: String)
         case aan(email: String)
     }
 
@@ -136,7 +138,7 @@ final class Account {
                 return
             }
             // De eerste keer op dit toestel: eerst weten wat er al in het account staat.
-            try await spiegel.wachtOpEersteKeer()
+            try await spiegel.wachtOpEersteKeer(hooguit: 25)
             let tabellen = try await spiegel.lees()
             let metSpelers = Set((tabellen["spelers"] ?? []).compactMap { $0["team_id"]?.tekst })
             let teams = try await spiegel.teams().map { Team(id: $0.id, naam: $0.naam, leeg: !metSpelers.contains($0.id)) }
@@ -154,9 +156,17 @@ final class Account {
                 fase = .kiezen(teams)
             }
         } catch {
-            fase = eersteKeer ? .uit : .aan(email: email)
-            melding = "Verbinden lukte niet. Heb je bereik?"
+            fase = .hapert(email: email)
+            // De woorden van de dienst erbij: zonder die weet niemand wat er mis is.
+            melding = "Verbinden met je account lukte niet. Wat op dit toestel staat is veilig.\n\n\(String(describing: error).prefix(300))"
         }
+    }
+
+    func probeerOpnieuw() async {
+        guard case .hapert(let email) = fase else { return }
+        fase = .verbinden
+        melding = nil
+        await koppel(email: email, eersteKeer: false)
     }
 
     private var hierStaatIets: Bool { !model.toestand.players.isEmpty || !model.toestand.archive.isEmpty }
