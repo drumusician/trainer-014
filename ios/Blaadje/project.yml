@@ -9,6 +9,8 @@ options:
 packages:
   BlaadjeKern:
     path: ../BlaadjeKern
+  BlaadjeSync:
+    path: ../BlaadjeSync
 targets:
   Blaadje:
     type: application
@@ -18,6 +20,7 @@ targets:
       - Assets.xcassets
     dependencies:
       - package: BlaadjeKern
+      - package: BlaadjeSync
       - target: BlaadjeKlok
     settings:
       base:

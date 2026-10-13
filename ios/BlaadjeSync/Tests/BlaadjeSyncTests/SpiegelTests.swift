@@ -260,4 +260,47 @@ final class SpiegelTests: XCTestCase {
 		try await telefoon.spiegel.sluit()
 		try await tablet.spiegel.sluit()
 	}
+
+	/// Wie de webapp al gebruikte heeft een team in zijn account, maar zonder
+	/// selectie in de tabellen. Wat op de telefoon staat hoort dáár in te komen.
+	@MainActor
+	func testEenBestaandLeegTeamWordtGevuldVanafHetToestel() async throws {
+		let team = UUID().uuidString.lowercased()
+		var r = URLRequest(url: URL(string: "http://localhost:3055/teams")!)
+		r.httpMethod = "POST"
+		r.setValue("Bearer \(try await Proefbewijs(gebruiker: Self.anna).bewijs())", forHTTPHeaderField: "Authorization")
+		r.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		r.httpBody = try JSONSerialization.data(withJSONObject: ["id": team, "naam": "Team van het web"])
+		let (_, antwoord) = try await URLSession.shared.data(for: r)
+		XCTAssertEqual((antwoord as? HTTPURLResponse)?.statusCode, 201)
+
+		let spiegel = toestel("telefoon")
+		try await spiegel.verbind(adres: Self.adres, toegang: Proefbewijs(gebruiker: Self.anna))
+		try await spiegel.wachtOpEersteKeer()
+		try await tot("het team van het web staat op de telefoon") { try await spiegel.teams().contains { $0.id == team } }
+
+		let telefoon = Toestel(spiegel, team: team, toestand: Self.seizoen())
+		telefoon.motor = Motor(
+			spiegel: spiegel, team: team, gespiegeld: nil,
+			rijen: [Rij(tabel: "teams", id: team, kolommen: ["naam": .tekst("Team van het web")])],
+			toestand: { telefoon.toestand }, neemOver: { telefoon.toestand = $0 }, onthoud: { telefoon.onthouden = $0 })
+		telefoon.motor.start()
+		try await tot("alles is opgestuurd") {
+			let wachtrij = try await spiegel.wachtrij()
+			return telefoon.motor.rustig && wachtrij == 0 && telefoon.onthouden != nil
+		}
+		XCTAssertEqual(spiegel.geweigerd, [])
+
+		let teams = try await opServer("/teams?id=eq.\(team)", als: Self.anna)
+		XCTAssertEqual(teams.count, 1)
+		XCTAssertEqual(teams.first?["naam"] as? String, "JO14-1", "de naam van het toestel wint")
+		let spelers = try await opServer("/spelers?team_id=eq.\(team)", als: Self.anna)
+		XCTAssertEqual(spelers.count, 14)
+		let instellingen = try await opServer("/team_instellingen?id=eq.\(team)", als: Self.anna)
+		XCTAssertEqual(instellingen.first?["formatie"] as? String, "4-3-3", "de instellingen stonden er nog niet en horen erbij te komen")
+		XCTAssertEqual(telefoon.toestand.archive.count, 2)
+
+		telefoon.motor.stop()
+		try await spiegel.sluit()
+	}
 }

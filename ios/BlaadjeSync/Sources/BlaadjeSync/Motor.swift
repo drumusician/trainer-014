@@ -33,13 +33,15 @@ public final class Motor {
 	///   - toestand: de toestand van nu.
 	///   - neemOver: de app krijgt een toestand van de server. Mag niet zelf `lokaalGewijzigd` aanroepen.
 	///   - onthoud: deze toestand staat nu in de tabellen; bewaar hem voor de volgende keer openen.
+	///   - rijen: in plaats van `gespiegeld`: precies de rijen die er al staan. Voor een team dat
+	///     al op de server bestaat maar nog leeg is; dan staat er minder dan een toestand zou doen denken.
 	public init(
-		spiegel: Spiegel, team: String, gespiegeld: AppState?,
+		spiegel: Spiegel, team: String, gespiegeld: AppState?, rijen: [Rij]? = nil,
 		toestand: @escaping () -> AppState, neemOver: @escaping (AppState) -> Void, onthoud: @escaping (AppState) -> Void
 	) {
 		self.spiegel = spiegel
 		self.team = team
-		self.gespiegeld = gespiegeld.map { SyncModel.rijen(van: $0, team: team) } ?? []
+		self.gespiegeld = rijen ?? gespiegeld.map { SyncModel.rijen(van: $0, team: team) } ?? []
 		self.toestand = toestand
 		self.neemOver = neemOver
 		self.onthoud = onthoud
@@ -84,8 +86,12 @@ public final class Motor {
 			opnieuw = false
 			do {
 				let doel = toestand()
-				let rijen = SyncModel.rijen(van: doel, team: team)
-				let stappen = SyncModel.verschil(van: gespiegeld, naar: rijen)
+				// Buiten het scherm om: met een heel seizoen is dit tientallen
+				// milliseconden rekenen, en een tik hoort daar niets van te merken.
+				let (rijen, stappen) = await Task.detached(priority: .utility) { [team, gespiegeld] in
+					let rijen = SyncModel.rijen(van: doel, team: team)
+					return (rijen, SyncModel.verschil(van: gespiegeld, naar: rijen))
+				}.value
 				if !stappen.isEmpty {
 					try await spiegel.schrijf(stappen)
 					gespiegeld = rijen
@@ -98,14 +104,18 @@ public final class Motor {
 				guard serverVeranderd else { continue }
 				serverVeranderd = false
 				let tabellen = try await spiegel.lees()
+				let opgebouwd = await Task.detached(priority: .utility) { [team] () -> (AppState, [Rij])? in
+					guard let server = SyncModel.toestand(uit: tabellen, team: team) else { return nil }
+					return (server, SyncModel.rijen(van: server, team: team))
+				}.value
 				if toestand() != doel {
 					serverVeranderd = true
 					opnieuw = true
 					continue
 				}
-				if let server = SyncModel.toestand(uit: tabellen, team: team), server != doel {
+				if let (server, rijenVanServer) = opgebouwd, server != doel {
 					neemOver(server)
-					gespiegeld = SyncModel.rijen(van: server, team: team)
+					gespiegeld = rijenVanServer
 					onthoud(server)
 				}
 				fout = nil

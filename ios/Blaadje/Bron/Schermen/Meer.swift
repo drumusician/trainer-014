@@ -5,6 +5,10 @@ import UniformTypeIdentifiers
 /// Teamnaam, en je gegevens erin of eruit.
 struct Meer: View {
     @Environment(AppModel.self) private var app
+    @Environment(Account.self) private var account
+    @State private var email = ""
+    @State private var inlogcode = ""
+    @State private var uitloggenVragen = false
     @State private var teamnaam = ""
     @State private var code = ""
     @State private var bestandKiezen = false
@@ -22,6 +26,7 @@ struct Meer: View {
                             if nieuw != app.toestand.teamName { app.zetTeamnaam(nieuw) }
                         }
                 }
+                if Account.beschikbaar { accountDeel }
                 Section {
                     Button { bestandKiezen = true } label: { Label("Kies een back-up", systemImage: "doc") }
                     TextField("Of plak hier een overzetcode", text: $code, axis: .vertical)
@@ -67,6 +72,73 @@ struct Meer: View {
             .alert("Dat lukte niet", isPresented: Binding(get: { fout != nil }, set: { if !$0 { fout = nil } })) {
                 Button("Oké") { fout = nil }
             } message: { Text(fout ?? "") }
+        }
+    }
+
+    @ViewBuilder
+    private var accountDeel: some View {
+        Section {
+            switch account.fase {
+            case .uit:
+                TextField("Je e-mailadres", text: $email)
+                    .keyboardType(.emailAddress)
+                    .textContentType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                Button("Stuur mij een code") {
+                    Toetsenbord.weg()
+                    Task { await account.stuurCode(email) }
+                }
+                .disabled(account.bezig || email.isEmpty)
+            case .code:
+                TextField("De code uit de mail", text: $inlogcode)
+                    .keyboardType(.numberPad)
+                    .textContentType(.oneTimeCode)
+                Button("Log in") {
+                    Toetsenbord.weg()
+                    Task { await account.bevestig(inlogcode); inlogcode = "" }
+                }
+                .disabled(account.bezig || inlogcode.isEmpty)
+                Button("Ander e-mailadres") { account.anderAdres() }
+            case .verbinden:
+                HStack {
+                    ProgressView()
+                    Text("Verbinden met je account").foregroundStyle(.secondary).padding(.leading, 6)
+                }
+            case .kiezen(let teams):
+                Text("Er staat al een team in je account, en er staat ook iets op dit toestel. Waar ga je mee verder?")
+                    .font(.subheadline)
+                ForEach(teams) { team in
+                    Button(team.leeg ? "Zet wat hier staat in \(team.naam)" : "Verder met \(team.naam) uit mijn account") {
+                        Task { await account.kies(team) }
+                    }
+                }
+                Button("Bewaar wat hier staat als nieuw team") { Task { await account.bewaarAlsNieuwTeam() } }
+            case .aan(let adres):
+                LabeledContent("Ingelogd", value: adres)
+                Label(
+                    account.wachtend == 0 ? "Alles staat in je account" : "\(account.wachtend) \(account.wachtend == 1 ? "wijziging wacht" : "wijzigingen wachten") op bereik",
+                    systemImage: account.wachtend == 0 ? "checkmark.icloud" : "icloud.and.arrow.up"
+                )
+                .foregroundStyle(.secondary)
+                Button("Log uit", role: .destructive) { uitloggenVragen = true }
+            }
+        } header: {
+            Text("Account")
+        } footer: {
+            if let melding = account.melding {
+                Text(melding)
+            } else if account.fase == .uit {
+                Text("Met een account staat je seizoen ook op de server en op je andere toestellen. Zonder account werkt alles gewoon op dit toestel.")
+            } else if case .kiezen = account.fase {
+                Text("Kies je een team uit je account, dan wordt wat hier staat apart gezet en niet weggegooid.")
+            }
+        }
+        .confirmationDialog("Uitloggen?", isPresented: $uitloggenVragen, titleVisibility: .visible) {
+            Button("Log uit", role: .destructive) { Task { await account.logUit() } }
+            Button("Terug", role: .cancel) {}
+        } message: {
+            Text("Wat op dit toestel staat blijft staan. Het gaat alleen niet meer naar je account.")
         }
     }
 

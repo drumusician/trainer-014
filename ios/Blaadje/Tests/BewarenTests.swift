@@ -34,6 +34,37 @@ final class BewarenTests: XCTestCase {
         XCTAssertEqual(daarna.match?.running, true, "de klok loopt door terwijl de app dicht was")
     }
 
+    func testAlleenEenTikVanDeTrainerGaatNaarDeServer() {
+        let app = AppModel(bestand: bestand, toestand: Proefstand.team())
+        var seintjes = 0
+        app.naBewaren = { seintjes += 1 }
+
+        app.nieuweWedstrijd(tegenstander: "Sparta", thuis: true)
+        XCTAssertEqual(seintjes, 1)
+        XCTAssertEqual(app.match?.id?.count, 36, "een wedstrijd krijgt een vast kenmerk")
+        app.voegSpelersToe("Nieuw")
+        XCTAssertEqual(app.spelers.last?.id.count, 36, "een nieuwe speler krijgt meteen het kenmerk dat de server wil")
+        XCTAssertEqual(seintjes, 2)
+
+        // Wat van de server komt wordt bewaard, maar gaat niet terug naar de server.
+        var vanServer = app.toestand
+        vanServer.teamName = "JO14-2"
+        app.neemOver(vanServer)
+        XCTAssertEqual(seintjes, 2, "anders stuiteren twee toestellen eindeloos heen en weer")
+        XCTAssertEqual(AppModel(bestand: bestand).toestand.teamName, "JO14-2")
+    }
+
+    func testEenBewaardeWedstrijdHoudtZijnKenmerk() {
+        let app = AppModel(bestand: bestand, toestand: Proefstand.team())
+        app.nieuweWedstrijd(tegenstander: "Sparta", thuis: true)
+        let kenmerk = app.match?.id
+        app.startOfPauzeer()
+        app.sluitAf()
+        app.bewaarInArchief()
+        XCTAssertNotNil(kenmerk)
+        XCTAssertEqual(app.toestand.archive.first?.id, kenmerk, "op de server is het dezelfde rij, die van 'bezig' naar 'afgelopen' gaat")
+    }
+
     func testZonderBestandBegintDeAppLeeg() {
         let app = AppModel(bestand: bestand)
         XCTAssertTrue(app.spelers.isEmpty)

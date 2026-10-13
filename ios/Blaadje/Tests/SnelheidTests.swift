@@ -48,6 +48,16 @@ final class SnelheidTests: XCTestCase {
             app.brengIn(heen ? "p12" : "p10")
             heen.toggle()
         }
+        // Bij een account rekent elke tik ook uit wat er naar de server moet.
+        let team = "11111111-1111-4111-8111-111111111111"
+        let voor = SyncModel.rijen(van: app.toestand, team: team)
+        print("METING rijen: \(voor.count)")
+        let verschil = meet("uitrekenen wat er naar de server moet") {
+            _ = SyncModel.verschil(van: voor, naar: SyncModel.rijen(van: app.toestand, team: team))
+        }
+        // Dit loopt op de achtergrond, niet in de tik zelf. Het moet wel klaar zijn
+        // voor de volgende tik, anders loopt het achter.
+        XCTAssertLessThan(verschil, 250)
         _ = meet("opnieuw openen") { _ = AppModel(bestand: bestand) }
         // Onder de 16 ms merk je niets; boven de 100 voelt een tik stroef.
         XCTAssertLessThan(tik, 16, "een tik hoort binnen één beeldje klaar te zijn")

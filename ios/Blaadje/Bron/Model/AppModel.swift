@@ -54,11 +54,39 @@ final class AppModel {
     /// Na elke wijziging. Eerst naar een tijdelijk bestand en dan omzetten, zodat
     /// een telefoon die halverwege uitvalt nooit een half bestand achterlaat.
     private func bewaar() {
+        // Een wedstrijd heeft een vast kenmerk nodig om hem op de server terug te vinden.
+        SyncModel.vulKenmerkenAan(&toestand)
+        schrijfWeg()
+        naBewaren?()
+    }
+
+    private func schrijfWeg() {
         regelTikker()
         Vergrendelklok.werkBij(toestand, nu: echtNu)
         guard let bestand else { return }
         try? Opslag.schrijf(toestand).write(to: bestand, atomically: true, encoding: .utf8)
     }
+
+    /// Na elke wijziging van de trainer zelf; hier haakt het synchroniseren in.
+    @ObservationIgnored var naBewaren: (() -> Void)?
+
+    /// Een toestand die van de server komt. Die gaat niet opnieuw naar de server.
+    func neemOver(_ nieuw: AppState) {
+        toestand = nieuw
+        gekozenPlek = nil
+        nu = echtNu
+        schrijfWeg()
+    }
+
+    /// Wat er nu staat apart bewaren, voordat iets van buiten het vervangt.
+    func zetOpzij(_ naam: String) {
+        guard let bestand else { return }
+        let kopie = bestand.deletingLastPathComponent().appendingPathComponent("\(naam)-\(Int(Date().timeIntervalSince1970)).json")
+        try? Opslag.schrijf(toestand).write(to: kopie, atomically: true, encoding: .utf8)
+    }
+
+    /// Nieuwe spelers en trainingen krijgen meteen het soort kenmerk dat de server wil.
+    private static let nieuwKenmerk: () -> String = { UUID().uuidString.lowercased() }
 
     private var echtNu: Double { Date().timeIntervalSince1970 * 1000 }
 
@@ -108,7 +136,7 @@ final class AppModel {
     // MARK: - team
 
     func voegSpelersToe(_ tekst: String) {
-        SquadActions.addPlayerNames(&toestand, tekst)
+        SquadActions.addPlayerNames(&toestand, tekst, nieuwId: AppModel.nieuwKenmerk)
         if toestand.match != nil { MatchActions.rebuildBench(&toestand) }
         bewaar()
     }
@@ -304,7 +332,7 @@ final class AppModel {
 
     /// Iedereen staat op aanwezig; je tikt alleen wie er niet is.
     func nieuweTraining() -> String {
-        let training = TrainingActions.newTraining(&toestand, vandaag: vandaag)
+        let training = TrainingActions.newTraining(&toestand, vandaag: vandaag, nieuwId: AppModel.nieuwKenmerk)
         bewaar()
         return training.id
     }

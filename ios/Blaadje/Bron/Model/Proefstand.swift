@@ -4,6 +4,8 @@ import Foundation
 /// Voor de tests die de app echt bedienen: een vaste beginstand in het geheugen,
 /// zodat een test nooit iemands echte seizoen raakt en altijd hetzelfde ziet.
 enum Proefstand {
+    static var isProef: Bool { ProcessInfo.processInfo.arguments.contains { $0.hasPrefix("-proef-") } }
+
     @MainActor
     static func model() -> AppModel {
         let args = ProcessInfo.processInfo.arguments
