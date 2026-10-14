@@ -1,6 +1,22 @@
 {
   "identifier" : "B1AADJE0",
-  "nonRenewingSubscriptions" : [],
+  "nonRenewingSubscriptions" : [
+    {
+      "displayPrice" : "24.99",
+      "familyShareable" : false,
+      "internalID" : "B1AADJE3",
+      "localizations" : [
+        {
+          "description" : "Programma, taken en meldingen voor het team, tot en met 31 juli.",
+          "displayName" : "Teamseizoen",
+          "locale" : "nl_NL"
+        }
+      ],
+      "productID" : "app.blaadje.ios.seizoen",
+      "referenceName" : "Teamseizoen",
+      "type" : "NonRenewingSubscription"
+    }
+  ],
   "products" : [],
   "settings" : {
     "_applicationInternalID" : "0",
@@ -9,37 +25,7 @@
     "_storefront" : "NLD",
     "_storeKitErrors" : []
   },
-  "subscriptionGroups" : [
-    {
-      "id" : "B1AADJE1",
-      "localizations" : [],
-      "name" : "Team",
-      "subscriptions" : [
-        {
-          "adHocOffers" : [],
-          "codeOffers" : [],
-          "displayPrice" : "24.99",
-          "familyShareable" : false,
-          "groupNumber" : 1,
-          "internalID" : "B1AADJE2",
-          "introductoryOffer" : null,
-          "localizations" : [
-            {
-              "description" : "Zet het team aan: programma, taken en meldingen voor alle ouders.",
-              "displayName" : "Teamabonnement",
-              "locale" : "nl_NL"
-            }
-          ],
-          "productID" : "app.blaadje.ios.team",
-          "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Teamabonnement",
-          "subscriptionGroupID" : "B1AADJE1",
-          "type" : "RecurringSubscription",
-          "winbackOffers" : []
-        }
-      ]
-    }
-  ],
+  "subscriptionGroups" : [],
   "version" : {
     "major" : 4,
     "minor" : 0

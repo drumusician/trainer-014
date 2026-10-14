@@ -25,7 +25,7 @@ const BAS = '55555555-5555-5555-5555-555555555555';
 const echt = globalThis.fetch;
 
 /** Een toegangsbewijs zoals Supabase het geeft, getekend met het geheim van de proef. */
-async function bewijs(gebruiker: string): Promise<string> {
+async function bewijs(gebruiker: string, rol = 'authenticated'): Promise<string> {
 	const b64 = (b: Uint8Array) =>
 		btoa(String.fromCharCode(...b))
 			.replace(/\+/g, '-')
@@ -34,7 +34,7 @@ async function bewijs(gebruiker: string): Promise<string> {
 	const json = (x: object) => b64(new TextEncoder().encode(JSON.stringify(x)));
 	const nu = Math.floor(Date.now() / 1000);
 	const kop = json({ alg: 'HS256', typ: 'JWT', kid: 'proef' });
-	const lijf = json({ sub: gebruiker, role: 'authenticated', aud: 'authenticated', iat: nu, exp: nu + 3600 });
+	const lijf = json({ sub: gebruiker, role: rol, aud: 'authenticated', iat: nu, exp: nu + 3600 });
 	const geheim = new TextEncoder().encode('blaadje-proef-geheim-van-minstens-32-tekens');
 	const sleutel = await crypto.subtle.importKey('raw', geheim, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
 	const handtekening = await crypto.subtle.sign('HMAC', sleutel, new TextEncoder().encode(kop + '.' + lijf));
@@ -262,6 +262,20 @@ describe.skipIf(!REST)('de webapp tegen de echte tabellen', () => {
 		expect(server.program?.find((p) => p.id === id)).toMatchObject({ opponent: 'Ajax', time: '10:30', home: true });
 		expect(server.tasks?.filter((x) => x.matchId === id)).toHaveLength(3);
 		expect(verschil(rijen(server, team), rijen(app.toestand, team))).toEqual([]);
+
+		/* Het team heeft het seizoen gekocht; dat legt alleen de serverfunctie vast. */
+		await echt(REST + '/rpc/abonnement_bij', {
+			method: 'POST',
+			headers: { Authorization: 'Bearer ' + (await bewijs(ANNA, 'service_role')), 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				p_id: 'seizoen-proef',
+				p_team: team,
+				p_product: 'app.blaadje.ios.seizoen',
+				p_verloopt: '2099-08-01T00:00:00+02:00',
+				p_omgeving: 'Sandbox',
+				p_ingetrokken: false
+			})
+		}).then((r) => expect(r.ok).toBe(true));
 
 		/* Een ouder: de teamlink, Sem kiezen, en de limonade teruggeven. */
 		const [link] = await rest(ANNA, 'POST', 'deellinks', { team_id: team }, 'return=representation');

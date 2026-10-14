@@ -38,6 +38,9 @@ insert into public.gebeurtenissen (id, team_id, wedstrijd_id, soort, t, deel, sp
   ('f5000000-0000-0000-0000-000000000004', 'cccccccc-0000-0000-0000-00000000000c', 'f0000000-0000-0000-0000-000000000002', 'doelpunt', 300, null, 'e0000000-0000-0000-0000-000000000001', null, null, null);
 commit;
 
+-- Het team heeft het seizoen gekocht (abonnement.sql); zonder dat ziet een ouder niets.
+select public.abonnement_bij('seizoen-JO14-1', 'cccccccc-0000-0000-0000-00000000000c', 'app.blaadje.ios.seizoen', now() + interval '1 year', 'Sandbox', false);
+
 -- ---------- wat een volger ziet ----------
 begin;
 set local role anon;

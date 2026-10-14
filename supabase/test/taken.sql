@@ -34,6 +34,9 @@ insert into public.deellinks (id, team_id, speler_id, code) values
   ('d4000000-0000-0000-0000-000000000001', 'dddddddd-0000-0000-0000-00000000000d', null, 'teamlink-jo12-0123456789');
 commit;
 
+-- Het team heeft het seizoen gekocht (abonnement.sql); zonder dat ziet een ouder niets.
+select public.abonnement_bij('seizoen-JO12-2', 'dddddddd-0000-0000-0000-00000000000d', 'app.blaadje.ios.seizoen', now() + interval '1 year', 'Sandbox', false);
+
 -- Een tijd die geen tijd is, gaat er niet in.
 do $$
 begin

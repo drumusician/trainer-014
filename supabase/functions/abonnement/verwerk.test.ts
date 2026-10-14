@@ -7,7 +7,7 @@
 import { assertEquals, assertRejects } from "jsr:@std/assert@1";
 import { Environment, SignedDataVerifier } from "npm:@apple/app-store-server-library@1.6.0";
 import { Buffer } from "node:buffer";
-import { type Nakijker, omgevingVan, verwerk } from "./verwerk.ts";
+import { type Nakijker, omgevingVan, seizoenTot, verwerk } from "./verwerk.ts";
 import { APPLE_ROOT_G3 } from "./apple-root.ts";
 
 const hier = new URL("./proef/", import.meta.url);
@@ -38,34 +38,44 @@ const nakijker: Nakijker = {
 const team = "11111111-1111-4111-8111-111111111111";
 const aankoop = (extra: object = {}) => ({
   transactionId: "2000000001", originalTransactionId: "1000000123", bundleId: "app.blaadje.ios",
-  productId: "app.blaadje.ios.team", type: "Auto-Renewable Subscription", environment: "Sandbox",
-  signedDate: Date.now(), purchaseDate: Date.now(), expiresDate: Date.UTC(2027, 9, 14),
+  productId: "app.blaadje.ios.seizoen", type: "Non-Renewing Subscription", environment: "Sandbox",
+  signedDate: Date.now(), purchaseDate: Date.UTC(2026, 9, 14),
   appAccountToken: team, ...extra,
 });
 
-Deno.test("een aankoop van de app zet het team aan tot de verloopdatum", async () => {
+Deno.test("een aankoop van de app zet het team aan tot het einde van het seizoen", async () => {
   const regel = await verwerk({ transactie: await teken(aankoop()) }, nakijker);
   assertEquals(regel, {
-    id: "1000000123", team, product: "app.blaadje.ios.team",
-    verloopt: "2027-10-14T00:00:00.000Z", omgeving: "Sandbox", ingetrokken: false,
+    id: "1000000123", team, product: "app.blaadje.ios.seizoen",
+    verloopt: "2027-07-31T22:00:00.000Z", omgeving: "Sandbox", ingetrokken: false,
   });
 });
 
+Deno.test("het seizoen loopt tot 31 juli, en vanaf 1 mei koop je het volgende", () => {
+  const tot = (iso: string) => seizoenTot(Date.parse(iso));
+  assertEquals(tot("2026-08-20T10:00:00Z"), "2027-07-31T22:00:00.000Z");
+  assertEquals(tot("2027-01-15T10:00:00Z"), "2027-07-31T22:00:00.000Z");
+  assertEquals(tot("2027-04-30T21:59:00Z"), "2027-07-31T22:00:00.000Z", "30 april, nog net dit seizoen");
+  assertEquals(tot("2027-04-30T22:30:00Z"), "2028-07-31T22:00:00.000Z", "1 mei in Nederland: het volgende seizoen");
+  assertEquals(tot("2027-06-30T10:00:00Z"), "2028-07-31T22:00:00.000Z");
+  assertEquals(tot("2027-07-15T10:00:00Z"), "2028-07-31T22:00:00.000Z");
+});
+
 Deno.test("een bericht van Apple over een verlenging of terugbetaling", async () => {
-  const transactie = await teken(aankoop({ expiresDate: Date.UTC(2028, 9, 14), revocationDate: Date.now() }));
+  const transactie = await teken(aankoop({ revocationDate: Date.now() }));
   const bericht = await teken({
     notificationType: "REFUND", notificationUUID: "x", version: "2.0", signedDate: Date.now(),
     data: { bundleId: "app.blaadje.ios", environment: "Sandbox", signedTransactionInfo: transactie },
   });
   const regel = await verwerk({ signedPayload: bericht }, nakijker);
   assertEquals(regel?.ingetrokken, true);
-  assertEquals(regel?.verloopt, "2028-10-14T00:00:00.000Z");
+  assertEquals(regel?.verloopt, "2027-07-31T22:00:00.000Z");
 });
 
 Deno.test("een vervalste aankoop komt er niet door", async () => {
   const echt = await teken(aankoop());
   const [kop, , handtekening] = echt.split(".");
-  const anders = btoa(JSON.stringify(aankoop({ expiresDate: Date.UTC(2099, 0, 1) }))).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const anders = btoa(JSON.stringify(aankoop({ appAccountToken: "22222222-2222-4222-8222-222222222222" }))).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
   await assertRejects(() => verwerk({ transactie: `${kop}.${anders}.${handtekening}` }, nakijker));
 });
 

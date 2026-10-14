@@ -8,7 +8,6 @@ struct Meer: View {
     @Environment(AppModel.self) private var app
     @Environment(Account.self) private var account
     @Environment(TeamAbonnement.self) private var abonnement
-    @State private var abonnementBeheren = false
     @State private var email = ""
     @State private var inlogcode = ""
     @State private var uitloggenVragen = false
@@ -93,20 +92,19 @@ struct Meer: View {
         }
     }
 
-    /// Eén aankoop zet het team aan, voor alle ouders.
+    /// Eén aankoop zet het team aan voor het seizoen, voor alle ouders.
     @ViewBuilder
     private var abonnementDeel: some View {
         Section {
             if let status = abonnement.status {
                 Label(status.tekst(), systemImage: status.aan ? "checkmark.seal" : "exclamationmark.circle")
             }
-            if abonnement.status?.abonnementTot.map({ $0 > Date() }) == true {
-                Button("Beheer het abonnement") { abonnementBeheren = true }
-            } else {
+            if abonnement.status?.kopen() ?? true {
                 Button {
                     Task { await abonnement.koop(team: account.huidigTeam ?? "") }
                 } label: {
-                    Text("Zet het team aan" + (abonnement.prijs.map { " · \($0) per jaar" } ?? ""))
+                    Text((abonnement.status?.aan == true ? "Koop het volgende seizoen" : "Zet het team aan voor dit seizoen")
+                        + (abonnement.prijs.map { " · \($0)" } ?? ""))
                 }
                 .disabled(abonnement.bezig || abonnement.prijs == nil)
             }
@@ -114,17 +112,16 @@ struct Meer: View {
                 .disabled(abonnement.bezig)
             if let melding = abonnement.melding {
                 Text(melding).font(.footnote).foregroundStyle(.secondary)
-            } else if abonnement.prijs == nil, abonnement.status?.abonnementTot == nil {
-                Text("Het abonnement is nu niet te koop: Apple gaf geen prijs. Probeer het later nog eens.")
+            } else if abonnement.prijs == nil, abonnement.status?.kopen() ?? true {
+                Text("Het seizoen is nu niet te koop: Apple gaf geen prijs. Probeer het later nog eens.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         } header: {
-            Text("Teamabonnement")
+            Text("Teamseizoen")
         } footer: {
-            Text("Eén abonnement voor het hele team: ouders zien het programma en de taken, en krijgen de meldingen. De wedstrijd bijhouden blijft altijd gratis.")
+            Text("Eén aankoop voor het hele team, tot en met 31 juli: ouders zien het programma en de taken, en krijgen de meldingen. Het verlengt niet vanzelf. Vanaf 1 mei koop je het volgende seizoen. De wedstrijd bijhouden blijft altijd gratis.")
         }
         .task { await abonnement.ververs() }
-        .manageSubscriptionsSheet(isPresented: $abonnementBeheren)
     }
 
     @ViewBuilder

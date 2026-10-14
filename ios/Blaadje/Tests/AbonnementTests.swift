@@ -34,7 +34,7 @@ final class AbonnementTests: XCTestCase {
         let server = Server()
         let abonnement = TeamAbonnement()
         abonnement.meld = { server.meld($0) }
-        abonnement.haalStatus = { .init(aan: true, gratisTot: nil, abonnementTot: Date().addingTimeInterval(365 * 86400)) }
+        abonnement.haalStatus = { .init(aan: true, abonnementTot: Date().addingTimeInterval(200 * 86400)) }
         await abonnement.ververs()
         XCTAssertNotNil(abonnement.prijs, "het abonnement staat te koop")
 
@@ -43,16 +43,17 @@ final class AbonnementTests: XCTestCase {
 
         let jws = try XCTUnwrap(server.gemeld.last)
         let aankoop = try inhoud(jws)
-        XCTAssertEqual(aankoop["productId"] as? String, "app.blaadje.ios.team")
+        XCTAssertEqual(aankoop["productId"] as? String, "app.blaadje.ios.seizoen")
         XCTAssertEqual((aankoop["appAccountToken"] as? String)?.lowercased(), team, "de server weet zo welk team het is")
-        XCTAssertNotNil(aankoop["expiresDate"])
+        XCTAssertNotNil(aankoop["purchaseDate"], "de server rekent vanaf de aankoopdatum het seizoen uit")
         XCTAssertNil(abonnement.melding)
         XCTAssertEqual(abonnement.status?.aan, true)
     }
 
     func testHetProductBestaat() async throws {
-        let producten = try await Product.products(for: ["app.blaadje.ios.team"])
-        XCTAssertEqual(producten.map(\.id), ["app.blaadje.ios.team"])
+        let producten = try await Product.products(for: ["app.blaadje.ios.seizoen"])
+        XCTAssertEqual(producten.map(\.id), ["app.blaadje.ios.seizoen"])
+        XCTAssertEqual(producten.first?.type, .nonRenewable, "een seizoen verlengt niet vanzelf")
     }
 
     func testZonderTeamWordtErNietsGekocht() async {
@@ -67,12 +68,19 @@ final class AbonnementTests: XCTestCase {
 
     func testDeStandVanHetTeamInWoorden() throws {
         let nu = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-10-14T12:00:00Z"))
-        let gratis = try XCTUnwrap(TeamAbonnement.Status.lees(Data(#"{"aan":true,"gratis_tot":"2027-01-31T23:00:00+00:00","abonnement_tot":null}"#.utf8)))
-        XCTAssertEqual(gratis.tekst(nu: nu), "Tot 1 februari 2027 is alles gratis. Daarna zet het teamabonnement het team aan.")
-        let betaald = try XCTUnwrap(TeamAbonnement.Status.lees(Data(#"{"aan":true,"gratis_tot":"2027-01-31T23:00:00+00:00","abonnement_tot":"2027-10-14T10:00:00.123+00:00"}"#.utf8)))
-        XCTAssertEqual(betaald.tekst(nu: nu), "Het team staat aan tot 14 oktober 2027.")
-        let uit = Status(aan: false, gratisTot: nil, abonnementTot: nil)
+        let seizoen = try XCTUnwrap(TeamAbonnement.Status.lees(Data(#"{"aan":true,"abonnement_tot":"2027-07-31T22:00:00+00:00"}"#.utf8)))
+        XCTAssertEqual(seizoen.tekst(nu: nu), "Het team staat aan tot en met 31 juli 2027.")
+        let uit = try XCTUnwrap(TeamAbonnement.Status.lees(Data(#"{"aan":false,"abonnement_tot":null}"#.utf8)))
         XCTAssertTrue(uit.tekst(nu: nu).hasPrefix("Het team staat uit"))
+    }
+
+    func testJeKooptAlsHetTeamUitStaatEnVanafMeiHetVolgendeSeizoen() throws {
+        let tot = try XCTUnwrap(ISO8601DateFormatter().date(from: "2027-07-31T22:00:00Z"))
+        let f = ISO8601DateFormatter()
+        XCTAssertTrue(Status(aan: false, abonnementTot: nil).kopen())
+        XCTAssertFalse(Status(aan: true, abonnementTot: tot).kopen(nu: try XCTUnwrap(f.date(from: "2026-10-14T12:00:00Z"))))
+        XCTAssertTrue(Status(aan: true, abonnementTot: tot).kopen(nu: try XCTUnwrap(f.date(from: "2027-05-01T12:00:00Z"))))
+        XCTAssertTrue(Status(aan: false, abonnementTot: tot).kopen(nu: try XCTUnwrap(f.date(from: "2027-08-02T12:00:00Z"))))
     }
 
     private typealias Status = TeamAbonnement.Status

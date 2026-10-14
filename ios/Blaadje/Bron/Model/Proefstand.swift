@@ -52,10 +52,10 @@ enum Proefstand {
         return v
     }
 
-    /// Met `-proef-abonnement`: een team in de gratis periode.
+    /// Met `-proef-abonnement`: een team dat nog geen seizoen heeft.
     static var abonnement: TeamAbonnement.Status? {
         guard ProcessInfo.processInfo.arguments.contains("-proef-abonnement") else { return nil }
-        return TeamAbonnement.Status(aan: true, gratisTot: Calendar.current.date(byAdding: .month, value: 3, to: Date()), abonnementTot: nil)
+        return TeamAbonnement.Status(aan: false, abonnementTot: nil)
     }
 
     static func team() -> AppState {

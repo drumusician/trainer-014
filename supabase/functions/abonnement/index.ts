@@ -1,9 +1,9 @@
 /**
- * Het teamabonnement vastleggen. Twee afzenders:
+ * Het teamseizoen vastleggen. Twee afzenders:
  *
  * - de app, vlak na een aankoop en bij elk openen: `{ "transactie": "<JWS>" }`;
  * - Apple zelf (App Store Server Notifications V2): `{ "signedPayload": "<JWS>" }`,
- *   bij een verlenging, opzegging of terugbetaling.
+ *   bij een terugbetaling.
  *
  * Geen geheim nodig: wat erin komt is door Apple getekend, en dat kijken we na
  * tegen het rootcertificaat van Apple. Verify JWT staat uit.

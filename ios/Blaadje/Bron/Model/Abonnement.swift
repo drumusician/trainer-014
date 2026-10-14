@@ -2,20 +2,20 @@ import Foundation
 import Observation
 import StoreKit
 
-/// Het teamabonnement: één aankoop via Apple zet het team aan, voor alle ouders.
+/// Het teamseizoen: één aankoop via Apple zet het team aan tot 31 juli, voor
+/// alle ouders. Het verlengt niet vanzelf; elk seizoen koopt iemand het opnieuw.
 ///
 /// De app geeft bij het kopen het team mee (`appAccountToken`), zodat de server
 /// weet welk team het is zonder te weten wie er betaalde. De server kijkt de
-/// handtekening van Apple na (supabase/functions/abonnement); verlengen,
-/// opzeggen en terugbetalen hoort hij daarna van Apple zelf.
+/// handtekening van Apple na en rekent uit tot wanneer het geldt
+/// (supabase/functions/abonnement); een terugbetaling hoort hij van Apple zelf.
 @MainActor
 @Observable
 final class TeamAbonnement {
-    static let product = "app.blaadje.ios.team"
+    static let product = "app.blaadje.ios.seizoen"
 
     struct Status: Equatable {
         var aan: Bool
-        var gratisTot: Date?
         var abonnementTot: Date?
 
         /// Wat `team_status` teruggeeft.
@@ -27,7 +27,7 @@ final class TeamAbonnement {
                 f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
                 return f.date(from: s) ?? ISO8601DateFormatter().date(from: s)
             }
-            return Status(aan: aan, gratisTot: datum("gratis_tot"), abonnementTot: datum("abonnement_tot"))
+            return Status(aan: aan, abonnementTot: datum("abonnement_tot"))
         }
 
         /// In woorden, voor bij Meer.
@@ -35,9 +35,16 @@ final class TeamAbonnement {
             let f = DateFormatter()
             f.locale = Locale(identifier: "nl_NL")
             f.dateFormat = "d MMMM yyyy"
-            if let tot = abonnementTot, tot > nu { return "Het team staat aan tot \(f.string(from: tot))." }
-            if let gratis = gratisTot, gratis > nu { return "Tot \(f.string(from: gratis)) is alles gratis. Daarna zet het teamabonnement het team aan." }
+            // Tot en met 31 juli: op de server is het 1 augustus, 0:00.
+            if let tot = abonnementTot, tot > nu { return "Het team staat aan tot en met \(f.string(from: tot.addingTimeInterval(-1)))." }
+            if aan { return "Het team staat aan." }
             return "Het team staat uit. Ouders zien het programma en de taken niet, en krijgen geen meldingen."
+        }
+
+        /// Kopen kan als het team uit staat, en vanaf mei voor het volgende seizoen.
+        func kopen(nu: Date = Date()) -> Bool {
+            guard let tot = abonnementTot, tot > nu else { return true }
+            return tot.timeIntervalSince(nu) < 100 * 86400
         }
     }
 
