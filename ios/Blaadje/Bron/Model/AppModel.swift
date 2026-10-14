@@ -188,6 +188,8 @@ final class AppModel {
     }
 
     func gooiWedstrijdWeg() {
+        // Kwam hij uit het programma, dan gaat hij daar terug, met zijn taken.
+        ProgramActions.terugInProgramma(&toestand)
         toestand.match = nil
         gekozenPlek = nil
         bewaar()
@@ -326,6 +328,72 @@ final class AppModel {
         guard PlanActions.voerUit(&toestand.match, nu: nu, id: id) else { return }
         gekozenPlek = nil
         bewaar()
+    }
+
+    // MARK: - het programma en de taken
+
+    @discardableResult
+    func programmaErbij(datum: Date, tijd: Date?, tegenstander: String, thuis: Bool) -> String {
+        let id = ProgramActions.voegToe(
+            &toestand, datum: AppModel.tekst(datum), tijd: tijd.map(AppModel.tijdTekst),
+            tegenstander: tegenstander, thuis: thuis, nieuwId: AppModel.nieuwKenmerk)
+        bewaar()
+        return id
+    }
+
+    func wijzigProgramma(_ id: String, datum: Date? = nil, tijd: Date?? = nil, tegenstander: String? = nil, thuis: Bool? = nil) {
+        if ProgramActions.wijzig(
+            &toestand, id, datum: datum.map(AppModel.tekst), tijd: tijd.map { $0.map(AppModel.tijdTekst) },
+            tegenstander: tegenstander, thuis: thuis)
+        { bewaar() }
+    }
+
+    func haalUitProgramma(_ id: String) {
+        if ProgramActions.haalWeg(&toestand, id) { bewaar() }
+    }
+
+    /// De wedstrijd van vandaag uit het programma opzetten.
+    @discardableResult
+    func beginUitProgramma(_ id: String) -> Bool {
+        guard ProgramActions.uitProgramma(&toestand, id) else { return false }
+        gekozenPlek = nil
+        bewaar()
+        return true
+    }
+
+    func zetTaak(_ wedstrijd: String, _ soort: TaskKind, speler: String?) {
+        ProgramActions.zet(&toestand, wedstrijd: wedstrijd, soort, speler: speler, nieuwId: AppModel.nieuwKenmerk)
+        bewaar()
+    }
+
+    func rijderErbij(_ wedstrijd: String) {
+        ProgramActions.voegToe(&toestand, wedstrijd: wedstrijd, .rijden, speler: nil, nieuwId: AppModel.nieuwKenmerk)
+        bewaar()
+    }
+
+    func wijsTaak(_ taak: String, speler: String?) {
+        ProgramActions.wijs(&toestand, taak: taak, speler: speler)
+        bewaar()
+    }
+
+    func haalTaakWeg(_ taak: String) {
+        ProgramActions.haalTaakWeg(&toestand, taak)
+        bewaar()
+    }
+
+    static func tijdTekst(_ d: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "HH:mm"
+        return f.string(from: d)
+    }
+
+    static func tijd(_ tekst: String?) -> Date? {
+        guard let tekst else { return nil }
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "HH:mm"
+        return f.date(from: tekst)
     }
 
     // MARK: - trainingen

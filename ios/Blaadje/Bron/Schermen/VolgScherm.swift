@@ -35,6 +35,17 @@ struct VolgScherm: View {
         let komt = p.wedstrijden.filter { $0.status == "gepland" }
         let gespeeld = p.wedstrijden.filter { $0.status == "afgelopen" }.reversed()
         let gemist = p.trainingen.filter { $0.status == "afgemeld" || $0.status == "afwezig" }
+        if p.kindKiezen {
+            Section {
+                ForEach(p.spelers) { s in
+                    Button(s.naam) { Task { await volgen.kiesKind(kind.code, s.id) } }
+                }
+            } header: {
+                Text("Wie is je kind?")
+            } footer: {
+                Text("Dan zie je welke taken van jullie zijn, en krijg je er een herinnering voor.")
+            }
+        }
         Section {
             ForEach(nu) { w in
                 VStack(alignment: .leading, spacing: 4) {
@@ -47,15 +58,32 @@ struct VolgScherm: View {
                 .accessibilityElement(children: .combine)
             }
             ForEach(komt) { w in
-                LabeledContent(wie(w, p.team), value: shortDate(w.datum))
+                VStack(alignment: .leading, spacing: 6) {
+                    LabeledContent(wie(w, p.team), value: shortDate(w.datum) + (w.aanvang.map { ", \($0)" } ?? ""))
+                    ForEach(w.taken) { taak in taakRegel(taak, kind: kind, p)
+                    }
+                }
+                .padding(.vertical, 2)
             }
             if nu.isEmpty, komt.isEmpty {
                 Text("Er staat nog geen wedstrijd klaar.").foregroundStyle(.secondary)
             }
         } header: {
-            Text(p.kind.map { "\($0) · \(p.team)" } ?? p.team)
+            HStack {
+                Text((p.kind ?? p.mijnKind?.naam).map { "\($0) · \(p.team)" } ?? p.team)
+                Spacer()
+                if p.kind == nil, p.mijnKind != nil, !p.spelers.isEmpty {
+                    Menu("Ander kind") {
+                        ForEach(p.spelers) { s in
+                            Button(s.naam) { Task { await volgen.kiesKind(kind.code, s.id) } }
+                        }
+                    }
+                    .font(.caption)
+                    .textCase(nil)
+                }
+            }
         } footer: {
-            Text("Je krijgt een melding bij de aftrap, een doelpunt, de rust en het eindsignaal.")
+            Text(volgen.melding ?? "Je krijgt een melding bij de aftrap, een doelpunt, de rust en het eindsignaal, en de avond voor een wedstrijd als jullie iets regelen.")
         }
         if !gespeeld.isEmpty {
             Section("Gespeeld") {
@@ -82,6 +110,27 @@ struct VolgScherm: View {
         } header: {
             if p.kind != nil { Text("Trainingen: \(p.trainingen.count - gemist.count) van de \(p.trainingen.count) geweest") }
         }
+    }
+
+    /// "Limonade · Noah", met de knoppen die erbij horen.
+    private func taakRegel(_ taak: Volgen.Taak, kind: Volgen.Kind, _ p: Volgen.Pagina) -> some View {
+        HStack(spacing: 8) {
+            Text(taak.woord).font(.subheadline).foregroundStyle(.secondary).frame(minWidth: 72, alignment: .leading)
+            if taak.vanMij {
+                Text("Jullie").font(.subheadline.bold()).foregroundStyle(Kleur.accent)
+            } else {
+                Text(taak.wie ?? "open").font(.subheadline).foregroundStyle(taak.wie == nil ? Kleur.oranje : .primary)
+            }
+            Spacer(minLength: 4)
+            if taak.vanMij {
+                Button("Kan niet") { Task { await volgen.kanNiet(kind.code, taak.id) } }
+                    .buttonStyle(.bordered).controlSize(.small)
+            } else if taak.wie == nil, p.mijnKind != nil {
+                Button("Ik doe het") { Task { await volgen.doeIk(kind.code, taak.id) } }
+                    .buttonStyle(.borderedProminent).controlSize(.small).tint(Kleur.groen)
+            }
+        }
+        .accessibilityElement(children: .contain)
     }
 
     private func wie(_ w: Volgen.Wedstrijd, _ team: String) -> String {

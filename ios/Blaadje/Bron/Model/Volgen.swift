@@ -1,3 +1,4 @@
+import BlaadjeKern
 import Foundation
 import Observation
 import UIKit
@@ -10,14 +11,65 @@ import UserNotifications
 @MainActor
 @Observable
 final class Volgen {
+    /// Wie wat regelt bij een wedstrijd. `wie` is de voornaam van het kind; leeg is open.
+    struct Taak: Decodable, Equatable, Identifiable {
+        let id: String
+        let soort: String
+        let wie: String?
+        let vanMij: Bool
+
+        enum CodingKeys: String, CodingKey { case id, soort, wie, vanMij = "van_mij" }
+
+        init(id: String, soort: String, wie: String?, vanMij: Bool) {
+            self.id = id
+            self.soort = soort
+            self.wie = wie
+            self.vanMij = vanMij
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            id = try c.decode(String.self, forKey: .id)
+            soort = try c.decode(String.self, forKey: .soort)
+            wie = try c.decodeIfPresent(String.self, forKey: .wie)
+            vanMij = try c.decodeIfPresent(Bool.self, forKey: .vanMij) ?? false
+        }
+
+        var woord: String { TaskKind(rawValue: soort).map(ProgramActions.woord) ?? soort }
+    }
+
     struct Wedstrijd: Decodable, Equatable, Identifiable {
+        /// Leeg bij een server van vóór het programma.
+        let kenmerk: String?
         let datum: String
+        let aanvang: String?
         let tegenstander: String
         let thuis: Bool
         let status: String
         let voor: Int?
         let tegen: Int?
-        var id: String { datum + tegenstander + status }
+        let taken: [Taak]
+        var id: String { kenmerk ?? datum + tegenstander + status }
+
+        enum CodingKeys: String, CodingKey { case kenmerk = "id", datum, aanvang, tegenstander, thuis, status, voor, tegen, taken }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            kenmerk = try c.decodeIfPresent(String.self, forKey: .kenmerk)
+            datum = try c.decode(String.self, forKey: .datum)
+            aanvang = try c.decodeIfPresent(String.self, forKey: .aanvang)
+            tegenstander = try c.decode(String.self, forKey: .tegenstander)
+            thuis = try c.decode(Bool.self, forKey: .thuis)
+            status = try c.decode(String.self, forKey: .status)
+            voor = try c.decodeIfPresent(Int.self, forKey: .voor)
+            tegen = try c.decodeIfPresent(Int.self, forKey: .tegen)
+            taken = try c.decodeIfPresent([Taak].self, forKey: .taken) ?? []
+        }
+    }
+
+    struct Speler: Decodable, Equatable, Identifiable {
+        let id: String
+        let naam: String
     }
 
     struct Training: Decodable, Equatable, Identifiable {
@@ -34,6 +86,25 @@ final class Volgen {
         var naam: String { kind ?? team }
         let wedstrijden: [Wedstrijd]
         let trainingen: [Training]
+        /// Het kind dat bij deze telefoon hoort: dat van de link, of het gekozen kind.
+        let mijnKind: Speler?
+        /// Om je kind te kiezen; alleen bij de link van het team.
+        let spelers: [Speler]
+
+        enum CodingKeys: String, CodingKey { case team, kind, wedstrijden, trainingen, mijnKind = "mijn_kind", spelers }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            team = try c.decode(String.self, forKey: .team)
+            kind = try c.decodeIfPresent(String.self, forKey: .kind)
+            wedstrijden = try c.decode([Wedstrijd].self, forKey: .wedstrijden)
+            trainingen = try c.decode([Training].self, forKey: .trainingen)
+            mijnKind = try c.decodeIfPresent(Speler.self, forKey: .mijnKind)
+            spelers = try c.decodeIfPresent([Speler].self, forKey: .spelers) ?? []
+        }
+
+        /// Moet de ouder nog zeggen welk kind van hem is?
+        var kindKiezen: Bool { kind == nil && mijnKind == nil && !spelers.isEmpty }
     }
 
     struct Kind: Identifiable, Equatable {
@@ -93,7 +164,9 @@ final class Volgen {
     }
 
     private func haalPagina(_ code: String) async throws -> Pagina? {
-        let data = try await verkeer("volgpagina", ["p_code": code])
+        var inhoud = ["p_code": code]
+        if let token { inhoud["p_token"] = token }
+        let data = try await verkeer("volgpagina", inhoud)
         // Een code die niet (meer) klopt geeft `null`.
         return try? JSONDecoder().decode(Pagina.self, from: data)
     }
@@ -159,8 +232,46 @@ final class Volgen {
         let omgeving = "echt"
         #endif
         for kind in kinderen {
-            _ = try? await verkeer("volg", ["p_code": kind.code, "p_token": token, "p_omgeving": omgeving])
+            var inhoud = ["p_code": kind.code, "p_token": token, "p_omgeving": omgeving]
+            if let speler = gekozen(kind.code) { inhoud["p_speler"] = speler }
+            _ = try? await verkeer("volg", inhoud)
         }
+    }
+
+    // MARK: - je kind en de taken
+
+    /// Het kind dat de ouder bij deze link koos. Ook hier bewaard: het adres voor
+    /// meldingen kan pas later komen, en dan moet de keuze mee.
+    func gekozen(_ code: String) -> String? { opslag.string(forKey: "volgen.kind.\(code)") }
+
+    func kiesKind(_ code: String, _ speler: String) async {
+        opslag.set(speler, forKey: "volgen.kind.\(code)")
+        if let token {
+            _ = try? await verkeer("kies_kind", ["p_code": code, "p_token": token, "p_speler": speler])
+        } else {
+            await vraagMeldingen()
+        }
+        await ververs()
+    }
+
+    /// Je eigen taak teruggeven. De rest van het team krijgt een melding dat hij open staat.
+    func kanNiet(_ code: String, _ taak: String) async { await taakActie("taak_kan_niet", code, taak) }
+
+    /// Een open taak overnemen.
+    func doeIk(_ code: String, _ taak: String) async { await taakActie("taak_doe_ik", code, taak) }
+
+    private func taakActie(_ functie: String, _ code: String, _ taak: String) async {
+        guard let token else {
+            melding = "Zet meldingen aan voor Blaadje; daaraan herkent de app dat jij het bent."
+            return
+        }
+        do {
+            let data = try await verkeer(functie, ["p_code": code, "p_token": token, "p_taak": taak])
+            melding = String(decoding: data, as: UTF8.self).contains("true") ? nil : "Dat kon niet meer. Misschien was iemand je voor."
+        } catch {
+            melding = "Dat lukte niet. Heb je bereik?"
+        }
+        await ververs()
     }
 }
 

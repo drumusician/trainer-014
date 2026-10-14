@@ -23,10 +23,20 @@ struct Start: View {
                         if volgen.kinderen.isEmpty { ouder }
                     } else if let w = app.match {
                         lopend(w)
+                    } else if let p = vanVandaag {
+                        // De wedstrijd van vandaag staat in het programma: die is het.
+                        Button {
+                            if app.beginUitProgramma(p.id) { stroom = .aanwezig }
+                        } label: {
+                            Label((p.home ? "Thuis" : "Uit") + " tegen \(p.opponent)", systemImage: "sportscourt")
+                        }
+                        .buttonStyle(HoofdKnop())
+                        Button("Een andere wedstrijd") { nieuw = true }.font(.subheadline)
                     } else {
                         Button { nieuw = true } label: { Label("Nieuwe wedstrijd", systemImage: "plus") }
                             .buttonStyle(HoofdKnop())
                     }
+                    if !app.spelers.isEmpty { ProgrammaBlok() }
                     if !app.toestand.archive.isEmpty { seizoen }
                     if !app.spelers.isEmpty, !volgen.kinderen.isEmpty {
                         Button { volgTonen = true } label: {
@@ -39,6 +49,9 @@ struct Start: View {
             }
             .navigationTitle(app.toestand.teamName.isEmpty ? "Blaadje" : app.toestand.teamName)
             .background(Color(.systemGroupedBackground))
+            .navigationDestination(for: String.self) { id in
+                ProgrammaWedstrijd(id: id) { stroom = .aanwezig }
+            }
         }
         .sheet(isPresented: $nieuw, onDismiss: {
             if naNieuw { naNieuw = false; stroom = .aanwezig }
@@ -51,6 +64,11 @@ struct Start: View {
         .fullScreenCover(item: $stroom) { begin in
             WedstrijdStroom(begin: begin)
         }
+    }
+
+    /// Een wedstrijd uit het programma van vandaag, of van eerder die nog niet gespeeld is.
+    private var vanVandaag: ScheduledMatch? {
+        app.toestand.program.first { $0.date <= app.vandaag }
     }
 
     private var leegTeam: some View {

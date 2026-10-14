@@ -211,6 +211,53 @@ final class WedstrijddagTests: XCTestCase {
         XCTAssertFalse(app.tabBars.buttons["Seizoen"].exists)
     }
 
+    func testHetProgrammaMetTaken() {
+        app.launchArguments = ["-proef-team"]
+        app.launch()
+
+        // Een wedstrijd in het programma: vandaag, thuis tegen Ajax.
+        XCTAssertTrue(app.buttons["Wedstrijd in het programma"].waitForExistence(timeout: 5))
+        beeld("pr1-leeg")
+        app.buttons["Wedstrijd in het programma"].tap()
+        let veld = app.textFields["Tegenstander"]
+        XCTAssertTrue(veld.waitForExistence(timeout: 5))
+        veld.typeText("Ajax")
+        app.buttons["Zet erin"].tap()
+
+        // Hij staat op het beginscherm, en omdat het vandaag is, is hij de wedstrijd van vandaag.
+        let rij = app.buttons.matching(identifier: "programma").firstMatch
+        XCTAssertTrue(rij.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Thuis tegen Ajax"].exists)
+        rij.tap()
+
+        // Wie regelt wat: de limonade bij Noah, en een rijder erbij.
+        let limonade = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Limonade")).firstMatch
+        XCTAssertTrue(limonade.waitForExistence(timeout: 5))
+        limonade.tap()
+        XCTAssertTrue(app.buttons["Noah"].waitForExistence(timeout: 5))
+        app.buttons["Noah"].tap()
+        app.buttons["Rijder erbij"].tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Rijden")).firstMatch.waitForExistence(timeout: 5))
+        beeld("pr2-taken")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Limonade Noah")).firstMatch.waitForExistence(timeout: 5))
+        beeld("pr3-begin")
+
+        // Op de dag zelf: één tik, en het is de wedstrijd.
+        app.buttons["Thuis tegen Ajax"].tap()
+        XCTAssertTrue(app.buttons["Sem, aanwezig"].waitForExistence(timeout: 5))
+    }
+
+    func testEenOuderZietZijnTaken() {
+        app.launchArguments = ["-proef-leeg", "-proef-teamlink"]
+        app.launch()
+        if app.tabBars.buttons["Volgen"].waitForExistence(timeout: 5) { app.tabBars.buttons["Volgen"].tap() }
+        XCTAssertTrue(app.buttons["Kan niet"].waitForExistence(timeout: 5), "de limonade is van Noah, dus van deze ouder")
+        XCTAssertTrue(app.buttons["Ik doe het"].exists, "bij rijden staat nog een plek open")
+        XCTAssertTrue(app.staticTexts["Noah · JO14-1"].exists)
+        beeld("o1-taken")
+    }
+
     func testEenTrainingBijhouden() {
         app.launchArguments = ["-proef-team"]
         app.launch()

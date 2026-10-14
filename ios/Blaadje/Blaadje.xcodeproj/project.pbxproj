@@ -16,6 +16,7 @@
 		2C71E1252F5BF02E0BBA1537 /* VeldMetBank.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41A5ACBABDB377A0F6B6B51 /* VeldMetBank.swift */; };
 		35ED9DBCA50194558EF1BA4D /* WedstrijddagTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0CA45AD96156CFCB5A401E /* WedstrijddagTests.swift */; };
 		421023759AC75F62D978C585 /* Wisselplan.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D1F4C07758799E61367E1C /* Wisselplan.swift */; };
+		45227B35D58069A751C1E0B5 /* Programma.swift in Sources */ = {isa = PBXBuildFile; fileRef = 133F96C4ECC206B0D12751C5 /* Programma.swift */; };
 		5218275FD998F690663926B9 /* KlokGegevens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B29291860A0B45F69A6DC48 /* KlokGegevens.swift */; };
 		5A7BAE8BB78A2DFA3885CC2A /* Seizoen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C382E273EA78C31F751D1A4 /* Seizoen.swift */; };
 		5ADE009AA8E21B2509CE3157 /* Trainingen.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0CC566E3568FDF8629AAC1A /* Trainingen.swift */; };
@@ -84,6 +85,7 @@
 		0A0CA45AD96156CFCB5A401E /* WedstrijddagTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WedstrijddagTests.swift; sourceTree = "<group>"; };
 		0F7F92DBCAFD47E4D0027449 /* VolgScherm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolgScherm.swift; sourceTree = "<group>"; };
 		10D04AB54B3CB0A1CD75448E /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		133F96C4ECC206B0D12751C5 /* Programma.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Programma.swift; sourceTree = "<group>"; };
 		14F1966BD75A5410756B4CD9 /* BlaadjeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlaadjeApp.swift; sourceTree = "<group>"; };
 		17A35BC2819E9141C6E08414 /* BlaadjeSync */ = {isa = PBXFileReference; lastKnownFileType = folder; name = BlaadjeSync; path = ../BlaadjeSync; sourceTree = SOURCE_ROOT; };
 		2B29291860A0B45F69A6DC48 /* KlokGegevens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KlokGegevens.swift; sourceTree = "<group>"; };
@@ -181,6 +183,7 @@
 				6F2CE664A43B40A7C5A6FE0B /* Afloop.swift */,
 				CBB80EC168D35E79CCAB93B9 /* Meer.swift */,
 				C5A9D8F1E083F837E57CCBB0 /* Opstelling.swift */,
+				133F96C4ECC206B0D12751C5 /* Programma.swift */,
 				8C382E273EA78C31F751D1A4 /* Seizoen.swift */,
 				A7DCDE25B2D9C7AF31989D79 /* Start.swift */,
 				507553B6D971A4DC931F05D4 /* Team.swift */,
@@ -430,6 +433,7 @@
 				AC7D0C7B891C4BAD44963372 /* Meer.swift in Sources */,
 				C5212DB42F1340FAB961CA9C /* Opstelling.swift in Sources */,
 				F5A5626BDF26A76424FF932A /* Proefstand.swift in Sources */,
+				45227B35D58069A751C1E0B5 /* Programma.swift in Sources */,
 				5A7BAE8BB78A2DFA3885CC2A /* Seizoen.swift in Sources */,
 				B4C970CA9F4082E7B421C96E /* Start.swift in Sources */,
 				22956932CCE0E1579572F126 /* Team.swift in Sources */,

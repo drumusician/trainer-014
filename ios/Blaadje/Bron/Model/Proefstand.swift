@@ -22,7 +22,23 @@ enum Proefstand {
         guard isProef else { return Volgen() }
         let opslag = UserDefaults(suiteName: "proef-volgen-\(UUID().uuidString)")!
         if ProcessInfo.processInfo.arguments.contains("-proef-volgt") { opslag.set(["code-van-sem-0123456789"], forKey: "volgen.codes") }
+        if ProcessInfo.processInfo.arguments.contains("-proef-teamlink") {
+            opslag.set(["teamlink-jo14-0123456789"], forKey: "volgen.codes")
+            opslag.set("proef-token-0123456789abcdef0123456789", forKey: "volgen.token")
+        }
         let v = Volgen(verkeer: { functie, inhoud in
+            if inhoud["p_code"]?.hasPrefix("teamlink-") == true {
+                guard functie == "volgpagina" else { return Data("true".utf8) }
+                return Data("""
+                {"team":"JO14-1","kind":null,"mijn_kind":{"id":"p2","naam":"Noah"},"seizoen":"2026/27","trainingen":[],
+                 "spelers":[{"id":"p1","naam":"Sem"},{"id":"p2","naam":"Noah"},{"id":"p3","naam":"Luuk"}],
+                 "wedstrijden":[{"id":"w1","datum":"2026-10-25","aanvang":"10:30","tegenstander":"Ajax","thuis":true,"status":"gepland","voor":null,"tegen":null,
+                   "taken":[{"id":"t1","soort":"limonade","wie":"Noah","van_mij":true},{"id":"t2","soort":"vlaggen","wie":"Sem","van_mij":false},
+                            {"id":"t3","soort":"rijden","wie":null,"van_mij":false}]},
+                  {"id":"w2","datum":"2026-11-01","aanvang":null,"tegenstander":"PSV","thuis":false,"status":"gepland","voor":null,"tegen":null,
+                   "taken":[{"id":"t4","soort":"rijden","wie":"Luuk","van_mij":false}]}]}
+                """.utf8)
+            }
             guard functie == "volgpagina", inhoud["p_code"]?.hasPrefix("code-van-") == true else { return Data("null".utf8) }
             return Data("""
             {"team":"JO14-1","kind":"Sem","seizoen":"2026/27",
