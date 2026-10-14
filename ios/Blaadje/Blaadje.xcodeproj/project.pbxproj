@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		02AE5B12722A2E395936469F /* Vergrendelklok.swift in Sources */ = {isa = PBXBuildFile; fileRef = F823D8FADC138E8524AEB1B4 /* Vergrendelklok.swift */; };
 		0929D00C6D1C5614AAB2454A /* BlaadjeKlok.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BFFEEC12D5F3485B3A29D77E /* BlaadjeKlok.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0B553173511FD73C66B6AB63 /* Abonnement.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47ECBFBB10EDCAA1F955E40 /* Abonnement.swift */; };
 		10705B0BFB078348AF058C56 /* KlokGegevens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B29291860A0B45F69A6DC48 /* KlokGegevens.swift */; };
 		21622C2D01E83FF5076277AB /* Wedstrijd.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4424A584E87CAA5425F28E7C /* Wedstrijd.swift */; };
 		22956932CCE0E1579572F126 /* Team.swift in Sources */ = {isa = PBXBuildFile; fileRef = 507553B6D971A4DC931F05D4 /* Team.swift */; };
@@ -25,6 +26,7 @@
 		89D4AFC883231A9DB6C15303 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BDAB35B1D9433403ED54F846 /* Assets.xcassets */; };
 		945E34631E12B93E8FFFD405 /* Thema.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE2AF97C5670424D98052815 /* Thema.swift */; };
 		9462F13A7838692467C25647 /* BewarenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E038E801763516CF87A1E4FF /* BewarenTests.swift */; };
+		96DB1B7D39624C36847C66B2 /* Blaadje.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 9DA8E2F5EF3FDF4BC009FFFA /* Blaadje.storekit */; };
 		AC7D0C7B891C4BAD44963372 /* Meer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB80EC168D35E79CCAB93B9 /* Meer.swift */; };
 		AE3C7677B4D6DAB3E65A67C9 /* VolgenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910AE4735EDB7EE08E35D53F /* VolgenTests.swift */; };
 		AEFA4331A55ADE8564317F3C /* Afloop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F2CE664A43B40A7C5A6FE0B /* Afloop.swift */; };
@@ -35,6 +37,7 @@
 		CE592AF0733085B8D6281579 /* BlaadjeKern in Frameworks */ = {isa = PBXBuildFile; productRef = 7864956EF02EE0323107578D /* BlaadjeKern */; };
 		D05C3D7A984E55B01AFE04AC /* KlokWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B62CFA87A3D5D89E89B5B6A2 /* KlokWidget.swift */; };
 		D37C67CCF8C28F81B6D153A8 /* SnelheidTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE837B0C604D3E434DC8A92F /* SnelheidTests.swift */; };
+		E3DCC77786F11355C93824C6 /* AbonnementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7BAA8DDAA027012F8680265 /* AbonnementTests.swift */; };
 		E41BA669013E1E4EC9FAD3FA /* Veld.swift in Sources */ = {isa = PBXBuildFile; fileRef = F06AA5B7A4B4C15FDCE9B211 /* Veld.swift */; };
 		EB640E9F8FD46B0E257A2744 /* WedstrijdStroom.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A369046203866D1E62DA22 /* WedstrijdStroom.swift */; };
 		F49BDFDE49055AAB5D65407C /* Account.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52ACE74F8A5A38F14B05AE5D /* Account.swift */; };
@@ -100,13 +103,16 @@
 		8C382E273EA78C31F751D1A4 /* Seizoen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Seizoen.swift; sourceTree = "<group>"; };
 		910AE4735EDB7EE08E35D53F /* VolgenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolgenTests.swift; sourceTree = "<group>"; };
 		99615BFC579B585FAA240675 /* BlaadjeKern */ = {isa = PBXFileReference; lastKnownFileType = folder; name = BlaadjeKern; path = ../BlaadjeKern; sourceTree = SOURCE_ROOT; };
+		9DA8E2F5EF3FDF4BC009FFFA /* Blaadje.storekit */ = {isa = PBXFileReference; path = Blaadje.storekit; sourceTree = "<group>"; };
 		A7A369046203866D1E62DA22 /* WedstrijdStroom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WedstrijdStroom.swift; sourceTree = "<group>"; };
 		A7DCDE25B2D9C7AF31989D79 /* Start.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Start.swift; sourceTree = "<group>"; };
 		AE2AF97C5670424D98052815 /* Thema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thema.swift; sourceTree = "<group>"; };
 		AE837B0C604D3E434DC8A92F /* SnelheidTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnelheidTests.swift; sourceTree = "<group>"; };
 		B62CFA87A3D5D89E89B5B6A2 /* KlokWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KlokWidget.swift; sourceTree = "<group>"; };
+		B7BAA8DDAA027012F8680265 /* AbonnementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbonnementTests.swift; sourceTree = "<group>"; };
 		BDAB35B1D9433403ED54F846 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BFFEEC12D5F3485B3A29D77E /* BlaadjeKlok.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = BlaadjeKlok.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C47ECBFBB10EDCAA1F955E40 /* Abonnement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Abonnement.swift; sourceTree = "<group>"; };
 		C48A39AE7985D6B70AFF09B6 /* Volgen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Volgen.swift; sourceTree = "<group>"; };
 		C5A9D8F1E083F837E57CCBB0 /* Opstelling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Opstelling.swift; sourceTree = "<group>"; };
 		CBB80EC168D35E79CCAB93B9 /* Meer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Meer.swift; sourceTree = "<group>"; };
@@ -147,6 +153,7 @@
 		0FE704C067706F078899E49B /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				C47ECBFBB10EDCAA1F955E40 /* Abonnement.swift */,
 				52ACE74F8A5A38F14B05AE5D /* Account.swift */,
 				10D04AB54B3CB0A1CD75448E /* AppModel.swift */,
 				06AA30D34B27B26F6E11748A /* Proefstand.swift */,
@@ -168,6 +175,7 @@
 			isa = PBXGroup;
 			children = (
 				BDAB35B1D9433403ED54F846 /* Assets.xcassets */,
+				9DA8E2F5EF3FDF4BC009FFFA /* Blaadje.storekit */,
 				0E8E5635DFB6722BF3219BBB /* Bron */,
 				DF5254AA097BF39C1A9444FD /* Klok */,
 				A52896FD4EE67E573C14FA26 /* Packages */,
@@ -216,6 +224,7 @@
 		B9FC69B2174742473735A5D7 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				B7BAA8DDAA027012F8680265 /* AbonnementTests.swift */,
 				E038E801763516CF87A1E4FF /* BewarenTests.swift */,
 				AE837B0C604D3E434DC8A92F /* SnelheidTests.swift */,
 				34F20C78D27684C56647294A /* VergrendelklokTests.swift */,
@@ -262,6 +271,7 @@
 			buildConfigurationList = D89E8462A132487716CFD857 /* Build configuration list for PBXNativeTarget "BlaadjeTests" */;
 			buildPhases = (
 				A84AC1D76D13C2620216EF09 /* Sources */,
+				B886C4644C5D80CC8FE43CE7 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -390,6 +400,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B886C4644C5D80CC8FE43CE7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				96DB1B7D39624C36847C66B2 /* Blaadje.storekit in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -414,6 +432,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E3DCC77786F11355C93824C6 /* AbonnementTests.swift in Sources */,
 				9462F13A7838692467C25647 /* BewarenTests.swift in Sources */,
 				D37C67CCF8C28F81B6D153A8 /* SnelheidTests.swift in Sources */,
 				B987CDBD1EC899AF06F2F296 /* VergrendelklokTests.swift in Sources */,
@@ -425,6 +444,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B553173511FD73C66B6AB63 /* Abonnement.swift in Sources */,
 				F49BDFDE49055AAB5D65407C /* Account.swift in Sources */,
 				AEFA4331A55ADE8564317F3C /* Afloop.swift in Sources */,
 				7DF8D3B7044ACBE88D7823BC /* AppModel.swift in Sources */,

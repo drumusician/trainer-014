@@ -74,6 +74,8 @@ targets:
     platform: iOS
     sources:
       - Tests
+      - path: Blaadje.storekit
+        buildPhase: resources
     dependencies:
       - target: Blaadje
     settings:
@@ -94,6 +96,9 @@ targets:
         TEST_TARGET_NAME: Blaadje
 schemes:
   Blaadje:
+    # Kopen in de simulator, zonder App Store Connect: het teamabonnement staat in Blaadje.storekit.
+    run:
+      storeKitConfiguration: Blaadje.storekit
     build:
       targets:
         Blaadje: all

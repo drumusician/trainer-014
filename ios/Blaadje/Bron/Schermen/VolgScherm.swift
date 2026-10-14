@@ -35,6 +35,14 @@ struct VolgScherm: View {
         let komt = p.wedstrijden.filter { $0.status == "gepland" }
         let gespeeld = p.wedstrijden.filter { $0.status == "afgelopen" }.reversed()
         let gemist = p.trainingen.filter { $0.status == "afgemeld" || $0.status == "afwezig" }
+        if !p.aan {
+            Section {
+                Text("De trainer heeft het team nog niet aangezet. Zodra dat gebeurt, zie je hier het programma en de taken, en krijg je de meldingen.")
+                    .foregroundStyle(.secondary)
+            } header: {
+                Text(p.team)
+            }
+        }
         if p.kindKiezen {
             Section {
                 ForEach(p.spelers) { s in

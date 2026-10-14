@@ -258,6 +258,16 @@ final class WedstrijddagTests: XCTestCase {
         beeld("o1-taken")
     }
 
+    func testHetTeamabonnementStaatBijMeer() {
+        app.launchArguments = ["-proef-team", "-proef-abonnement"]
+        app.launch()
+        app.tabBars.buttons["Meer"].tap()
+        let tekst = app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Tot ")).firstMatch
+        XCTAssertTrue(tekst.waitForExistence(timeout: 5), "in de gratis periode staat tot wanneer")
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Zet het team aan")).firstMatch.exists)
+        beeld("ab1-meer")
+    }
+
     func testEenTrainingBijhouden() {
         app.launchArguments = ["-proef-team"]
         app.launch()

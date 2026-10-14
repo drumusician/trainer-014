@@ -1,0 +1,47 @@
+{
+  "identifier" : "B1AADJE0",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : {
+    "_applicationInternalID" : "0",
+    "_developerTeamID" : "N72Z597PXN",
+    "_locale" : "nl_NL",
+    "_storefront" : "NLD",
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "B1AADJE1",
+      "localizations" : [],
+      "name" : "Team",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "24.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "B1AADJE2",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Zet het team aan: programma, taken en meldingen voor alle ouders.",
+              "displayName" : "Teamabonnement",
+              "locale" : "nl_NL"
+            }
+          ],
+          "productID" : "app.blaadje.ios.team",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Teamabonnement",
+          "subscriptionGroupID" : "B1AADJE1",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : []
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

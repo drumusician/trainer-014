@@ -267,6 +267,39 @@ final class Account {
         return url
     }
 
+    // MARK: - het teamabonnement
+
+    /// Het team van dit toestel, als je ingelogd bent.
+    var huidigTeam: String? {
+        if case .aan = fase { return teamId }
+        return nil
+    }
+
+    /// Staat het team aan, en waardoor (`team_status` in supabase/abonnement.sql).
+    func teamStatus() async -> TeamAbonnement.Status? {
+        guard let team = huidigTeam, let bewijs = try? await inlog.bewijs() else { return nil }
+        var verzoek = URLRequest(url: Adressen.supabase.appendingPathComponent("rest/v1/rpc/team_status"))
+        verzoek.httpMethod = "POST"
+        verzoek.setValue(Adressen.sleutel, forHTTPHeaderField: "apikey")
+        verzoek.setValue("Bearer \(bewijs)", forHTTPHeaderField: "Authorization")
+        verzoek.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        verzoek.httpBody = try? JSONSerialization.data(withJSONObject: ["p_team": team])
+        guard let (data, antwoord) = try? await URLSession.shared.data(for: verzoek),
+              (antwoord as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+        return TeamAbonnement.Status.lees(data)
+    }
+
+    /// Een aankoop van Apple naar de server, die hem nakijkt (supabase/functions/abonnement).
+    nonisolated static func meldAankoop(_ jws: String) async -> Bool {
+        var verzoek = URLRequest(url: Adressen.supabase.appendingPathComponent("functions/v1/abonnement"))
+        verzoek.httpMethod = "POST"
+        verzoek.setValue(Adressen.sleutel, forHTTPHeaderField: "apikey")
+        verzoek.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        verzoek.httpBody = try? JSONSerialization.data(withJSONObject: ["transactie": jws])
+        guard let (_, antwoord) = try? await URLSession.shared.data(for: verzoek) else { return false }
+        return (antwoord as? HTTPURLResponse)?.statusCode == 200
+    }
+
     // MARK: - uitloggen
 
     /// Wat op dit toestel staat blijft staan; het gaat alleen niet meer naar je account.

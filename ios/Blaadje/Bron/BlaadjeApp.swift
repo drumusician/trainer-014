@@ -6,6 +6,7 @@ struct BlaadjeApp: App {
     @State private var app: AppModel
     @State private var account: Account
     @State private var volgen: Volgen
+    @State private var abonnement = TeamAbonnement()
 
     init() {
         let model = Proefstand.model()
@@ -24,8 +25,17 @@ struct BlaadjeApp: App {
                 .environment(app)
                 .environment(account)
                 .environment(volgen)
+                .environment(abonnement)
                 // Niet in de tests die de app bedienen: die horen niets naar een server te sturen.
-                .task { if !Proefstand.isProef { await account.start() } }
+                .task {
+                    abonnement.haalStatus = { [account] in await account.teamStatus() }
+                    if Proefstand.isProef {
+                        abonnement.haalStatus = { Proefstand.abonnement }
+                    } else {
+                        abonnement.start()
+                        await account.start()
+                    }
+                }
                 .tint(Kleur.accent)
                 .onChange(of: fase) { _, nieuw in
                     if nieuw == .active {

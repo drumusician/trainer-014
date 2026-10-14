@@ -57,23 +57,7 @@ alter table public.volgers   enable row level security;
 alter table public.meldingen enable row level security;
 
 -- ---------- volgen en ontvolgen ----------
-create or replace function public.volg(p_code text, p_token text, p_omgeving text default 'echt') returns boolean
-language plpgsql security definer
-set search_path = public
-as $$
-declare
-  v_link uuid;
-begin
-  select d.id into v_link from public.deellinks d where d.code = p_code and d.ingetrokken is null;
-  if v_link is null then
-    return false;
-  end if;
-  insert into public.volgers (deellink_id, token, omgeving)
-  values (v_link, p_token, case when p_omgeving = 'proef' then 'proef' else 'echt' end)
-  on conflict (deellink_id, token) do update set omgeving = excluded.omgeving;
-  return true;
-end;
-$$;
+-- `volg` zelf staat in taken.sql: daar kreeg hij het kind erbij.
 
 create or replace function public.ontvolg(p_code text, p_token text) returns void
 language sql security definer
@@ -84,66 +68,11 @@ as $$
    where d.id = v.deellink_id and d.code = p_code and v.token = p_token;
 $$;
 
-revoke all on function public.volg(text, text, text) from public;
 revoke all on function public.ontvolg(text, text) from public;
-grant execute on function public.volg(text, text, text) to anon, authenticated;
 grant execute on function public.ontvolg(text, text) to anon, authenticated;
 
 -- ---------- wat een volger ziet ----------
--- Het team en de wedstrijden van dit seizoen (ook die nu loopt, met de stand).
--- Met de link van een kind ook de voornaam van dat kind en de trainingen met of
--- het er was; met de link van het team staat er over geen enkel kind iets op.
--- Klopt de code niet of is hij ingetrokken, dan komt er niets terug.
-create or replace function public.volgpagina(p_code text) returns jsonb
-language plpgsql security definer stable
-set search_path = public
-as $$
-declare
-  v_team     uuid;
-  v_speler   uuid;
-  v_seizoen  text := public.seizoen_van(current_date);
-begin
-  select d.team_id, d.speler_id into v_team, v_speler
-    from public.deellinks d
-   where d.code = p_code and d.ingetrokken is null;
-  if v_team is null then
-    return null;
-  end if;
-
-  return jsonb_build_object(
-    'team', (select t.naam from public.teams t where t.id = v_team),
-    'kind', (select s.naam from public.spelers s where s.id = v_speler),
-    'seizoen', v_seizoen,
-    'wedstrijden', coalesce((
-      select jsonb_agg(jsonb_build_object(
-               'datum', w.datum,
-               'tegenstander', w.tegenstander,
-               'thuis', w.thuis,
-               'status', w.status,
-               -- de stand zodra er gespeeld wordt
-               'voor', case when w.status <> 'gepland' then w.doelpunten_voor end,
-               'tegen', case when w.status <> 'gepland' then w.doelpunten_tegen end
-             ) order by w.datum, w.gemaakt)
-        from public.wedstrijden w
-       where w.team_id = v_team and public.seizoen_van(w.datum) = v_seizoen
-    ), '[]'::jsonb),
-    'trainingen', coalesce((
-      select jsonb_agg(jsonb_build_object(
-               'datum', tr.datum,
-               'status', (select ts.status from public.training_spelers ts
-                           where ts.training_id = tr.id and ts.speler_id = v_speler)
-             ) order by tr.datum, tr.gemaakt)
-        from public.trainingen tr
-       where tr.team_id = v_team and public.seizoen_van(tr.datum) = v_seizoen
-         -- alleen met de link van een kind
-         and v_speler is not null
-    ), '[]'::jsonb)
-  );
-end;
-$$;
-
-revoke all on function public.volgpagina(text) from public;
-grant execute on function public.volgpagina(text) to anon, authenticated;
+-- `volgpagina` staat in taken.sql: daar kwamen het programma en de taken erbij.
 
 -- ---------- de melding bij een gebeurtenis ----------
 -- Voor de serverfunctie die de meldingen verstuurt: wat moet er naar wie, voor
@@ -179,6 +108,10 @@ begin
   end if;
   select * into w from public.wedstrijden where id = g.wedstrijd_id;
   if not found or w.status <> 'bezig' then
+    return null;
+  end if;
+  -- Alleen voor een team dat aanstaat (abonnement.sql).
+  if not public.team_aan(w.team_id) then
     return null;
   end if;
   -- Alleen de rust: bij vier kwarten zijn de andere pauzes geen nieuws.
@@ -258,7 +191,7 @@ begin
   -- Eén tegelijk per wedstrijd, anders verdelen twee aanroepen de stapel onder elkaar.
   perform pg_advisory_xact_lock(hashtext(p_wedstrijd::text));
   select * into w from public.wedstrijden where id = p_wedstrijd;
-  if not found then
+  if not found or not public.team_aan(w.team_id) then
     return null;
   end if;
 

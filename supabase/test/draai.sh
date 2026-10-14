@@ -34,10 +34,15 @@ opruimen
 "$psql" -q -v ON_ERROR_STOP=1 -c "set client_min_messages = warning" -d "$db" -f "${MODEL:-$hier/../model.sql}"
 "$psql" -q -t -A -v ON_ERROR_STOP=1 -d "$db" -f "$hier/model.sql"
 
+# Het teamabonnement, volgen en de taken. Eerst alle drie erin: volgen.sql en
+# taken.sql vragen het abonnement of een team aanstaat, en `volg` en
+# `volgpagina` staan in taken.sql.
+for f in "${ABONNEMENT:-$hier/../abonnement.sql}" "${VOLGEN:-$hier/../volgen.sql}" "${TAKEN:-$hier/../taken.sql}"; do
+  "$psql" -q -v ON_ERROR_STOP=1 -c "set client_min_messages = warning" -d "$db" -f "$f"
+done
 # Volgen en meldingen: wat een ouder ziet, en welke melding bij welke gebeurtenis hoort.
-"$psql" -q -v ON_ERROR_STOP=1 -c "set client_min_messages = warning" -d "$db" -f "${VOLGEN:-$hier/../volgen.sql}"
 "$psql" -q -t -A -v ON_ERROR_STOP=1 -d "$db" -f "$hier/volgen.sql"
-
 # Het programma en de taken: kind kiezen, kan niet en doe ik, en de herinneringen.
-"$psql" -q -v ON_ERROR_STOP=1 -c "set client_min_messages = warning" -d "$db" -f "${TAKEN:-$hier/../taken.sql}"
 "$psql" -q -t -A -v ON_ERROR_STOP=1 -d "$db" -f "$hier/taken.sql"
+# Het abonnement: na de gratis periode alleen nog met een abonnement.
+"$psql" -q -t -A -v ON_ERROR_STOP=1 -d "$db" -f "$hier/abonnement.sql"

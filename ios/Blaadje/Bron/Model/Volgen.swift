@@ -91,7 +91,10 @@ final class Volgen {
         /// Om je kind te kiezen; alleen bij de link van het team.
         let spelers: [Speler]
 
-        enum CodingKeys: String, CodingKey { case team, kind, wedstrijden, trainingen, mijnKind = "mijn_kind", spelers }
+        /// Uit als het team geen abonnement heeft (na de gratis periode).
+        let aan: Bool
+
+        enum CodingKeys: String, CodingKey { case team, kind, wedstrijden, trainingen, mijnKind = "mijn_kind", spelers, aan }
 
         init(from decoder: Decoder) throws {
             let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -101,6 +104,7 @@ final class Volgen {
             trainingen = try c.decode([Training].self, forKey: .trainingen)
             mijnKind = try c.decodeIfPresent(Speler.self, forKey: .mijnKind)
             spelers = try c.decodeIfPresent([Speler].self, forKey: .spelers) ?? []
+            aan = try c.decodeIfPresent(Bool.self, forKey: .aan) ?? true
         }
 
         /// Moet de ouder nog zeggen welk kind van hem is?

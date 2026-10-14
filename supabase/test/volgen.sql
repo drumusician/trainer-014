@@ -218,7 +218,12 @@ begin
   if p->>'kind' is not null then raise exception 'de link van het team noemt een kind'; end if;
   if jsonb_array_length(p->'wedstrijden') <> 3 then raise exception 'de wedstrijden staan niet op de teampagina'; end if;
   if jsonb_array_length(p->'trainingen') <> 0 then raise exception 'op de teampagina staan trainingen, en die zijn per kind'; end if;
-  if p::text like '%Sem%' or p::text like '%Noah%' then raise exception 'op de teampagina staat een kind bij naam'; end if;
+  -- De voornamen staan er wel, om je eigen kind uit te kiezen (taken.sql), maar
+  -- verder nergens: geen trainingen, geen kind dat deze telefoon niet koos.
+  if (p - 'spelers')::text like '%Sem%' or (p - 'spelers')::text like '%Noah%' then
+    raise exception 'op de teampagina staat een kind bij naam, buiten de lijst om te kiezen';
+  end if;
+  if p->'mijn_kind' <> 'null'::jsonb then raise exception 'zonder telefoon toch een eigen kind'; end if;
   if not public.volg('code-van-het-team-0123456789', 'telefoon-van-opa-0123456789abcdef0123456789') then raise exception 'het team volgen lukt niet'; end if;
 end $$;
 reset role;

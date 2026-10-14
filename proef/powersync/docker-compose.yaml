@@ -13,8 +13,9 @@ services:
       - ../../supabase/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql:ro
       - ../../supabase/model.sql:/docker-entrypoint-initdb.d/03-model.sql:ro
       - ./init/04-proef.sql:/docker-entrypoint-initdb.d/04-proef.sql:ro
-      - ../../supabase/volgen.sql:/docker-entrypoint-initdb.d/05-volgen.sql:ro
-      - ../../supabase/taken.sql:/docker-entrypoint-initdb.d/06-taken.sql:ro
+      - ../../supabase/abonnement.sql:/docker-entrypoint-initdb.d/05-abonnement.sql:ro
+      - ../../supabase/volgen.sql:/docker-entrypoint-initdb.d/06-volgen.sql:ro
+      - ../../supabase/taken.sql:/docker-entrypoint-initdb.d/07-taken.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "psql -U postgres -d postgres -Atc \"select 1 from pg_publication where pubname = 'powersync'\" | grep -q 1"]
       interval: 3s

@@ -1,4 +1,5 @@
 import BlaadjeKern
+import StoreKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -6,6 +7,8 @@ import UniformTypeIdentifiers
 struct Meer: View {
     @Environment(AppModel.self) private var app
     @Environment(Account.self) private var account
+    @Environment(TeamAbonnement.self) private var abonnement
+    @State private var abonnementBeheren = false
     @State private var email = ""
     @State private var inlogcode = ""
     @State private var uitloggenVragen = false
@@ -29,6 +32,7 @@ struct Meer: View {
                         }
                 }
                 if Account.beschikbaar { accountDeel }
+                if account.huidigTeam != nil || ProcessInfo.processInfo.arguments.contains("-proef-abonnement") { abonnementDeel }
                 Section {
                     Button { linkPlakken = true } label: { Label("Een team volgen", systemImage: "bell") }
                 } footer: {
@@ -87,6 +91,37 @@ struct Meer: View {
                 Button("Oké") { fout = nil }
             } message: { Text(fout ?? "") }
         }
+    }
+
+    /// Eén aankoop zet het team aan, voor alle ouders.
+    @ViewBuilder
+    private var abonnementDeel: some View {
+        Section {
+            if let status = abonnement.status {
+                Label(status.tekst(), systemImage: status.aan ? "checkmark.seal" : "exclamationmark.circle")
+            }
+            if abonnement.status?.abonnementTot.map({ $0 > Date() }) == true {
+                Button("Beheer het abonnement") { abonnementBeheren = true }
+            } else {
+                Button {
+                    Task { await abonnement.koop(team: account.huidigTeam ?? "") }
+                } label: {
+                    Text("Zet het team aan" + (abonnement.prijs.map { " · \($0) per jaar" } ?? ""))
+                }
+                .disabled(abonnement.bezig || abonnement.prijs == nil)
+            }
+            Button("Herstel een aankoop") { Task { await abonnement.herstel() } }
+                .disabled(abonnement.bezig)
+            if let melding = abonnement.melding {
+                Text(melding).font(.footnote).foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Teamabonnement")
+        } footer: {
+            Text("Eén abonnement voor het hele team: ouders zien het programma en de taken, en krijgen de meldingen. De wedstrijd bijhouden blijft altijd gratis.")
+        }
+        .task { await abonnement.ververs() }
+        .manageSubscriptionsSheet(isPresented: $abonnementBeheren)
     }
 
     @ViewBuilder

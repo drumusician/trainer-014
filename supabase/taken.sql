@@ -1,6 +1,6 @@
 -- Blaadje — het programma en de taken
 --
--- Draait ná schema.sql, model.sql en volgen.sql. De trainer of teamleider zet de
+-- Draait ná schema.sql, model.sql, abonnement.sql en volgen.sql. De trainer of teamleider zet de
 -- wedstrijden die komen er alvast in, en bij elke wedstrijd wie wat regelt:
 -- limonade, rijden, fluiten, vlaggen, de teamtas. Een ouder kiest in de app één
 -- keer zijn kind, ziet het programma met de taken, en kan zeggen "kan niet" of
@@ -151,7 +151,17 @@ begin
   end if;
   select k.speler into v_mijn from public.kind_van(p_code, p_token) k;
 
+  -- Staat het team niet aan, dan alleen de naam: de app zegt dan dat de trainer
+  -- het team moet aanzetten.
+  if not public.team_aan(v_team) then
+    return jsonb_build_object(
+      'team', (select t.naam from public.teams t where t.id = v_team),
+      'aan', false, 'kind', null, 'mijn_kind', null, 'spelers', '[]'::jsonb,
+      'seizoen', v_seizoen, 'wedstrijden', '[]'::jsonb, 'trainingen', '[]'::jsonb);
+  end if;
+
   return jsonb_build_object(
+    'aan', true,
     'team', (select t.naam from public.teams t where t.id = v_team),
     -- het kind van de link; met de link van het team staat hier niets
     'kind', (select s.naam from public.spelers s where s.id = v_link),
@@ -295,6 +305,7 @@ begin
         from public.taken tk
         join public.wedstrijden w on w.id = tk.wedstrijd_id
        where w.datum = v_lokaal::date + 1 and w.status = 'gepland' and tk.speler_id is not null
+         and public.team_aan(w.team_id, p_nu)
        group by w.id, w.tegenstander, w.aanvang, w.team_id, tk.speler_id
     loop
       continue when r.tokens is null;
@@ -320,7 +331,7 @@ begin
              - ((w.klok->>'elapsed')::float8 + (extract(epoch from p_nu) * 1000 - (w.klok->>'since')::float8) / 1000) as nog
       from public.wedstrijden w
       join public.taken tk on tk.wedstrijd_id = w.id and tk.soort = 'limonade' and tk.speler_id is not null
-     where w.status = 'bezig'
+     where w.status = 'bezig' and public.team_aan(w.team_id, p_nu)
        and (w.klok->>'running')::boolean is true
        and coalesce((w.klok->>'inBreak')::boolean, false) is false
        and (w.klok->>'part')::int = w.delen / 2
@@ -349,6 +360,7 @@ begin
      where tk.speler_id is null and tk.afgemeld_door is not null
        and tk.bijgewerkt > p_nu - interval '1 day'
        and w.status <> 'afgelopen' and w.datum >= v_lokaal::date
+       and public.team_aan(w.team_id, p_nu)
   loop
     continue when r.tokens is null;
     insert into public.meldingen (sleutel) values ('open|' || r.taak || '|' || r.afgemeld_door)
