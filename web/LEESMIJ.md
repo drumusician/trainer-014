@@ -109,20 +109,36 @@ is leidend, niet je telefoon.
 
 ## Synchroniseren
 
-Lokaal is leidend. De app werkt zonder bereik, en zodra er internet is gaat wat
-er veranderd is vanzelf naar de server. De regel eronder:
+Sinds oktober 2026 werken het web en de iPhone-app in dezelfde tabellen
+(`supabase/model.sql`). Wat je op het web klaarzet staat op je telefoon, en
+andersom. De vertaling van de toestand naar rijen staat in
+`src/lib/supabase/rijen.ts` en is regel voor regel dezelfde als die van de
+iPhone-app (`ios/BlaadjeKern/.../Sync/Rijen.swift`). Dat moet: een rij is pas
+dezelfde rij als het kenmerk klopt. `rijen.test.ts` legt de uitkomst naast de
+rijen die de iPhone-app zelf maakte (`Fixtures/rijen-gedeeld.json`).
 
-- **Opsturen** gebeurt vier seconden na de laatste wijziging, en alleen als het
-  pakket echt anders is dan wat er al staat. Ook tijdens een wedstrijd: vier
-  seconden na elke wissel staat hij op de server.
-- **Ophalen** gebeurt bij het openen van de app en als je terugkomt uit een ander
-  scherm, maar **nooit** als er hier nog iets klaarstaat. Dan zou je je eigen
-  werk overschrijven.
-- Botst het (op allebei de toestellen iets veranderd), dan doet de app niets en
-  verschijnt er een balk: ophalen, of dit toestel opsturen. Die keuze is aan de
-  trainer.
+- **Opsturen** gebeurt vier seconden na de laatste wijziging, en dan alleen wat
+  er veranderde: per veld, net als de telefoon. Het toestel onthoudt wat er
+  volgens hem in de tabellen staat (`o14-gespiegeld-v1`); het verschil daarmee
+  is wat er heen gaat. Wat een ander toestel intussen deed staat daar niet in,
+  en wordt dus ook niet weggehaald. Doen twee toestellen hetzelfde veld, dan
+  wint de laatste. Botsingen bestaan daardoor niet meer.
+- **Ophalen** gebeurt bij het openen, als je terugkomt naar het tabblad en elke
+  minuut zolang het voor je staat, maar **nooit** als er hier nog iets
+  klaarstaat of de trainer intussen tikte. Dan gaat dat eerst de andere kant op.
+- **Een leeg toestel maakt een team nooit leeg.** Staat er hier niets en in het
+  account wel, dan haalt de app op in plaats van alles weg te halen.
+- Weigert de server een rij, dan gaat de rest gewoon door; het staat in het
+  logboekje bij Meer.
 - Geen bereik? Dan blijft het klaarstaan en gaat het mee zodra je weer online
   bent.
+
+Het oude blok (`team_toestand`, één JSON-document per team) wordt niet meer
+geschreven. Staat een team nog leeg in de tabellen, dan verhuist de app dat blok
+de eerste keer.
+
+`./proef.sh` draait de webapp tegen een verse lokale database met het echte
+model en PostgREST (Docker nodig, bijvoorbeeld `colima start`).
 
 Een code en een back-up bevatten hetzelfde, op één ding na: de wedstrijd die nu
 loopt zit er niet in. Die is bedoeld om over te zetten en te bewaren, en een
@@ -138,16 +154,14 @@ seizoen kost. Vier regels, en alles in `sync.svelte.ts` is een uitwerking daarva
    geen gekozen, dan gebeurt er niets tot de trainer kiest. Dat is een vraag, geen
    storing: er komt geen 'geen verbinding' te staan en er wordt niet doorgeprobeerd.
 3. **Het eerste contact met een team is altijd ophalen, nooit opsturen.** Weet het
-   toestel niet op welke versie het bouwt, dan heeft het dit team nog nooit gezien,
-   en dan is opsturen het overschrijven van iets wat het niet kent.
+   toestel niet wat er in de tabellen staat, dan heeft het dit team nog nooit
+   gezien, en dan is opsturen het overschrijven van iets wat het niet kent. Wat er
+   op dit toestel stond gaat dan apart (`o14-app-v1-voor-account`).
 4. **Overstappen kan alleen als er niets klaarstaat, en lukt helemaal of niet.**
    Eerst het andere team ophalen, en pas omzetten als dat gelukt is.
 
-Regel 3 zat er eerst niet in, en dat is het scherpst denkbare randje. Een net
-toegevoegde trainer logt in, zijn nog lege app duwt naar jouw team, de
-versiecontrole houdt hem tegen — en dan krijgt hij een botsing te zien waarvan één
-van de twee knoppen met opzet zijn lege toestel over jouw seizoen heen stuurt. Een
-geladen wapen in handen van iemand die net binnenkomt.
+Regel 3 zat er eerst niet in, en dat is het scherpst denkbare randje: een net
+toegevoegde trainer logt in en zijn nog lege app duwt naar jouw team.
 
 Regel 4 heeft een tweede helft die makkelijk te missen is: stap je over naar een
 team waar nog *niets* staat, dan wordt wat er op dit toestel staat gewist. Dat
@@ -174,32 +188,15 @@ aanstaat. Hij was eerst een eenmalig keuzemoment dat verdween zodra je gekozen
 had, en dat maakte er een eenrichtingsdeur van: wie twee teams heeft koos er een
 en kwam nooit meer bij het andere.
 
-## Een telefoon die leegloopt
+## De wedstrijd
 
-De lopende wedstrijd gaat wél naar de server, en dat is met opzet: het is het
-enige wat nergens anders bestaat. Vier seconden na elke wissel staat hij er.
+Een wedstrijd houd je bij in de iPhone-app. Het web volgt: wat er in het account
+staat wint, ook als hier al een wedstrijd liep. Vroeger was het andersom (na de
+aftrap won dit toestel), maar met per veld opsturen zou een oude kopie hier de
+wissels en doelpunten van de telefoon weer weghalen.
 
-Andersom gaat hij niet: een wedstrijd die hier loopt wordt **nooit** overschreven
-door wat er op de server staat. Een toestel dat zelf niets heeft lopen pakt hem
-wel op, compleet met alles wat er al gebeurd is.
-
-De grens ligt bij de aftrap, en dat gaat niet over wat er bewaard wordt — de
-opstelling en elke wissel gaan gewoon mee — maar over wie er wint als dit toestel
-en de server het oneens zijn:
-
-- **Vóór de aftrap** wint de server. Je bent in het slechtste geval een
-  klaargezette opstelling kwijt: opnieuw klikken, twee minuten.
-- **Ná de aftrap** wint dit toestel, altijd. Tussen de tik op een wissel en het
-  opsturen zit een gat — normaal vier seconden, achter de sporthal zonder bereik
-  twintig minuten. In dat gat staan die wissels hier en nergens anders, en wie er
-  tien minuten geleden uitging weet niemand meer.
-
-Bij de aftrap wordt vastgelegd wie hem bijhoudt (`keptBy`). Tikt er een tweede
-mee, dan staat dat bovenaan het wedstrijdscherm, met een knop om hem met opzet
-over te nemen. Dat is voor de telefoon die leegloopt. Houden twee mensen hem
-tegelijk bij, dan duwen ze om beurten hun eigen versie naar de server en raken de
-wissels van een van beiden zoek — daarom staat er een waarschuwing en geen
-automatische samenvoeging.
+Een wedstrijd heeft een vast kenmerk (`id`) dat meegaat naar het archief, zodat
+hij op de server één rij blijft.
 
 ## Opslag
 

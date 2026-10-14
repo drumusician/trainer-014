@@ -2,118 +2,754 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { noodrem, sync } from './sync.svelte';
 import { app } from '$lib/store.svelte';
 import { issues } from '$lib/issues.svelte';
-import { emptyState } from '$lib/domain/types';
+import { emptyState, type State } from '$lib/domain/types';
+import { nepServer } from '../../test/nepserver';
 
-/** A fake server: enough to test the decisions, not the network. */
-function nepFetch(
-	opties: { versie?: number; data?: unknown; botsing?: boolean; stuk?: boolean; zonderCode?: boolean } = {}
-) {
-	const verstuurd: unknown[] = [];
-	const f = vi.fn(async (url: string, init?: RequestInit) => {
-		const body = init?.body ? JSON.parse(String(init.body)) : null;
+/** Voor wat niet over de tabellen gaat: alles is goed, of er is geen bereik. */
+function nepFetch(opties: { stuk?: boolean } = {}) {
+	const f = vi.fn(async (_url: string, _init?: RequestInit) => {
 		if (opties.stuk) throw new Error('geen bereik');
-		if (url.includes('/rest/v1/teams')) {
-			return new Response(JSON.stringify([{ id: 'team-1' }]), { status: 200 });
-		}
-		if (url.includes('rpc/toestand_opslaan')) {
-			if (opties.botsing) {
-				/* Zonder code: dan moet de tekst het doen. Dat is het pad dat stukging. */
-				const lijf = opties.zonderCode
-					? { message: 'versie loopt niet gelijk (hier 82, jij 78)' }
-					: { code: 'PT409', message: 'versie loopt niet gelijk (hier 82, jij 78)' };
-				return new Response(JSON.stringify(lijf), { status: 409 });
-			}
-			verstuurd.push(body.p_data);
-			return new Response(JSON.stringify({ versie: (opties.versie ?? 0) + 1 }), { status: 200 });
-		}
-		if (url.includes('team_toestand')) {
-			return new Response(JSON.stringify(opties.data ? [{ data: opties.data, versie: opties.versie ?? 1 }] : []), {
-				status: 200
-			});
-		}
 		return new Response('{}', { status: 200 });
 	});
 	globalThis.fetch = f as unknown as typeof fetch;
-	return { f, verstuurd };
+	return { f };
 }
+
+/** Een kenmerk zoals de telefoon het maakt. */
+const id = (n: number) => '00000000-0000-4000-8000-' + String(n).padStart(12, '0');
+
+/** Wat de iPhone-app in het account zette: een selectie, een training en een bewaarde wedstrijd. */
+function vanDeTelefoon(): State {
+	const t = emptyState();
+	t.teamName = 'JO13-1';
+	t.players = [
+		{ id: id(1), name: 'Sem', line: 'V', keeper: true },
+		{ id: id(2), name: 'Noah', line: 'M' },
+		{ id: id(3), name: 'Luuk', line: 'A' }
+	];
+	t.trainings = [
+		{ id: id(20), date: '2026-10-07', status: { [id(1)]: 'present', [id(2)]: 'excused', [id(3)]: 'present' } }
+	];
+	t.archive = [
+		{
+			id: id(30),
+			date: '2026-10-04',
+			opponent: 'Sparta',
+			home: true,
+			score: [2, 1],
+			formation: '4-3-3',
+			duration: 4200,
+			parts: 2,
+			events: [
+				{ type: 'start', t: 0 },
+				{ type: 'goal', t: 600, player: id(3) },
+				{ type: 'conceded', t: 900 },
+				{ type: 'goal', t: 2000, player: id(2) },
+				{ type: 'end', t: 4200 }
+			],
+			playingTime: [
+				{ id: id(1), name: 'Sem', seconds: 4200, keeper: 4200 },
+				{ id: id(2), name: 'Noah', seconds: 4200, keeper: 0 },
+				{ id: id(3), name: 'Luuk', seconds: 2100, keeper: 0 }
+			]
+		}
+	];
+	return t;
+}
+
+const namen = () => app.toestand.players.map((p) => p.name);
 
 beforeEach(() => {
 	localStorage.clear();
+	sync.load(); /* vergeet ook wat er van een team in de tabellen stond */
+	app.afterSave = () => sync.merkVies(); /* zoals de schil van de app doet */
+	noodrem.los();
 	app.toestand = emptyState();
 	app.toestand.players = [{ id: 'p1', name: 'Daanish', line: 'M' }];
 	sync.sessie = {
-		access_token: 'token',
-		refresh_token: 'r',
+		access_token: 'u1',
+		refresh_token: 'u1',
 		verloopt: Date.now() + 3600_000,
 		user_id: 'u1',
 		email: 'trainer@voorbeeld.nl',
 		teamId: 'team-1',
-		versie: 1,
-		laatst: null,
-		afdruk: null
+		laatst: null
 	};
 	sync.vies = false;
-	sync.botsing = false;
 	sync.hapert = false;
+	sync.geweigerd = 0;
+	sync.message = '';
+	sync.mijnTeams = [];
+	sync.leden = [];
+	sync.openstaand = [];
+	sync.uitgenodigdVoor = [];
+	sync.andereGebruiker = null;
+	vi.stubGlobal('confirm', () => true);
+});
+
+/*
+ * De tabellen.
+ *
+ * Sinds oktober 2026 schrijven het web en de iPhone-app in dezelfde tabellen,
+ * per veld. Wat hier bewaakt wordt: het web haalt eerst op voordat het iets
+ * stuurt, stuurt daarna alleen wat er hier veranderde, en laat staan wat een
+ * ander toestel intussen deed.
+ */
+describe('de eerste keer', () => {
+	it('haalt op wat de telefoon in het account zette', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		s.vul('team-1', vanDeTelefoon());
+
+		await sync.kijkEven();
+
+		expect(namen()).toEqual(['Sem', 'Noah', 'Luuk']);
+		expect(app.toestand.archive[0].score).toEqual([2, 1]);
+		expect(app.toestand.trainings[0].status[id(2)]).toBe('excused');
+		expect(sync.vies).toBe(false);
+	});
+
+	/* Regel 3: het eerste contact met een team is ophalen, nooit opsturen. */
+	it('stuurt niets op voordat het team een keer is opgehaald', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		s.vul('team-1', vanDeTelefoon());
+
+		await sync.opsturen();
+
+		expect(s.schrijfacties()).toHaveLength(0);
+		expect(s.toestand('team-1')!.players.map((p) => p.name)).toEqual(['Sem', 'Noah', 'Luuk']);
+	});
+
+	it('zet wat hier stond apart, voor als dat een vergissing was', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		s.vul('team-1', vanDeTelefoon());
+
+		await sync.kijkEven();
+
+		const apart = JSON.parse(localStorage.getItem('o14-app-v1-voor-account')!);
+		expect(apart.players[0].name).toBe('Daanish');
+	});
+
+	/* Het oude blok, van vóór de tabellen: één keer verhuizen, daarna niet meer. */
+	it('verhuist het oude blok als er in de tabellen nog niets staat', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		s.oud['team-1'] = {
+			versie: 8,
+			data: {
+				teamName: 'JO13-1',
+				players: [{ id: 'p7', name: 'Vanaf de laptop', line: 'M' }],
+				archive: [],
+				trainings: []
+			}
+		};
+		app.toestand = emptyState();
+
+		await sync.kijkEven();
+
+		expect(namen()).toEqual(['Vanaf de laptop']);
+		expect(s.toestand('team-1')!.players.map((p) => p.name)).toEqual(['Vanaf de laptop']);
+	});
+
+	it('houdt wat hier staat als dat net zo nieuw is als het oude blok', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		s.oud['team-1'] = { versie: 8, data: { players: [{ id: 'p7', name: 'Ouder', line: 'M' }] } };
+		sync.sessie!.versie = 8;
+		app.toestand.players = [
+			{ id: 'p1', name: 'Daanish', line: 'M' },
+			{ id: 'p2', name: 'Nieuw hier', line: 'A' }
+		];
+
+		await sync.kijkEven();
+
+		expect(namen()).toEqual(['Daanish', 'Nieuw hier']);
+		expect(s.toestand('team-1')!.players.map((p) => p.name)).toEqual(['Daanish', 'Nieuw hier']);
+	});
+
+	it('zet wat hier staat in een team dat nog leeg is', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		app.toestand.teamName = 'Ons team';
+
+		await sync.kijkEven();
+
+		expect(s.toestand('team-1')!.players.map((p) => p.name)).toEqual(['Daanish']);
+		/* en de standaardnaam hernoemt het team niet */
+		expect(s.teams[0].naam).toBe('JO13-1');
+		expect(app.toestand.teamName).toBe('JO13-1');
+	});
+
+	/* Supabase geeft hooguit duizend rijen per keer; een seizoen trainingen is meer. */
+	it('haalt ook meer dan duizend rijen op', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		const t = vanDeTelefoon();
+		t.players = Array.from({ length: 20 }, (_, i) => ({ id: id(100 + i), name: 'Speler ' + i, line: 'M' as const }));
+		t.trainings = Array.from({ length: 60 }, (_, i) => ({
+			id: id(1000 + i),
+			date: '2026-' + String(9 + Math.floor(i / 28)).padStart(2, '0') + '-' + String(1 + (i % 28)).padStart(2, '0'),
+			status: Object.fromEntries(t.players.map((p) => [p.id, 'present' as const]))
+		}));
+		s.vul('team-1', t);
+		expect(s.rijenVan('training_spelers', 'team-1').length).toBe(1200);
+
+		await sync.kijkEven();
+
+		expect(app.toestand.trainings).toHaveLength(60);
+		expect(app.toestand.trainings.every((tr) => Object.keys(tr.status).length === 20)).toBe(true);
+	});
 });
 
 describe('vanzelf bijwerken', () => {
-	it('merkt een wijziging en stuurt hem op', async () => {
-		const { verstuurd } = nepFetch({ versie: 1 });
-		sync.merkVies();
+	async function opgehaald() {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		s.vul('team-1', vanDeTelefoon());
+		await sync.kijkEven();
+		s.log = [];
+		return s;
+	}
+
+	it('stuurt alleen op wat er veranderde', async () => {
+		const s = await opgehaald();
+		app.renamePlayer(app.toestand.players[1], 'Noah B.');
 		expect(sync.vies).toBe(true);
+
 		await sync.duwAlsNodig();
+
 		expect(sync.vies).toBe(false);
-		expect((verstuurd[0] as { players: unknown[] }).players).toHaveLength(1);
+		expect(s.schrijfacties()).toEqual([
+			{ method: 'PATCH', pad: '/rest/v1/spelers?id=eq.' + id(2), body: { naam: 'Noah B.' } }
+		]);
 	});
 
-	/* This used to be the other way round: the match deliberately stayed on one
-	   device. But then you cannot prepare anything at home, which is precisely when
-	   you are sitting down quietly. */
-	it('stuurt ook een wedstrijd op die je klaarzet', async () => {
-		const { verstuurd } = nepFetch({ versie: 1 });
-		sync.merkVies();
+	it('zet een nieuwe speler erbij', async () => {
+		const s = await opgehaald();
+		app.addPlayerNames('Milan');
 		await sync.duwAlsNodig();
-		expect(sync.vies).toBe(false);
+		expect(s.toestand('team-1')!.players.map((p) => p.name)).toEqual(['Sem', 'Noah', 'Luuk', 'Milan']);
+	});
 
-		app.newMatch('Sparta', true);
-		sync.merkVies();
-		expect(sync.vies).toBe(true);
+	it('stuurt een wedstrijd op die je klaarzet, zodat de telefoon hem ziet', async () => {
+		const s = await opgehaald();
+		app.newMatch('Feyenoord', false);
 		await sync.duwAlsNodig();
-		expect((verstuurd.at(-1) as { match: { opponent: string } }).match.opponent).toBe('Sparta');
+		const w = s.toestand('team-1')!.match!;
+		expect(w.opponent).toBe('Feyenoord');
+		expect(w.home).toBe(false);
+		expect(w.id).toBe(app.toestand.match!.id);
+	});
+
+	it('laat staan wat een ander toestel intussen deed', async () => {
+		const s = await opgehaald();
+		/* de telefoon zet een speler erbij, het web hernoemt een ander */
+		const telefoon = s.toestand('team-1')!;
+		telefoon.players.push({ id: id(4), name: 'Finn', line: 'V' });
+		s.vul('team-1', telefoon);
+		app.renamePlayer(app.toestand.players[0], 'Sem K.');
+
+		await sync.duwAlsNodig();
+		expect(s.toestand('team-1')!.players.map((p) => p.name)).toEqual(['Sem K.', 'Noah', 'Luuk', 'Finn']);
+
+		await sync.kijkEven();
+		expect(namen()).toEqual(['Sem K.', 'Noah', 'Luuk', 'Finn']);
+	});
+
+	it('haalt op wat de telefoon deed', async () => {
+		const s = await opgehaald();
+		const telefoon = s.toestand('team-1')!;
+		telefoon.trainings[0].status[id(3)] = 'absent';
+		s.vul('team-1', telefoon);
+
+		await sync.kijkEven();
+
+		expect(app.toestand.trainings[0].status[id(3)]).toBe('absent');
+		expect(sync.vies).toBe(false);
+	});
+
+	/*
+	 * De wedstrijd houd je bij op de telefoon. Een oudere kopie hier mag zijn
+	 * wissels en doelpunten niet weghalen: het web volgt.
+	 */
+	it('volgt de wedstrijd van de telefoon, ook als die hier al liep', async () => {
+		const s = await opgehaald();
+		app.newMatch('Feyenoord', true);
+		app.toggleRunning();
+		await sync.duwAlsNodig();
+
+		const telefoon = s.toestand('team-1')!;
+		telefoon.match!.events.push({ type: 'goal', t: 300, player: id(3) }, { type: 'goal', t: 500, player: id(2) });
+		s.vul('team-1', telefoon);
+
+		await sync.kijkEven();
+
+		expect(app.toestand.match!.events.filter((g) => g.type === 'goal')).toHaveLength(2);
+		expect(s.toestand('team-1')!.match!.events.filter((g) => g.type === 'goal')).toHaveLength(2);
+		expect(sync.vies).toBe(false);
 	});
 
 	it('haalt niet stiekem op als er hier nog iets klaarstaat', async () => {
-		nepFetch({ versie: 9, data: { players: [{ id: 'x', name: 'Vreemd', line: '' }] } });
+		const s = await opgehaald();
+		const telefoon = s.toestand('team-1')!;
+		telefoon.players[0].name = 'Van de telefoon';
+		s.vul('team-1', telefoon);
 		sync.vies = true;
+
 		await sync.ophalen(true);
-		expect(app.toestand.players[0].name).toBe('Daanish');
+
+		expect(namen()[0]).toBe('Sem');
 	});
 
-	it('haalt wel op als er hier niets klaarstaat', async () => {
-		nepFetch({
-			versie: 9,
-			data: { players: [{ id: 'x', name: 'Vanaf de laptop', line: '' }], trainings: [], archive: [] }
-		});
-		await sync.ophalen(true);
-		expect(app.toestand.players[0].name).toBe('Vanaf de laptop');
-		expect(sync.sessie!.versie).toBe(9);
+	/* Haalt hij op terwijl de trainer tikt, dan gaat die tik voor: eerst opsturen. */
+	it('gooit geen tik weg die tijdens het ophalen kwam', async () => {
+		const s = await opgehaald();
+		const telefoon = s.toestand('team-1')!;
+		telefoon.players[2].name = 'Luuk van de telefoon';
+		s.vul('team-1', telefoon);
+
+		const bezig = sync.ophalen(true);
+		app.renamePlayer(app.toestand.players[0], 'Sem tijdens het ophalen');
+		await bezig;
+		expect(namen()[0]).toBe('Sem tijdens het ophalen');
+
+		await sync.kijkEven();
+		expect(namen()).toEqual(['Sem tijdens het ophalen', 'Noah', 'Luuk van de telefoon']);
 	});
 
-	it('overschrijft niets bij een botsing maar vraagt het aan de trainer', async () => {
-		nepFetch({ botsing: true });
-		sync.merkVies();
+	it('vervangt met de hand alles door wat er in het account staat', async () => {
+		const s = await opgehaald();
+		app.toestand.players[0].name = 'Nog niet opgestuurd';
+		const telefoon = s.toestand('team-1')!;
+		telefoon.players[1].name = 'Noah van de telefoon';
+		s.vul('team-1', telefoon);
+
+		await sync.ophalen();
+
+		expect(namen()).toEqual(['Sem', 'Noah van de telefoon', 'Luuk']);
+	});
+
+	/* Een leeg toestel is bijna altijd een nieuw of gewist toestel, en geen trainer die zijn seizoen weg wil. */
+	it('maakt een team nooit leeg omdat er hier niets staat', async () => {
+		const s = await opgehaald();
+		app.wisAlles();
+
 		await sync.duwAlsNodig();
-		expect(sync.botsing).toBe(true);
-		expect(sync.vies).toBe(true); /* blijft klaarstaan */
+
+		expect(s.toestand('team-1')!.players).toHaveLength(3);
+		expect(s.schrijfacties()).toHaveLength(0);
+		expect(namen()).toEqual(['Sem', 'Noah', 'Luuk']);
+	});
+
+	it('haalt wel een losse training weg', async () => {
+		const s = await opgehaald();
+		app.removeTraining(app.toestand.trainings[0]);
+		await sync.duwAlsNodig();
+		expect(s.toestand('team-1')!.trainings).toHaveLength(0);
+		expect(s.rijenVan('training_spelers', 'team-1')).toHaveLength(0);
 	});
 
 	it('houdt wijzigingen vast als er geen bereik is', async () => {
-		nepFetch({ stuk: true });
-		sync.merkVies();
+		const s = await opgehaald();
+		s.stuk = true;
+		app.addPlayerNames('Milan');
 		await sync.duwAlsNodig();
 		expect(sync.vies).toBe(true);
 		expect(sync.hapert).toBe(true);
+
+		s.stuk = false;
+		await sync.duwAlsNodig();
+		expect(sync.vies).toBe(false);
+		expect(s.toestand('team-1')!.players).toHaveLength(4);
+	});
+
+	/*
+	 * Een weigering wordt nooit beter van opnieuw proberen, en blijft hij staan
+	 * dan komt er nooit meer iets door. Dus: de rest gaat door, en het wordt
+	 * opgeschreven.
+	 */
+	it('laat één geweigerde rij de rest niet tegenhouden', async () => {
+		const s = await opgehaald();
+		issues.lijst = [];
+		s.weiger = (_m, tabel, r) => (tabel === 'spelers' && r.naam === 'Fout' ? 400 : null);
+		app.addPlayerNames('Milan\nFout\nJesse');
+
+		await sync.duwAlsNodig();
+
+		expect(s.toestand('team-1')!.players.map((p) => p.name)).toEqual(['Sem', 'Noah', 'Luuk', 'Milan', 'Jesse']);
+		expect(sync.geweigerd).toBe(1);
+		expect(issues.lijst[0].what).toContain('weigerde 1 wijziging');
+		expect(sync.vies).toBe(false);
+	});
+
+	it('wacht steeds langer als het opsturen blijft mislukken', async () => {
+		const s = await opgehaald();
+		s.stuk = true;
+		app.addPlayerNames('Milan');
+		const wachten: number[] = [];
+		const echt = globalThis.setTimeout;
+		globalThis.setTimeout = ((_fn: () => void, ms: number) => {
+			wachten.push(ms);
+			return 0 as unknown as ReturnType<typeof setTimeout>;
+		}) as typeof setTimeout;
+		for (let i = 0; i < 8; i++) await sync.duwAlsNodig();
+		globalThis.setTimeout = echt;
+
+		expect(wachten.length).toBeGreaterThan(3);
+		/* oplopend, en nooit langer dan vijf minuten */
+		expect(wachten.at(-1)!).toBeGreaterThan(wachten[1]);
+		expect(Math.max(...wachten)).toBeLessThanOrEqual(300_000);
+	});
+
+	it('doet niets bij het openen als alles al klopt', async () => {
+		const s = await opgehaald();
+		await sync.kijkEven();
+		expect(s.schrijfacties()).toHaveLength(0);
+		expect(sync.vies).toBe(false);
+	});
+});
+
+/*
+ * Een team aanmaken.
+ *
+ * De eerste keer synchroniseren is er nog geen team op de server. Dat moet dan
+ * ontstaan, en precies één keer: twee teams voor dezelfde trainer betekent dat de
+ * ene telefoon de ene helft van het seizoen bijhoudt en de andere de andere.
+ */
+describe('het team op de server', () => {
+	it('neemt een bestaand team over', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		sync.sessie!.teamId = undefined;
+		await sync.opsturen();
+		expect(sync.sessie!.teamId).toBe('team-1');
+	});
+
+	it('maakt er een aan als er nog geen is, en zet alles erin', async () => {
+		const s = nepServer();
+		app.toestand.teamName = 'JO14-3';
+		sync.sessie!.teamId = undefined;
+
+		await sync.opsturen();
+
+		expect(s.teams).toHaveLength(1);
+		expect(s.teams[0]).toMatchObject({ naam: 'JO14-3', eigenaar: 'u1' });
+		expect(sync.sessie!.teamId).toBe(s.teams[0].id);
+		expect(s.toestand(s.teams[0].id)!.players.map((p) => p.name)).toEqual(['Daanish']);
+	});
+
+	it('vraagt het bij de tweede keer niet opnieuw', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		await sync.opsturen();
+		s.log = [];
+		await sync.opsturen();
+		expect(s.log.filter((v) => v.pad.startsWith('/rest/v1/teams?select=id,naam'))).toHaveLength(0);
+	});
+});
+
+/*
+ * Meerdere trainers per team.
+ *
+ * De database bewaakt wie er waarbij mag; die proef staat in supabase/test. Wat
+ * hier bewaakt wordt is het toestel: welk team het volgt. Het verkeerde team
+ * pakken betekent dat jouw seizoen over dat van iemand anders heen gaat.
+ */
+describe('welk team dit toestel volgt', () => {
+	it('gokt niet als je bij meer dan één team hoort', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		s.team('team-2', 'JO15-2');
+		sync.sessie!.teamId = undefined;
+
+		await sync.opsturen();
+
+		expect(sync.sessie!.teamId).toBeUndefined();
+		expect(sync.mijnTeams.map((t) => t.naam)).toEqual(['JO13-1', 'JO15-2']);
+		expect(s.schrijfacties()).toHaveLength(0);
+		expect(sync.message).toContain('Kies');
+		/* geen storing, dus ook niet 'geen verbinding' */
+		expect(sync.hapert).toBe(false);
+	});
+
+	/*
+	 * De bron van de verwarring op 7 september: de tweede trainer kreeg bij zijn
+	 * eerste inlog automatisch een eigen leeg team, en nam daarna pas de
+	 * uitnodiging aan.
+	 */
+	it('maakt geen leeg team aan als er een uitnodiging klaarstaat', async () => {
+		const s = nepServer();
+		s.team('team-9', 'JO15-2', 'u2');
+		s.uitnodigingen.push({ id: 'x', team_id: 'team-9', email: 'trainer@voorbeeld.nl' });
+		sync.sessie!.teamId = undefined;
+
+		await sync.opsturen();
+
+		expect(s.teams).toHaveLength(1);
+		expect(sync.sessie!.teamId).toBeUndefined();
+		expect(sync.message).toContain('uitnodiging');
+		expect(sync.hapert).toBe(false);
+	});
+
+	it('neemt bij het overstappen de gegevens van het andere team over', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		s.team('team-9', 'JO15-2');
+		s.vul('team-9', { ...vanDeTelefoon(), teamName: 'JO15-2' });
+		sync.mijnTeams = [
+			{ id: 'team-1', naam: 'JO13-1' },
+			{ id: 'team-9', naam: 'JO15-2' }
+		];
+
+		await sync.kiesTeam('team-9');
+
+		expect(sync.sessie!.teamId).toBe('team-9');
+		expect(app.toestand.teamName).toBe('JO15-2');
+		expect(namen()).toEqual(['Sem', 'Noah', 'Luuk']);
+		/* en er is niets heen gegaan */
+		expect(s.schrijfacties()).toHaveLength(0);
+	});
+
+	/* Stap je over naar een team waar nog niets staat, dan gaat wat hier staat niet mee. */
+	it('draagt geen gegevens van het ene team het andere in', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		s.team('team-9', 'JO15-2');
+		app.toestand.teamName = 'JO13-1';
+
+		await sync.kiesTeam('team-9');
+		await sync.duwAlsNodig();
+
+		expect(app.toestand.players).toHaveLength(0);
+		expect(app.toestand.teamName).toBe('JO15-2');
+		expect(s.rijenVan('spelers', 'team-9')).toHaveLength(0);
+	});
+
+	/* Maar wie nergens vandaan komt houdt wat hij heeft: dat ís het begin. */
+	it('laat wat er staat met rust als dit het eerste team is', async () => {
+		const s = nepServer();
+		s.team('team-9', 'JO15-2');
+		sync.sessie!.teamId = undefined;
+
+		await sync.kiesTeam('team-9');
+		await sync.duwAlsNodig();
+
+		expect(sync.sessie!.teamId).toBe('team-9');
+		expect(namen()).toEqual(['Daanish']);
+		expect(s.toestand('team-9')!.players.map((p) => p.name)).toEqual(['Daanish']);
+	});
+
+	it('stapt niet half over als het ophalen mislukt', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		s.team('team-9', 'JO15-2');
+		s.stuk = true;
+		app.toestand.teamName = 'JO13-1';
+
+		await sync.kiesTeam('team-9');
+
+		expect(sync.sessie!.teamId).toBe('team-1');
+		expect(app.toestand.teamName).toBe('JO13-1');
+		expect(sync.message).toContain('niets veranderd');
+	});
+
+	it('stapt niet over zolang er hier nog iets klaarstaat', async () => {
+		nepServer();
+		sync.vies = true;
+		await sync.kiesTeam('team-2');
+		expect(sync.sessie!.teamId).toBe('team-1');
+		expect(sync.message).toContain('Stuur eerst op');
+	});
+
+	/* Volgt dit toestel nog geen team, dan hoort wat er klaarstaat nergens bij. */
+	it('laat een toestel dat nog nergens bij hoort wel kiezen', async () => {
+		const s = nepServer();
+		s.team('team-9', 'JO15-2');
+		sync.sessie!.teamId = undefined;
+		sync.vies = true;
+		await sync.kiesTeam('team-9');
+		expect(sync.sessie!.teamId).toBe('team-9');
+	});
+
+	it('kiest geen team waar je niet bij hoort', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		s.team('team-9', 'JO15-2', 'u2');
+		await sync.kiesTeam('team-9');
+		expect(sync.sessie!.teamId).toBe('team-1');
+		expect(sync.message).toContain('niets veranderd');
+	});
+});
+
+describe('als de ploeg nog niet op de server staat', () => {
+	it('werkt gewoon bij, zonder te klagen', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		s.zonderPloeg = true;
+		await sync.kijkEven();
+		await sync.opsturen();
+		expect(sync.message).toBe('Bijgewerkt.');
+		await sync.haalPloeg();
+		expect(sync.leden).toHaveLength(0);
+		await sync.kijkNaarUitnodigingen();
+		expect(sync.uitgenodigdVoor).toHaveLength(0);
+	});
+});
+
+/*
+ * Zelf een team beginnen.
+ *
+ * Wie was uitgenodigd voor het team van een ander moet ook zijn eigen ploeg
+ * kunnen beginnen.
+ */
+describe('een eigen team beginnen', () => {
+	async function bijTeam1() {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		s.vul('team-1', vanDeTelefoon());
+		await sync.kijkEven();
+		s.log = [];
+		return s;
+	}
+
+	it('maakt een team op jouw naam en volgt het meteen', async () => {
+		const s = await bijTeam1();
+
+		await sync.nieuwTeam('  JO10-4  ');
+
+		const nieuw = s.teams.find((t) => t.naam === 'JO10-4')!;
+		expect(nieuw.eigenaar).toBe('u1');
+		expect(sync.sessie!.teamId).toBe(nieuw.id);
+		expect(app.toestand.teamName).toBe('JO10-4');
+	});
+
+	/* Wat er in de app stond hoort bij het team dat je verlaat. */
+	it('begint leeg, en laat het vorige team heel', async () => {
+		const s = await bijTeam1();
+
+		await sync.nieuwTeam('JO10-4');
+
+		expect(app.toestand.players).toHaveLength(0);
+		expect(s.toestand('team-1')!.players).toHaveLength(3);
+		const nieuw = s.teams.find((t) => t.naam === 'JO10-4')!;
+		expect(s.rijenVan('spelers', nieuw.id)).toHaveLength(0);
+	});
+
+	it('houdt wat er staat als dit je eerste team is', async () => {
+		const s = nepServer();
+		sync.sessie!.teamId = undefined;
+
+		await sync.nieuwTeam('JO10-4');
+
+		expect(namen()).toEqual(['Daanish']);
+		expect(s.toestand(sync.sessie!.teamId!)!.players.map((p) => p.name)).toEqual(['Daanish']);
+	});
+
+	it('vraagt om een naam', async () => {
+		const s = nepServer();
+		await sync.nieuwTeam('   ');
+		expect(s.schrijfacties()).toHaveLength(0);
+		expect(sync.message).toContain('naam');
+	});
+
+	it('begint niets nieuws zolang er hier iets klaarstaat', async () => {
+		const s = await bijTeam1();
+		sync.vies = true;
+		await sync.nieuwTeam('JO10-4');
+		expect(s.teams).toHaveLength(1);
+		expect(sync.sessie!.teamId).toBe('team-1');
+	});
+});
+
+describe('de teamnaam op de server', () => {
+	it('werkt de naam bij zodra de trainer hem verandert', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1');
+		await sync.kijkEven();
+		app.setTeamName('JO13-2');
+		await sync.duwAlsNodig();
+		expect(s.teams[0].naam).toBe('JO13-2');
+	});
+
+	/* Een trainer die niet de eigenaar is kan de naam niet veranderen. Dat mag
+	   geen lus worden: de server werkt dan stil niets bij. */
+	it('probeert het niet bij elke opslag opnieuw', async () => {
+		const s = nepServer();
+		s.team('team-1', 'JO13-1', 'u2', ['u2', 'u1']);
+		await sync.kijkEven();
+		app.setTeamName('JO13-9');
+		await sync.duwAlsNodig();
+		await sync.opsturen();
+		await sync.opsturen();
+		expect(s.log.filter((v) => v.method === 'PATCH' && v.pad.startsWith('/rest/v1/teams'))).toHaveLength(1);
+		expect(s.teams[0].naam).toBe('JO13-1');
+	});
+});
+
+/*
+ * De hele heen-en-weer.
+ *
+ * Tjaco's vraag: en als ik daarna weer terugswitch, nadat ik met dat tweede
+ * account een nieuw team heb gemaakt? Dat is precies de reis waarop gegevens van
+ * de een bij de ander kunnen belanden.
+ */
+describe('heen en weer tussen twee accounts', () => {
+	it('houdt de twee seizoenen uit elkaar, de hele reis lang', async () => {
+		const s = nepServer();
+		s.emails.u1 = 'tjaco@voorbeeld.nl';
+		s.emails.u2 = 'matthijs@voorbeeld.nl';
+		sync.sessie = null;
+		app.toestand = emptyState();
+		const logIn = async (wie: string) => {
+			s.wie = wie;
+			sync.email = s.emails[wie];
+			await sync.controleerCode('12345678');
+		};
+
+		/* Tjaco richt zijn team in en stuurt het op. */
+		await logIn('u1');
+		app.setTeamName('JO14-3');
+		app.addPlayerNames('Bram');
+		await sync.opsturen();
+		const teamTjaco = sync.sessie!.teamId!;
+		expect(s.toestand(teamTjaco)!.players.map((p) => p.name)).toEqual(['Bram']);
+
+		/* Uitloggen, en Matthijs logt in op hetzelfde toestel. */
+		sync.uitloggen();
+		await logIn('u2');
+		expect(sync.andereGebruiker).toBe('tjaco@voorbeeld.nl');
+
+		/* Hij begint schoon en maakt zijn eigen team. */
+		sync.beginSchoon();
+		await new Promise((r) => setTimeout(r, 0));
+		expect(app.toestand.players).toHaveLength(0);
+		await sync.nieuwTeam('JO10-4');
+		app.addPlayerNames('Sil');
+		await sync.opsturen();
+		const teamMatthijs = sync.sessie!.teamId!;
+		expect(teamMatthijs).not.toBe(teamTjaco);
+		expect(s.toestand(teamMatthijs)!.players.map((p) => p.name)).toEqual(['Sil']);
+
+		/* En Tjaco's team is onderweg niet aangeraakt. */
+		expect(s.toestand(teamTjaco)!.players.map((p) => p.name)).toEqual(['Bram']);
+
+		/* Terug naar Tjaco. Weer de vraag, want er staat nu Matthijs' team. */
+		sync.uitloggen();
+		await logIn('u1');
+		expect(sync.andereGebruiker).toBe('matthijs@voorbeeld.nl');
+
+		/* Schoon beginnen haalt meteen zijn eigen seizoen terug. */
+		sync.beginSchoon();
+		await new Promise((r) => setTimeout(r, 0));
+		await new Promise((r) => setTimeout(r, 0));
+		expect(app.toestand.teamName).toBe('JO14-3');
+		expect(namen()).toEqual(['Bram']);
+		expect(sync.sessie!.teamId).toBe(teamTjaco);
+
+		/* En het team van Matthijs is nog steeds van hem. */
+		expect(s.toestand(teamMatthijs)!.players.map((p) => p.name)).toEqual(['Sil']);
 	});
 });
 
@@ -154,73 +790,6 @@ describe('inloggen op een telefoon', () => {
 		sync.fase = 'email';
 		sync.load();
 		expect(sync.fase).toBe('email');
-	});
-});
-
-describe('bij het openen', () => {
-	/* This went wrong when the match joined the payload: a lineup was ready on the
-	   laptop, but nothing changed any more, so the app never noticed there was
-	   suddenly more to send. The phone stayed empty. */
-	it('merkt dat er hier iets staat wat de server nog niet heeft', async () => {
-		const { verstuurd } = nepFetch({ versie: 1, data: { players: app.toestand.players } });
-		sync.sessie!.afdruk = 'iets ouds';
-		app.newMatch('Sparta', true);
-		sync.vies = false;
-
-		await sync.kijkEven();
-		expect(sync.vies).toBe(true);
-		await sync.duwAlsNodig();
-		expect((verstuurd.at(-1) as { match: { opponent: string } }).match.opponent).toBe('Sparta');
-	});
-
-	it('laat het met rust als de server alles al heeft', async () => {
-		nepFetch({ versie: 1, data: { players: app.toestand.players } });
-		sync.merkVies();
-		await sync.duwAlsNodig(); /* now it knows what is there */
-		expect(sync.vies).toBe(false);
-
-		await sync.kijkEven();
-		expect(sync.vies).toBe(false);
-	});
-});
-
-describe('niet blijven hameren', () => {
-	/* Dit ging echt mis: de tekst van de database is Nederlands, en de hernoeming
-	   naar het Engels maakte er 'versie running niet gelijk' van. Daardoor werd een
-	   versieconflict niet als conflict herkend, ging de rem er nooit op en bleef de
-	   app doorproberen — 357.000 fouten in een uur op de database. */
-	it('herkent een versieconflict aan de tekst van de database', async () => {
-		nepFetch({ botsing: true, zonderCode: true });
-		sync.merkVies();
-		await sync.duwAlsNodig();
-		expect(sync.botsing).toBe(true);
-	});
-
-	it('probeert na een botsing niet uit zichzelf opnieuw', async () => {
-		const { f } = nepFetch({ botsing: true });
-		sync.merkVies();
-		await sync.duwAlsNodig();
-		const na = f.mock.calls.length;
-		for (let i = 0; i < 20; i++) await sync.duwAlsNodig();
-		expect(f.mock.calls.length).toBe(na);
-	});
-
-	it('wacht steeds langer als het opsturen blijft mislukken', async () => {
-		nepFetch({ stuk: true });
-		sync.merkVies();
-		const wachten: number[] = [];
-		const echt = globalThis.setTimeout;
-		globalThis.setTimeout = ((fn: () => void, ms: number) => {
-			wachten.push(ms);
-			return 0 as unknown as ReturnType<typeof setTimeout>;
-		}) as typeof setTimeout;
-		for (let i = 0; i < 8; i++) await sync.duwAlsNodig();
-		globalThis.setTimeout = echt;
-
-		expect(wachten.length).toBeGreaterThan(3);
-		/* oplopend, en nooit langer dan vijf minuten */
-		expect(wachten[1]).toBeGreaterThan(wachten[0]);
-		expect(Math.max(...wachten)).toBeLessThanOrEqual(300_000);
 	});
 });
 
@@ -298,12 +867,12 @@ describe('inloggen', () => {
 		nepFetch();
 		sync.sessie = { access_token: 'x', refresh_token: 'y' } as never;
 		sync.vies = true;
-		sync.botsing = true;
 		sync.uitloggen();
 		expect(sync.sessie).toBeNull();
 		expect(sync.vies).toBe(false);
-		expect(sync.botsing).toBe(false);
 		expect(localStorage.getItem('o14-sessie-v1')).toBeFalsy();
+		/* en ook niet wat er van het team in de tabellen stond */
+		expect(localStorage.getItem('o14-gespiegeld-v1')).toBeFalsy();
 	});
 });
 
@@ -361,198 +930,6 @@ describe('terugkomen uit de mail', () => {
 		await sync.pakInlogUitLink();
 		expect(sync.message).toContain('invalid');
 		expect(sync.sessie).toBeNull();
-	});
-});
-
-/*
- * Een team aanmaken.
- *
- * De eerste keer synchroniseren is er nog geen team op de server. Dat moet dan
- * ontstaan, en precies één keer: twee teams voor dezelfde trainer betekent dat de
- * ene telefoon de ene helft van het seizoen bijhoudt en de andere de andere.
- */
-describe('het team op de server', () => {
-	it('neemt een bestaand team over', async () => {
-		const { f } = nepFetch();
-		sync.sessie!.teamId = undefined;
-		await sync.opsturen();
-		expect(sync.sessie!.teamId).toBe('team-1');
-		expect(f.mock.calls.some((c) => String(c[0]).includes('teams?select=id'))).toBe(true);
-	});
-
-	it('maakt er een aan als er nog geen is', async () => {
-		const gemaakt: unknown[] = [];
-		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
-			const u = String(url);
-			if (u.includes('teams?select=id')) return new Response('[]', { status: 200 });
-			if (u.includes('/rest/v1/teams')) {
-				gemaakt.push(JSON.parse(String(init?.body)));
-				return new Response(JSON.stringify([{ id: 'nieuw-team' }]), { status: 200 });
-			}
-			return new Response(JSON.stringify({ versie: 2 }), { status: 200 });
-		}) as unknown as typeof fetch;
-
-		app.toestand.teamName = 'JO14-3';
-		sync.sessie!.teamId = undefined;
-		await sync.opsturen();
-		expect(sync.sessie!.teamId).toBe('nieuw-team');
-		expect(gemaakt[0]).toMatchObject({ naam: 'JO14-3', eigenaar: 'u1' });
-	});
-
-	it('vraagt het bij de tweede keer niet opnieuw', async () => {
-		const { f } = nepFetch();
-		await sync.opsturen();
-		await sync.opsturen();
-		expect(f.mock.calls.filter((c) => String(c[0]).includes('teams?select=id'))).toHaveLength(0);
-	});
-});
-
-/*
- * Meerdere trainers per team.
- *
- * De database bewaakt wie er waarbij mag; die proef staat in supabase/test. Wat
- * hier bewaakt wordt is het toestel: welk team het volgt. Dat is de gevaarlijkste
- * beslissing in dit bestand, want het verkeerde team pakken betekent dat jouw
- * seizoen over dat van iemand anders heen gaat, en dat is met geen enkele knop
- * terug te draaien.
- */
-describe('welk team dit toestel volgt', () => {
-	function metTeams(teams: { id: string; naam: string }[]) {
-		const gemaakt: unknown[] = [];
-		const f = vi.fn(async (url: string, init?: RequestInit) => {
-			const u = String(url);
-			if (u.includes('teams?select=id')) return new Response(JSON.stringify(teams), { status: 200 });
-			if (u.includes('uitnodigingen')) return new Response('[]', { status: 200 });
-			if (u.includes('/rest/v1/teams') && init?.method === 'POST') {
-				gemaakt.push(JSON.parse(String(init.body)));
-				return new Response(JSON.stringify([{ id: 'vers-team' }]), { status: 200 });
-			}
-			if (u.includes('team_toestand')) return new Response('[]', { status: 200 });
-			return new Response(JSON.stringify({ versie: 2 }), { status: 200 });
-		});
-		globalThis.fetch = f as unknown as typeof fetch;
-		return { f, gemaakt };
-	}
-
-	beforeEach(() => {
-		sync.mijnTeams = [];
-		sync.leden = [];
-		sync.openstaand = [];
-		sync.uitgenodigdVoor = [];
-		sync.message = '';
-	});
-
-	it('neemt het team over als er maar één is', async () => {
-		metTeams([{ id: 'team-1', naam: 'JO13-1' }]);
-		sync.sessie!.teamId = undefined;
-		await sync.opsturen();
-		expect(sync.sessie!.teamId).toBe('team-1');
-		/* de lijst blijft staan; hij is geen keuzemoment maar een overzicht */
-		expect(sync.mijnTeams).toEqual([{ id: 'team-1', naam: 'JO13-1' }]);
-	});
-
-	/*
-	 * Dit is de test die ertoe doet. Bij twee teams mag de app niet gokken. Vóór
-	 * het lidmaatschap pakte hij simpelweg het oudste; dat werkte zolang je alleen
-	 * je eigen team had, en zou vanaf nu andermans seizoen kunnen overschrijven.
-	 */
-	it('gokt niet als je bij meer dan één team hoort', async () => {
-		const { f } = metTeams([
-			{ id: 'team-1', naam: 'JO13-1' },
-			{ id: 'team-2', naam: 'JO15-2' }
-		]);
-		sync.sessie!.teamId = undefined;
-		await sync.opsturen();
-
-		expect(sync.sessie!.teamId).toBeUndefined();
-		expect(sync.mijnTeams.map((t) => t.naam)).toEqual(['JO13-1', 'JO15-2']);
-		/* en er is niets opgestuurd */
-		expect(f.mock.calls.some((c) => String(c[0]).includes('toestand_opslaan'))).toBe(false);
-	});
-
-	/*
-	 * De bron van de verwarring op 7 september.
-	 *
-	 * De tweede trainer logde voor het eerst in, kreeg automatisch een eigen leeg
-	 * team, en nam daarna pas de uitnodiging aan. Twee teams, waarvan één nergens
-	 * voor dient — en precies díé tweede maakte de keuzeknoppen nodig. De app
-	 * veroorzaakte zijn eigen complexiteit.
-	 */
-	it('maakt geen leeg team aan als er een uitnodiging klaarstaat', async () => {
-		const gemaakt: unknown[] = [];
-		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
-			const u = String(url);
-			if (u.includes('teams?select=id')) return new Response('[]', { status: 200 });
-			if (u.includes('uitnodigingen')) return new Response(JSON.stringify([{ team_id: 'team-9' }]), { status: 200 });
-			if (u.includes('/rest/v1/teams') && init?.method === 'POST') {
-				gemaakt.push(1);
-				return new Response(JSON.stringify([{ id: 'ongewenst' }]), { status: 200 });
-			}
-			return new Response('{}', { status: 200 });
-		}) as unknown as typeof fetch;
-
-		sync.sessie!.teamId = undefined;
-		await sync.opsturen();
-
-		expect(gemaakt).toHaveLength(0);
-		expect(sync.sessie!.teamId).toBeUndefined();
-		expect(sync.message).toContain('uitnodiging');
-		/* en het is geen storing, dus geen 'geen verbinding' en geen herhaling */
-		expect(sync.hapert).toBe(false);
-	});
-
-	it('maakt er een aan als je nog nergens bij hoort', async () => {
-		const { gemaakt } = metTeams([]);
-		app.toestand.teamName = 'JO14-3';
-		sync.sessie!.teamId = undefined;
-		await sync.opsturen();
-		expect(sync.sessie!.teamId).toBe('vers-team');
-		expect(gemaakt[0]).toMatchObject({ naam: 'JO14-3' });
-	});
-
-	it('volgt het team dat je kiest en haalt dat op', async () => {
-		metTeams([]);
-		sync.vies = false;
-		await sync.kiesTeam('team-2');
-		expect(sync.sessie!.teamId).toBe('team-2');
-		expect(sync.mijnTeams).toHaveLength(0);
-	});
-
-	/*
-	 * Overstappen terwijl er nog iets klaarstaat zou dat werk bij het andere team
-	 * naar binnen duwen. Dus eerst opsturen of ophalen, dan pas kiezen.
-	 */
-	it('stapt niet over zolang er hier nog iets klaarstaat', async () => {
-		metTeams([]);
-		sync.sessie!.teamId = 'team-1';
-		sync.vies = true;
-		await sync.kiesTeam('team-2');
-		expect(sync.sessie!.teamId).toBe('team-1');
-		expect(sync.message).toContain('Stuur eerst op');
-	});
-
-	/*
-	 * Maar die rem mag geen doodlopende weg worden. Volgt dit toestel nog geen
-	 * team, dan hoort wat er klaarstaat nergens bij, en 'stuur eerst op' zou
-	 * verwijzen naar iets wat niet bestaat. Dat is de toestand van iemand die net
-	 * is uitgenodigd.
-	 */
-	it('laat een toestel dat nog nergens bij hoort wel kiezen', async () => {
-		metTeams([]);
-		sync.sessie!.teamId = undefined;
-		sync.vies = true;
-		await sync.kiesTeam('team-9');
-		expect(sync.sessie!.teamId).toBe('team-9');
-		expect(sync.message).not.toContain('Stuur eerst op');
-	});
-
-	/* De versie van het ene team zegt niets over het andere; hem meenemen zou
-	   betekenen dat we denken te weten waar we op bouwen terwijl dat niet zo is. */
-	it('neemt de versie van het vorige team niet mee', async () => {
-		metTeams([]);
-		sync.sessie!.versie = 42;
-		await sync.kiesTeam('team-2');
-		expect(sync.sessie!.versie).not.toBe(42);
 	});
 });
 
@@ -735,53 +1112,6 @@ describe('uitgenodigd worden', () => {
  * team_leden en uitnodigingen nog niet. Dat mag niets kapotmaken: een trainer die
  * er niets van weet moet gewoon zijn wedstrijd kunnen bijhouden.
  */
-describe('als het nieuwe schema er nog niet is', () => {
-	function zonderNieuweTabellen() {
-		globalThis.fetch = vi.fn(async (url: string) => {
-			const u = String(url);
-			if (u.includes('team_leden') || u.includes('uitnodigingen')) {
-				return new Response(JSON.stringify({ code: '42P01', message: 'relation "public.team_leden" does not exist' }), {
-					status: 404
-				});
-			}
-			if (u.includes('teams?select=id'))
-				return new Response(JSON.stringify([{ id: 'team-1', naam: 'JO13-1' }]), { status: 200 });
-			if (u.includes('rpc/toestand_opslaan')) return new Response(JSON.stringify({ versie: 2 }), { status: 200 });
-			return new Response('[]', { status: 200 });
-		}) as unknown as typeof fetch;
-	}
-
-	beforeEach(() => {
-		sync.leden = [];
-		sync.openstaand = [];
-		sync.uitgenodigdVoor = [];
-		sync.message = '';
-	});
-
-	it('houdt de wedstrijd gewoon bij', async () => {
-		zonderNieuweTabellen();
-		await sync.opsturen();
-		expect(sync.vies).toBe(false);
-		expect(sync.message).toBe('Opgestuurd.');
-	});
-
-	/* En zonder melding: er is niets wat de trainer eraan kan doen, dus een
-	   foutmelding zou alleen maar onrust zaaien over iets wat niet van hem is. */
-	it('laat de ploeg leeg, zonder erover te klagen', async () => {
-		zonderNieuweTabellen();
-		await sync.haalPloeg();
-		expect(sync.leden).toHaveLength(0);
-		expect(sync.openstaand).toHaveLength(0);
-		expect(sync.message).toBe('');
-	});
-
-	it('kijkt naar uitnodigingen zonder te klagen', async () => {
-		zonderNieuweTabellen();
-		await sync.kijkNaarUitnodigingen();
-		expect(sync.uitgenodigdVoor).toHaveLength(0);
-		expect(sync.message).toBe('');
-	});
-});
 
 /*
  * Vastzitten op een keuze.
@@ -833,202 +1163,6 @@ describe('wachten op een teamkeuze', () => {
 		vi.advanceTimersByTime(10 * 60_000);
 		expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(naEerste);
 		vi.useRealTimers();
-	});
-});
-
-/*
- * De vier regels waar het niet mis mag gaan.
- *
- * 1. Een toestel volgt precies één team. Alles wat het opstuurt gaat daarheen.
- * 2. De app raadt nooit welk team dat is.
- * 3. Het eerste contact met een team is altijd ophalen, nooit opsturen.
- * 4. Overstappen kan alleen als er niets klaarstaat, en lukt helemaal of niet.
- *
- * Regel 3 is de belangrijkste. Zonder die regel duwt een net toegevoegde trainer
- * zijn nog lege app naar het team van een ander. De versiecontrole houdt dat
- * tegen, maar dan krijgt hij een botsing te zien — en één van de twee knoppen
- * daar stuurt met opzet dit toestel eroverheen. Een geladen wapen in handen van
- * iemand die net binnenkomt.
- */
-describe('elkaars teams niet overschrijven', () => {
-	function server(opties: { teams?: { id: string; naam: string }[]; documenten?: Record<string, unknown> } = {}) {
-		const verstuurd: { url: string; method?: string; body?: Record<string, unknown> }[] = [];
-		const documenten = opties.documenten ?? {};
-		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
-			const u = String(url);
-			const body = init?.body ? JSON.parse(String(init.body)) : null;
-			verstuurd.push({ url: u, method: init?.method, body });
-			if (u.includes('teams?select=id')) {
-				return new Response(JSON.stringify(opties.teams ?? [{ id: 'team-1', naam: 'JO13-1' }]), { status: 200 });
-			}
-			if (u.includes('uitnodigingen')) return new Response('[]', { status: 200 });
-			if (u.includes('/rest/v1/teams') && init?.method === 'POST') {
-				return new Response(JSON.stringify([{ id: 'vers-team' }]), { status: 200 });
-			}
-			if (u.includes('team_toestand')) {
-				const id = u.split('team_id=eq.')[1]?.split('&')[0] ?? '';
-				const d = documenten[id];
-				return new Response(JSON.stringify(d ? [d] : []), { status: 200 });
-			}
-			if (u.includes('rpc/toestand_opslaan')) return new Response(JSON.stringify({ versie: 9 }), { status: 200 });
-			return new Response('{}', { status: 200 });
-		}) as unknown as typeof fetch;
-		return verstuurd;
-	}
-
-	const documentVan = (naam: string, versie = 4) => ({
-		versie,
-		data: { teamName: naam, players: [{ id: 'x', name: 'Speler van ' + naam, line: 'M' }], archive: [], trainings: [] }
-	});
-
-	beforeEach(() => {
-		sync.mijnTeams = [];
-		sync.message = '';
-		sync.botsing = false;
-		sync.hapert = false;
-	});
-
-	/* ---------- regel 3 ---------- */
-	it('stuurt niets op naar een team dat dit toestel nog nooit heeft opgehaald', async () => {
-		const verstuurd = server({ documenten: { 'team-1': documentVan('JO13-1') } });
-		sync.sessie!.teamId = undefined;
-		sync.sessie!.versie = undefined;
-		app.toestand.teamName = 'Ons team';
-
-		await sync.opsturen();
-
-		expect(verstuurd.some((v) => v.url.includes('toestand_opslaan'))).toBe(false);
-		expect(sync.message).toContain('nog niet opgehaald');
-		expect(sync.botsing).toBe(false);
-	});
-
-	it('stuurt wel op naar een team dat het net zelf heeft aangemaakt', async () => {
-		const verstuurd = server({ teams: [] });
-		sync.sessie!.teamId = undefined;
-		sync.sessie!.versie = undefined;
-
-		await sync.opsturen();
-
-		/* vers aangemaakt: de server heeft niets, dus opsturen is hier veilig */
-		expect(verstuurd.some((v) => v.url.includes('toestand_opslaan'))).toBe(true);
-	});
-
-	it('stuurt gewoon op zodra het team een keer opgehaald is', async () => {
-		const verstuurd = server({ documenten: { 'team-1': documentVan('JO13-1') } });
-		sync.sessie!.teamId = 'team-1';
-		sync.sessie!.versie = 4;
-
-		await sync.opsturen();
-		expect(verstuurd.some((v) => v.url.includes('toestand_opslaan'))).toBe(true);
-	});
-
-	/* ---------- regel 4 ---------- */
-	it('neemt bij het overstappen de gegevens van het andere team over', async () => {
-		server({
-			teams: [
-				{ id: 'team-1', naam: 'JO13-1' },
-				{ id: 'team-9', naam: 'JO15-2' }
-			],
-			documenten: { 'team-9': documentVan('JO15-2', 7) }
-		});
-		sync.mijnTeams = [
-			{ id: 'team-1', naam: 'JO13-1' },
-			{ id: 'team-9', naam: 'JO15-2' }
-		];
-		sync.sessie!.teamId = 'team-1';
-		sync.sessie!.versie = 3;
-		sync.vies = false;
-
-		await sync.kiesTeam('team-9');
-
-		expect(sync.sessie!.teamId).toBe('team-9');
-		expect(sync.sessie!.versie).toBe(7);
-		expect(app.toestand.teamName).toBe('JO15-2');
-		expect(app.toestand.players[0].name).toBe('Speler van JO15-2');
-	});
-
-	/*
-	 * Dit is het doorkruisen waar het om gaat. Stap je over naar een team waar nog
-	 * niets staat, dan mag wat hier staat niet meegaan: dat is van het team dat je
-	 * verlaat, en het zou zich bij het nieuwe naar binnen schrijven.
-	 */
-	it('draagt geen gegevens van het ene team het andere in', async () => {
-		server({
-			teams: [
-				{ id: 'team-1', naam: 'JO13-1' },
-				{ id: 'team-9', naam: 'JO15-2' }
-			],
-			documenten: {}
-		});
-		app.toestand.teamName = 'JO13-1';
-		app.toestand.players = [{ id: 'p1', name: 'Bram', line: 'M' }];
-		sync.sessie!.teamId = 'team-1';
-		sync.sessie!.versie = 3;
-		sync.vies = false;
-
-		await sync.kiesTeam('team-9');
-
-		expect(app.toestand.players).toHaveLength(0);
-		expect(app.toestand.teamName).not.toBe('JO13-1');
-	});
-
-	/* Maar wie nergens vandaan komt houdt wat hij heeft: dat ís het begin. */
-	it('laat wat er staat met rust als dit het eerste team is', async () => {
-		server({ teams: [{ id: 'team-9', naam: 'JO15-2' }], documenten: {} });
-		app.toestand.players = [{ id: 'p1', name: 'Bram', line: 'M' }];
-		sync.sessie!.teamId = undefined;
-		sync.sessie!.versie = undefined;
-
-		await sync.kiesTeam('team-9');
-
-		expect(sync.sessie!.teamId).toBe('team-9');
-		expect(app.toestand.players).toHaveLength(1);
-	});
-
-	/*
-	 * Halverwege blijven steken is het gevaarlijkst: dan staat de selectie van het
-	 * ene team op een toestel dat het andere volgt, en duwt de eerstvolgende
-	 * wijziging hem de verkeerde kant op.
-	 */
-	it('stapt niet half over als het ophalen mislukt', async () => {
-		globalThis.fetch = vi.fn(async (url: string) => {
-			if (String(url).includes('team_toestand')) throw new Error('geen bereik');
-			return new Response('[]', { status: 200 });
-		}) as unknown as typeof fetch;
-		app.toestand.teamName = 'JO13-1';
-		sync.sessie!.teamId = 'team-1';
-		sync.sessie!.versie = 3;
-		sync.vies = false;
-
-		await sync.kiesTeam('team-9');
-
-		expect(sync.sessie!.teamId).toBe('team-1');
-		expect(sync.sessie!.versie).toBe(3);
-		expect(app.toestand.teamName).toBe('JO13-1');
-		expect(sync.message).toContain('niets veranderd');
-	});
-
-	it('stapt niet over met werk dat nog klaarstaat', async () => {
-		server();
-		sync.sessie!.teamId = 'team-1';
-		sync.vies = true;
-		await sync.kiesTeam('team-9');
-		expect(sync.sessie!.teamId).toBe('team-1');
-	});
-
-	/* ---------- regel 2 ---------- */
-	it('kiest niet zelf als er meer teams zijn', async () => {
-		const verstuurd = server({
-			teams: [
-				{ id: 'team-1', naam: 'JO13-1' },
-				{ id: 'team-9', naam: 'JO15-2' }
-			]
-		});
-		sync.sessie!.teamId = undefined;
-		await sync.opsturen();
-		expect(sync.sessie!.teamId).toBeUndefined();
-		expect(verstuurd.some((v) => v.url.includes('toestand_opslaan'))).toBe(false);
-		expect(sync.mijnTeams).toHaveLength(2);
 	});
 });
 
@@ -1109,11 +1243,10 @@ describe('de noodrem', () => {
 		for (let i = 0; i < 400; i++) noodrem.mag(nu + i * 10);
 		const voor = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
 
-		await sync.opsturen(false, true);
+		await sync.opsturen(true);
 
 		expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(voor);
 		expect(sync.message).toContain('stilgezet');
-		expect(sync.botsing).toBe(false);
 	});
 });
 
@@ -1269,179 +1402,6 @@ describe('een uur later, na het vernieuwen van het toegangsbewijs', () => {
 });
 
 /*
- * Zelf een team beginnen.
- *
- * Tot nu toe ontstond een team alleen als je nog nergens bij hoorde. Wie was
- * uitgenodigd voor het team van een ander zat daarmee vast: hij kon nooit zijn
- * eigen ploeg beginnen. Dat is geen ondersteunende rol maar een val.
- */
-describe('een eigen team beginnen', () => {
-	function server() {
-		const verstuurd: { url: string; method?: string; body?: Record<string, unknown> }[] = [];
-		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
-			const u = String(url);
-			verstuurd.push({ url: u, method: init?.method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
-			if (u.includes('/rest/v1/teams') && init?.method === 'POST')
-				return new Response(JSON.stringify([{ id: 'nieuw-team' }]), { status: 200 });
-			if (u.includes('teams?select=id'))
-				return new Response(
-					JSON.stringify([
-						{ id: 'team-1', naam: 'JO13-1' },
-						{ id: 'nieuw-team', naam: 'JO10-4' }
-					]),
-					{ status: 200 }
-				);
-			if (u.includes('uitnodigingen') || u.includes('team_leden')) return new Response('[]', { status: 200 });
-			if (u.includes('team_toestand')) return new Response('[]', { status: 200 });
-			return new Response(JSON.stringify({ versie: 1 }), { status: 200 });
-		}) as unknown as typeof fetch;
-		return verstuurd;
-	}
-
-	beforeEach(() => {
-		noodrem.los();
-		sync.mijnTeams = [{ id: 'team-1', naam: 'JO13-1' }];
-		sync.message = '';
-		sync.vies = false;
-		app.toestand = emptyState();
-		app.toestand.teamName = 'JO13-1';
-		app.toestand.players = [{ id: 'p1', name: 'Bram', line: 'M' }];
-	});
-
-	it('maakt een team op jouw naam en volgt het meteen', async () => {
-		const verstuurd = server();
-		sync.sessie!.teamId = 'team-1';
-		sync.sessie!.versie = 5;
-
-		await sync.nieuwTeam('  JO10-4  ');
-
-		const post = verstuurd.find((v) => v.url.includes('/rest/v1/teams') && v.method === 'POST');
-		expect(post?.body).toMatchObject({ naam: 'JO10-4', eigenaar: 'u1' });
-		expect(sync.sessie!.teamId).toBe('nieuw-team');
-		expect(app.toestand.teamName).toBe('JO10-4');
-	});
-
-	/*
-	 * Regel 4, opnieuw: wat er in de app stond hoort bij het team dat je verlaat.
-	 * Het meenemen zou de selectie van de een in de ploeg van de ander schrijven.
-	 */
-	it('begint leeg, en neemt de spelers van het vorige team niet mee', async () => {
-		server();
-		sync.sessie!.teamId = 'team-1';
-		sync.sessie!.versie = 5;
-
-		await sync.nieuwTeam('JO10-4');
-
-		expect(app.toestand.players).toHaveLength(0);
-		expect(app.toestand.archive).toHaveLength(0);
-	});
-
-	/* Maar wie nog nergens bij hoorde houdt wat hij heeft: dat ís het begin. */
-	it('houdt wat er staat als dit je eerste team is', async () => {
-		server();
-		sync.sessie!.teamId = undefined;
-		sync.sessie!.versie = undefined;
-
-		await sync.nieuwTeam('JO10-4');
-
-		expect(app.toestand.players).toHaveLength(1);
-		expect(sync.sessie!.teamId).toBe('nieuw-team');
-	});
-
-	it('vraagt om een naam', async () => {
-		const verstuurd = server();
-		await sync.nieuwTeam('   ');
-		expect(verstuurd.some((v) => v.method === 'POST')).toBe(false);
-		expect(sync.message).toContain('naam');
-	});
-
-	it('begint niets nieuws zolang er hier iets klaarstaat', async () => {
-		const verstuurd = server();
-		sync.sessie!.teamId = 'team-1';
-		sync.vies = true;
-		await sync.nieuwTeam('JO10-4');
-		expect(verstuurd.some((v) => v.method === 'POST')).toBe(false);
-		expect(sync.sessie!.teamId).toBe('team-1');
-	});
-});
-
-/*
- * De naam van het team gelijk houden.
- *
- * teams.naam werd één keer gezet bij het aanmaken en daarna nooit meer. Wie zijn
- * team hernoemde zag in de lijst nog de naam van toen — precies op het moment dat
- * je tussen twee teams moet kiezen.
- */
-describe('de teamnaam op de server', () => {
-	function server(mislukt = false) {
-		const verstuurd: { url: string; method?: string; body?: Record<string, unknown> }[] = [];
-		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
-			const u = String(url);
-			verstuurd.push({ url: u, method: init?.method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
-			if (init?.method === 'PATCH' && mislukt)
-				return new Response(JSON.stringify({ message: 'mag niet' }), { status: 403 });
-			if (u.includes('teams?select=id'))
-				return new Response(JSON.stringify([{ id: 'team-1', naam: 'JO13-1' }]), { status: 200 });
-			if (u.includes('uitnodigingen')) return new Response('[]', { status: 200 });
-			return new Response(JSON.stringify({ versie: 9 }), { status: 200 });
-		}) as unknown as typeof fetch;
-		return verstuurd;
-	}
-
-	beforeEach(() => {
-		noodrem.los();
-		sync.mijnTeams = [{ id: 'team-1', naam: 'JO13-1' }];
-		sync.vies = false;
-		sync.botsing = false;
-		app.toestand = emptyState();
-		sync.sessie!.teamId = 'team-1';
-		sync.sessie!.versie = 4;
-	});
-
-	it('werkt de naam bij zodra de trainer hem verandert', async () => {
-		const verstuurd = server();
-		app.toestand.teamName = 'JO13-2';
-		await sync.opsturen();
-		const patch = verstuurd.find((v) => v.method === 'PATCH');
-		expect(patch?.body).toMatchObject({ naam: 'JO13-2' });
-		expect(sync.mijnTeams[0].naam).toBe('JO13-2');
-	});
-
-	it('laat hem met rust als hij niet veranderd is', async () => {
-		const verstuurd = server();
-		app.toestand.teamName = 'JO13-1';
-		await sync.opsturen();
-		expect(verstuurd.some((v) => v.method === 'PATCH')).toBe(false);
-	});
-
-	/*
-	 * 'Ons team' is de naam die er staat als er nog niets is ingevuld. Een toestel
-	 * met een lege app zou daarmee het team van een ander hernoemen.
-	 */
-	it('stuurt de standaardnaam nooit op', async () => {
-		const verstuurd = server();
-		app.toestand.teamName = 'Ons team';
-		await sync.opsturen();
-		expect(verstuurd.some((v) => v.method === 'PATCH')).toBe(false);
-		expect(sync.mijnTeams[0].naam).toBe('JO13-1');
-	});
-
-	/*
-	 * Eén poging per naam. Lukt het niet omdat je niet de eigenaar bent, dan blijft
-	 * het daarbij: bij elke opslag opnieuw proberen is precies hoe je een lus bouwt.
-	 */
-	/* Een naam die nog niet geprobeerd is, want de rem werkt per naam. */
-	it('probeert het niet bij elke opslag opnieuw', async () => {
-		const verstuurd = server(true);
-		app.toestand.teamName = 'JO13-9';
-		await sync.opsturen();
-		await sync.opsturen();
-		await sync.opsturen();
-		expect(verstuurd.filter((v) => v.method === 'PATCH')).toHaveLength(1);
-	});
-});
-
-/*
  * Er logt iemand anders in dan de vorige keer.
  *
  * Op een geleende telefoon, of als je zelf twee adressen hebt. Wat er dan niet
@@ -1471,9 +1431,16 @@ describe('als er iemand anders inlogt', () => {
 		}) as unknown as typeof fetch;
 	}
 
+	/** verzoeken die iets in de tabellen zetten */
+	const schrijvend = () =>
+		(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.filter(
+			(c) => (c[1] as RequestInit)?.method && (c[1] as RequestInit).method !== 'GET' && !String(c[0]).includes('/auth/')
+		);
+
 	beforeEach(() => {
 		noodrem.los();
 		localStorage.clear();
+		sync.load();
 		sync.sessie = null;
 		sync.andereGebruiker = null;
 		sync.message = '';
@@ -1499,14 +1466,9 @@ describe('als er iemand anders inlogt', () => {
 		sync.email = 'matthijs@voorbeeld.nl';
 		await sync.controleerCode('12345678');
 
-		const voor = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
 		await sync.opsturen();
-		const na = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) =>
-			String(c[0]).includes('toestand_opslaan')
-		);
-		expect(na).toHaveLength(0);
+		expect(schrijvend()).toHaveLength(0);
 		expect(sync.message).toContain('tjaco@voorbeeld.nl');
-		void voor;
 	});
 
 	it('vraagt niets als dezelfde persoon opnieuw inlogt', async () => {
@@ -1578,7 +1540,7 @@ describe('als er iemand anders inlogt', () => {
 			oproepen.some((c) => String(c[0]).includes('/rest/v1/teams') && (c[1] as RequestInit)?.method === 'POST')
 		).toBe(false);
 		/* en niets opgestuurd */
-		expect(oproepen.some((c) => String(c[0]).includes('toestand_opslaan'))).toBe(false);
+		expect(schrijvend()).toHaveLength(0);
 	});
 
 	/* En daarna gaat het gewoon weer. */
@@ -1590,119 +1552,6 @@ describe('als er iemand anders inlogt', () => {
 		sync.neemMee();
 
 		await sync.opsturen();
-		expect(
-			(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.some((c) => String(c[0]).includes('toestand_opslaan'))
-		).toBe(true);
-	});
-});
-
-/*
- * De hele heen-en-weer.
- *
- * Tjaco's vraag: en als ik daarna weer terugswitch, nadat ik met dat tweede
- * account een nieuw team heb gemaakt? Dat is de reis die je op één toestel maakt
- * als je twee accounts test, en het is precies de reis waarop gegevens van de
- * een bij de ander kunnen belanden.
- */
-describe('heen en weer tussen twee accounts', () => {
-	const documenten: Record<string, { data: Record<string, unknown>; versie: number }> = {};
-	let teamsVan: Record<string, { id: string; naam: string }[]> = {};
-	let wie = '';
-
-	function server() {
-		globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
-			const u = String(url);
-			const body = init?.body ? JSON.parse(String(init.body)) : null;
-			if (u.includes('/auth/v1/verify'))
-				return new Response(
-					JSON.stringify({ access_token: 't', refresh_token: 'r', expires_in: 3600, user: { id: wie, email: wie } }),
-					{ status: 200 }
-				);
-			if (u.includes('teams?select=id')) return new Response(JSON.stringify(teamsVan[wie] ?? []), { status: 200 });
-			if (u.includes('/rest/v1/teams') && init?.method === 'POST') {
-				const id = 'team-van-' + wie;
-				teamsVan[wie] = [...(teamsVan[wie] ?? []), { id, naam: body.naam }];
-				return new Response(JSON.stringify([{ id }]), { status: 200 });
-			}
-			if (u.includes('uitnodigingen')) return new Response('[]', { status: 200 });
-			if (u.includes('team_toestand')) {
-				const id = u.split('team_id=eq.')[1]?.split('&')[0] ?? '';
-				const d = documenten[id];
-				return new Response(JSON.stringify(d ? [d] : []), { status: 200 });
-			}
-			if (u.includes('rpc/toestand_opslaan')) {
-				const id = body.p_team_id as string;
-				const versie = (documenten[id]?.versie ?? 0) + 1;
-				documenten[id] = { data: body.p_data, versie };
-				return new Response(JSON.stringify({ versie }), { status: 200 });
-			}
-			return new Response('{}', { status: 200 });
-		}) as unknown as typeof fetch;
-	}
-
-	async function logIn(email: string) {
-		wie = email;
-		sync.email = email;
-		await sync.controleerCode('12345678');
-	}
-
-	beforeEach(() => {
-		noodrem.los();
-		localStorage.clear();
-		for (const k of Object.keys(documenten)) delete documenten[k];
-		teamsVan = {};
-		sync.sessie = null;
-		sync.andereGebruiker = null;
-		sync.vies = false;
-		sync.botsing = false;
-		sync.mijnTeams = [];
-		app.toestand = emptyState();
-		server();
-	});
-
-	it('houdt de twee seizoenen uit elkaar, de hele reis lang', async () => {
-		/* Tjaco richt zijn team in en stuurt het op. */
-		await logIn('tjaco@voorbeeld.nl');
-		app.toestand.teamName = 'JO14-3';
-		app.toestand.players = [{ id: 'p1', name: 'Bram', line: 'M' }];
-		await sync.opsturen();
-		const teamTjaco = sync.sessie!.teamId!;
-		expect(documenten[teamTjaco].data.teamName).toBe('JO14-3');
-
-		/* Uitloggen, en Matthijs logt in op hetzelfde toestel. */
-		sync.uitloggen();
-		await logIn('matthijs@voorbeeld.nl');
-		expect(sync.andereGebruiker).toBe('tjaco@voorbeeld.nl');
-
-		/* Hij begint schoon en maakt zijn eigen team. */
-		sync.beginSchoon();
-		await Promise.resolve();
-		expect(app.toestand.players).toHaveLength(0);
-
-		await sync.nieuwTeam('JO10-4');
-		app.toestand.players = [{ id: 'q1', name: 'Sil', line: 'A' }];
-		await sync.opsturen();
-		const teamMatthijs = sync.sessie!.teamId!;
-		expect(teamMatthijs).not.toBe(teamTjaco);
-		expect(documenten[teamMatthijs].data.teamName).toBe('JO10-4');
-
-		/* En Tjaco's team is onderweg niet aangeraakt. */
-		expect(documenten[teamTjaco].data.teamName).toBe('JO14-3');
-		expect((documenten[teamTjaco].data.players as unknown[])[0]).toMatchObject({ name: 'Bram' });
-
-		/* Terug naar Tjaco. Weer de vraag, want er staat nu Matthijs' team. */
-		sync.uitloggen();
-		await logIn('tjaco@voorbeeld.nl');
-		expect(sync.andereGebruiker).toBe('matthijs@voorbeeld.nl');
-
-		/* Schoon beginnen haalt meteen zijn eigen seizoen terug. */
-		sync.beginSchoon();
-		await new Promise((r) => setTimeout(r, 0));
-		expect(app.toestand.teamName).toBe('JO14-3');
-		expect(app.toestand.players.map((p) => p.name)).toEqual(['Bram']);
-		expect(sync.sessie!.teamId).toBe(teamTjaco);
-
-		/* En het team van Matthijs is nog steeds van hem. */
-		expect(documenten[teamMatthijs].data.teamName).toBe('JO10-4');
+		expect(schrijvend().some((c) => String(c[0]).includes('/rest/v1/spelers'))).toBe(true);
 	});
 });

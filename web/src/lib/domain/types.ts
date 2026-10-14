@@ -75,6 +75,11 @@ export interface Match {
 	keptBy?: string;
 	/** Het wisselplan: wat je van plan bent, niet wat er gebeurde. Zie domain/plan.ts. */
 	plan?: PlannedSub[];
+	/**
+	 * Een vast kenmerk, zodat de wedstrijd op de server één rij blijft, ook als je
+	 * hem op een ander toestel bijwerkt. Gaat mee naar het archief.
+	 */
+	id?: string;
 }
 
 /**
@@ -148,6 +153,8 @@ export interface ArchivedMatch {
 	 */
 	lineup?: Lineup;
 	bench?: string[];
+	/** hetzelfde kenmerk als de wedstrijd waar hij uit kwam */
+	id?: string;
 }
 
 export type Attendance = 'present' | 'excused' | 'absent';

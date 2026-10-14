@@ -137,6 +137,7 @@ export function archiveMatch(t: State, nu: number): ArchivedMatch | null {
 				)
 			}))
 	};
+	if (w.id) regel.id = w.id;
 	t.archive.unshift(regel);
 	w.archived = true;
 	return regel;

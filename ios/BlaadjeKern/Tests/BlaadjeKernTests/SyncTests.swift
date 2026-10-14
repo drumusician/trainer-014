@@ -194,4 +194,61 @@ import Testing
 		#expect(SyncModel.moment("2026-10-13 21:00:00.123456+00") < SyncModel.moment("2026-10-13T21:00:00.124Z"))
 		#expect(SyncModel.moment("2026-10-13T21:00:00Z") < SyncModel.moment("2026-10-13 21:00:00.001+00"))
 	}
+
+	/// De webapp schrijft dezelfde tabellen, met een eigen vertaling in TypeScript.
+	/// Maken de twee voor dezelfde toestand niet precies dezelfde rijen, dan ziet
+	/// de een de wedstrijden van de ander als nieuwe en staat alles dubbel. Dus
+	/// staan de rijen van de iPhone in een bestand, en legt de webtest
+	/// (`web/src/lib/supabase/rijen.test.ts`) de zijne ernaast.
+	///
+	/// Verandert de vertaling hier met opzet, draai dan met `SCHRIJF_RIJEN=1` en
+	/// kijk of de webtest daarna nog slaagt.
+	@Test func deRijenStaanVoorDeWebappKlaar() throws {
+		var sept = try #require(try Opslag.lees(opgeslagenTekst()))
+		var n = 0
+		SyncModel.vulKenmerkenAan(&sept) { n += 1; return "wedstrijd-\(n)" }
+		/* Vaste kenmerken: seizoen() geeft de wedstrijden er elke keer nieuwe. */
+		var s = seizoen()
+		s.match?.id = "wedstrijd-van-nu"
+		for i in s.archive.indices { s.archive[i].id = "bewaard-\(i)" }
+		/* Ook wat zelden voorkomt: twee kinderen die het team verlieten (de een
+		   speelde nog, de ander was afgemeld), wie de wedstrijd bijhoudt, en een
+		   notitie met aanhalingstekens. */
+		s.players.removeAll { $0.id == "p13" || $0.id == "p14" }
+		s.match?.keptBy = "trainer@voorbeeld.nl"
+		s.match?.note = "Let's \"knallen\"\n"
+		s.archive[0].parts = 4
+		let gevallen: [(String, AppState)] = [("seizoen", s), ("september", sept)]
+
+		func cel(_ c: Cel) -> JSONValue {
+			switch c {
+			case .tekst(let s): .string(s)
+			case .getal(let g): .number(Double(g))
+			case .leeg: .null
+			}
+		}
+		var uit: [JSONValue] = []
+		for (naam, t) in gevallen {
+			var o = OrderedDict<JSONValue>()
+			o["naam"] = .string(naam)
+			o["team"] = .string(team)
+			o["invoer"] = t.json
+			o["rijen"] = .array(SyncModel.rijen(van: t, team: team).map { r in
+				var k = OrderedDict<JSONValue>()
+				for sleutel in r.kolommen.keys.sorted() { k[sleutel] = cel(r.kolommen[sleutel]!) }
+				var rij = OrderedDict<JSONValue>()
+				rij["tabel"] = .string(r.tabel)
+				rij["id"] = .string(r.id)
+				rij["kolommen"] = .object(k)
+				return .object(rij)
+			})
+			uit.append(.object(o))
+		}
+		let tekst = JSONValue.array(uit).tekst() + "\n"
+		let pad = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/rijen-gedeeld.json")
+		if ProcessInfo.processInfo.environment["SCHRIJF_RIJEN"] != nil || !FileManager.default.fileExists(atPath: pad.path) {
+			try tekst.write(to: pad, atomically: true, encoding: .utf8)
+		}
+		#expect(try String(contentsOf: pad, encoding: .utf8) == tekst, "de rijen zijn veranderd; draai met SCHRIJF_RIJEN=1 en daarna de webtest")
+	}
 }

@@ -1,6 +1,21 @@
 import { app } from '$lib/store.svelte';
 import { reportIssue } from '$lib/issues.svelte';
 import { SUPABASE_SLEUTEL, SUPABASE_URL } from './config';
+import type { State } from '$lib/domain/types';
+import { emptyState } from '$lib/domain/types';
+import { migreerToestand } from '$lib/domain/migrate-storage';
+import {
+	MET_VOLGORDE,
+	NU,
+	TABELLEN,
+	rijen,
+	tijdstip,
+	toestand,
+	verschil,
+	vulKenmerkenAan,
+	type Rij,
+	type Wijziging
+} from './rijen';
 
 const SESSIESLEUTEL = 'o14-sessie-v1';
 /* Blijft staan na uitloggen: daaraan zien we of er iemand anders inlogt. */
@@ -8,16 +23,10 @@ const LAATSTE_INLOG = 'o14-laatste-inlog-v1';
 /* On a phone you switch to your mail in between, which can reload the app.
    That is why we remember who we requested a code for. */
 const INLOGSLEUTEL = 'o14-inlog-v1';
+/* Wat er volgens dit toestel in de tabellen staat. Zie Spiegel. */
+const SPIEGELSLEUTEL = 'o14-gespiegeld-v1';
 
 const storage = () => (typeof localStorage === 'undefined' ? null : localStorage);
-
-/** A cheap fingerprint, to see whether anything really changed. */
-function vingerafdruk(waarde: unknown): string {
-	const tekst = JSON.stringify(waarde);
-	let h = 5381;
-	for (let i = 0; i < tekst.length; i++) h = ((h << 5) + h + tekst.charCodeAt(i)) | 0;
-	return tekst.length + ':' + (h >>> 0).toString(36);
-}
 
 interface Sessie {
 	access_token: string;
@@ -27,10 +36,28 @@ interface Sessie {
 	user_id?: string | null;
 	email?: string | null;
 	teamId?: string | null;
+	/** de versie van het oude blok (team_toestand); alleen nog om één keer te verhuizen */
 	versie?: number;
 	laatst?: string | null;
-	/** fingerprint of what last arrived successfully */
+	/** van vóór de tabellen; wordt niet meer gebruikt */
 	afdruk?: string | null;
+}
+
+/**
+ * Wat er volgens dit toestel in de tabellen van een team staat.
+ *
+ * Het verschil tussen dit en wat er nu in de app staat is wat er opgestuurd
+ * moet worden; niet meer dan dat. Zo blijft wat een ander toestel intussen
+ * deed staan: dat staat hier niet in, en wordt dus ook niet weggehaald.
+ *
+ * `toestand` leeg met een `naam`: het team bestaat, maar er staat nog niets in.
+ * Geen spiegel voor een team: dit toestel heeft het nog nooit opgehaald, en
+ * opsturen begint dan altijd met ophalen.
+ */
+interface Spiegel {
+	team: string;
+	toestand: State | null;
+	naam?: string;
 }
 
 interface Fout extends Error {
@@ -158,6 +185,14 @@ export interface Lid {
  */
 class WachtOpDeTrainer extends Error {}
 
+/** Wat er in de tabellen staat, per tabel. */
+type Tabellen = Record<string, Record<string, unknown>[]>;
+
+/** Hoeveel rijen er in één keer heen of terug gaan. Supabase geeft er standaard hooguit duizend. */
+const PAGINA = 1000;
+
+const kloon = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
+
 class Sync {
 	sessie = $state<Sessie | null>(null);
 	message = $state('');
@@ -169,8 +204,8 @@ class Sync {
 	/* ---------- syncing by itself ---------- */
 	/** there are changes waiting that the server does not have yet */
 	vies = $state(false);
-	/** the server has something newer; then the coach decides, not the app */
-	botsing = $state(false);
+	/** hoeveel wijzigingen de server weigerde; die zijn weggegooid, zie schrijf() */
+	geweigerd = $state(0);
 	/** the last attempt failed (usually: no signal) */
 	hapert = $state(false);
 	private wachter: ReturnType<typeof setTimeout> | null = null;
@@ -186,6 +221,11 @@ class Sync {
 	private mislukt = 0;
 	private static readonly LANGSTE_WACHT = 300_000;
 	private bezigMetDuwen = false;
+	private spiegel: Spiegel | null = null;
+	/** de rijen van de spiegel, uitgerekend als ze nodig zijn */
+	private spiegelRijen: Rij[] | null = null;
+	/** telt elke opslag, om te zien of de trainer iets deed terwijl we ophaalden */
+	private tikken = 0;
 
 	/* ---------- meerdere trainers ----------
 	   Zolang er één team was, kon de app het gewoon pakken. Nu je ook lid kunt
@@ -225,6 +265,12 @@ class Sync {
 		} catch {
 			this.sessie = null;
 		}
+		try {
+			this.spiegel = JSON.parse(bak.getItem(SPIEGELSLEUTEL) ?? 'null');
+		} catch {
+			this.spiegel = null;
+		}
+		this.spiegelRijen = null;
 		try {
 			const wachtend = JSON.parse(bak.getItem(INLOGSLEUTEL) ?? 'null');
 			if (wachtend?.email && !this.sessie) {
@@ -347,6 +393,9 @@ class Sync {
 	 * een leeg scherm waar hij niets van begrijpt.
 	 */
 	beginSchoon() {
+		/* Eerst vergeten wat er op de server stond. Anders lijkt de lege app een
+		   opdracht om daar alles weg te halen. */
+		this.zetSpiegel(null);
 		app.wisAlles();
 		this.andereGebruiker = null;
 		this.vies = false;
@@ -358,7 +407,7 @@ class Sync {
 		this.sessie = null;
 		this.message = '';
 		this.vies = false;
-		this.botsing = false;
+		this.zetSpiegel(null);
 		this.mijnTeams = [];
 		this.leden = [];
 		this.openstaand = [];
@@ -580,7 +629,7 @@ class Sync {
 			s.teamId = gemaakt[0].id;
 			/* Vers aangemaakt, dus de server heeft nog niets. Dat is geen 'onbekend'
 			   maar een 'leeg', en dat verschil bepaalt of er opgestuurd mag worden. */
-			s.versie = 0;
+			this.zetSpiegel({ team: s.teamId!, toestand: null, naam: app.toestand.teamName });
 		}
 		this.save();
 		return s.teamId!;
@@ -623,38 +672,17 @@ class Sync {
 		try {
 			const token = await this.token();
 			if (!token) return;
-			const rijen = (await sb('/rest/v1/team_toestand?select=data,versie&team_id=eq.' + teamId, {}, token)) as
-				{ data: ReturnType<typeof app.syncPayload>; versie: number }[] | null;
-
-			if (rijen?.length) {
-				if (!app.adoptSyncPayload(rijen[0].data)) {
-					this.message = 'Wat er bij dat team staat kon ik niet lezen. Er is niets veranderd.';
-					return;
-				}
-				this.sessie.versie = rijen[0].versie;
-			} else if (kwam) {
-				/*
-				 * Een leeg team, en we kwamen van een ander. Wat hier staat is dan van
-				 * dát team, en meenemen zou het bij het nieuwe naar binnen schrijven.
-				 * Dus schoon beginnen. Kwamen we nergens vandaan, dan is wat hier staat
-				 * juist het begin van dit team en blijft het staan.
-				 */
-				app.wisAlles();
-				this.sessie.versie = 0;
-			} else {
-				this.sessie.versie = 0;
-			}
-
+			/* Eerst halen, en pas omzetten als dat gelukt is. */
+			await this.eersteKeer(teamId, token, !!kwam);
 			this.sessie.teamId = teamId;
-			this.sessie.afdruk = vingerafdruk(app.syncPayload());
 			this.sessie.laatst = new Date().toISOString();
 			this.leden = [];
 			this.openstaand = [];
-			this.vies = false;
-			this.botsing = false;
 			this.save();
 			this.message = 'Dit toestel volgt nu ' + (this.mijnTeams.find((p) => p.id === teamId)?.naam ?? 'dit team') + '.';
 			await this.haalPloeg();
+			/* Stond er nog niets, dan is wat hier staat het begin van dit team. */
+			this.merkVies();
 		} catch (e) {
 			/* Niets omgezet: het toestel volgt nog steeds hetzelfde team. */
 			this.message = 'Overstappen lukte niet: ' + (e as Error).message + '. Er is niets veranderd.';
@@ -705,59 +733,22 @@ class Sync {
 				token
 			)) as { id: string }[];
 
+			/* Vers aangemaakt: de server heeft nog niets. Geen 'onbekend' maar 'leeg'.
+			   Dat eerst, zodat het wissen hieronder niet als een opdracht geldt. */
+			this.zetSpiegel({ team: gemaakt[0].id, toestand: null, naam: schoon });
 			if (this.sessie.teamId) app.wisAlles();
 			app.setTeamName(schoon);
 			this.sessie.teamId = gemaakt[0].id;
-			/* Vers aangemaakt: de server heeft nog niets. Geen 'onbekend' maar 'leeg'. */
-			this.sessie.versie = 0;
-			this.sessie.afdruk = null;
 			this.leden = [];
 			this.openstaand = [];
-			this.botsing = false;
 			this.save();
 			await this.haalTeams();
-			await this.opsturen(false, true);
+			await this.opsturen(true);
 			this.message = 'Nieuw team gemaakt: ' + schoon + '.';
 		} catch (e) {
 			this.message = 'Een nieuw team maken lukte niet: ' + (e as Error).message;
 		} finally {
 			this.bezig = false;
-		}
-	}
-
-	/**
-	 * De naam van het team gelijk houden met wat de trainer invulde.
-	 *
-	 * teams.naam werd één keer gezet bij het aanmaken en daarna nooit meer. Wie
-	 * zijn team hernoemde zag in de lijst nog de naam van toen — precies op het
-	 * moment dat je tussen twee teams moet kiezen.
-	 *
-	 * Eén poging per naam. Lukt het niet omdat je niet de eigenaar bent, dan
-	 * blijft het daarbij: opnieuw proberen bij elke opslag is hoe je een lus bouwt.
-	 */
-	private naamGeprobeerd: string | null = null;
-
-	private async houdNaamGelijk(token: string, team: string) {
-		const wil = app.toestand.teamName;
-		/*
-		 * 'Ons team' is de naam die er staat als er nog niets is ingevuld. Die mag
-		 * nooit naar de server: een toestel met een lege app zou daarmee het team van
-		 * een ander hernoemen naar 'Ons team'. Een test ving dat op de dag dat dit
-		 * geschreven werd.
-		 */
-		if (wil === 'Ons team') return;
-		const bekend = this.mijnTeams.find((p) => p.id === team)?.naam;
-		if (!bekend || bekend === wil || this.naamGeprobeerd === wil) return;
-		this.naamGeprobeerd = wil;
-		try {
-			await sb(
-				'/rest/v1/teams?id=eq.' + team,
-				{ method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ naam: wil }) },
-				token
-			);
-			this.mijnTeams = this.mijnTeams.map((p) => (p.id === team ? { ...p, naam: wil } : p));
-		} catch {
-			/* niet de eigenaar, of geen bereik: dan blijft de naam zoals hij was */
 		}
 	}
 
@@ -940,19 +931,218 @@ class Sync {
 		}
 	}
 
-	private isBotsing(e: Fout): boolean {
-		/* De tekst komt uit de database en is Nederlands; de hernoeming naar het
-		   Engels maakte er 'versie running niet gelijk' van, waardoor een conflict
-		   niet meer als conflict werd herkend en de rem er nooit op ging. */
-		return e.data?.code === 'PT409' || /versie loopt niet gelijk/.test(e.message ?? '');
+	/* ==========================================================
+	   De tabellen
+
+	   Het toestel schrijft, de server bewaart. Wat er opgestuurd wordt is het
+	   verschil tussen wat er nu staat en de spiegel: wat er volgens dit toestel
+	   al in de tabellen stond. Per veld, net als de iPhone-app. Daardoor botst er
+	   niets meer: twee toestellen die elk iets anders veranderen houden allebei
+	   hun wijziging, en bij hetzelfde veld wint de laatste.
+	   ========================================================== */
+
+	private zetSpiegel(s: Spiegel | null) {
+		this.spiegel = s ? { ...s, toestand: s.toestand ? kloon(s.toestand) : null } : null;
+		this.spiegelRijen = null;
+		try {
+			if (s) storage()?.setItem(SPIEGELSLEUTEL, JSON.stringify(this.spiegel));
+			else storage()?.removeItem(SPIEGELSLEUTEL);
+		} catch {
+			/* Vol of geen opslag: dan haalt hij het na herladen opnieuw op. */
+		}
 	}
 
-	async opsturen(overschrijven = false, stil = false) {
+	/** Heeft dit toestel dit team ooit opgehaald? */
+	private kent(team: string): boolean {
+		return this.spiegel?.team === team;
+	}
+
+	private gespiegeld(team: string): Rij[] {
+		const s = this.spiegel;
+		if (!s || s.team !== team) return [];
+		this.spiegelRijen ??= s.toestand
+			? rijen(s.toestand, team)
+			: [{ tabel: 'teams', id: team, kolommen: { naam: s.naam ?? '' } }];
+		return this.spiegelRijen;
+	}
+
+	/** Wat er nu staat, met een vast kenmerk voor elke wedstrijd. */
+	private nu(): State {
+		if (vulKenmerkenAan(app.toestand)) app.save();
+		return kloon(app.toestand);
+	}
+
+	private stappen(team: string, doel = this.nu()): Wijziging[] {
+		return verschil(this.gespiegeld(team), rijen(doel, team));
+	}
+
+	/** Alles wat er van dit team in de tabellen staat. */
+	private async haalTabellen(team: string, token: string): Promise<Tabellen> {
+		const uit: Tabellen = {};
+		await Promise.all(
+			TABELLEN.map(async (tabel) => {
+				const filter = tabel === 'teams' || tabel === 'team_instellingen' ? 'id=eq.' : 'team_id=eq.';
+				const lijst: Record<string, unknown>[] = [];
+				for (let vanaf = 0; ; vanaf += PAGINA) {
+					const deel = (await sb(
+						`/rest/v1/${tabel}?select=*&${filter}${team}&order=id&limit=${PAGINA}&offset=${vanaf}`,
+						{},
+						token
+					)) as Record<string, unknown>[] | null;
+					lijst.push(...(deel ?? []));
+					if ((deel?.length ?? 0) < PAGINA) break;
+				}
+				uit[tabel] = lijst;
+			})
+		);
+		return uit;
+	}
+
+	/**
+	 * De wijzigingen naar de server, tabel voor tabel.
+	 *
+	 * Erbij in groepen; bestaat een rij al (een ander toestel maakte hem met
+	 * hetzelfde kenmerk), dan wordt hij bijgewerkt. Een gebeurtenis kan op de
+	 * server niet veranderen, dus daar is 'bestaat al' gewoon klaar.
+	 *
+	 * Weigert de server iets (dit mag niet, dit klopt niet), dan wordt dat nooit
+	 * beter van opnieuw proberen. Blijft het staan, dan komt er nooit meer iets
+	 * doorheen. Dus weggooien en tellen; het volgende ophalen zet het recht.
+	 * Een storing (geen bereik) gooit wel: dan blijft alles klaarstaan.
+	 */
+	private async schrijf(stappen: Wijziging[], token: string) {
+		const nu = Date.now() / 1000;
+		let volgnummer = 0;
+		let geweigerd = 0;
+		const waarde = (k: string, v: unknown) => (k === 'weg' && v === NU ? tijdstip(nu, 0) : v);
+		const weigering = (e: unknown) => {
+			const st = (e as Fout).status ?? 0;
+			return st >= 400 && st < 500 && st !== 401 && st !== 408 && st !== 429;
+		};
+		const probeer = async (wat: () => Promise<unknown>) => {
+			try {
+				await wat();
+			} catch (e) {
+				if (!weigering(e)) throw e;
+				geweigerd++;
+			}
+		};
+
+		for (const tabel of TABELLEN) {
+			const erbij = stappen.flatMap((w) => (w.soort === 'erbij' && w.rij.tabel === tabel ? [w.rij] : []));
+			const lichamen = erbij.map((r) => {
+				const o: Record<string, unknown> = { id: r.id };
+				for (const [k, v] of Object.entries(r.kolommen)) o[k] = waarde(k, v);
+				if (MET_VOLGORDE.has(tabel)) o.gemaakt = tijdstip(nu, volgnummer++);
+				return o;
+			});
+			const prefer =
+				(tabel === 'gebeurtenissen' || tabel === 'teams'
+					? 'resolution=ignore-duplicates'
+					: 'resolution=merge-duplicates') + ',return=minimal';
+			const post = (lijst: unknown) =>
+				sb('/rest/v1/' + tabel, { method: 'POST', headers: { Prefer: prefer }, body: JSON.stringify(lijst) }, token);
+			for (let i = 0; i < lichamen.length; i += 500) {
+				const groep = lichamen.slice(i, i + 500);
+				try {
+					await post(groep);
+				} catch (e) {
+					if (!weigering(e)) throw e;
+					/* Eén rij die niet mag houdt de rest niet tegen. */
+					for (const o of groep) await probeer(() => post([o]));
+				}
+			}
+			for (const w of stappen) {
+				if (w.soort !== 'bij' || w.tabel !== tabel) continue;
+				const o: Record<string, unknown> = {};
+				for (const [k, v] of Object.entries(w.kolommen)) o[k] = waarde(k, v);
+				await probeer(() =>
+					sb(
+						`/rest/v1/${tabel}?id=eq.${w.id}`,
+						{ method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(o) },
+						token
+					)
+				);
+			}
+		}
+		for (const tabel of [...TABELLEN].reverse()) {
+			const weg = stappen.flatMap((w) => (w.soort === 'weg' && w.tabel === tabel ? [w.id] : []));
+			for (let i = 0; i < weg.length; i += 100) {
+				const ids = weg.slice(i, i + 100).join(',');
+				await probeer(() => sb(`/rest/v1/${tabel}?id=in.(${ids})`, { method: 'DELETE' }, token));
+			}
+		}
+		if (geweigerd) {
+			this.geweigerd += geweigerd;
+			reportIssue(
+				'De server weigerde ' +
+					geweigerd +
+					(geweigerd === 1 ? ' wijziging' : ' wijzigingen') +
+					'. Die zijn niet bewaard.'
+			);
+		}
+	}
+
+	/**
+	 * Regel 3: het eerste contact met een team is ophalen.
+	 *
+	 * Staat er al iets in de tabellen, dan wordt dat wat hier staat, en wat hier
+	 * stond gaat apart. Staat er nog niets, dan kijken we één keer in het oude
+	 * blok (van vóór de tabellen) en verhuizen dat. En anders is wat hier staat
+	 * het begin van het team — tenzij we van een ander team komen, want dan hoort
+	 * het daarbij.
+	 *
+	 * Daarna kent dit toestel het team. Opsturen doet de aanroeper.
+	 */
+	private async eersteKeer(team: string, token: string, kwam = false) {
+		const tabellen = await this.haalTabellen(team, token);
+		const naam = tabellen.teams?.[0]?.naam;
+		if (typeof naam !== 'string') throw new Error('dit team staat niet (meer) in je account');
+		const server = toestand(tabellen, team);
+		const gevuld = ['spelers', 'wedstrijden', 'trainingen'].some((t) => (tabellen[t] ?? []).length > 0);
+		const hierIets = app.toestand.players.length > 0 || app.toestand.archive.length > 0;
+
+		if (server && gevuld) {
+			if (hierIets && !kwam) app.bewaarApart('voor-account');
+			this.zetSpiegel({ team, toestand: server });
+			app.neemOver(server);
+			return;
+		}
+
+		this.zetSpiegel({ team, toestand: null, naam });
+		const oud = await this.oudBlok(team, token);
+		const hierNieuwer = hierIets && !kwam && oud !== null && this.sessie?.versie === oud.versie;
+		if (oud && !hierNieuwer) {
+			app.neemOver(oud.toestand);
+		} else if (kwam) {
+			app.wisAlles();
+		}
+		/* 'Ons team' is wat er staat als er niets is ingevuld. Daarmee mag de app het
+		   team van een ander niet hernoemen. */
+		if (app.toestand.teamName === 'Ons team') app.setTeamName(naam);
+	}
+
+	/** Het oude blok van dit team, als dat er nog is en te lezen valt. */
+	private async oudBlok(team: string, token: string): Promise<{ toestand: State; versie: number } | null> {
+		try {
+			const r = (await sb('/rest/v1/team_toestand?select=data,versie&team_id=eq.' + team, {}, token)) as
+				{ data: unknown; versie: number }[] | null;
+			const d = r?.length ? (migreerToestand(r[0].data) as Partial<State> | null) : null;
+			if (!d || !Array.isArray(d.players)) return null;
+			return { toestand: { ...emptyState(), ...d, match: d.match ?? null }, versie: r![0].versie };
+		} catch {
+			/* Geen oud blok, of de tabel is er niet meer: niets te verhuizen. */
+			return null;
+		}
+	}
+
+	/** Stuurt op wat er hier veranderde. Met `stil` vanzelf, op de achtergrond. */
+	async opsturen(stil = false) {
 		if (!this.sessie) return;
 		/* Met de hand op de knop drukken haalt de rem eraf: dan beslist de trainer. */
 		if (!stil) noodrem.los();
 		this.bezig = !stil;
-		if (!stil) this.message = 'Bezig met opsturen…';
+		if (!stil) this.message = 'Bezig met bijwerken…';
 		try {
 			const token = await this.token();
 			if (!token) {
@@ -960,72 +1150,64 @@ class Sync {
 				return;
 			}
 			const team = await this.zorgVoorTeam(token);
+			if (!this.kent(team)) await this.eersteKeer(team, token);
+
+			const doel = this.nu();
 			/*
-			 * Regel 3. Weten we niet op welke versie we bouwen, dan hebben we dit team
-			 * nog nooit opgehaald — en dan is opsturen het overschrijven van iets wat
-			 * we niet gezien hebben.
+			 * Nooit een team leegmaken omdat er hier niets staat. Een lege app is
+			 * bijna altijd een nieuw of gewist toestel, en geen trainer die zijn
+			 * seizoen weg wil hebben. Dan halen we op in plaats van op te sturen.
 			 */
-			if (this.sessie.versie === undefined && !overschrijven) {
-				const naam = this.mijnTeams.find((p) => p.id === team)?.naam ?? 'dit team';
-				this.message = `Dit toestel heeft de gegevens van ${naam} nog niet opgehaald. Doe dat eerst met Ophalen.`;
+			const leeg = !doel.players.length && !doel.archive.length && !doel.trainings.length;
+			if (leeg && this.spiegel?.toestand?.players.length) {
+				this.zetSpiegel(null);
+				await this.eersteKeer(team, token);
+				this.vies = false;
+				this.message = stil ? '' : 'Op dit toestel stond niets; opgehaald wat er in je account staat.';
 				return;
 			}
-			let verwacht: number | null = this.sessie.versie ?? null;
-			if (overschrijven) {
-				const nu = (await sb('/rest/v1/team_toestand?select=versie&team_id=eq.' + team, {}, token)) as {
-					versie: number;
-				}[];
-				verwacht = nu?.length ? nu[0].versie : null;
-			}
-			const pakket = app.syncPayload();
-			const r = (await sb(
-				'/rest/v1/rpc/toestand_opslaan',
-				{ method: 'POST', body: JSON.stringify({ p_team_id: team, p_data: pakket, p_verwachte_versie: verwacht }) },
-				token
-			)) as { versie: number } | null;
-			this.sessie.versie = r?.versie ?? (this.sessie.versie ?? 0) + 1;
+			const stappen = this.stappen(team, doel);
+			if (stappen.length) await this.schrijf(stappen, token);
+			this.zetSpiegel({ team, toestand: doel });
 			this.sessie.laatst = new Date().toISOString();
-			this.sessie.afdruk = vingerafdruk(pakket);
 			this.save();
-			this.vies = false;
-			this.botsing = false;
 			this.hapert = false;
 			this.mislukt = 0;
-			this.message = 'Opgestuurd.';
-			await this.houdNaamGelijk(token, team);
+			this.message = stil ? '' : 'Bijgewerkt.';
+			/* Intussen getikt? Dan staat er alweer iets klaar. */
+			this.merkVies();
 		} catch (e) {
 			if (e instanceof WachtOpDeTrainer) {
 				this.message = (e as Error).message;
 				return;
 			}
+			this.hapert = true;
 			if ((e as Fout).status === 429) {
 				/* De noodrem. Doorproberen is precies wat we net hebben tegengehouden. */
-				this.hapert = true;
 				this.message = (e as Error).message;
 				return;
 			}
 			this.mislukt++;
-			if (this.isBotsing(e as Fout)) {
-				this.botsing = true;
-				/* Hier beslist de trainer; de app probeert niet vanzelf opnieuw. */
-				this.message =
-					'Op de server staat iets nieuwers, van een ander toestel. Haal het eerst op, of stuur dit toestel er met opzet overheen.';
-			} else {
-				this.hapert = true;
-				this.message = 'Opsturen lukte niet: ' + (e as Error).message;
-				this.plan(this.wachttijd());
-			}
+			this.message = 'Bijwerken lukte niet: ' + (e as Error).message;
+			this.plan(this.wachttijd());
 		} finally {
 			this.bezig = false;
 		}
 	}
 
+	/**
+	 * Halen wat er in de tabellen staat.
+	 *
+	 * Stil: alleen als hier niets klaarstaat, en niet als de trainer intussen iets
+	 * deed; dat gaat eerst de andere kant op. Met de hand: wat hier staat wordt
+	 * vervangen, ook wat nog niet was opgestuurd. Daarom vraagt hij het eerst.
+	 */
 	async ophalen(stil = false) {
 		if (!this.sessie) return;
 		if (
 			!stil &&
 			!confirm(
-				'De selectie, standaardopstelling, trainingen, het archief en de wedstrijd die klaarstaat op dit toestel vervangen door wat er op de server staat?\n\nEen wedstrijd die hier al loopt blijft staan.'
+				'Alles op dit toestel vervangen door wat er in je account staat?\n\nWat hier nog niet was opgestuurd gaat dan verloren.'
 			)
 		)
 			return;
@@ -1040,32 +1222,23 @@ class Sync {
 				return;
 			}
 			const team = await this.zorgVoorTeam(token);
-			const rijen = (await sb('/rest/v1/team_toestand?select=data,versie&team_id=eq.' + team, {}, token)) as
-				{ data: ReturnType<typeof app.syncPayload>; versie: number }[] | null;
-			if (!rijen?.length) {
-				/* nothing on the server yet: then what is here is the beginning */
-				if (stil) {
-					this.vies = true;
-					await this.duwAlsNodig();
-				} else {
-					this.message = 'Er staat nog niets op de server.';
-				}
-				return;
+			if (!this.kent(team)) {
+				await this.eersteKeer(team, token);
+			} else {
+				const tik = this.tikken;
+				const server = toestand(await this.haalTabellen(team, token), team);
+				if (!server) throw new Error('dit team staat niet (meer) in je account');
+				/* Getikt terwijl we haalden: eerst dat opsturen, dan een volgende keer. */
+				if (stil && (this.tikken !== tik || this.vies)) return;
+				this.zetSpiegel({ team, toestand: server });
+				if (!stil || verschil(rijen(this.nu(), team), rijen(server, team)).length) app.neemOver(server);
 			}
-			if (stil && this.sessie.versie === rijen[0].versie) return; /* already in step */
-			if (!app.adoptSyncPayload(rijen[0].data)) {
-				this.message = 'Wat er staat kon ik niet lezen.';
-				return;
-			}
-			this.sessie.versie = rijen[0].versie;
 			this.sessie.laatst = new Date().toISOString();
-			this.sessie.afdruk = vingerafdruk(app.syncPayload());
 			this.save();
-			this.vies = false;
-			this.botsing = false;
 			this.hapert = false;
 			this.mislukt = 0;
 			this.message = stil ? '' : 'Opgehaald.';
+			this.merkVies();
 		} catch (e) {
 			if (e instanceof WachtOpDeTrainer) {
 				this.message = (e as Error).message;
@@ -1082,72 +1255,59 @@ class Sync {
 		}
 	}
 
-	get botsingOpen(): boolean {
-		return this.botsing;
-	}
-
 	/* ==========================================================
 	   Syncing by itself
-	   The device writes, the server keeps. We push as soon as something has
-	   changed and there is signal; we only pull when nothing is waiting here,
-	   otherwise we would overwrite your own work.
+	   We push as soon as something has changed and there is signal; we only pull
+	   when nothing is waiting here, otherwise we would overwrite your own work.
 	   ========================================================== */
 
 	/** Called after every save. */
 	merkVies() {
+		this.tikken++;
 		if (!this.sessie) return;
-		const nu = vingerafdruk(app.syncPayload());
-		if (nu === this.sessie.afdruk) return; /* nothing changed that concerns the server */
-		this.vies = true;
-		this.plan();
+		const team = this.sessie.teamId;
+		/* Een team dat we nog nooit haalden: dan is er altijd iets te doen, en dat
+		   begint met ophalen. */
+		this.vies = team && this.kent(team) ? this.stappen(team).length > 0 : true;
+		if (this.vies) this.plan();
 	}
 
-	/** Wait until things settle; otherwise we push on every single tap during a
-	    match. */
 	/** Na elke mislukking twee keer zo lang, tot vijf minuten. */
 	private wachttijd(): number {
 		return Math.min(Sync.LANGSTE_WACHT, 4000 * 2 ** Math.max(0, this.mislukt - 1));
 	}
 
+	/** Wait until things settle; otherwise we push on every single tap. */
 	private plan(na = 4000) {
 		if (this.wachter) clearTimeout(this.wachter);
 		this.wachter = setTimeout(() => this.duwAlsNodig(), na);
 	}
 
 	async duwAlsNodig() {
-		if (!this.sessie || !this.vies || this.bezigMetDuwen || this.botsing) return;
+		if (!this.sessie || !this.vies || this.bezigMetDuwen) return;
 		if (typeof navigator !== 'undefined' && navigator.onLine === false) {
 			this.hapert = true;
 			return;
 		}
 		this.bezigMetDuwen = true;
 		try {
-			await this.opsturen(false, true);
+			await this.opsturen(true);
 		} finally {
 			this.bezigMetDuwen = false;
 		}
 	}
 
-	/** On opening the app, and when you come back from another screen. */
+	/** On opening the app, when you come back to it, and every minute while it is in front of you. */
 	async kijkEven() {
 		if (!this.sessie) return;
 		/* Stil op de achtergrond: een uitnodiging die klaarstaat wil je zien zonder
 		   ernaar te hoeven zoeken. */
 		void this.kijkNaarUitnodigingen();
-		if (this.vies) {
-			await this.duwAlsNodig();
-			return;
-		}
-		try {
-			await this.ophalen(true);
-		} catch {
-			/* no signal: then later */
-		}
-		/* And then check whether what is here still matches what the server has. Up
-		   to now we only noticed that after a change, which is too late when
-		   something is added to what we exchange: then everything that was already
-		   there is suddenly new, while nobody touched a thing. */
-		this.merkVies();
+		if (this.vies) await this.duwAlsNodig();
+		if (this.vies) return;
+		await this.ophalen(true);
+		/* De eerste keer kan er na het ophalen iets te verhuizen zijn. */
+		if (this.vies) await this.duwAlsNodig();
 	}
 }
 

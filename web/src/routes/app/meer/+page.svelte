@@ -216,9 +216,7 @@
 			</p>
 			<p class="uitleg">
 				<b>
-					{#if sync.botsing}
-						{text.data.statusConflict}
-					{:else if sync.vies && sync.hapert}
+					{#if sync.vies && sync.hapert}
 						{text.data.statusOffline}
 					{:else if sync.vies}
 						{text.data.statusPending}
@@ -234,11 +232,6 @@
 				<button disabled={sync.bezig} onclick={() => sync.ophalen()}>{text.data.pull}</button>
 				<button onclick={() => sync.uitloggen()}>{text.data.signOut}</button>
 			</div>
-			{#if sync.botsingOpen}
-				<div class="knoprij" style="padding-left: 0">
-					<button class="uit" onclick={() => sync.opsturen(true)}>{text.data.forcePush}</button>
-				</div>
-			{/if}
 		{/if}
 		{#if sync.message}<p class="uitleg" style="margin-top: 8px">{sync.message}</p>{/if}
 

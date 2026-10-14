@@ -215,9 +215,6 @@ const match = {
 /** De schil om elk scherm: waarschuwingen en de tabbalk. */
 const shell = {
 	savingFails: 'Opslaan lukt niet. Wat je nu doet is weg zodra je de app sluit — maak ruimte op je toestel.',
-	conflict: 'Op de server staat iets nieuwers, van een ander toestel.',
-	conflictPull: 'Ophalen',
-	conflictPush: 'Dit toestel',
 	tabs: {
 		matches: 'Wedstrijden',
 		training: 'Training',
@@ -554,16 +551,14 @@ const data = {
 	signedInAs: 'Ingelogd als',
 	unknownEmail: 'onbekend',
 	signedInHint:
-		'De app werkt gewoon zonder bereik en stuurt vanzelf op zodra er weer internet is. Een wedstrijd die je klaarzet gaat mee, dus je stelt thuis op en pakt hem op het veld op je telefoon op. Een wedstrijd die al loopt wordt wel opgestuurd, maar nooit overschreven door een ander toestel.',
-	statusConflict: 'Er staat iets nieuwers op de server.',
+		'Wat je hier doet staat ook in Blaadje op je iPhone, en andersom. Zonder bereik werkt de app gewoon door en stuurt hij op zodra er weer internet is. Een wedstrijd die je hier klaarzet pak je op het veld op je telefoon op.',
 	statusOffline: 'Nog niet opgestuurd, geen verbinding.',
 	statusPending: 'Nog niet opgestuurd.',
 	statusUpdated: (when: string) => `Bijgewerkt ${when}.`,
 	statusNever: 'Nog niets uitgewisseld.',
-	pushNow: 'Nu opsturen',
-	pull: 'Ophalen',
+	pushNow: 'Nu bijwerken',
+	pull: 'Opnieuw ophalen',
 	signOut: 'Uitloggen',
-	forcePush: 'Toch dit toestel opsturen',
 
 	/* ---------- wie kan erbij ---------- */
 	teamHeading: 'Wie kan hierbij',

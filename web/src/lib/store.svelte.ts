@@ -495,6 +495,39 @@ class App {
 		this.save();
 	}
 
+	/**
+	 * Wat er in het account staat wordt wat hier staat, de wedstrijd inbegrepen.
+	 *
+	 * Anders dan adoptSyncPayload houdt dit een lopende wedstrijd níét vast. Dat
+	 * kan niet meer: sinds de iPhone-app per veld opstuurt zou een oude kopie van
+	 * de wedstrijd hier de wissels van de telefoon weer weghalen. De wedstrijd
+	 * houd je bij op de telefoon; het web volgt.
+	 */
+	neemOver(t: State) {
+		const hier = this.toestand;
+		hier.teamName = t.teamName;
+		hier.players = t.players;
+		hier.formation = t.formation;
+		hier.minutesPerPart = t.minutesPerPart;
+		hier.parts = t.parts;
+		hier.defaultLineup = t.defaultLineup;
+		hier.trainings = t.trainings;
+		hier.archive = t.archive;
+		hier.reportSubs = t.reportSubs;
+		if (hier.match?.id !== t.match?.id) this.chosenPosition = null;
+		hier.match = t.match;
+		this.save();
+	}
+
+	/** Wat hier staat apart zetten voordat het vervangen wordt, voor als dat een vergissing was. */
+	bewaarApart(naam: string) {
+		try {
+			storage()?.setItem(SLEUTEL + '-' + naam, JSON.stringify(this.toestand));
+		} catch {
+			/* vol: dan niet */
+		}
+	}
+
 	syncPayload() {
 		const t = this.toestand;
 		return {

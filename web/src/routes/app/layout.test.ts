@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/svelte';
 import { createRawSnippet, tick } from 'svelte';
 import Schil from './+layout.svelte';
 import { app } from '$lib/store.svelte';
-import { sync } from '$lib/supabase/sync.svelte';
 import { issues } from '$lib/issues.svelte';
 import { zetKop } from '$lib/header.svelte';
 import { emptyState } from '$lib/domain/types';
@@ -26,7 +25,6 @@ function toon(pad = '/app') {
 beforeEach(() => {
 	localStorage.clear();
 	app.toestand = emptyState();
-	sync.botsing = false;
 	issues.savingFails = false;
 	zetKop('Blaadje');
 	vi.restoreAllMocks();
@@ -85,15 +83,8 @@ describe('de schil om de app', () => {
 			expect(document.querySelector('.waarschuwing')).toBeNull();
 		});
 
-		it('melden een botsing met twee uitwegen', () => {
-			sync.botsing = true;
-			toon();
-			expect(document.querySelector('.waarschuwing')).toBeTruthy();
-			expect(screen.getAllByRole('button')).toHaveLength(2);
-		});
-
-		/* Als opslaan niet lukt is alles wat je nog doet verloren. Dat is zwaarder
-		   dan een botsing en krijgt zijn eigen, ernstiger melding. */
+		/* Als opslaan niet lukt is alles wat je nog doet verloren. Dat krijgt een
+		   eigen, ernstige melding. */
 		it('melden het zwaarder als opslaan niet meer lukt', () => {
 			issues.savingFails = true;
 			toon();

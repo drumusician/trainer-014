@@ -23,7 +23,6 @@ beforeEach(() => {
 	sync.fase = 'email';
 	sync.vies = false;
 	sync.hapert = false;
-	sync.botsing = false;
 	sync.message = '';
 	sync.mijnTeams = [];
 	sync.leden = [];
@@ -294,23 +293,12 @@ describe('het gegevensscherm als je ingelogd bent', () => {
 		expect(document.body.textContent).toContain('geen verbinding');
 	});
 
-	it('meldt dat er iets nieuwers op de server staat', () => {
-		sync.botsing = true;
+	/* Botsingen bestaan niet meer: sinds de tabellen wint per veld de laatste.
+	   Dus ook geen knop meer die het werk van een ander overschrijft. */
+	it('biedt geen knop meer om een ander toestel te overschrijven', () => {
 		render(Meer);
-		expect(document.body.textContent).toContain('nieuwers op de server');
-	});
-
-	/* De uitweg uit een botsing: dit toestel wint. Die knop hoort er alleen te
-	   staan als er ook echt een botsing is, want hij overschrijft het werk van de
-	   ander. */
-	it('biedt het overrulen alleen aan bij een botsing', () => {
-		const zonder = render(Meer);
-		expect(zonder.queryByRole('button', { name: 'Toch dit toestel opsturen' })).toBeNull();
-		zonder.unmount();
-
-		sync.botsing = true;
-		render(Meer);
-		expect(screen.getByRole('button', { name: 'Toch dit toestel opsturen' })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: /Toch dit toestel/ })).toBeNull();
+		expect(document.body.textContent).not.toContain('nieuwers op de server');
 	});
 
 	it('logt je uit', async () => {

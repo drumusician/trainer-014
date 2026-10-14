@@ -90,8 +90,15 @@
 		};
 		document.addEventListener('visibilitychange', terug);
 
+		/* Wat er op de telefoon gebeurt ook hier zien, zonder te herladen. Alleen
+		   als het scherm voor je staat: een tabblad op de achtergrond hoeft niet. */
+		const bijhouden = setInterval(() => {
+			if (document.visibilityState === 'visible') sync.kijkEven();
+		}, 60_000);
+
 		return () => {
 			clearInterval(tik);
+			clearInterval(bijhouden);
 			document.removeEventListener('visibilitychange', terug);
 			window.removeEventListener('online', weerOnline);
 			losWakeLock();
@@ -113,13 +120,6 @@
 	{#if issues.savingFails}
 		<div class="waarschuwing ernstig">
 			<span>{text.shell.savingFails}</span>
-		</div>
-	{/if}
-	{#if sync.botsing}
-		<div class="waarschuwing">
-			<span>{text.shell.conflict}</span>
-			<button class="klein" onclick={() => sync.ophalen()}>{text.shell.conflictPull}</button>
-			<button class="klein" onclick={() => sync.opsturen(true)}>{text.shell.conflictPush}</button>
 		</div>
 	{/if}
 	<header>
