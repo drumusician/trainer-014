@@ -18,7 +18,14 @@
 	];
 
 	/* Anything to do with a match counts towards the first tab. */
-	const BIJ_WEDSTRIJDEN = ['/app/wedstrijd', '/app/archief', '/app/afloop', '/app/aanwezig', '/app/opstelling'];
+	const BIJ_WEDSTRIJDEN = [
+		'/app/wedstrijd',
+		'/app/archief',
+		'/app/afloop',
+		'/app/aanwezig',
+		'/app/opstelling',
+		'/app/programma'
+	];
 
 	/* Pass on the real height of the bar, safe area below it included. Guessing
 	   goes wrong on devices I do not have in my hands. */

@@ -123,6 +123,35 @@ const trainings = {
 	confirmRemove: (date: string) => `De training van ${date} verwijderen?`
 } as const;
 
+/** Het programma: de wedstrijden die komen, en wie wat regelt. */
+const program = {
+	title: 'Programma',
+	heading: 'Programma',
+	hint: 'De wedstrijden die eraan komen, en wie wat regelt. Ouders zien dit in de app, en krijgen de avond ervoor een herinnering voor hun taak.',
+	none: 'Nog niets in het programma. Zet de komende wedstrijden erin, dan zien ouders wat er komt.',
+	addHeading: 'Wedstrijd erbij',
+	dateLabel: 'Datum',
+	timeLabel: 'Aanvang',
+	opponentLabel: 'Tegenstander',
+	homeLabel: 'Thuis of uit',
+	home: 'Thuis',
+	away: 'Uit',
+	add: 'Zet erin',
+	nobody: '—',
+	open: 'open',
+	declined: (naam: string) => `${naam} kan niet`,
+	addDriver: 'Rijder erbij',
+	remove: 'Haal uit het programma',
+	confirmRemove: (tegen: string) => `De wedstrijd tegen ${tegen} uit het programma halen, met de taken?`,
+	startToday: 'Begin deze wedstrijd',
+	homeHeading: 'Programma',
+	homeMore: 'Programma en taken',
+	homeNone: 'Zet de komende wedstrijden erin, met wie de limonade doet en wie er rijdt.',
+	line: (thuis: boolean, tegen: string, tijd: string) =>
+		(thuis ? 'Thuis' : 'Uit') + ' tegen ' + tegen + (tijd ? ', ' + tijd : ''),
+	kinds: { limonade: 'Limonade', rijden: 'Rijden', fluiten: 'Fluiten', vlaggen: 'Vlaggen', teamtas: 'Teamtas' }
+} as const;
+
 /** Team: de selectie, de verdeling over de linies, en de teamnaam. */
 const team = {
 	title: 'Team',
@@ -793,6 +822,7 @@ export const text = {
 	attendance,
 	afterMatch,
 	trainings,
+	program,
 	team,
 	match,
 	shell,

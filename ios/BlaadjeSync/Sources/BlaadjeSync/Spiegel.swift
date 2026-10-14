@@ -52,6 +52,7 @@ enum Tabellen {
 			("doelpunten_voor", .getal), ("doelpunten_tegen", .getal), ("duur", .getal),
 			("teamnaam", .tekst), ("notitie", .tekst),
 			("klok", .tekst), ("opstelling", .tekst), ("bank", .tekst), ("wisselplan", .tekst), ("gemaakt", .tekst),
+			("aanvang", .tekst),
 		]),
 		("trainingen", [("team_id", .tekst), ("datum", .tekst), ("gemaakt", .tekst)]),
 		("wedstrijd_spelers", [
@@ -65,6 +66,10 @@ enum Tabellen {
 		]),
 		("training_spelers", [
 			("team_id", .tekst), ("training_id", .tekst), ("speler_id", .tekst), ("status", .tekst),
+		]),
+		("taken", [
+			("team_id", .tekst), ("wedstrijd_id", .tekst), ("soort", .tekst), ("speler_id", .tekst),
+			("afgemeld_door", .tekst), ("gemaakt", .tekst),
 		]),
 	]
 

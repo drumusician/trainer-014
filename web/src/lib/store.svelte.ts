@@ -8,7 +8,8 @@ import type {
 	State,
 	Training,
 	FieldLine,
-	Match
+	Match,
+	TaskKind
 } from './domain/types';
 import { emptyState } from './domain/types';
 import { migreerToestand as migrateStorage } from './domain/migrate-storage';
@@ -21,6 +22,7 @@ import * as opstellen from './actions/lineup';
 import * as selectie from './actions/squad';
 import * as trainings from './actions/trainings';
 import * as plan from './actions/plan';
+import * as programma from './actions/program';
 
 const SLEUTEL = 'o14-app-v1';
 
@@ -204,6 +206,8 @@ class App {
 
 	/** Discard a practice match or a mistake. */
 	discardMatch() {
+		/* Kwam hij uit het programma, dan gaat hij daar terug, met zijn taken. */
+		programma.terugInProgramma(this.toestand);
 		this.toestand.match = null;
 		this.chosenPosition = null;
 		this.save();
@@ -421,6 +425,49 @@ class App {
 		this.save();
 	}
 
+	/* ---------- het programma en de taken ---------- */
+	addToProgram(datum: string, aanvang: string | undefined, tegenstander: string, thuis: boolean): string {
+		const id = programma.voegToe(this.toestand, datum, aanvang, tegenstander, thuis);
+		this.save();
+		return id;
+	}
+
+	updateProgram(id: string, velden: Parameters<typeof programma.wijzig>[2]) {
+		if (programma.wijzig(this.toestand, id, velden)) this.save();
+	}
+
+	removeFromProgram(id: string) {
+		if (programma.haalWeg(this.toestand, id)) this.save();
+	}
+
+	/** De wedstrijd van vandaag uit het programma opzetten. */
+	startFromProgram(id: string): boolean {
+		if (!programma.uitProgramma(this.toestand, id)) return false;
+		this.chosenPosition = null;
+		this.save();
+		return true;
+	}
+
+	setTask(wedstrijd: string, soort: TaskKind, speler: string | null) {
+		programma.zet(this.toestand, wedstrijd, soort, speler);
+		this.save();
+	}
+
+	addTask(wedstrijd: string, soort: TaskKind, speler: string | null) {
+		programma.voegTaakToe(this.toestand, wedstrijd, soort, speler);
+		this.save();
+	}
+
+	assignTask(taak: string, speler: string | null) {
+		programma.wijs(this.toestand, taak, speler);
+		this.save();
+	}
+
+	removeTask(taak: string) {
+		programma.haalTaakWeg(this.toestand, taak);
+		this.save();
+	}
+
 	/* ---------- training sessions ---------- */
 	newTraining(): Training {
 		const training = trainings.newTraining(this.toestand, new Date().toISOString().slice(0, 10));
@@ -514,6 +561,8 @@ class App {
 		hier.trainings = t.trainings;
 		hier.archive = t.archive;
 		hier.reportSubs = t.reportSubs;
+		hier.program = t.program;
+		hier.tasks = t.tasks;
 		if (hier.match?.id !== t.match?.id) this.chosenPosition = null;
 		hier.match = t.match;
 		this.save();

@@ -80,6 +80,35 @@ export interface Match {
 	 * hem op een ander toestel bijwerkt. Gaat mee naar het archief.
 	 */
 	id?: string;
+	/** hoe laat de aftrap is, "10:30"; uit het programma */
+	time?: string;
+	/** kwam uit het programma: weggooien zet hem daar terug */
+	fromProgram?: boolean;
+}
+
+/**
+ * Een wedstrijd die nog komt. Op de dag zelf wordt hij de wedstrijd, met hetzelfde
+ * kenmerk, zodat de taken eraan vast blijven zitten. Zie actions/program.ts.
+ */
+export interface ScheduledMatch {
+	id: string;
+	date: string;
+	/** "10:30"; leeg als het nog niet bekend is */
+	time?: string;
+	opponent: string;
+	home: boolean;
+}
+
+export type TaskKind = 'limonade' | 'rijden' | 'fluiten' | 'vlaggen' | 'teamtas';
+
+/** Een taak bij een wedstrijd, voor de familie van een speler. Zonder speler staat hij open. */
+export interface TeamTask {
+	id: string;
+	matchId: string;
+	kind: TaskKind;
+	player?: string;
+	/** die familie kon niet en gaf hem terug */
+	declinedBy?: string;
 }
 
 /**
@@ -179,6 +208,10 @@ export interface State {
 	archive: ArchivedMatch[];
 	trainings: Training[];
 	reportSubs: boolean;
+	/** de wedstrijden die nog komen, vroegste eerst */
+	program?: ScheduledMatch[];
+	/** wie wat regelt bij een wedstrijd */
+	tasks?: TeamTask[];
 }
 
 export function emptyState(): State {

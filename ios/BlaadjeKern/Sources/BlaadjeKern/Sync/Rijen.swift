@@ -58,11 +58,11 @@ public enum SyncModel {
 	 */
 	public static let tabellen = [
 		"teams", "team_instellingen", "spelers", "wedstrijden", "trainingen",
-		"wedstrijd_spelers", "gebeurtenissen", "training_spelers",
+		"wedstrijd_spelers", "gebeurtenissen", "training_spelers", "taken",
 	]
 
 	/** Tabellen waarvan de volgorde telt; die krijgen bij het wegschrijven een tijdstip. */
-	public static let metVolgorde: Set<String> = ["spelers", "wedstrijden", "trainingen", "gebeurtenissen"]
+	public static let metVolgorde: Set<String> = ["spelers", "wedstrijden", "trainingen", "gebeurtenissen", "taken"]
 
 	/** Staat voor 'nu' in `spelers.weg`: wie het wegschrijft vult het tijdstip in. */
 	public static let nu = "NU"
@@ -161,6 +161,7 @@ public enum SyncModel {
 			}
 		}
 		for tr in t.trainings { for id in tr.status.keys { noem(id, nil) } }
+		for taak in t.tasks { noem(taak.player, nil); noem(taak.declinedBy, nil) }
 		if let w = t.match, w.archived != true {
 			for g in w.events {
 				for id in [g.player, g.assist, g.on, g.off, g.playerA, g.playerB] { noem(id, nil) }
@@ -211,6 +212,7 @@ public enum SyncModel {
 			klok["inBreak"] = .bool(w.inBreak)
 			klok["finished"] = .bool(w.finished)
 			klok.zet("keptBy", w.keptBy)
+			if w.fromProgram == true { klok["uitProgramma"] = .bool(true) }
 			zet("wedstrijden", wid, [
 				"team_id": .tekst(team), "datum": .tekst(datum(w.date)),
 				"tegenstander": .tekst(knip(w.opponent, 80)), "thuis": ja(w.home),
@@ -220,6 +222,7 @@ public enum SyncModel {
 				"doelpunten_voor": .getal(stand.voor), "doelpunten_tegen": .getal(stand.tegen),
 				"duur": .getal(0), "teamnaam": .leeg, "notitie": tekst(w.note.map { knip($0, 4000) }),
 				"klok": json(.object(klok)), "opstelling": json(opstelling(w.lineup)), "bank": json(lijst(w.bench)),
+				"aanvang": tekst(ProgramActions.tijd(w.time)),
 				"wisselplan": json(w.plan.map { plan in
 					.array(plan.map { s in
 						var kopie = s
@@ -253,7 +256,7 @@ public enum SyncModel {
 				"duur": .getal(max(0, Int(a.duration.rounded()))),
 				"teamnaam": tekst(a.teamName.map { knip($0, 60) }), "notitie": tekst(a.note.map { knip($0, 4000) }),
 				"klok": .leeg, "opstelling": json(a.lineup.map(opstelling)), "bank": json(a.bench.map(lijst)),
-				"wisselplan": .leeg,
+				"wisselplan": .leeg, "aanvang": .leeg,
 			])
 			let afwezig = Set((a.absent ?? []).map(m))
 			var gehad = Set<String>()
@@ -280,6 +283,23 @@ public enum SyncModel {
 			gebeurtenissen(a.events, wid)
 		}
 
+		/* Het programma: wat er nog komt. Geen klok, en daaraan is hij te herkennen. */
+		var wedstrijdIds = Set((perTabel["wedstrijden"] ?? []).map(\.id))
+		for p in t.program {
+			let wid = m(p.id)
+			guard wedstrijdIds.insert(wid).inserted else { continue }
+			zet("wedstrijden", wid, [
+				"team_id": .tekst(team), "datum": .tekst(datum(p.date)),
+				"tegenstander": .tekst(knip(p.opponent, 80)), "thuis": ja(p.home),
+				"status": .tekst("gepland"),
+				"formatie": .tekst(knip(t.formation, 20)), "delen": .getal(t.parts == 4 ? 4 : 2),
+				"minuten_per_deel": .getal(minuten(t.minutesPerPart)),
+				"doelpunten_voor": .getal(0), "doelpunten_tegen": .getal(0), "duur": .getal(0),
+				"teamnaam": .leeg, "notitie": .leeg, "klok": .leeg, "opstelling": .leeg, "bank": .leeg,
+				"wisselplan": .leeg, "aanvang": tekst(ProgramActions.tijd(p.time)),
+			])
+		}
+
 		var trainingGehad = Set<String>()
 		for tr in t.trainings {
 			let tid = m(tr.id)
@@ -292,6 +312,18 @@ public enum SyncModel {
 					"status": .tekst(st == .present ? "aanwezig" : st == .excused ? "afgemeld" : "afwezig"),
 				])
 			}
+		}
+
+		/* Taken, alleen bij een wedstrijd die er is: anders weigert de server ze. */
+		var taakGehad = Set<String>()
+		for taak in t.tasks {
+			let wid = m(taak.matchId)
+			let id = m(taak.id)
+			guard wedstrijdIds.contains(wid), taakGehad.insert(id).inserted else { continue }
+			zet("taken", id, [
+				"team_id": .tekst(team), "wedstrijd_id": .tekst(wid), "soort": .tekst(taak.kind.rawValue),
+				"speler_id": ref(taak.player), "afgemeld_door": ref(taak.declinedBy),
+			])
 		}
 
 		return tabellen.flatMap { perTabel[$0] ?? [] }
@@ -438,8 +470,9 @@ public enum SyncModel {
 		}
 
 		let wedstrijden = rijen("wedstrijden")
-		/* De wedstrijd van nu: wat bezig is gaat voor, anders de eerste die klaarstaat. */
-		let open = wedstrijden.filter { s($0, "status") != "afgelopen" }.sorted { a, b in
+		/* De wedstrijd van nu: wat bezig is gaat voor, anders de eerste die klaarstaat.
+		   Een wedstrijd zonder klok is er een uit het programma, nog niet opgezet. */
+		let open = wedstrijden.filter { s($0, "status") != "afgelopen" && s($0, "klok").gevuld != nil }.sorted { a, b in
 			let x = s(a, "status") == "bezig", y = s(b, "status") == "bezig"
 			if x != y { return x }
 			let da = s(a, "datum") ?? "", db = s(b, "datum") ?? ""
@@ -461,9 +494,26 @@ public enum SyncModel {
 				absent: ws.filter { !ja($0, "aanwezig") }.compactMap { s($0, "speler_id") },
 				keptBy: klok.str("keptBy"),
 				plan: try? json(r, "wisselplan")?.arrayValue?.map(PlannedSub.init(json:)),
-				id: wid
+				id: wid,
+				time: s(r, "aanvang"),
+				fromProgram: klok.bool("uitProgramma") == true ? true : nil
 			)
 		}
+
+		t.program = wedstrijden
+			.filter { s($0, "status") == "gepland" && s($0, "klok").gevuld == nil }
+			.sorted { a, b in
+				let da = s(a, "datum") ?? "", db = s(b, "datum") ?? ""
+				if da != db { return da < db }
+				let ta = s(a, "aanvang") ?? "", tb = s(b, "aanvang") ?? ""
+				return ta != tb ? ta < tb : opVolgorde(a, b)
+			}
+			.map { r in
+				ScheduledMatch(
+					id: s(r, "id") ?? "", date: s(r, "datum") ?? "", time: s(r, "aanvang"),
+					opponent: s(r, "tegenstander") ?? "", home: ja(r, "thuis")
+				)
+			}
 
 		t.archive = wedstrijden.filter { s($0, "status") == "afgelopen" }
 			.sorted { a, b in
@@ -513,6 +563,11 @@ public enum SyncModel {
 				}
 				return Training(id: tid, date: s(r, "datum") ?? "", status: status)
 			}
+
+		t.tasks = rijen("taken").sorted(by: opVolgorde).compactMap { r in
+			guard let id = s(r, "id"), let wid = s(r, "wedstrijd_id"), let soort = TaskKind(rawValue: s(r, "soort") ?? "") else { return nil }
+			return TeamTask(id: id, matchId: wid, kind: soort, player: s(r, "speler_id"), declinedBy: s(r, "afgemeld_door"))
+		}
 		return t
 	}
 

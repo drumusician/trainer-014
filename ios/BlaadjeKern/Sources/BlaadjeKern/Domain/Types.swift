@@ -257,6 +257,10 @@ public struct Match: JSONModel, Equatable, Sendable {
 	public var keptBy: String?
 	/** Het wisselplan: wat je van plan bent, niet wat er gebeurde. Zie Domain/Plan.swift. */
 	public var plan: [PlannedSub]?
+	/** Hoe laat de aftrap is, "10:30". Uit het programma. */
+	public var time: String?
+	/** Kwam uit het programma: gooi je hem weg, dan gaat hij daar weer in terug. */
+	public var fromProgram: Bool?
 
 	public init(
 		date: String,
@@ -278,9 +282,13 @@ public struct Match: JSONModel, Equatable, Sendable {
 		absent: [String]? = nil,
 		keptBy: String? = nil,
 		plan: [PlannedSub]? = nil,
-		id: String? = nil
+		id: String? = nil,
+		time: String? = nil,
+		fromProgram: Bool? = nil
 	) {
 		self.id = id
+		self.time = time
+		self.fromProgram = fromProgram
 		self.date = date
 		self.opponent = opponent
 		self.home = home
@@ -324,6 +332,8 @@ public struct Match: JSONModel, Equatable, Sendable {
 		absent = o.strings("absent")
 		keptBy = o.str("keptBy")
 		plan = try o.arr("plan")?.map(PlannedSub.init(json:))
+		time = o.str("time")
+		fromProgram = o.bool("fromProgram")
 	}
 
 	public var json: JSONValue {
@@ -348,6 +358,8 @@ public struct Match: JSONModel, Equatable, Sendable {
 		o.zet("keptBy", keptBy)
 		if let plan { o["plan"] = .array(plan.map(\.json)) }
 		o.zet("id", id)
+		o.zet("time", time)
+		o.zet("fromProgram", fromProgram)
 		return .object(o)
 	}
 }
@@ -699,6 +711,91 @@ public struct Training: JSONModel, Equatable, Identifiable, Sendable {
 }
 
 /**
+ * Een wedstrijd die nog komt: alleen wanneer en tegen wie. Op de dag zelf wordt
+ * hij de wedstrijd (`MatchActions.uitProgramma`), met hetzelfde kenmerk, zodat
+ * de taken eraan vast blijven zitten.
+ */
+public struct ScheduledMatch: JSONModel, Equatable, Identifiable, Sendable {
+	public var id: String
+	public var date: String
+	/** "10:30"; leeg als het nog niet bekend is */
+	public var time: String?
+	public var opponent: String
+	public var home: Bool
+
+	public init(id: String, date: String, time: String? = nil, opponent: String, home: Bool) {
+		self.id = id
+		self.date = date
+		self.time = time
+		self.opponent = opponent
+		self.home = home
+	}
+
+	public init(json: JSONValue) throws {
+		let o = try alsObject(json, "programma")
+		id = o.str("id") ?? ""
+		date = o.str("date") ?? ""
+		time = o.str("time")
+		opponent = o.str("opponent") ?? ""
+		home = o.bool("home") ?? true
+	}
+
+	public var json: JSONValue {
+		var o = OrderedDict<JSONValue>()
+		o["id"] = .string(id)
+		o["date"] = .string(date)
+		o.zet("time", time)
+		o["opponent"] = .string(opponent)
+		o["home"] = .bool(home)
+		return .object(o)
+	}
+}
+
+/** Wat ouders bij een wedstrijd regelen. */
+public enum TaskKind: String, CaseIterable, Codable, Sendable {
+	case limonade, rijden, fluiten, vlaggen, teamtas
+}
+
+/**
+ * Een taak bij een wedstrijd, voor de familie van een speler. Zonder speler staat
+ * hij open. `declinedBy`: die familie kon niet, en gaf hem terug.
+ */
+public struct TeamTask: JSONModel, Equatable, Identifiable, Sendable {
+	public var id: String
+	public var matchId: String
+	public var kind: TaskKind
+	public var player: String?
+	public var declinedBy: String?
+
+	public init(id: String, matchId: String, kind: TaskKind, player: String? = nil, declinedBy: String? = nil) {
+		self.id = id
+		self.matchId = matchId
+		self.kind = kind
+		self.player = player
+		self.declinedBy = declinedBy
+	}
+
+	public init(json: JSONValue) throws {
+		let o = try alsObject(json, "taak")
+		id = o.str("id") ?? ""
+		matchId = o.str("matchId") ?? ""
+		kind = o.str("kind").flatMap(TaskKind.init(rawValue:)) ?? .limonade
+		player = o.str("player")
+		declinedBy = o.str("declinedBy")
+	}
+
+	public var json: JSONValue {
+		var o = OrderedDict<JSONValue>()
+		o["id"] = .string(id)
+		o["matchId"] = .string(matchId)
+		o["kind"] = .string(kind.rawValue)
+		o.zet("player", player)
+		o.zet("declinedBy", declinedBy)
+		return .object(o)
+	}
+}
+
+/**
  * Everything the app remembers. `State` in the web app; here `AppState`, because
  * SwiftUI already has a `State`.
  */
@@ -715,6 +812,10 @@ public struct AppState: JSONModel, Equatable, Sendable {
 	public var archive: [ArchivedMatch]
 	public var trainings: [Training]
 	public var reportSubs: Bool
+	/** de wedstrijden die nog komen, vroegste eerst */
+	public var program: [ScheduledMatch]
+	/** de taken bij wedstrijden: limonade, rijden, fluiten */
+	public var tasks: [TeamTask]
 
 	public init(
 		teamName: String = "Ons team",
@@ -726,8 +827,12 @@ public struct AppState: JSONModel, Equatable, Sendable {
 		defaultLineup: DefaultLineup? = nil,
 		archive: [ArchivedMatch] = [],
 		trainings: [Training] = [],
-		reportSubs: Bool = false
+		reportSubs: Bool = false,
+		program: [ScheduledMatch] = [],
+		tasks: [TeamTask] = []
 	) {
+		self.program = program
+		self.tasks = tasks
 		self.teamName = teamName
 		self.players = players
 		self.formation = formation
@@ -755,6 +860,8 @@ public struct AppState: JSONModel, Equatable, Sendable {
 		archive = try (o.arr("archive") ?? []).map(ArchivedMatch.init(json:))
 		trainings = try (o.arr("trainings") ?? []).map(Training.init(json:))
 		reportSubs = o.bool("reportSubs") ?? leeg.reportSubs
+		program = try (o.arr("program") ?? []).map(ScheduledMatch.init(json:))
+		tasks = try (o.arr("tasks") ?? []).map(TeamTask.init(json:))
 	}
 
 	public var json: JSONValue {
@@ -769,6 +876,10 @@ public struct AppState: JSONModel, Equatable, Sendable {
 		o["archive"] = .array(archive.map(\.json))
 		o["trainings"] = .array(trainings.map(\.json))
 		o["reportSubs"] = .bool(reportSubs)
+		/* Alleen als er iets in staat: zo blijft de opslag van wie het niet gebruikt
+		   precies zoals hij was. */
+		if !program.isEmpty { o["program"] = .array(program.map(\.json)) }
+		if !tasks.isEmpty { o["tasks"] = .array(tasks.map(\.json)) }
 		return .object(o)
 	}
 }

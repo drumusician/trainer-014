@@ -7,7 +7,10 @@ import type {
 	MatchEventType,
 	PlannedSub,
 	Player,
+	ScheduledMatch,
 	State,
+	TaskKind,
+	TeamTask,
 	Training
 } from '$lib/domain/types';
 import { emptyState } from '$lib/domain/types';
@@ -52,11 +55,12 @@ export const TABELLEN = [
 	'trainingen',
 	'wedstrijd_spelers',
 	'gebeurtenissen',
-	'training_spelers'
+	'training_spelers',
+	'taken'
 ] as const;
 
 /** Tabellen waarvan de volgorde telt; die krijgen bij het wegschrijven een tijdstip. */
-export const MET_VOLGORDE = new Set(['spelers', 'wedstrijden', 'trainingen', 'gebeurtenissen']);
+export const MET_VOLGORDE = new Set(['spelers', 'wedstrijden', 'trainingen', 'gebeurtenissen', 'taken']);
 
 /** Kolommen die op de server JSON zijn, en die met ja of nee. */
 export const JSON_KOLOMMEN = new Set(['standaardopstelling', 'klok', 'opstelling', 'bank', 'wisselplan', 'posities']);
@@ -160,6 +164,10 @@ export function rijen(t: State, team: string): Rij[] {
 		for (const g of a.events) for (const id of betrokken(g)) noem(id, id ? a.names?.[id] : null);
 	}
 	for (const tr of t.trainings) for (const id of Object.keys(tr.status)) noem(id, null);
+	for (const taak of t.tasks ?? []) {
+		noem(taak.player, null);
+		noem(taak.declinedBy, null);
+	}
 	if (t.match && t.match.archived !== true) {
 		for (const g of t.match.events) for (const id of betrokken(g)) noem(id, null);
 	}
@@ -218,6 +226,7 @@ export function rijen(t: State, team: string): Rij[] {
 			finished: w.finished
 		};
 		if (w.keptBy !== undefined && w.keptBy !== null) klok.keptBy = w.keptBy;
+		if (w.fromProgram === true) klok.uitProgramma = true;
 		zet('wedstrijden', wid, {
 			team_id: team,
 			datum: datum(w.date),
@@ -235,7 +244,8 @@ export function rijen(t: State, team: string): Rij[] {
 			klok,
 			opstelling: opstelling(w.lineup),
 			bank: lijst(w.bench),
-			wisselplan: w.plan ? w.plan.map((s) => planAlsJson({ ...s, on: m(s.on), off: m(s.off) })) : null
+			wisselplan: w.plan ? w.plan.map((s) => planAlsJson({ ...s, on: m(s.on), off: m(s.off) })) : null,
+			aanvang: aanvang(w.time)
 		});
 		const afwezig = new Set((w.absent ?? []).map(m));
 		for (const p of t.players) {
@@ -273,7 +283,8 @@ export function rijen(t: State, team: string): Rij[] {
 			klok: null,
 			opstelling: a.lineup ? opstelling(a.lineup) : null,
 			bank: a.bench ? lijst(a.bench) : null,
-			wisselplan: null
+			wisselplan: null,
+			aanvang: null
 		});
 		const afwezig = new Set((a.absent ?? []).map(m));
 		const gehad = new Set<string>();
@@ -310,6 +321,34 @@ export function rijen(t: State, team: string): Rij[] {
 		gebeurtenissen(a.events, wid);
 	});
 
+	/* Het programma: wat er nog komt. Geen klok, en daaraan is hij te herkennen. */
+	const wedstrijdIds = new Set((perTabel.get('wedstrijden') ?? []).map((r) => r.id));
+	for (const p of t.program ?? []) {
+		const wid = m(p.id);
+		if (wedstrijdIds.has(wid)) continue;
+		wedstrijdIds.add(wid);
+		zet('wedstrijden', wid, {
+			team_id: team,
+			datum: datum(p.date),
+			tegenstander: knip(p.opponent, 80),
+			thuis: !!p.home,
+			status: 'gepland',
+			formatie: knip(t.formation, 20),
+			delen: t.parts === 4 ? 4 : 2,
+			minuten_per_deel: minuten(t.minutesPerPart),
+			doelpunten_voor: 0,
+			doelpunten_tegen: 0,
+			duur: 0,
+			teamnaam: null,
+			notitie: null,
+			klok: null,
+			opstelling: null,
+			bank: null,
+			wisselplan: null,
+			aanvang: aanvang(p.time)
+		});
+	}
+
 	const trainingGehad = new Set<string>();
 	for (const tr of t.trainings) {
 		const tid = m(tr.id);
@@ -325,6 +364,22 @@ export function rijen(t: State, team: string): Rij[] {
 				status: st === 'present' ? 'aanwezig' : st === 'excused' ? 'afgemeld' : 'afwezig'
 			});
 		}
+	}
+
+	/* Taken, alleen bij een wedstrijd die er is: anders weigert de server ze. */
+	const taakGehad = new Set<string>();
+	for (const taak of t.tasks ?? []) {
+		const wid = m(taak.matchId);
+		const id = m(taak.id);
+		if (!wedstrijdIds.has(wid) || taakGehad.has(id)) continue;
+		taakGehad.add(id);
+		zet('taken', id, {
+			team_id: team,
+			wedstrijd_id: wid,
+			soort: taak.kind,
+			speler_id: ref(taak.player),
+			afgemeld_door: ref(taak.declinedBy)
+		});
 	}
 
 	return TABELLEN.flatMap((tabel) => perTabel.get(tabel) ?? []);
@@ -520,8 +575,10 @@ export function toestand(tabellen: Record<string, Tabelrij[]>, team: string): St
 
 	const wedstrijden = rijenVan('wedstrijden');
 	/* De wedstrijd van nu: wat bezig is gaat voor, anders de eerste die klaarstaat. */
+	/* Een wedstrijd zonder klok is er een uit het programma, nog niet opgezet. */
+	const metKlok = (r: Tabelrij) => r.klok !== null && r.klok !== undefined && r.klok !== '';
 	const open = wedstrijden
-		.filter((r) => s(r, 'status') !== 'afgelopen')
+		.filter((r) => s(r, 'status') !== 'afgelopen' && metKlok(r))
 		.sort((a, b) => {
 			const x = s(a, 'status') === 'bezig',
 				y = s(b, 'status') === 'bezig';
@@ -559,8 +616,34 @@ export function toestand(tabellen: Record<string, Tabelrij[]>, team: string): St
 		const plan = json(r, 'wisselplan');
 		if (Array.isArray(plan) && plan.every(isObject)) w.plan = plan.map(leesPlan);
 		w.id = wid;
+		const tijd = s(r, 'aanvang');
+		if (tijd !== null) w.time = tijd;
+		if (k.uitProgramma === true) w.fromProgram = true;
 		t.match = w;
 	}
+
+	const programma = wedstrijden
+		.filter((r) => s(r, 'status') === 'gepland' && !metKlok(r))
+		.sort((a, b) => {
+			const da = s(a, 'datum') ?? '',
+				db = s(b, 'datum') ?? '';
+			if (da !== db) return vergelijk(da, db);
+			const ta = s(a, 'aanvang') ?? '',
+				tb = s(b, 'aanvang') ?? '';
+			return ta !== tb ? vergelijk(ta, tb) : opVolgorde(a, b);
+		})
+		.map((r) => {
+			const p: ScheduledMatch = {
+				id: s(r, 'id') ?? '',
+				date: s(r, 'datum') ?? '',
+				opponent: s(r, 'tegenstander') ?? '',
+				home: ja(r, 'thuis')
+			};
+			const tijd = s(r, 'aanvang');
+			if (tijd !== null) p.time = tijd;
+			return p;
+		});
+	if (programma.length) t.program = programma;
 
 	t.archive = wedstrijden
 		.filter((r) => s(r, 'status') === 'afgelopen')
@@ -628,7 +711,30 @@ export function toestand(tabellen: Record<string, Tabelrij[]>, team: string): St
 			}
 			return { id: tid, date: s(r, 'datum') ?? '', status };
 		});
+
+	const taken = [...rijenVan('taken')].sort(opVolgorde).flatMap((r): TeamTask[] => {
+		const id = s(r, 'id'),
+			wid = s(r, 'wedstrijd_id'),
+			soort = s(r, 'soort');
+		if (!id || !wid || !SOORTEN.includes(soort as TaskKind)) return [];
+		const taak: TeamTask = { id, matchId: wid, kind: soort as TaskKind };
+		const speler = s(r, 'speler_id');
+		if (speler) taak.player = speler;
+		const weg = s(r, 'afgemeld_door');
+		if (weg) taak.declinedBy = weg;
+		return [taak];
+	});
+	if (taken.length) t.tasks = taken;
 	return t;
+}
+
+const SOORTEN: TaskKind[] = ['limonade', 'rijden', 'fluiten', 'vlaggen', 'teamtas'];
+
+/** Een aftrap als "10:30", of niets. */
+function aanvang(s: string | null | undefined): string | null {
+	const t = (s ?? '').trim();
+	const m = /^(\d\d):(\d\d)$/.exec(t);
+	return m && Number(m[1]) <= 23 && Number(m[2]) <= 59 ? t : null;
 }
 
 /* --------------------------------------------------------- klein gereedschap */

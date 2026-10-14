@@ -134,6 +134,26 @@
 				</div>
 			{/if}
 
+			<h2>{text.program.homeHeading}</h2>
+			{#if !(t.program ?? []).length}
+				<p class="uitleg">{text.program.homeNone}</p>
+			{:else}
+				<ul class="log">
+					{#each (t.program ?? []).slice(0, 3) as p (p.id)}
+						<li class="klikbaar">
+							<a href="/app/programma#{p.id}">
+								<b>{shortDate(p.date)}</b>
+								<span>{text.program.line(p.home, p.opponent, p.time ?? '')}</span>
+								<em>›</em>
+							</a>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+			<div class="knoprij" style="padding-left: 0">
+				<a class="knop" href="/app/programma">{text.program.homeMore}</a>
+			</div>
+
 			<h2>{text.home.playedHeading}</h2>
 			{#if !t.archive.length}
 				<p class="uitleg">{text.home.nothingArchived}</p>

@@ -33,7 +33,8 @@ const DATATABELLEN = [
 	'trainingen',
 	'wedstrijd_spelers',
 	'gebeurtenissen',
-	'training_spelers'
+	'training_spelers',
+	'taken'
 ];
 
 export function nepServer() {

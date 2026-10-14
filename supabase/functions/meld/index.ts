@@ -1,14 +1,19 @@
 /**
  * Meldingen naar wie een wedstrijd volgt.
  *
- * Aangeroepen door de database bij elke nieuwe rij in `gebeurtenissen`
- * (een Database Webhook). Welke melding erbij hoort, naar wie, en of hij al
- * verstuurd is, beslist de database (`melding_voor` in supabase/volgen.sql);
- * hier wordt hij alleen bij Apple afgeleverd.
+ * Twee manieren van aanroepen:
+ *
+ * - door de database bij elke nieuwe rij in `gebeurtenissen` (een Database
+ *   Webhook): de aftrap, een doelpunt, de rust, het einde;
+ * - elke minuut door een klok in de database (pg_cron), met `{ "type": "KLOK" }`:
+ *   de herinneringen voor taken (`herinneringen` in supabase/taken.sql).
+ *
+ * Welke melding erbij hoort, naar wie, en of hij al verstuurd is, beslist de
+ * database; hier wordt hij alleen bij Apple afgeleverd.
  *
  * Geheimen (Edge Functions → Secrets): APNS_P8, APNS_SLEUTEL_ID, APNS_TEAM_ID, MELD_GEHEIM.
  */
-import { verstuur } from "./apns.ts";
+import { type Ontvanger, verstuur } from "./apns.ts";
 
 const basis = Deno.env.get("SUPABASE_URL")!;
 const dienst = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -32,7 +37,26 @@ Deno.serve(async (verzoek) => {
     const magErin = (geheim && verzoek.headers.get("x-meld-geheim") === geheim) ||
       verzoek.headers.get("authorization") === `Bearer ${dienst}`;
     if (!magErin) return new Response("nee", { status: 401 });
+    const sleutels = {
+      p8: Deno.env.get("APNS_P8")!,
+      sleutelId: Deno.env.get("APNS_SLEUTEL_ID")!,
+      teamId: Deno.env.get("APNS_TEAM_ID")!,
+      bundel: Deno.env.get("APNS_BUNDEL") ?? "app.blaadje.ios",
+    };
     const { type, table, record } = await verzoek.json();
+
+    if (type === "KLOK") {
+      const lijst = ((await rpc("herinneringen", {})) ?? []) as { titel: string; tekst: string; tokens: Ontvanger[] }[];
+      let afgeleverd = 0;
+      for (const melding of lijst) {
+        const uitkomst = await verstuur(melding, melding.tokens, sleutels, fetch);
+        afgeleverd += uitkomst.afgeleverd;
+        for (const token of uitkomst.vergeten) await rpc("vergeet_token", { p_token: token });
+        if (uitkomst.mislukt.length) console.error("niet afgeleverd:", uitkomst.mislukt);
+      }
+      return Response.json({ herinneringen: lijst.length, afgeleverd });
+    }
+
     if (type !== "INSERT" || table !== "gebeurtenissen" || !record?.id) return Response.json({ gemeld: false });
 
     let melding = await rpc("melding_voor", { p_gebeurtenis: record.id });
@@ -44,12 +68,7 @@ Deno.serve(async (verzoek) => {
     }
     if (!melding) return Response.json({ gemeld: false });
 
-    const uitkomst = await verstuur(melding, melding.tokens, {
-      p8: Deno.env.get("APNS_P8")!,
-      sleutelId: Deno.env.get("APNS_SLEUTEL_ID")!,
-      teamId: Deno.env.get("APNS_TEAM_ID")!,
-      bundel: Deno.env.get("APNS_BUNDEL") ?? "app.blaadje.ios",
-    }, fetch);
+    const uitkomst = await verstuur(melding, melding.tokens, sleutels, fetch);
     for (const token of uitkomst.vergeten) await rpc("vergeet_token", { p_token: token });
     if (uitkomst.mislukt.length) console.error("niet afgeleverd:", uitkomst.mislukt);
     return Response.json({ gemeld: true, afgeleverd: uitkomst.afgeleverd, vergeten: uitkomst.vergeten.length, mislukt: uitkomst.mislukt.length });

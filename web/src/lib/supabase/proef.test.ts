@@ -65,7 +65,8 @@ const TABELLEN = [
 	'trainingen',
 	'wedstrijd_spelers',
 	'gebeurtenissen',
-	'training_spelers'
+	'training_spelers',
+	'taken'
 ];
 
 /** Wat er voor een team in de database staat, als toestand. */
@@ -245,6 +246,65 @@ describe.skipIf(!REST)('de webapp tegen de echte tabellen', () => {
 		await expect(
 			rest(BAS, 'POST', 'spelers', { id: crypto.randomUUID(), team_id: team, naam: 'Indringer' })
 		).rejects.toThrow(/403|401|42501/);
+	});
+
+	it('zet het programma en de taken erin, en een ouder kan ermee werken', async () => {
+		await sync.kijkEven();
+		const [sem, noah] = app.toestand.players;
+		const id = app.addToProgram('2027-05-01', '10:30', 'Ajax', true);
+		app.setTask(id, 'limonade', sem.id);
+		app.setTask(id, 'vlaggen', noah.id);
+		app.addTask(id, 'rijden', null);
+		await sync.duwAlsNodig();
+		expect(sync.geweigerd).toBe(0);
+
+		const server = (await opDeServer(team))!;
+		expect(server.program?.find((p) => p.id === id)).toMatchObject({ opponent: 'Ajax', time: '10:30', home: true });
+		expect(server.tasks?.filter((x) => x.matchId === id)).toHaveLength(3);
+		expect(verschil(rijen(server, team), rijen(app.toestand, team))).toEqual([]);
+
+		/* Een ouder: de teamlink, Sem kiezen, en de limonade teruggeven. */
+		const [link] = await rest(ANNA, 'POST', 'deellinks', { team_id: team }, 'return=representation');
+		const ouder = (pad: string, body: unknown) =>
+			echt(REST + '/rpc/' + pad, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body)
+			}).then((r) => r.json());
+		const token = 'telefoon-van-de-ouder-van-sem-0123456789';
+		expect(await ouder('volg', { p_code: link.code, p_token: token, p_speler: sem.id })).toBe(true);
+		const pagina = await ouder('volgpagina', { p_code: link.code, p_token: token });
+		expect(pagina.mijn_kind.naam).toBe(sem.name);
+		const wedstrijd = pagina.wedstrijden.find((w: { id: string }) => w.id === id);
+		const limonade = wedstrijd.taken.find((x: { soort: string }) => x.soort === 'limonade');
+		expect(limonade.van_mij).toBe(true);
+		expect(await ouder('taak_kan_niet', { p_code: link.code, p_token: token, p_taak: limonade.id })).toBe(true);
+
+		/* De trainer ziet het: de taak staat open, met wie niet kon. */
+		await sync.kijkEven();
+		const taak = app.toestand.tasks!.find((x) => x.id === limonade.id)!;
+		expect(taak.player).toBeUndefined();
+		expect(taak.declinedBy).toBe(sem.id);
+
+		/* Op de dag zelf wordt het de wedstrijd, met dezelfde taken. */
+		app.toestand.program = app.toestand.program!.map((p) => (p.id === id ? { ...p, date: '2026-10-14' } : p));
+		app.save();
+		await sync.duwAlsNodig();
+		/* Een eerdere proef liet een wedstrijd openstaan; er kan er maar één tegelijk. */
+		expect(app.toestand.match).not.toBeNull();
+		expect(app.startFromProgram(id)).toBe(false);
+		app.discardMatch();
+		expect(app.startFromProgram(id)).toBe(true);
+		await sync.duwAlsNodig();
+		expect(sync.geweigerd).toBe(0);
+		const daarna = (await opDeServer(team))!;
+		expect(daarna.match?.id).toBe(id);
+		expect(daarna.match?.time).toBe('10:30');
+		expect(daarna.program?.some((p) => p.id === id) ?? false).toBe(false);
+		expect(daarna.tasks?.filter((x) => x.matchId === id)).toHaveLength(3);
+		app.discardMatch();
+		await sync.duwAlsNodig();
+		expect((await opDeServer(team))!.program?.some((p) => p.id === id)).toBe(true);
 	});
 
 	it('verhuist het oude blok van een team naar de tabellen', async () => {

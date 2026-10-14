@@ -42,6 +42,15 @@ import Testing
 		MatchEventActions.goal(&t.match, nu: nu + 60_000, spelerId: nil)
 		PlanActions.voegToe(&t.match, minuut: 35, on: "p12", off: "p10", naDeel: 1, nieuwId: { "w1" })
 		SyncModel.vulKenmerkenAan(&t)
+		/* Het programma, met taken: twee wedstrijden die nog komen. */
+		let thuis = ProgramActions.voegToe(&t, datum: "2026-09-19", tijd: "10:30", tegenstander: "Ajax", thuis: true, nieuwId: { "prog-1" })
+		ProgramActions.voegToe(&t, datum: "2026-09-26", tijd: nil, tegenstander: "PSV", thuis: false, nieuwId: { "prog-2" })
+		ProgramActions.zet(&t, wedstrijd: thuis, .limonade, speler: "p4", nieuwId: { "taak-1" })
+		ProgramActions.zet(&t, wedstrijd: thuis, .vlaggen, speler: "p7", nieuwId: { "taak-2" })
+		ProgramActions.voegToe(&t, wedstrijd: "prog-2", .rijden, speler: "p2", nieuwId: { "taak-3" })
+		ProgramActions.voegToe(&t, wedstrijd: "prog-2", .rijden, speler: nil, nieuwId: { "taak-4" })
+		t.tasks[1].player = nil
+		t.tasks[1].declinedBy = "p7"
 		return t
 	}
 
