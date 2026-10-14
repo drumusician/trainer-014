@@ -114,6 +114,9 @@ struct Meer: View {
                 .disabled(abonnement.bezig)
             if let melding = abonnement.melding {
                 Text(melding).font(.footnote).foregroundStyle(.secondary)
+            } else if abonnement.prijs == nil, abonnement.status?.abonnementTot == nil {
+                Text("Het abonnement is nu niet te koop: Apple gaf geen prijs. Probeer het later nog eens.")
+                    .font(.footnote).foregroundStyle(.secondary)
             }
         } header: {
             Text("Teamabonnement")
