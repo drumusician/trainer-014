@@ -57,6 +57,8 @@ final class WedstrijddagTests: XCTestCase {
 
         // Een doelpunt van Ruben, zonder assist.
         app.buttons["Doelpunt"].tap()
+        XCTAssertTrue(app.buttons["Weet ik niet"].waitForExistence(timeout: 5))
+        beeld("4b-wie-scoorde")
         app.buttons["RB: Ruben"].tap()
         XCTAssertTrue(app.buttons["Geen assist"].waitForExistence(timeout: 5))
         app.buttons["Geen assist"].tap()

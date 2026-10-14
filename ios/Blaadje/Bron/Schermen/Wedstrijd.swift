@@ -221,23 +221,32 @@ struct Wedstrijd: View {
 
     /// - Parameter rustig: nog niet aan de beurt; dan hoort het niet om aandacht te vragen.
     private func balk(_ tekst: String, rustig: Bool = false, @ViewBuilder knoppen: () -> some View) -> some View {
+        // Een kaart zoals die van de bank, in de kleuren van het scherm: licht
+        // overdag, donker 's avonds. Het groene streepje zegt dat de app op je
+        // wacht; grijs is alleen ter informatie.
         VStack(alignment: .leading, spacing: 8) {
             Text(tekst).font(.subheadline).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) { knoppen() }
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, minHeight: Self.strook, alignment: .topLeading)
-        .foregroundStyle(Color(red: 0.09, green: 0.13, blue: 0.11))
-        .background(rustig ? Color(red: 0.93, green: 0.94, blue: 0.93) : Kleur.oranjeLicht)
-        .overlay(alignment: .top) { Rectangle().fill(rustig ? Color.secondary.opacity(0.4) : Kleur.oranje).frame(height: 2) }
+        .foregroundStyle(.primary)
+        .padding(.vertical, 10)
+        .padding(.leading, 16)
+        .padding(.trailing, 12)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(alignment: .leading) {
+            Capsule().fill(rustig ? Color.secondary.opacity(0.5) : Kleur.accent)
+                .frame(width: 4).padding(.vertical, 10).padding(.leading, 6)
+        }
+        .padding(.horizontal, 10)
+        .padding(.top, 8)
     }
 
     private func kleineKnop(_ titel: String, _ doe: @escaping () -> Void) -> some View {
         Button(action: doe) {
             Text(titel).font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 12).frame(minHeight: 40)
-                .background(.white, in: RoundedRectangle(cornerRadius: 9))
-                .overlay(RoundedRectangle(cornerRadius: 9).stroke(Kleur.oranje.opacity(0.4)))
+                .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 10))
         }
         .buttonStyle(.plain)
     }

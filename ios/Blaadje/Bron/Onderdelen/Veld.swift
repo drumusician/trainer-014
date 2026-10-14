@@ -148,7 +148,7 @@ struct Bank: View {
                                             .stroke(gekozen != nil && past(p) ? Kleur.oranje : .clear, lineWidth: 1.5)
                                     )
                                     .opacity(gekozen != nil && !past(p) ? 0.6 : 1)
-                                    .foregroundStyle(gekozen != nil && past(p) ? Color(red: 0.09, green: 0.13, blue: 0.11) : .primary)
+                                    .foregroundStyle(.primary)
                                 }
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Bank: \(p.name)")

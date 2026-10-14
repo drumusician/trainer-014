@@ -13,7 +13,13 @@ enum Kleur {
     static let groenDiep = Color(red: 0x24 / 255, green: 0x48 / 255, blue: 0x3a / 255)
     static let gras = Color(red: 0x4b / 255, green: 0x8b / 255, blue: 0x5f / 255)
     static let oranje = Color(red: 0xc1 / 255, green: 0x54 / 255, blue: 0x1f / 255)
-    static let oranjeLicht = Color(red: 0xfd / 255, green: 0xf1 / 255, blue: 0xe8 / 255)
+    /// Achter wat oplicht. In het donker een warme donkere tint: een lichte vlak
+    /// springt er dan uit als een lamp.
+    static let oranjeLicht = Color(UIColor { stijl in
+        stijl.userInterfaceStyle == .dark
+            ? UIColor(red: 0x3d / 255, green: 0x24 / 255, blue: 0x17 / 255, alpha: 1)
+            : UIColor(red: 0xfd / 255, green: 0xf1 / 255, blue: 0xe8 / 255, alpha: 1)
+    })
 }
 
 /// Een voelbaar tikje: langs de lijn kijk je naar het veld, niet naar je telefoon.
