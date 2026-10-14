@@ -39,7 +39,8 @@ grant select on
   public.wedstrijd_spelers,
   public.gebeurtenissen,
   public.trainingen,
-  public.training_spelers
+  public.training_spelers,
+  public.taken
 to powersync_role;
 
 -- De lijst waar PowerSync naar luistert. De naam moet 'powersync' zijn.
@@ -48,7 +49,7 @@ to powersync_role;
 do $$
 declare
   v_tabellen text := 'public.teams, public.team_leden, public.team_instellingen, public.spelers, '
-    || 'public.wedstrijden, public.wedstrijd_spelers, public.gebeurtenissen, public.trainingen, public.training_spelers';
+    || 'public.wedstrijden, public.wedstrijd_spelers, public.gebeurtenissen, public.trainingen, public.training_spelers, public.taken';
 begin
   if exists (select from pg_publication where pubname = 'powersync') then
     execute 'alter publication powersync set table ' || v_tabellen;
