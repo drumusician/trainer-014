@@ -194,7 +194,7 @@ struct Bankoverzicht: View {
                     let w = app.toestand.archive.count, t = app.toestand.trainings.count
                     Text(w == 0
                         ? "Dit zie je na de eerste wedstrijd."
-                        : "Wie het langst op de bank zat, staat bovenaan. Over \(w) \(w == 1 ? "bewaarde wedstrijd" : "bewaarde wedstrijden").")
+                        : "Wie het langst op de bank zat, staat bovenaan. Over \(w) \(w == 1 ? "bewaarde wedstrijd" : "bewaarde wedstrijden") en \(t) \(t == 1 ? "training" : "trainingen").")
                 }
             }
             .navigationTitle("Wie zat op de bank")

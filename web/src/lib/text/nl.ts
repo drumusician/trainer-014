@@ -54,10 +54,8 @@ const attendance = {
 	heading: 'Wie is er vandaag',
 	/* Tijdens de wedstrijd is dit geen opzetscherm meer maar een correctie, en
 	   dan mag het veld niet meer wijzigen — zie setAbsent in actions/match.ts. */
-	hintDuringMatch:
-		'Wie in het veld staat, haal je eruit met een wissel. Van de bank afmelden kan hier.',
-	hintBeforeMatch:
-		'Tik weg wie er niet is.',
+	hintDuringMatch: 'Wie in het veld staat, haal je eruit met een wissel. Van de bank afmelden kan hier.',
+	hintBeforeMatch: 'Tik weg wie er niet is.',
 
 	/* In twee stukken, en dat is een uitzondering. Het aantal staat vet in een
 	   verder grijze regel: dat is het getal waar je op scant. Vet kan niet in een
@@ -151,13 +149,13 @@ const program = {
 	line: (thuis: boolean, tegen: string, tijd: string) =>
 		(thuis ? 'Thuis' : 'Uit') + ' tegen ' + tegen + (tijd ? ', ' + tijd : ''),
 	kinds: {
-			limonade: 'Limonade',
-			rijden: 'Rijden',
-			fluiten: 'Fluiten',
-			vlaggen: 'Vlaggen',
-			velddienst: 'Velddienst',
-			teamtas: 'Teamtas'
-		}
+		limonade: 'Limonade',
+		rijden: 'Rijden',
+		fluiten: 'Fluiten',
+		vlaggen: 'Vlaggen',
+		velddienst: 'Velddienst',
+		teamtas: 'Teamtas'
+	}
 } as const;
 
 /** Team: de selectie, de verdeling over de linies, en de teamnaam. */
@@ -169,8 +167,7 @@ const team = {
 	toStats: 'Spelersoverzicht',
 
 	squadHeading: 'Selectie',
-	emptyHint:
-		'Plak de namen, één per regel. Liever stap voor stap?',
+	emptyHint: 'Plak de namen, één per regel. Liever stap voor stap?',
 	emptyHintLink: 'Loop het opzetten door.',
 	namesPlaceholder: 'Casper\nMaher\nDaan',
 	add: 'Toevoegen',
@@ -192,8 +189,7 @@ const team = {
 		`${players} voor ${positions} ${positions === 1 ? 'plek' : 'plekken'}`,
 	coverageShort: 'Een linie is niet vol te krijgen met de spelers die je zo gemarkeerd hebt.',
 	coverageThinKeepers: 'Er kan er maar één keepen. Is hij er niet, dan moet je ter plekke iemand aanwijzen.',
-	coverageCrowded:
-		'In deze linie zitten veel spelers voor weinig plekken. Een andere formatie kan helpen.',
+	coverageCrowded: 'In deze linie zitten veel spelers voor weinig plekken. Een andere formatie kan helpen.',
 	coverageFine: 'De letters zijn een hint bij het wisselen, geen regel: je kunt altijd iedereen kiezen.',
 
 	nameHeading: 'Naam van je team',
@@ -347,8 +343,7 @@ const archivedMatch = {
 	later: 'Verder',
 	timelineHeading: 'Verloop',
 	/* Alleen de score is hier te wijzigen; zie actions/archive.ts voor waarom. */
-	editHint:
-		'Haal een doelpunt weg dat er niet was. De stand past zich aan.',
+	editHint: 'Haal een doelpunt weg dat er niet was. De stand past zich aan.',
 	addGoalHeading: 'Doelpunt erbij',
 	minuteLabel: 'Minuut',
 	minutePlaceholder: '35',
@@ -404,8 +399,7 @@ const players = {
 	minutes: (n: number) => `${n} min`,
 	noSessions: 'geen training',
 	attendance: (pct: number, came: number, total: number) => `${pct}% · ${came}/${total}`,
-	footnote:
-		'Het gemiddelde telt alleen wedstrijden waarin iemand speelde.'
+	footnote: 'Het gemiddelde telt alleen wedstrijden waarin iemand speelde.'
 } as const;
 
 /** Het opstelscherm: het veld met de bank ernaast, voor de wedstrijd of de standaard. */
@@ -432,7 +426,7 @@ const lineupScreen = {
 	toBenchOverview: 'Wie zat er op de bank? ↓',
 	benchHeading: 'Bank en training tot nu toe',
 	benchHint: (matches: number, sessions: number) =>
-		`Wie het langst op de bank zat, staat bovenaan. Over ${matches} ${matches === 1 ? 'bewaarde wedstrijd' : 'bewaarde wedstrijden'}.`,
+		`Wie het langst op de bank zat, staat bovenaan. Over ${matches} ${matches === 1 ? 'bewaarde wedstrijd' : 'bewaarde wedstrijden'} en ${sessions} ${sessions === 1 ? 'training' : 'trainingen'}.`,
 	benchNothingYet: 'Dit zie je na de eerste wedstrijd.',
 	benchMinutes: (minutes: number) => `${minutes} min bank`,
 	benchStarts: (onBench: number, known: number) =>
@@ -459,8 +453,7 @@ const lineupScreen = {
  */
 const plan = {
 	title: 'Wisselplan',
-	intro:
-		'Zet de wissels die je al weet erin. Tijdens de wedstrijd staat de volgende onder het veld.',
+	intro: 'Zet de wissels die je al weet erin. Tijdens de wedstrijd staat de volgende onder het veld.',
 	noMatch: 'Er is geen wedstrijd om een wisselplan voor te maken. Begin er een op het startscherm.',
 	empty: 'Nog niets gepland.',
 	minuteLabel: 'Minuut',
@@ -514,14 +507,12 @@ const setup = {
 	back: 'Terug',
 
 	nameHeading: 'Hoe heet je team?',
-	nameHint:
-		'Bijvoorbeeld JO11-2, of de naam die iedereen gebruikt.',
+	nameHint: 'Bijvoorbeeld JO11-2, of de naam die iedereen gebruikt.',
 	nameLabel: 'Teamnaam',
 	namePlaceholder: 'bijv. JO11-2',
 
 	squadHeading: 'Wie zitten erin?',
-	squadHint:
-		'Plak of typ de namen, één per regel. Voornamen zijn genoeg.',
+	squadHint: 'Plak of typ de namen, één per regel. Voornamen zijn genoeg.',
 	namesPlaceholder: 'Sem\nNoah\nLuuk',
 	already: (n: number) => `Je hebt er al ${n}.`,
 	adding: (n: number) => `Hier komen er ${n} bij.`,
@@ -529,8 +520,7 @@ const setup = {
 	laterIsFine: 'Later spelers toevoegen kan altijd.',
 
 	playHeading: 'Hoe spelen jullie?',
-	playHint:
-		'Je kunt dit later nog aanpassen.',
+	playHint: 'Je kunt dit later nog aanpassen.',
 
 	doneHeading: 'Klaar',
 	summary: (players: number, formation: string, parts: number, minutes: number) =>
@@ -548,15 +538,13 @@ const data = {
 	title: 'Gegevens',
 
 	syncHeading: 'Synchroniseren',
-	signInHint:
-		'Log in, dan kunnen ouders meekijken en staat je team ook op je telefoon. Je krijgt een code per mail.',
+	signInHint: 'Log in, dan kunnen ouders meekijken en staat je team ook op je telefoon. Je krijgt een code per mail.',
 	otherUserHeading: 'Van wie zijn deze gegevens?',
 	otherUser: (vorige: string) =>
 		`Op dit toestel staat nog het team van ${vorige}. Er gaat niets heen en weer zolang dit niet duidelijk is.`,
 	otherUserKeep: 'Meenemen naar dit account',
 	otherUserFresh: 'Schoon beginnen',
-	otherUserFreshHint:
-		'Begin schoon met het team uit je account. Wat nu op dit toestel staat, gaat weg.',
+	otherUserFreshHint: 'Begin schoon met het team uit je account. Wat nu op dit toestel staat, gaat weg.',
 
 	installFirstLead: 'Zet Blaadje eerst op je beginscherm',
 	installFirst: 'en log daar in. Die app staat los van deze browser: log je hier in, dan ben je daar niet ingelogd.',
@@ -599,8 +587,7 @@ const data = {
 
 	/* ---------- wie kan erbij ---------- */
 	teamHeading: 'Wie kan hierbij',
-	teamHint:
-		'Nodig een trainer uit met zijn e-mailadres. Hij ziet en doet alles wat jij doet.',
+	teamHint: 'Nodig een trainer uit met zijn e-mailadres. Hij ziet en doet alles wat jij doet.',
 	teamOnlyOwner: 'Alleen de eigenaar kan hier iemand bij zetten.',
 	roleOwner: 'eigenaar',
 	roleTrainer: 'trainer',
@@ -637,8 +624,7 @@ const data = {
 	acceptInvite: 'Aannemen',
 
 	chooseTeamHeading: 'Welk team volgt dit toestel',
-	chooseTeamHint:
-		'Je werkt in één team tegelijk. Kies het team waar je mee verder wilt.',
+	chooseTeamHint: 'Je werkt in één team tegelijk. Kies het team waar je mee verder wilt.',
 	chooseTeam: (naam: string) => `Overstappen naar ${naam}`,
 	currentTeam: (naam: string) => `${naam} · staat aan`,
 	confirmChooseTeam: (naam: string) =>
@@ -651,10 +637,8 @@ const data = {
 
 	transferHeading: 'Overzetten en back-up',
 	onlyHereLead: 'Alles staat alleen op dit toestel.',
-	onlyHere:
-		'Log in, dan raak je je team nooit kwijt.',
-	transferHint:
-		'Je gegevens als bestand of als code.',
+	onlyHere: 'Log in, dan raak je je team nooit kwijt.',
+	transferHint: 'Je gegevens als bestand of als code.',
 	saveFile: 'Bestand opslaan',
 	openFile: 'Bestand openen',
 	makeCode: 'Code maken',
