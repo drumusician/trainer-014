@@ -151,11 +151,15 @@ final class Account {
                 model.zetOpzij("blaadje-ander-account")
                 model.neemOver(emptyState())
             }
-            // De eerste keer op dit toestel: eerst weten wat er al in het account staat.
+            // De eerste keer op dit toestel: eerst weten wat er al in het account
+            // staat. Dat vragen we de server zelf; de spiegel kan na het wissen bij
+            // uitloggen "klaar" zeggen terwijl hij nog niets binnen heeft, en dan
+            // lijkt een account met een team een nieuw account.
+            let opServer = try await serverTeams()
             try await spiegel.wachtOpEersteKeer(hooguit: 25)
-            let tabellen = try await spiegel.lees()
-            let metSpelers = Set((tabellen["spelers"] ?? []).compactMap { $0["team_id"]?.tekst })
-            let teams = try await spiegel.teams().map { Team(id: $0.id, naam: $0.naam, leeg: !metSpelers.contains($0.id)) }
+            try await wachtTotBinnen(spiegel, opServer)
+            let namen = Dictionary(try await spiegel.teams().map { ($0.id, $0.naam) }, uniquingKeysWith: { a, _ in a })
+            let teams = opServer.map { Team(id: $0.id, naam: namen[$0.id] ?? "", leeg: $0.spelers == 0) }
             if teams.isEmpty {
                 // Een nieuw account: wat op dit toestel staat wordt je team.
                 teamId = UUID().uuidString.lowercased()
@@ -174,6 +178,38 @@ final class Account {
             // De woorden van de dienst erbij: zonder die weet niemand wat er mis is.
             melding = "Verbinden met je account lukte niet. Wat op dit toestel staat is veilig.\n\n\(String(describing: error).prefix(300))"
         }
+    }
+
+    /// De teams waar je lid van bent, en hoeveel spelers erin staan, rechtstreeks van de server.
+    private func serverTeams() async throws -> [(id: String, spelers: Int)] {
+        guard let gebruiker = await inlog.sessie?.gebruiker else { throw InlogFout.nietIngelogd }
+        let bewijs = try await inlog.bewijs()
+        func vraag(_ pad: String) async throws -> [[String: Any]] {
+            var verzoek = URLRequest(url: URL(string: Adressen.supabase.absoluteString + "/rest/v1/" + pad)!)
+            verzoek.setValue(Adressen.sleutel, forHTTPHeaderField: "apikey")
+            verzoek.setValue("Bearer \(bewijs)", forHTTPHeaderField: "Authorization")
+            let (data, antwoord) = try await URLSession.shared.data(for: verzoek)
+            guard (antwoord as? HTTPURLResponse)?.statusCode == 200,
+                  let rijen = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { throw InlogFout.storing }
+            return rijen
+        }
+        let leden = try await vraag("team_leden?select=team_id&gebruiker=eq.\(gebruiker)").compactMap { $0["team_id"] as? String }
+        if leden.isEmpty { return [] }
+        let spelers = try await vraag("spelers?select=team_id&weg=is.null&team_id=in.(\(leden.joined(separator: ",")))")
+            .compactMap { $0["team_id"] as? String }
+        return leden.map { id in (id: id, spelers: spelers.filter { $0 == id }.count) }
+    }
+
+    /// Wacht tot de spiegel de teams heeft die de server noemt, met hun spelers.
+    private func wachtTotBinnen(_ spiegel: Spiegel, _ teams: [(id: String, spelers: Int)]) async throws {
+        for _ in 0..<50 {
+            let tabellen = try await spiegel.lees()
+            let hier = Set((tabellen["teams"] ?? []).compactMap { $0["id"]?.tekst })
+            let spelers = (tabellen["spelers"] ?? []).compactMap { $0["team_id"]?.tekst }
+            if teams.allSatisfy({ t in hier.contains(t.id) && spelers.filter { $0 == t.id }.count >= t.spelers }) { return }
+            try await Task.sleep(nanoseconds: 500_000_000)
+        }
+        throw SyncFout("je team kwam niet binnen")
     }
 
     func probeerOpnieuw() async {
