@@ -38,7 +38,7 @@ final class TeamAbonnement {
             // Tot en met 31 juli: op de server is het 1 augustus, 0:00.
             if let tot = abonnementTot, tot > nu { return "Het team staat aan tot en met \(f.string(from: tot.addingTimeInterval(-1)))." }
             if aan { return "Het team staat aan." }
-            return "Het team staat uit. Ouders zien het programma en de taken niet, en krijgen geen meldingen."
+            return "Het team staat uit. Zet het aan om ouders erbij te halen."
         }
 
         /// Kopen kan als het team uit staat, en vanaf mei voor het volgende seizoen.
@@ -90,7 +90,7 @@ final class TeamAbonnement {
     /// Kopen voor dit team.
     func koop(team: String) async {
         guard let aanbod, let teamUUID = UUID(uuidString: team) else {
-            melding = "Het abonnement is nu niet te koop. Heb je bereik?"
+            melding = "Het seizoen is nu niet te koop. Heb je bereik?"
             return
         }
         bezig = true

@@ -4,6 +4,8 @@ import SwiftUI
 /// De wedstrijden die komen, op het beginscherm. Een tik opent er een, met wie wat regelt.
 struct ProgrammaBlok: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.ouderZien) private var ouderZien
+    @Environment(\.naarTab) private var naarTab
     @State private var erbij = false
 
     var body: some View {
@@ -15,7 +17,7 @@ struct ProgrammaBlok: View {
                     .labelStyle(.iconOnly)
             }
             if app.toestand.program.isEmpty {
-                Text("Zet de wedstrijden die komen erin, met wie de limonade doet en wie er rijdt. Ouders zien het in de app.")
+                Text("Zet de wedstrijden die komen erin, met wie de limonade doet en wie er rijdt.")
                     .font(.subheadline).foregroundStyle(.secondary)
             }
             ForEach(app.toestand.program) { p in
@@ -40,6 +42,13 @@ struct ProgrammaBlok: View {
             if !app.toestand.tasks.isEmpty {
                 NavigationLink(value: WieDeedWat()) {
                     Label("Wie deed wat", systemImage: "list.bullet.clipboard").font(.subheadline)
+                }
+                .padding(.top, 2)
+            }
+            if !app.toestand.program.isEmpty, !ouderZien {
+                Button { naarTab(.team) } label: {
+                    Label("Ouders zien dit nog niet. Haal ze erbij", systemImage: "person.2")
+                        .font(.subheadline)
                 }
                 .padding(.top, 2)
             }
@@ -123,6 +132,7 @@ struct ProgrammaErbij: View {
 /// Eén wedstrijd uit het programma: bijwerken, wie wat regelt, en op de dag zelf beginnen.
 struct ProgrammaWedstrijd: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.ouderZien) private var ouderZien
     @Environment(\.dismiss) private var dismiss
     let id: String
     /// Na "Begin deze wedstrijd": het beginscherm opent de wedstrijd.
@@ -222,7 +232,9 @@ struct ProgrammaWedstrijd: View {
     private var voetnoot: String {
         let kanNiet = ProgramActions.taken(app.toestand, wedstrijd: id)
             .compactMap { t in t.open ? t.declinedBy.flatMap { app.speler($0)?.name }.map { "\($0) kan niet (\(ProgramActions.woord(t.kind).lowercased()))" } : nil }
-        let basis = "Ouders zien dit in de app en krijgen de avond ervoor een herinnering. Wie de limonade doet, krijgt er vlak voor de rust nog een."
+        let basis = ouderZien
+            ? "Ouders zien dit in de app en krijgen de avond ervoor een herinnering. Wie de limonade doet, krijgt er vlak voor de rust nog een."
+            : "Ouders zien dit zodra je ze erbij haalt, bij Team."
         return kanNiet.isEmpty ? basis : kanNiet.joined(separator: ", ") + ". " + basis
     }
 }
@@ -271,5 +283,15 @@ struct WieDeedWatScherm: View {
         }
         .navigationTitle("Wie deed wat")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Zien ouders het programma? Alleen als het team online staat en aan staat.
+struct OuderZienKey: EnvironmentKey { static let defaultValue = false }
+
+extension EnvironmentValues {
+    var ouderZien: Bool {
+        get { self[OuderZienKey.self] }
+        set { self[OuderZienKey.self] = newValue }
     }
 }

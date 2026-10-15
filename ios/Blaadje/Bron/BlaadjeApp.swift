@@ -50,6 +50,8 @@ struct BlaadjeApp: App {
 struct Hoofdscherm: View {
     @Environment(AppModel.self) private var app
     @Environment(Volgen.self) private var volgen
+    @Environment(Account.self) private var account
+    @Environment(TeamAbonnement.self) private var abonnement
     enum Tab { case volgen, wedstrijd, trainingen, team, seizoen, meer }
     @State private var tab: Tab?
     /// Voor een trainer die ook volgt: Volgen als blad over zijn eigen schermen.
@@ -73,6 +75,10 @@ struct Hoofdscherm: View {
             }
             Meer().tabItem { Label("Meer", systemImage: "ellipsis.circle") }.tag(Tab.meer)
         }
+        .environment(\.naarTab) { tab = $0 }
+        .environment(\.ouderZien, account.huidigTeam != nil && abonnement.status?.aan == true)
+        // Weten of het team aanstaat, ook voordat iemand Meer of Team opent.
+        .task(id: account.huidigTeam) { if account.huidigTeam != nil { await abonnement.ververs() } }
         .sheet(isPresented: $volgTonen) { VolgScherm() }
         // De link van de trainer, aangetikt in een bericht.
         .onOpenURL { url in

@@ -164,25 +164,19 @@ final class WedstrijddagTests: XCTestCase {
         app.launchArguments = ["-proef-team"]
         app.launch()
 
-        app.tabBars.buttons["Meer"].tap()
-        let code = app.textViews["Of plak hier een overzetcode"].exists
-            ? app.textViews["Of plak hier een overzetcode"] : app.textFields["Of plak hier een overzetcode"]
-        XCTAssertTrue(code.waitForExistence(timeout: 5))
-        code.tap()
-        code.typeText("geen echte code")
+        app.tabBars.buttons["Team"].tap()
+        let naam = app.textFields["Teamnaam"]
+        XCTAssertTrue(naam.waitForExistence(timeout: 5))
+        naam.tap()
+        naam.typeText(" thuis")
         XCTAssertTrue(app.keyboards.firstMatch.exists)
         beeld("m1-toetsenbord")
 
-        // Een veld van meer regels heeft geen toets om te sluiten: dan de knop erboven.
         app.toolbars.buttons["Klaar"].tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "het toetsenbord hoort weg te kunnen")
-        XCTAssertTrue(app.tabBars.buttons["Team"].isHittable, "anders kom je niet meer bij de andere schermen")
-
-        // Een code die niet klopt: dat zeggen, en het toetsenbord blijft weg.
-        app.buttons["Lees de code in"].tap()
-        XCTAssertTrue(app.alerts["Dat lukte niet"].waitForExistence(timeout: 5))
-        app.alerts.buttons["Oké"].tap()
-        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.tabBars.buttons["Wedstrijd"].isHittable, "anders kom je niet meer bij de andere schermen")
+        app.tabBars.buttons["Wedstrijd"].tap()
+        XCTAssertTrue(app.staticTexts["JO14-1 thuis"].waitForExistence(timeout: 5), "de nieuwe naam staat bovenaan")
     }
 
     func testEenOuderVolgtMetDeLinkVanDeTrainer() {
@@ -283,6 +277,18 @@ final class WedstrijddagTests: XCTestCase {
         XCTAssertTrue(tekst.waitForExistence(timeout: 5), "zonder seizoen staat het team uit")
         XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Zet het team aan voor dit seizoen")).firstMatch.exists)
         beeld("ab1-meer")
+
+        // Bij Team: de drie stappen om ouders erbij te halen; inloggen is hier al gedaan.
+        app.tabBars.buttons["Team"].tap()
+        XCTAssertTrue(app.staticTexts["Zet het team aan"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "€")).firstMatch.exists)
+        XCTAssertFalse(app.buttons["Deel"].isEnabled, "delen kan pas als het team aanstaat")
+        beeld("ab2-team")
+
+        // Een speler: tik erop en je past alles aan op één plek.
+        app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Sem")).firstMatch.tap()
+        XCTAssertTrue(app.switches["Kan keepen"].waitForExistence(timeout: 5))
+        beeld("ab3-speler")
     }
 
     func testEenTrainingBijhouden() {

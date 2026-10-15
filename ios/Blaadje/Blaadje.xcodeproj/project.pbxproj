@@ -21,6 +21,7 @@
 		5218275FD998F690663926B9 /* KlokGegevens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B29291860A0B45F69A6DC48 /* KlokGegevens.swift */; };
 		5A7BAE8BB78A2DFA3885CC2A /* Seizoen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C382E273EA78C31F751D1A4 /* Seizoen.swift */; };
 		5ADE009AA8E21B2509CE3157 /* Trainingen.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0CC566E3568FDF8629AAC1A /* Trainingen.swift */; };
+		7012DBEB654D8F94AE96C626 /* Inloggen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EDE5BC99061AA124717746F /* Inloggen.swift */; };
 		7482A4333954D9DE92A6FAFA /* VolgScherm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F7F92DBCAFD47E4D0027449 /* VolgScherm.swift */; };
 		7DF8D3B7044ACBE88D7823BC /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D04AB54B3CB0A1CD75448E /* AppModel.swift */; };
 		89D4AFC883231A9DB6C15303 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BDAB35B1D9433403ED54F846 /* Assets.xcassets */; };
@@ -101,6 +102,7 @@
 		75649EB9F7354A660683E621 /* BlaadjeSchermTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BlaadjeSchermTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8304AF1BD3F4F5E097480466 /* BlaadjeTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BlaadjeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C382E273EA78C31F751D1A4 /* Seizoen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Seizoen.swift; sourceTree = "<group>"; };
+		8EDE5BC99061AA124717746F /* Inloggen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Inloggen.swift; sourceTree = "<group>"; };
 		910AE4735EDB7EE08E35D53F /* VolgenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolgenTests.swift; sourceTree = "<group>"; };
 		99615BFC579B585FAA240675 /* BlaadjeKern */ = {isa = PBXFileReference; lastKnownFileType = folder; name = BlaadjeKern; path = ../BlaadjeKern; sourceTree = SOURCE_ROOT; };
 		9DA8E2F5EF3FDF4BC009FFFA /* Blaadje.storekit */ = {isa = PBXFileReference; path = Blaadje.storekit; sourceTree = "<group>"; };
@@ -189,6 +191,7 @@
 			isa = PBXGroup;
 			children = (
 				6F2CE664A43B40A7C5A6FE0B /* Afloop.swift */,
+				8EDE5BC99061AA124717746F /* Inloggen.swift */,
 				CBB80EC168D35E79CCAB93B9 /* Meer.swift */,
 				C5A9D8F1E083F837E57CCBB0 /* Opstelling.swift */,
 				133F96C4ECC206B0D12751C5 /* Programma.swift */,
@@ -449,6 +452,7 @@
 				AEFA4331A55ADE8564317F3C /* Afloop.swift in Sources */,
 				7DF8D3B7044ACBE88D7823BC /* AppModel.swift in Sources */,
 				F82027F3FA6C62014B36364E /* BlaadjeApp.swift in Sources */,
+				7012DBEB654D8F94AE96C626 /* Inloggen.swift in Sources */,
 				10705B0BFB078348AF058C56 /* KlokGegevens.swift in Sources */,
 				AC7D0C7B891C4BAD44963372 /* Meer.swift in Sources */,
 				C5212DB42F1340FAB961CA9C /* Opstelling.swift in Sources */,

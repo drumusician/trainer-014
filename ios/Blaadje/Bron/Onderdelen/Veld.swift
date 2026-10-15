@@ -39,14 +39,13 @@ struct Veld: View {
                                 )
                                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(.white, lineWidth: gekozen == plek.id ? 2 : 0))
                                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Kleur.oranje, lineWidth: gemarkeerd.contains(plek.id) ? 3 : 0))
-                            HStack(spacing: 4) {
-                                Text(plek.label)
-                                if let id, let tijden {
-                                    Text("\(Int((tijden[id, default: 0] / 60).rounded()))′").monospacedDigit()
-                                }
+                            // Waar iemand staat zie je aan de plek; eronder alleen zijn speeltijd.
+                            if let id, let tijden {
+                                Text("\(Int((tijden[id, default: 0] / 60).rounded()))′")
+                                    .monospacedDigit()
+                                    .font(.system(size: min(max(b * 0.029, 9), 12), weight: .bold))
+                                    .foregroundStyle(.white.opacity(0.9))
                             }
-                            .font(.system(size: min(max(b * 0.029, 9), 12), weight: .bold))
-                            .foregroundStyle(.white.opacity(0.9))
                         }
                         // Ruim om de naam heen raak te tikken, ook met koude vingers.
                         .padding(4)
@@ -54,11 +53,23 @@ struct Veld: View {
                     }
                     .buttonStyle(.plain)
                     .position(x: b * plek.x / 100, y: h * plek.y / 100)
-                    .accessibilityLabel("\(plek.label): \(wie ?? "leeg")")
+                    .accessibilityLabel("\(Self.voluit(plek.label)): \(wie ?? "leeg")")
+                    .accessibilityIdentifier("\(plek.label): \(wie ?? "leeg")")
                     .accessibilityAddTraits(gekozen == plek.id ? .isSelected : [])
                 }
             }
         }
+    }
+}
+
+extension Veld {
+    /// De plek in woorden, voor VoiceOver.
+    static func voluit(_ kort: String) -> String {
+        [
+            "K": "Keeper", "LV": "Linksachter", "CV": "Centrale verdediger", "RV": "Rechtsachter", "V": "Verdediger",
+            "VM": "Verdedigende middenvelder", "LM": "Linkermiddenvelder", "M": "Middenvelder", "RM": "Rechtermiddenvelder",
+            "LA": "Linksaanvaller", "RA": "Rechtsaanvaller", "LB": "Linksbuiten", "RB": "Rechtsbuiten", "SP": "Spits",
+        ][kort] ?? kort
     }
 }
 

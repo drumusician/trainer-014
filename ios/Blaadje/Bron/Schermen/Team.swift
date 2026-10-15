@@ -1,7 +1,7 @@
 import BlaadjeKern
 import SwiftUI
 
-/// De selectie: wie er zijn, in welke linie, en wie kan keepen.
+/// Het team: de naam, ouders erbij, wie er zijn, en hoe jullie spelen.
 struct Team: View {
     @Environment(AppModel.self) private var app
     @Environment(Account.self) private var account
@@ -9,57 +9,46 @@ struct Team: View {
     @State private var linkMelding: String?
     @State private var toevoegen = false
     @State private var namen = ""
-    @State private var hernoemen: Player?
-    @State private var nieuweNaam = ""
+    @State private var teamnaam = ""
+    @State private var bewerken: Player?
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
+                    TextField("Teamnaam", text: $teamnaam)
+                        .submitLabel(.done)
+                        // Bij elke letter bewaren: je tikt daarna zo naar een ander scherm.
+                        .onChange(of: teamnaam) { _, nieuw in
+                            if nieuw != app.toestand.teamName { app.zetTeamnaam(nieuw) }
+                        }
+                }
+
+                if !app.spelers.isEmpty, Account.beschikbaar { OudersErbij { deel(nil) } }
+
+                Section {
                     ForEach(app.spelers) { p in
-                        VStack(alignment: .leading, spacing: 8) {
+                        Button { bewerken = p } label: {
                             HStack {
-                                Text(p.name).font(.body.weight(.semibold))
-                                Spacer()
-                                Button { app.wisselKeeper(p.id) } label: {
-                                    Label("Keept", systemImage: p.keeper == true ? "hand.raised.fill" : "hand.raised")
-                                        .labelStyle(.iconOnly)
-                                        .foregroundStyle(p.keeper == true ? Kleur.accent : .secondary)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(p.name).foregroundStyle(.primary)
+                                    Text(Self.over(p)).font(.footnote).foregroundStyle(.secondary)
                                 }
-                                .buttonStyle(.borderless)
-                                .accessibilityLabel("\(p.name) kan keepen")
-                                .accessibilityAddTraits(p.keeper == true ? .isSelected : [])
+                                Spacer()
+                                Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(.tertiary)
                             }
-                            Picker("Linie", selection: Binding(get: { p.line }, set: { app.zetLinie(p.id, $0) })) {
-                                Text("Geen").tag(FieldLine.geen)
-                                Text("Verdediging").tag(FieldLine.V)
-                                Text("Midden").tag(FieldLine.M)
-                                Text("Aanval").tag(FieldLine.A)
-                            }
-                            .pickerStyle(.segmented)
+                            .contentShape(Rectangle())
                         }
-                        .padding(.vertical, 2)
-                        .swipeActions(edge: .leading) {
-                            Button { deel(p) } label: { Label("Eigen link", systemImage: "link") }.tint(Kleur.groen)
-                        }
+                        .buttonStyle(.plain)
                         .swipeActions {
                             Button(role: .destructive) { app.verwijder(p) } label: { Label("Verwijder", systemImage: "trash") }
-                            Button { nieuweNaam = p.name; hernoemen = p } label: { Label("Naam", systemImage: "pencil") }
                         }
                     }
                 } header: {
                     Text("\(app.spelers.count) spelers")
                 } footer: {
                     if !app.spelers.isEmpty {
-                        Text("De linie bepaalt wie de app voorstelt bij een wissel. Het handje betekent: kan keepen. Veeg naar links om een naam te wijzigen of iemand te verwijderen, en naar rechts voor een eigen link van dat kind, waar ook zijn trainingen op staan.")
-                    }
-                }
-
-                if !app.spelers.isEmpty {
-                    Section {
-                        Button { deel(nil) } label: { Label("Link voor ouders", systemImage: "square.and.arrow.up") }
-                    } footer: {
-                        Text("Eén link voor de groepsapp. Wie hem opent volgt de wedstrijden en krijgt een melding bij de aftrap, een doelpunt, de rust en het eindsignaal. Speeltijd en wissels staan er niet op.")
+                        Text("Met de linie stelt de app bij een wissel iemand voor die op die plek past.")
                     }
                 }
 
@@ -82,6 +71,7 @@ struct Team: View {
                     }
                 }
             }
+            .toetsenbordWeg()
             .navigationTitle("Team")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -123,8 +113,8 @@ struct Team: View {
                             }
                         } footer: {
                             Text(l.kind
-                                ? "Stuur deze link alleen naar de ouders van \(l.naam). Wie hem heeft, volgt de wedstrijden en ziet ook de trainingen van \(l.naam), en van niemand anders."
-                                : "Zet deze link in de groepsapp van het team. Over een los kind staat er niets op.")
+                                ? "Stuur deze link alleen naar de ouders van \(l.naam). Zij zien ook de trainingen van \(l.naam)."
+                                : "Zet deze link in de groepsapp van het team.")
                         }
                     }
                     .navigationTitle("Link voor \(l.naam)")
@@ -136,12 +126,82 @@ struct Team: View {
             .alert("Link voor ouders", isPresented: Binding(get: { linkMelding != nil }, set: { if !$0 { linkMelding = nil } })) {
                 Button("Oké") { linkMelding = nil }
             } message: { Text(linkMelding ?? "") }
-            .alert("Naam wijzigen", isPresented: Binding(get: { hernoemen != nil }, set: { if !$0 { hernoemen = nil } })) {
-                TextField("Naam", text: $nieuweNaam)
-                Button("Bewaar") { if let p = hernoemen { app.hernoem(p.id, nieuweNaam) }; hernoemen = nil }
-                Button("Annuleer", role: .cancel) { hernoemen = nil }
+            .sheet(item: $bewerken) { p in SpelerBewerken(id: p.id) { deel(p) } }
+            .onAppear { teamnaam = app.toestand.teamName }
+        }
+    }
+
+    /// "Verdediging · keept"
+    static func over(_ p: Player) -> String {
+        let linie: String? = switch p.line {
+        case .V: "Verdediging"
+        case .M: "Midden"
+        case .A: "Aanval"
+        default: nil
+        }
+        let keept = p.keeper == true
+        guard let linie else { return keept ? "Keept" : "Geen linie" }
+        return keept ? linie + " · keept" : linie
+    }
+}
+
+/// Eén speler: naam, linie, keepen, de eigen link voor de ouders, of weg.
+struct SpelerBewerken: View {
+    @Environment(AppModel.self) private var app
+    @Environment(\.dismiss) private var dismiss
+    let id: String
+    let deel: () -> Void
+    @State private var naam = ""
+
+    var body: some View {
+        NavigationStack {
+            if let p = app.spelers.first(where: { $0.id == id }) {
+                Form {
+                    Section {
+                        TextField("Naam", text: $naam)
+                            .onSubmit { app.hernoem(id, naam) }
+                    }
+                    Section {
+                        Picker("Linie", selection: Binding(get: { p.line }, set: { app.zetLinie(id, $0) })) {
+                            Text("Geen").tag(FieldLine.geen)
+                            Text("Verdediging").tag(FieldLine.V)
+                            Text("Midden").tag(FieldLine.M)
+                            Text("Aanval").tag(FieldLine.A)
+                        }
+                        .pickerStyle(.segmented)
+                        Toggle("Kan keepen", isOn: Binding(get: { p.keeper == true }, set: { _ in app.wisselKeeper(id) }))
+                    } footer: {
+                        Text("Met de linie stelt de app bij een wissel iemand voor die op die plek past.")
+                    }
+                    if Account.beschikbaar {
+                        Section {
+                            Button { deel() } label: { Label("Link voor de ouders van \(p.name)", systemImage: "link") }
+                        } footer: {
+                            Text("Met deze link zien ze ook de trainingen van \(p.name).")
+                        }
+                    }
+                    Section {
+                        Button("Verwijder \(p.name)", role: .destructive) {
+                            app.verwijder(p)
+                            dismiss()
+                        }
+                    }
+                }
+                .navigationTitle(p.name)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Klaar") {
+                            if naam != p.name { app.hernoem(id, naam) }
+                            dismiss()
+                        }
+                        .bold()
+                    }
+                }
+                .onAppear { naam = p.name }
             }
         }
+        .presentationDetents([.medium, .large])
     }
 }
 
@@ -160,7 +220,7 @@ extension Team {
             do {
                 link = Ouderlink(naam: p?.name ?? app.toestand.teamName, kind: p != nil, url: try await account.ouderlink(speler: p?.id))
             } catch Account.LinkFout.nietIngelogd {
-                linkMelding = "Log eerst in bij Meer. De link verwijst naar je team in je account."
+                linkMelding = "Log eerst in. De link verwijst naar je team online."
             } catch {
                 linkMelding = "De link maken lukte niet. Heb je bereik?"
             }
