@@ -372,4 +372,21 @@ final class WedstrijddagTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Cas"].exists)
         beeld("0-team")
     }
+
+    /// Langs elk tabblad, voor wie de schermen wil zien (met BEELDEN).
+    func testEenRondjeDoorDeApp() {
+        app.launchArguments = ["-proef-team"]
+        app.launch()
+        XCTAssertTrue(app.tabBars.buttons["Wedstrijd"].waitForExistence(timeout: 5))
+        beeld("r1-wedstrijd")
+        for (tab, naam) in [("Trainingen", "r2-trainingen"), ("Team", "r3-team"), ("Seizoen", "r4-seizoen"), ("Meer", "r5-meer")] {
+            app.tabBars.buttons[tab].tap()
+            sleep(1)
+            beeld(naam)
+        }
+        app.swipeUp()
+        sleep(1)
+        beeld("r6-meer-onder")
+    }
 }
+
