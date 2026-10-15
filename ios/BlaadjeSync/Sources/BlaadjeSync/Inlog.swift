@@ -117,16 +117,28 @@ public actor Inlog: Toegang {
 		return nieuw
 	}
 
+	/// Het account voor de beoordelaars van Apple. Zij kunnen geen mail lezen, dus
+	/// dit adres krijgt geen code: de "code" is het wachtwoord dat in Supabase bij
+	/// dit account staat, en dat Apple krijgt bij de inzending.
+	public static let reviewAdres = "review@blaadje.app"
+
+	private static func isReview(_ email: String) -> Bool {
+		email.trimmingCharacters(in: .whitespaces).lowercased() == reviewAdres
+	}
+
 	/// Stuurt een mail met een code. Wie nog geen account heeft krijgt er een.
 	public func stuurCode(email: String) async throws {
+		if Self.isReview(email) { return }
 		_ = try await stuur("/auth/v1/otp", ["email": email.trimmingCharacters(in: .whitespaces), "create_user": true])
 	}
 
 	@discardableResult
 	public func bevestig(email: String, code: String) async throws -> Sessie {
-		let antwoord = try await stuur("/auth/v1/verify", [
-			"email": email.trimmingCharacters(in: .whitespaces), "token": code.trimmingCharacters(in: .whitespaces), "type": "email",
-		])
+		let adres = email.trimmingCharacters(in: .whitespaces), token = code.trimmingCharacters(in: .whitespaces)
+		if Self.isReview(adres) {
+			return try bewaar(try await stuur("/auth/v1/token?grant_type=password", ["email": Self.reviewAdres, "password": token]))
+		}
+		let antwoord = try await stuur("/auth/v1/verify", ["email": adres, "token": token, "type": "email"])
 		return try bewaar(antwoord)
 	}
 

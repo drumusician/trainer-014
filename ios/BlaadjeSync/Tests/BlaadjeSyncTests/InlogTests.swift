@@ -74,6 +74,22 @@ final class InlogTests: XCTestCase {
 		XCTAssertEqual(weer, "toegang-1")
 	}
 
+	func testHetReviewadresKrijgtGeenMailEnLogtInMetHetWachtwoord() async throws {
+		let server = Nepserver(), klok = Klok()
+		server.antwoord = { [self] pad, inhoud in
+			XCTAssertEqual(inhoud["email"] as? String, Inlog.reviewAdres)
+			XCTAssertEqual(inhoud["password"] as? String, "nep-wachtwoord")
+			return (sessie(1), 200)
+		}
+		let inlog = maak(server, Geheugenkluis(), klok)
+		try await inlog.stuurCode(email: " Review@Blaadje.app ")
+		XCTAssertEqual(server.paden, [], "er gaat geen mail naar een adres dat niemand leest")
+		try await inlog.bevestig(email: "review@blaadje.app", code: " nep-wachtwoord ")
+		XCTAssertEqual(server.paden, ["/auth/v1/token?grant_type=password"])
+		let bewijs = try await inlog.bewijs()
+		XCTAssertEqual(bewijs, "toegang-1")
+	}
+
 	func testEenVerkeerdeCodeLogtNietIn() async throws {
 		let server = Nepserver(), klok = Klok()
 		server.antwoord = { _, _ in (["msg": "Token has expired or is invalid"], 403) }
