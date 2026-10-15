@@ -71,6 +71,12 @@ final class Account {
         set { UserDefaults.standard.set(newValue, forKey: "sync.team") }
     }
 
+    /// Van welk account wat op dit toestel staat. Blijft staan na uitloggen.
+    private var eigenaar: String? {
+        get { UserDefaults.standard.string(forKey: "sync.eigenaar") }
+        set { UserDefaults.standard.set(newValue, forKey: "sync.eigenaar") }
+    }
+
     /// De toestand waarvan we weten dat hij in de tabellen staat. Na een crash
     /// is het verschil met wat er nu staat precies wat nog weggeschreven moet.
     private var onthouden: URL { map.appendingPathComponent("blaadje-gespiegeld.json") }
@@ -138,6 +144,12 @@ final class Account {
                 let gespiegeld = (try? String(contentsOf: onthouden, encoding: .utf8)).flatMap { try? Opslag.lees($0) }
                 begin(spiegel, team: team, gespiegeld: gespiegeld, email: email)
                 return
+            }
+            // Wat hier staat komt uit een ander account (uitgelogd, met een ander
+            // adres ingelogd): dat hoort niet in dit account. Het gaat opzij.
+            if let vorige = eigenaar, vorige != email.lowercased(), hierStaatIets {
+                model.zetOpzij("blaadje-ander-account")
+                model.neemOver(emptyState())
             }
             // De eerste keer op dit toestel: eerst weten wat er al in het account staat.
             try await spiegel.wachtOpEersteKeer(hooguit: 25)
@@ -220,6 +232,7 @@ final class Account {
             onthoud: { try? Opslag.schrijf($0).write(to: onthouden, atomically: true, encoding: .utf8) }
         )
         self.motor = motor
+        eigenaar = email.lowercased()
         model.naBewaren = { [weak motor] in motor?.lokaalGewijzigd() }
         motor.start()
         fase = .aan(email: email)
@@ -303,6 +316,7 @@ final class Account {
     // MARK: - uitloggen
 
     /// Wat op dit toestel staat blijft staan; het gaat alleen niet meer naar je account.
+    /// Log je daarna met een ander adres in, dan gaat het opzij (zie `koppel`).
     func logUit() async {
         teller?.cancel()
         motor?.stop()
