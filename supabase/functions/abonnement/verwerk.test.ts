@@ -1,13 +1,12 @@
 /**
- * Het nakijken echt laten gebeuren, met de bibliotheek van Apple, maar met een
+ * Het nakijken echt laten gebeuren, met onze eigen nakijker (nakijk.ts), maar met een
  * nagemaakte keten (proef/): een eigen root, een tussencertificaat en een blad
  * met dezelfde kenmerken als die van Apple. Zo bewijst de proef dat een goed
  * getekende aankoop erdoor komt en een vervalste niet, in Deno.
  */
 import { assertEquals, assertRejects } from "jsr:@std/assert@1";
-import { Environment, SignedDataVerifier } from "npm:@apple/app-store-server-library@1.6.0";
-import { Buffer } from "node:buffer";
-import { type Nakijker, omgevingVan, seizoenTot, verwerk } from "./verwerk.ts";
+import { maakNakijker } from "./nakijk.ts";
+import { omgevingVan, seizoenTot, verwerk } from "./verwerk.ts";
 import { APPLE_ROOT_G3 } from "./apple-root.ts";
 
 const hier = new URL("./proef/", import.meta.url);
@@ -29,11 +28,7 @@ async function teken(inhoud: object, keten = ["blad.pem", "tussen.pem", "root.pe
   return kop + "." + lijf + "." + b64url(new Uint8Array(handtekening));
 }
 
-const nep = new SignedDataVerifier([Buffer.from(der(pem("root.pem")), "base64")], false, Environment.SANDBOX, "app.blaadje.ios");
-const nakijker: Nakijker = {
-  aankoop: (j) => nep.verifyAndDecodeTransaction(j),
-  bericht: (j) => nep.verifyAndDecodeNotification(j),
-};
+const nakijker = maakNakijker([der(pem("root.pem"))], "app.blaadje.ios", "Sandbox");
 
 const team = "11111111-1111-4111-8111-111111111111";
 const aankoop = (extra: object = {}) => ({
@@ -81,8 +76,7 @@ Deno.test("een vervalste aankoop komt er niet door", async () => {
 
 Deno.test("een keten die niet van Apple komt, of zonder tussencertificaat, komt er niet door", async () => {
   // Dezelfde aankoop, maar nagekeken tegen de echte root van Apple: onze nagemaakte keten hoort daar niet bij.
-  const echtApple = new SignedDataVerifier([Buffer.from(APPLE_ROOT_G3, "base64")], false, Environment.SANDBOX, "app.blaadje.ios");
-  const tegenApple: Nakijker = { aankoop: (j) => echtApple.verifyAndDecodeTransaction(j), bericht: (j) => echtApple.verifyAndDecodeNotification(j) };
+  const tegenApple = maakNakijker([APPLE_ROOT_G3], "app.blaadje.ios", "Sandbox");
   await assertRejects(async () => verwerk({ transactie: await teken(aankoop()) }, tegenApple));
   const zonderTussen = await teken(aankoop(), ["blad.pem", "blad.pem", "root.pem"]);
   await assertRejects(() => verwerk({ transactie: zonderTussen }, nakijker));
@@ -99,4 +93,24 @@ Deno.test("de omgeving staat in de aankoop en in het bericht", async () => {
   assertEquals(omgevingVan(await teken(aankoop())), "Sandbox");
   assertEquals(omgevingVan(await teken({ data: { environment: "Production" } })), "Production");
   assertEquals(omgevingVan("onzin"), undefined);
+});
+
+Deno.test("een keten zoals die van Apple, met P-384 en SHA-384, komt erdoor", async () => {
+  const metP384 = maakNakijker([der(pem("root384.pem"))], "app.blaadje.ios", "Sandbox");
+  const regel = await verwerk({ transactie: await teken(aankoop(), ["blad384.pem", "tussen384.pem", "root384.pem"]) }, metP384);
+  assertEquals(regel?.team, team);
+  // en die keten hoort niet bij de andere root
+  await assertRejects(async () => verwerk({ transactie: await teken(aankoop(), ["blad384.pem", "tussen384.pem", "root384.pem"]) }, nakijker));
+});
+
+Deno.test("een aankoop uit een andere omgeving of van na het verlopen van de keten komt er niet door", async () => {
+  await assertRejects(async () => verwerk({ transactie: await teken(aankoop({ environment: "Production" })) }, nakijker));
+  await assertRejects(async () => verwerk({ transactie: await teken(aankoop({ signedDate: Date.UTC(2200, 0, 1) })) }, nakijker));
+});
+
+Deno.test("de nakijker gebruikt geen node:crypto, want dat mist op de server", async () => {
+  for (const bestand of ["nakijk.ts", "index.ts", "verwerk.ts"]) {
+    const tekst = await Deno.readTextFile(new URL(bestand, import.meta.url));
+    assertEquals(/node:crypto|app-store-server-library/.test(tekst.replace(/\/\*[\s\S]*?\*\//g, "")), false, bestand);
+  }
 });

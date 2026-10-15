@@ -6,38 +6,36 @@
  *   bij een terugbetaling.
  *
  * Geen geheim nodig: wat erin komt is door Apple getekend, en dat kijken we na
- * tegen het rootcertificaat van Apple. Verify JWT staat uit.
+ * tegen het rootcertificaat van Apple (nakijk.ts). Verify JWT staat uit.
  *
  * Secret (Edge Functions → Secrets): APP_APPLE_ID, het nummer van de app in App
  * Store Connect (App Information → Apple ID). Zonder dat nummer worden alleen
  * proefaankopen (TestFlight) aangenomen.
  */
-import { Environment, SignedDataVerifier } from "npm:@apple/app-store-server-library@1.6.0";
-import { Buffer } from "node:buffer";
 import { APPLE_ROOT_G3 } from "./apple-root.ts";
+import { maakNakijker } from "./nakijk.ts";
 import { type Nakijker, omgevingVan, verwerk } from "./verwerk.ts";
 
 const basis = Deno.env.get("SUPABASE_URL")!;
 const dienst = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const bundel = Deno.env.get("APNS_BUNDEL") ?? "app.blaadje.ios";
 const appAppleId = Number(Deno.env.get("APP_APPLE_ID") ?? "") || undefined;
-const wortels = [Buffer.from(APPLE_ROOT_G3, "base64")];
 
-/* Alleen Production en Sandbox: bij Xcode en LocalTesting kijkt de bibliotheek niets na. */
-const nakijkers: Record<string, SignedDataVerifier> = {
-  Sandbox: new SignedDataVerifier(wortels, true, Environment.SANDBOX, bundel),
+/* Alleen Production en Sandbox; Production pas als het nummer van de app bekend is. */
+const nakijkers: Record<string, Nakijker> = {
+  Sandbox: maakNakijker([APPLE_ROOT_G3], bundel, "Sandbox"),
 };
-if (appAppleId) nakijkers.Production = new SignedDataVerifier(wortels, true, Environment.PRODUCTION, bundel, appAppleId);
+if (appAppleId) nakijkers.Production = maakNakijker([APPLE_ROOT_G3], bundel, "Production", appAppleId);
 
-function kies(jws: string): SignedDataVerifier {
+function kies(jws: string): Nakijker {
   const n = nakijkers[omgevingVan(jws) ?? ""];
   if (!n) throw new Error("onbekende omgeving");
   return n;
 }
 
 const nakijker: Nakijker = {
-  aankoop: (jws) => kies(jws).verifyAndDecodeTransaction(jws),
-  bericht: (jws) => kies(jws).verifyAndDecodeNotification(jws),
+  aankoop: (jws) => kies(jws).aankoop(jws),
+  bericht: (jws) => kies(jws).bericht(jws),
 };
 
 Deno.serve(async (verzoek) => {
