@@ -208,3 +208,52 @@ extension EnvironmentValues {
         set { self[NaarTabKey.self] = newValue }
     }
 }
+
+/// De trainers van het team: wie erbij zit, wie is uitgenodigd, en iemand uitnodigen.
+struct Trainers: View {
+    @Environment(Account.self) private var account
+    @State private var uitnodigen = false
+    @State private var adres = ""
+    @State private var melding: String?
+
+    var body: some View {
+        Section {
+            ForEach(account.leden) { lid in
+                LabeledContent(lid.email.isEmpty ? "Trainer" : lid.email, value: lid.eigenaar ? "maakte het team" : "")
+                    .swipeActions {
+                        if account.benEigenaar, !lid.eigenaar {
+                            Button("Haal eruit", role: .destructive) { Task { await account.haalEruit(lid) } }
+                        }
+                    }
+            }
+            ForEach(account.uitgenodigd) { u in
+                LabeledContent(u.email, value: "uitgenodigd")
+                    .foregroundStyle(.secondary)
+                    .swipeActions {
+                        if account.benEigenaar {
+                            Button("Trek in", role: .destructive) { Task { await account.trekIn(u) } }
+                        }
+                    }
+            }
+            if account.benEigenaar {
+                Button { adres = ""; uitnodigen = true } label: { Label("Nodig een trainer uit", systemImage: "person.badge.plus") }
+            }
+        } header: {
+            Text("Trainers")
+        } footer: {
+            Text(melding ?? "Een trainer die je uitnodigt, ziet en doet alles wat jij doet. Houd een wedstrijd op één telefoon tegelijk bij.")
+        }
+        .task(id: account.huidigTeam) { await account.haalTrainers() }
+        .alert("Nodig een trainer uit", isPresented: $uitnodigen) {
+            TextField("E-mailadres", text: $adres)
+                .keyboardType(.emailAddress)
+                .textContentType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            Button("Nodig uit") { Task { melding = await account.nodigUit(adres) } }
+            Button("Annuleer", role: .cancel) {}
+        } message: {
+            Text("Het adres waarmee de ander inlogt.")
+        }
+    }
+}

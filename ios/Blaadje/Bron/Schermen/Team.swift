@@ -25,6 +25,7 @@ struct Team: View {
                 }
 
                 if !app.spelers.isEmpty, Account.beschikbaar { OudersErbij { deel(nil) } }
+                if account.huidigTeam != nil { Trainers() }
 
                 Section {
                     ForEach(app.spelers) { p in

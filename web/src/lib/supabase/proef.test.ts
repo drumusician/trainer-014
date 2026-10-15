@@ -34,7 +34,9 @@ async function bewijs(gebruiker: string, rol = 'authenticated'): Promise<string>
 	const json = (x: object) => b64(new TextEncoder().encode(JSON.stringify(x)));
 	const nu = Math.floor(Date.now() / 1000);
 	const kop = json({ alg: 'HS256', typ: 'JWT', kid: 'proef' });
-	const lijf = json({ sub: gebruiker, role: rol, aud: 'authenticated', iat: nu, exp: nu + 3600 });
+	/* Het adres staat in het bewijs, zoals bij Supabase: uitnodigen en aannemen gaan erop. */
+	const email = { [ANNA]: 'anna@voorbeeld.nl', [BAS]: 'bas@voorbeeld.nl' }[gebruiker];
+	const lijf = json({ sub: gebruiker, email, role: rol, aud: 'authenticated', iat: nu, exp: nu + 3600 });
 	const geheim = new TextEncoder().encode('blaadje-proef-geheim-van-minstens-32-tekens');
 	const sleutel = await crypto.subtle.importKey('raw', geheim, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
 	const handtekening = await crypto.subtle.sign('HMAC', sleutel, new TextEncoder().encode(kop + '.' + lijf));
@@ -343,5 +345,48 @@ describe.skipIf(!REST)('de webapp tegen de echte tabellen', () => {
 
 		expect(app.toestand.players.map((p) => p.name)).toEqual(['Uit het oude blok']);
 		expect((await opDeServer(ander))!.players.map((p) => p.name)).toEqual(['Uit het oude blok']);
+	});
+});
+
+/* Wat de iPhone-app doet bij Team → Trainers en bij het inloggen (Account.swift), met dezelfde aanroepen. */
+describe.skipIf(!REST)('een trainer uitnodigen vanuit de app', () => {
+	it('Anna nodigt Bas uit, Bas logt in en hoort erbij, en Anna kan hem er weer uit halen', async () => {
+		const team = '66666666-6666-4666-8666-666666666666';
+		await rest(ANNA, 'POST', 'teams', { id: team, naam: 'JO9-1' });
+		await rest(
+			ANNA,
+			'POST',
+			'uitnodigingen',
+			{ team_id: team, email: 'bas@voorbeeld.nl', door: ANNA },
+			'return=representation'
+		);
+		/* nog een keer: dat adres staat er al */
+		await expect(
+			rest(ANNA, 'POST', 'uitnodigingen', { team_id: team, email: 'bas@voorbeeld.nl', door: ANNA })
+		).rejects.toThrow(/23505/);
+		const open = await rest(ANNA, 'GET', 'uitnodigingen?select=id,email&team_id=eq.' + team + '&order=gemaakt.asc');
+		expect(open.map((u: { email: string }) => u.email)).toEqual(['bas@voorbeeld.nl']);
+
+		/* Bas logt in: de app neemt aan wat er klaarstaat, en vraagt dan zijn teams. */
+		await rest(BAS, 'POST', 'rpc/uitnodiging_aannemen', undefined, 'return=representation');
+		const lid = await rest(BAS, 'GET', 'team_leden?select=team_id&gebruiker=eq.' + BAS);
+		expect(lid.map((l: { team_id: string }) => l.team_id)).toContain(team);
+
+		const leden = await rest(
+			ANNA,
+			'GET',
+			'team_leden?select=gebruiker,rol,email&team_id=eq.' + team + '&order=toegevoegd.asc'
+		);
+		expect(leden).toEqual([
+			{ gebruiker: ANNA, rol: 'eigenaar', email: 'anna@voorbeeld.nl' },
+			{ gebruiker: BAS, rol: 'trainer', email: 'bas@voorbeeld.nl' }
+		]);
+		expect(await rest(ANNA, 'GET', 'uitnodigingen?select=id,email&team_id=eq.' + team)).toEqual([]);
+
+		/* Bas kan Anna er niet uit halen; Anna Bas wel. */
+		await rest(BAS, 'DELETE', 'team_leden?team_id=eq.' + team + '&gebruiker=eq.' + ANNA);
+		expect((await rest(ANNA, 'GET', 'team_leden?select=gebruiker&team_id=eq.' + team)).length).toBe(2);
+		await rest(ANNA, 'DELETE', 'team_leden?team_id=eq.' + team + '&gebruiker=eq.' + BAS);
+		expect(await rest(ANNA, 'GET', 'team_leden?select=gebruiker&team_id=eq.' + team)).toEqual([{ gebruiker: ANNA }]);
 	});
 });

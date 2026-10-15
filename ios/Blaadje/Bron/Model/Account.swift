@@ -155,6 +155,9 @@ final class Account {
             // staat. Dat vragen we de server zelf; de spiegel kan na het wissen bij
             // uitloggen "klaar" zeggen terwijl hij nog niets binnen heeft, en dan
             // lijkt een account met een team een nieuw account.
+            // Uitgenodigd door een andere trainer? Dan hoor je bij dat team, en
+            // hoort de app geen nieuw, leeg team voor je te maken.
+            await neemUitnodigingenAan()
             let opServer = try await serverTeams()
             try await spiegel.wachtOpEersteKeer(hooguit: 25)
             try await wachtTotBinnen(spiegel, opServer)
@@ -281,6 +284,101 @@ final class Account {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
             }
         }
+    }
+
+    // MARK: - trainers
+
+    struct Lid: Identifiable, Equatable {
+        let gebruiker: String
+        let email: String
+        let eigenaar: Bool
+        var id: String { gebruiker }
+    }
+
+    struct Uitnodiging: Identifiable, Equatable {
+        let id: String
+        let email: String
+    }
+
+    /// Wie er bij het team zit, en wie is uitgenodigd maar nog niet ingelogd.
+    private(set) var leden: [Lid] = []
+    private(set) var uitgenodigd: [Uitnodiging] = []
+
+    /// Ben jij de trainer die het team maakte? Alleen die nodigt uit of haalt eruit.
+    var benEigenaar: Bool {
+        guard let mij = inlogGebruiker else { return false }
+        return leden.contains { $0.gebruiker == mij && $0.eigenaar }
+    }
+
+    @ObservationIgnored private var inlogGebruiker: String?
+
+    /// Een vraag aan de database, als de ingelogde trainer.
+    private func rest(_ methode: String, _ pad: String, _ inhoud: [String: String]? = nil) async throws -> [[String: Any]] {
+        let bewijs = try await inlog.bewijs()
+        var verzoek = URLRequest(url: URL(string: Adressen.supabase.absoluteString + "/rest/v1/" + pad)!)
+        verzoek.httpMethod = methode
+        verzoek.setValue(Adressen.sleutel, forHTTPHeaderField: "apikey")
+        verzoek.setValue("Bearer \(bewijs)", forHTTPHeaderField: "Authorization")
+        verzoek.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        verzoek.setValue("return=representation", forHTTPHeaderField: "Prefer")
+        if let inhoud { verzoek.httpBody = try JSONSerialization.data(withJSONObject: inhoud) }
+        let (data, antwoord) = try await URLSession.shared.data(for: verzoek)
+        let status = (antwoord as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(status) else {
+            let o = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+            throw RestFout(code: o?["code"] as? String, status: status)
+        }
+        return (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] ?? []
+    }
+
+    struct RestFout: Error { let code: String?; let status: Int }
+
+    /// Neemt aan wat er op jouw adres klaarstaat. Stil: lukt het niet, dan gaat het inloggen gewoon door.
+    private func neemUitnodigingenAan() async {
+        _ = try? await rest("POST", "rpc/uitnodiging_aannemen")
+    }
+
+    /// De trainers van het team ophalen.
+    func haalTrainers() async {
+        guard let team = huidigTeam else { return }
+        inlogGebruiker = await inlog.sessie?.gebruiker
+        guard let l = try? await rest("GET", "team_leden?select=gebruiker,rol,email&team_id=eq.\(team)&order=toegevoegd.asc"),
+              let u = try? await rest("GET", "uitnodigingen?select=id,email&team_id=eq.\(team)&order=gemaakt.asc") else { return }
+        leden = l.compactMap { r in
+            guard let g = r["gebruiker"] as? String else { return nil }
+            return Lid(gebruiker: g, email: r["email"] as? String ?? "", eigenaar: r["rol"] as? String == "eigenaar")
+        }
+        uitgenodigd = u.compactMap { r in
+            guard let id = r["id"] as? String, let e = r["email"] as? String else { return nil }
+            return Uitnodiging(id: id, email: e)
+        }
+    }
+
+    /// Een trainer uitnodigen op het adres waarmee hij inlogt. Geeft terug wat er te zeggen valt.
+    func nodigUit(_ email: String) async -> String {
+        let adres = email.trimmingCharacters(in: .whitespaces)
+        guard adres.contains("@") else { return "Vul het e-mailadres in waarmee de ander inlogt." }
+        guard let team = huidigTeam, let mij = await inlog.sessie?.gebruiker else { return "Log eerst in." }
+        defer { Task { await haalTrainers() } }
+        do {
+            _ = try await rest("POST", "uitnodigingen", ["team_id": team, "email": adres, "door": mij])
+            return "\(adres) is uitgenodigd. Laat het even weten: inloggen met dit adres is genoeg."
+        } catch let f as RestFout where f.code == "23505" {
+            return "\(adres) was al uitgenodigd."
+        } catch {
+            return "Uitnodigen lukte niet. Heb je bereik?"
+        }
+    }
+
+    func trekIn(_ u: Uitnodiging) async {
+        _ = try? await rest("DELETE", "uitnodigingen?id=eq.\(u.id)")
+        await haalTrainers()
+    }
+
+    func haalEruit(_ lid: Lid) async {
+        guard let team = huidigTeam else { return }
+        _ = try? await rest("DELETE", "team_leden?team_id=eq.\(team)&gebruiker=eq.\(lid.gebruiker)")
+        await haalTrainers()
     }
 
     // MARK: - de link voor een ouder
