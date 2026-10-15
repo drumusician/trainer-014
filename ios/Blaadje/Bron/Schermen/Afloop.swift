@@ -45,7 +45,7 @@ struct Afloop: View {
                     }
                 }
                 Section("Hoe ging het?") {
-                    TextField("Voor jezelf, in je eigen woorden", text: $notitie, axis: .vertical)
+                    TextField("Alleen voor jou", text: $notitie, axis: .vertical)
                         .lineLimit(3...8)
                         .onChange(of: notitie) { _, nieuw in app.zetNotitie(nieuw) }
                 }

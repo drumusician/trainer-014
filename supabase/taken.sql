@@ -302,10 +302,7 @@ begin
   if extract(hour from v_lokaal) between 19 and 21 then
     for r in
       select w.id as wedstrijd, w.tegenstander, w.aanvang, tk.speler_id,
-             string_agg(case tk.soort
-                          when 'limonade' then 'de limonade'
-                          when 'teamtas' then 'de teamtas'
-                          else tk.soort end, ' en ' order by tk.soort) as wat,
+             string_agg(tk.soort, ' en ' order by tk.soort) as wat,
              (select jsonb_agg(distinct jsonb_build_object('token', v.token, 'omgeving', v.omgeving))
                 from public.volgers v
                 join public.deellinks d on d.id = v.deellink_id
@@ -323,7 +320,7 @@ begin
       continue when not found;
       v_uit := v_uit || jsonb_build_object(
         'titel', 'Morgen tegen ' || r.tegenstander || coalesce(', ' || r.aanvang, ''),
-        'tekst', 'Jullie doen ' || r.wat || '.',
+        'tekst', 'Jullie regelen: ' || r.wat || '.',
         'tokens', r.tokens);
     end loop;
   end if;
@@ -352,7 +349,7 @@ begin
     continue when not found;
     v_uit := v_uit || jsonb_build_object(
       'titel', 'Bijna rust',
-      'tekst', 'Over een paar minuten is het rust. Jullie hebben de limonade.',
+      'tekst', 'Jullie hebben de limonade.',
       'tokens', r.tokens);
   end loop;
 
@@ -383,7 +380,7 @@ begin
                                   else r.soort end || '?',
       'tekst', 'Tegen ' || r.tegenstander || ', ' || v_dagen[extract(dow from r.datum)::int + 1] || ' '
                || extract(day from r.datum)::int || ' ' || v_maanden[extract(month from r.datum)::int]
-               || '. Open de app om het over te nemen.',
+               || '. Tik om het over te nemen.',
       'tokens', r.tokens);
   end loop;
 

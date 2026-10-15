@@ -170,12 +170,12 @@ struct Wedstrijd: View {
     @ViewBuilder
     private func melding(_ w: Match) -> some View {
         if doelpuntKiezen {
-            balk("Doelpunt. Tik op wie hem maakte.") {
+            balk("Wie scoorde?") {
                 kleineKnop("Weet ik niet") { app.doelpunt(nil); doelpuntKiezen = false; Tik.gelukt() }
                 kleineKnop("Annuleer") { doelpuntKiezen = false }
             }
         } else if assistVragen {
-            balk("\(app.speler(maker)?.name ?? "Doelpunt"). Wie gaf de assist?") {
+            balk("Assist van?") {
                 kleineKnop("Geen assist") { assistVragen = false }
             }
         } else if let plek = app.gekozenPlek {
@@ -183,7 +183,7 @@ struct Wedstrijd: View {
             let linie = positionLine(plek, w.formation)
             let keepte = Int(((uit.flatMap { app.keepertijden[$0.id] } ?? 0) / 60).rounded())
             balk(
-                "\(uit?.name ?? "Lege plek") · tik op de bank voor een wissel, of op een andere plek om te ruilen."
+                "\(uit?.name ?? "Lege plek"): tik op de bank om te wisselen, of op een plek om te ruilen."
                     + (keepte > 0 && linie != .K ? " Keepte al \(keepte)′." : "")
             ) {
                 if let uit {
@@ -270,6 +270,7 @@ struct Wedstrijd: View {
             } label: { Text("Tegen") }
                 .buttonStyle(TweedeKnop())
                 .frame(maxWidth: 96)
+                .accessibilityLabel("Tegendoelpunt")
 
             if let wat = app.terugTeDraaien {
                 Button {

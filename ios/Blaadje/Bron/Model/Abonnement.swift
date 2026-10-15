@@ -104,10 +104,10 @@ final class TeamAbonnement {
                 }
                 let gelukt = await meld(uitkomst.jwsRepresentation)
                 await t.finish()
-                melding = gelukt ? nil : "Gekocht. Het team gaat aan zodra er bereik is."
+                melding = gelukt ? nil : "Gekocht, maar het team aanzetten lukte nog niet. Tik zo op Herstel een aankoop om het opnieuw te proberen."
                 await ververs()
             case .pending:
-                melding = "De aankoop wacht op goedkeuring."
+                melding = "De aankoop wacht op goedkeuring, bijvoorbeeld van een ouder."
             case .userCancelled:
                 melding = nil
             @unknown default:

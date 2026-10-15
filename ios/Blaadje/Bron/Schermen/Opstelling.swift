@@ -53,7 +53,7 @@ struct Opstelling: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     HStack(spacing: 8) {
-                        Button { bankTonen = true } label: { Label("Bank tot nu toe", systemImage: "chart.bar.xaxis") }
+                        Button { bankTonen = true } label: { Label("Wie zat op de bank", systemImage: "chart.bar.xaxis") }
                         if bron == .wedstrijd {
                             let n = app.match?.plan?.count ?? 0
                             Button { planTonen = true } label: {
@@ -75,7 +75,7 @@ struct Opstelling: View {
                 .padding(.vertical, 10)
             }
             .confirmationDialog(
-                "Er staan er \(bezet) op het veld in plaats van \(nodig).", isPresented: $onvolledigVragen, titleVisibility: .visible
+                "Er staan er \(bezet) van de \(nodig).", isPresented: $onvolledigVragen, titleVisibility: .visible
             ) {
                 Button("Toch doorgaan") { klaar() }
                 Button("Terug", role: .cancel) {}

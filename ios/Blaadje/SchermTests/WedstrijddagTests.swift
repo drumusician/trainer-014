@@ -65,7 +65,7 @@ final class WedstrijddagTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["1 – 0"].exists)
 
         // En een tegen, die we terugdraaien.
-        app.buttons["Tegen"].tap()
+        app.buttons["Tegendoelpunt"].tap()
         XCTAssertTrue(app.staticTexts["1 – 1"].waitForExistence(timeout: 5))
         app.buttons["Tegendoelpunt terugdraaien"].tap()
         XCTAssertTrue(app.staticTexts["1 – 0"].waitForExistence(timeout: 5))
@@ -323,9 +323,9 @@ final class WedstrijddagTests: XCTestCase {
         app.buttons["Naar de opstelling"].tap()
 
         // Vooraf: wie zat er al veel op de bank, en wat weten we al over de rust.
-        XCTAssertTrue(app.buttons["Bank tot nu toe"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Wie zat op de bank"].waitForExistence(timeout: 5))
         beeld("p1-opstelling")
-        app.buttons["Bank tot nu toe"].tap()
+        app.buttons["Wie zat op de bank"].tap()
         XCTAssertTrue(app.staticTexts["nu op de bank"].firstMatch.waitForExistence(timeout: 5))
         beeld("p2-bank")
         app.buttons["Klaar"].tap()

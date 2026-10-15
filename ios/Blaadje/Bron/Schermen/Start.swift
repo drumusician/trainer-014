@@ -85,8 +85,8 @@ struct Start: View {
 
     private var leegTeam: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Zet eerst je team erin").font(.title3.bold())
-            Text("Plak de namen van je spelers en kies hoe jullie spelen. Daarna kun je meteen een wedstrijd beginnen.")
+            Text("Begin met je team").font(.title3.bold())
+            Text("Voeg je spelers toe. Daarna kun je meteen een wedstrijd beginnen.")
                 .foregroundStyle(.secondary)
             Button("Aan de slag") { opzetten = true }.buttonStyle(HoofdKnop())
         }
@@ -98,7 +98,7 @@ struct Start: View {
     private var ouder: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Ben je ouder?").font(.title3.bold())
-            Text("Tik op de link die de trainer deelde, of plak hem hier. Dan volg je de wedstrijden van het team.")
+            Text("Tik op de link van de trainer, of plak hem hier.")
                 .foregroundStyle(.secondary)
             Button("Ik heb een link") { linkPlakken = true }.buttonStyle(TweedeKnop())
         }
@@ -110,7 +110,7 @@ struct Start: View {
         let uitslag = homeFirst(app.stand, w.home)
         let ons = app.toestand.teamName
         return VStack(alignment: .leading, spacing: 12) {
-            Text(w.finished ? "Nog te bewaren" : app.afgetrapt ? "Bezig" : "Klaargezet")
+            Text(w.finished ? "Afgelopen" : app.afgetrapt ? "Bezig" : "Klaar voor de aftrap")
                 .font(.caption.bold()).kerning(1).textCase(.uppercase).foregroundStyle(Kleur.accent)
             Text(w.home ? "\(ons) – \(w.opponent)" : "\(w.opponent) – \(ons)").font(.title3.bold())
             if app.afgetrapt {
@@ -127,7 +127,7 @@ struct Start: View {
             }
             .buttonStyle(HoofdKnop())
             if !app.afgetrapt {
-                Button("Toch niet, gooi weg", role: .destructive) { app.gooiWedstrijdWeg() }
+                Button("Gooi weg", role: .destructive) { app.gooiWedstrijdWeg() }
                     .font(.subheadline)
                     .frame(maxWidth: .infinity)
             }
@@ -194,7 +194,7 @@ struct NieuweWedstrijd: View {
                     LabeledContent("Formatie", value: app.toestand.formation)
                     LabeledContent("Speeltijd", value: "\(app.toestand.parts) × \(Int(app.toestand.minutesPerPart)) minuten")
                 } footer: {
-                    Text("Aanpassen kan bij Team.")
+                    Text("Dit stel je in bij Team.")
                 }
             }
             .navigationTitle("Nieuwe wedstrijd")

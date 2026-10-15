@@ -67,7 +67,7 @@ struct Wisselplan: View {
                     stapRegel(s, w)
                 }
             } footer: {
-                Text("Tijdens de wedstrijd staat de volgende stap onder het veld. Doe je dezelfde wissel met de hand, dan telt hij ook.")
+                Text("De volgende wissel staat tijdens de wedstrijd onder het veld.")
             }
 
             Section("Stap erbij") {
@@ -193,11 +193,11 @@ struct Bankoverzicht: View {
                 } footer: {
                     let w = app.toestand.archive.count, t = app.toestand.trainings.count
                     Text(w == 0
-                        ? "Nog geen bewaarde wedstrijden, dus nog niets te zeggen over de bank."
-                        : "Over \(w) \(w == 1 ? "bewaarde wedstrijd" : "bewaarde wedstrijden") en \(t) \(t == 1 ? "training" : "trainingen"). Wie het langst op de bank zat staat bovenaan. Alleen wedstrijden waarbij hij er was tellen mee.")
+                        ? "Dit zie je na de eerste wedstrijd."
+                        : "Wie het langst op de bank zat, staat bovenaan. Over \(w) \(w == 1 ? "bewaarde wedstrijd" : "bewaarde wedstrijden").")
                 }
             }
-            .navigationTitle("Bank tot nu toe")
+            .navigationTitle("Wie zat op de bank")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Klaar") { dismiss() }.bold() }

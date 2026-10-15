@@ -17,7 +17,7 @@ struct ProgrammaBlok: View {
                     .labelStyle(.iconOnly)
             }
             if app.toestand.program.isEmpty {
-                Text("Zet de wedstrijden die komen erin, met wie de limonade doet en wie er rijdt.")
+                Text("Zet de komende wedstrijden erin, met wie de limonade doet en wie er rijdt.")
                     .font(.subheadline).foregroundStyle(.secondary)
             }
             ForEach(app.toestand.program) { p in
@@ -47,7 +47,7 @@ struct ProgrammaBlok: View {
             }
             if !app.toestand.program.isEmpty, !ouderZien {
                 Button { naarTab(.team) } label: {
-                    Label("Ouders zien dit nog niet. Haal ze erbij", systemImage: "person.2")
+                    Label("Haal de ouders erbij", systemImage: "person.2")
                         .font(.subheadline)
                 }
                 .padding(.top, 2)
@@ -105,9 +105,9 @@ struct ProgrammaErbij: View {
                 }
                 Section {
                     DatePicker("Datum", selection: $datum, displayedComponents: .date)
-                    Toggle("Aanvang bekend", isOn: $metTijd)
+                    Toggle("Aftrap bekend", isOn: $metTijd)
                     if metTijd {
-                        DatePicker("Aanvang", selection: $tijd, displayedComponents: .hourAndMinute)
+                        DatePicker("Aftrap", selection: $tijd, displayedComponents: .hourAndMinute)
                     }
                 }
             }
@@ -155,7 +155,7 @@ struct ProgrammaWedstrijd: View {
                         selection: Binding(get: { AppModel.datum(p.date) ?? Date() }, set: { app.wijzigProgramma(id, datum: $0) }),
                         displayedComponents: .date)
                     Toggle(
-                        "Aanvang bekend",
+                        "Aftrap bekend",
                         isOn: Binding(
                             get: { p.time != nil },
                             set: { aan in
@@ -163,7 +163,7 @@ struct ProgrammaWedstrijd: View {
                             }))
                     if let t = p.time {
                         DatePicker(
-                            "Aanvang",
+                            "Aftrap",
                             selection: Binding(get: { AppModel.tijd(t) ?? Date() }, set: { app.wijzigProgramma(id, tijd: .some($0)) }),
                             displayedComponents: .hourAndMinute)
                     }
@@ -233,7 +233,7 @@ struct ProgrammaWedstrijd: View {
         let kanNiet = ProgramActions.taken(app.toestand, wedstrijd: id)
             .compactMap { t in t.open ? t.declinedBy.flatMap { app.speler($0)?.name }.map { "\($0) kan niet (\(ProgramActions.woord(t.kind).lowercased()))" } : nil }
         let basis = ouderZien
-            ? "Ouders zien dit in de app en krijgen de avond ervoor een herinnering. Wie de limonade doet, krijgt er vlak voor de rust nog een."
+            ? "Ouders krijgen de avond ervoor een herinnering. Wie de limonade doet, ook vlak voor de rust."
             : "Ouders zien dit zodra je ze erbij haalt, bij Team."
         return kanNiet.isEmpty ? basis : kanNiet.joined(separator: ", ") + ". " + basis
     }
@@ -265,7 +265,7 @@ struct WieDeedWatScherm: View {
             } header: {
                 Text("Hoe vaak")
             } footer: {
-                Text("Wat al gespeeld is en wat nog in het programma staat, samen.")
+                Text("Gespeelde en komende wedstrijden samen.")
             }
             if !beurten.isEmpty {
                 Section("Wanneer") {

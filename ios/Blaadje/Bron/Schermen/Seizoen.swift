@@ -65,7 +65,7 @@ struct Seizoen: View {
                 if app.toestand.archive.isEmpty {
                     ContentUnavailableView(
                         "Nog niets gespeeld", systemImage: "calendar",
-                        description: Text("Bewaarde wedstrijden komen hier te staan, met de speeltijd over het seizoen.")
+                        description: Text("Na je eerste wedstrijd zie je hier de uitslagen en de speeltijd.")
                     )
                 }
             }
@@ -205,7 +205,7 @@ private struct Bewaard: View {
                 Text("Verloop")
             } footer: {
                 if bijwerken {
-                    Text("Een doelpunt dat er niet was kun je weghalen; de stand telt vanzelf opnieuw. Wissels blijven staan, want daar hangt de speeltijd aan.")
+                    Text("Haal een doelpunt weg dat er niet was. De stand past zich aan.")
                 }
             }
 
@@ -236,7 +236,7 @@ private struct Bewaard: View {
             }
 
             Section("Hoe ging het") {
-                TextField("Nog niets opgeschreven.", text: $notitie, axis: .vertical)
+                TextField("Hoe ging het?", text: $notitie, axis: .vertical)
                     .lineLimit(2...8)
                     .onChange(of: notitie) { _, nieuw in
                         if nieuw != (a.note ?? "") { app.zetBewaardeNotitie(index, nieuw) }

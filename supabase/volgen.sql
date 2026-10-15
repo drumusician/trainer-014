@@ -155,7 +155,7 @@ begin
     v_wat := case when v_naam is null then 'Doelpunt!' else 'Doelpunt van ' || v_naam || '!' end;
   else
     v_wat := case g.soort
-      when 'aftrap' then 'De wedstrijd is begonnen'
+      when 'aftrap' then 'Aftrap'
       when 'tegendoelpunt' then 'Tegendoelpunt'
       when 'pauze' then 'Rust'
       else 'Afgelopen' end;
@@ -251,7 +251,7 @@ begin
 
   return jsonb_build_object(
     'titel', v_stand,
-    'tekst', case when v_einde then 'Afgelopen' else 'Bijgewerkt' end
+    'tekst', case when v_einde then 'Afgelopen' else 'De uitslag is aangepast' end
              || case when cardinality(v_delen) > 0 then ': ' || array_to_string(v_delen, ', ') else '' end,
     'wedstrijd', w.id,
     'tokens', v_tokens

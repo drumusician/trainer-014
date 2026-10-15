@@ -266,12 +266,12 @@ final class Volgen {
 
     private func taakActie(_ functie: String, _ code: String, _ taak: String) async {
         guard let token else {
-            melding = "Zet meldingen aan voor Blaadje; daaraan herkent de app dat jij het bent."
+            melding = "Zet meldingen aan voor Blaadje, dan kun je taken overnemen."
             return
         }
         do {
             let data = try await verkeer(functie, ["p_code": code, "p_token": token, "p_taak": taak])
-            melding = String(decoding: data, as: UTF8.self).contains("true") ? nil : "Dat kon niet meer. Misschien was iemand je voor."
+            melding = String(decoding: data, as: UTF8.self).contains("true") ? nil : "Iemand anders was je net voor."
         } catch {
             melding = "Dat lukte niet. Heb je bereik?"
         }

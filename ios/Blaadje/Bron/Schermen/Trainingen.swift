@@ -32,7 +32,7 @@ struct Trainingen: View {
                             LabeledContent(r.speler.name, value: "\(r.er) van de \(r.totaal)")
                         }
                     } header: {
-                        Text("Weinig geweest")
+                        Text("Vaak gemist")
                     } footer: {
                         Text("Over de laatste vier trainingen.")
                     }
@@ -51,7 +51,7 @@ struct Trainingen: View {
                 if app.spelers.isEmpty {
                     ContentUnavailableView(
                         "Nog geen spelers", systemImage: "person.3",
-                        description: Text("Zet eerst je team erin, dan kun je bijhouden wie er was."))
+                        description: Text("Zet eerst je spelers erin, bij Team."))
                 } else if app.toestand.trainings.isEmpty {
                     ContentUnavailableView {
                         Label("Nog geen trainingen", systemImage: "figure.run")
@@ -145,7 +145,7 @@ private struct EenTraining: View {
                 } header: {
                     Text(Aanwezigheid.samenvatting(t, app.spelers))
                 } footer: {
-                    Text("Tik op een naam: afgemeld, niet gekomen, en weer aanwezig.")
+                    Text("Tik op een naam om te wisselen tussen aanwezig, afgemeld en niet gekomen.")
                 }
                 Section {
                     Button("Verwijder deze training", role: .destructive) {

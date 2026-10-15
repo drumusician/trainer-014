@@ -103,7 +103,7 @@ declare
 begin
   -- de aftrap
   m := public.melding_voor('f5000000-0000-0000-0000-000000000001');
-  if m is null or m->>'tekst' <> 'De wedstrijd is begonnen' then raise exception 'de aftrap geeft geen melding: %', m; end if;
+  if m is null or m->>'tekst' <> 'Aftrap' then raise exception 'de aftrap geeft geen melding: %', m; end if;
 
   -- een doelpunt, uit: de thuisploeg staat eerst
   m := public.melding_voor('f5000000-0000-0000-0000-000000000002');

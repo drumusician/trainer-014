@@ -25,7 +25,7 @@ struct Inloggen: View {
                         Button("Stuur mij een code", action: stuur)
                             .disabled(account.bezig || email.isEmpty)
                     } footer: {
-                        Text(account.melding ?? "Je krijgt een mail met een code. Nog geen account? Dan maken we er een.")
+                        Text(account.melding ?? "Je krijgt een mail met een code.")
                     }
                 case .code(let adres):
                     Section {

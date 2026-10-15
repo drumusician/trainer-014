@@ -55,9 +55,9 @@ const attendance = {
 	/* Tijdens de wedstrijd is dit geen opzetscherm meer maar een correctie, en
 	   dan mag het veld niet meer wijzigen — zie setAbsent in actions/match.ts. */
 	hintDuringMatch:
-		'De wedstrijd loopt. Wie in het veld staat haal je eruit met een wissel, niet hier — anders klopt zijn speeltijd niet meer. Van de bank afmelden kan wel.',
+		'Wie in het veld staat, haal je eruit met een wissel. Van de bank afmelden kan hier.',
 	hintBeforeMatch:
-		'Tik weg wie er niet is. Die staat dan niet op de bank, zodat je hem er langs de lijn niet per ongeluk in brengt. Wie al opgesteld stond, laat zijn plek leeg.',
+		'Tik weg wie er niet is.',
 
 	/* In twee stukken, en dat is een uitzondering. Het aantal staat vet in een
 	   verder grijze regel: dat is het getal waar je op scant. Vet kan niet in een
@@ -87,7 +87,7 @@ const afterMatch = {
 	noteHint: 'Een paar regels voor jezelf of voor de groepsapp. Gaat mee in het verslag.',
 	notePlaceholder: 'Sterk begin, na rust weggezakt. Achterin stond het goed.',
 	shareHeading: 'Delen',
-	shareHint: 'Voor de groepsapp. De wissels laat ik er standaard uit.',
+	shareHint: 'Voor de groepsapp.',
 	copied: 'Gekopieerd. Staat hier ook, voor als plakken niet lukt.',
 	archived: 'Bewaard in archief',
 	archive: 'Bewaren in archief',
@@ -99,8 +99,8 @@ const trainings = {
 	title: 'Trainingen',
 	heading: 'Trainingen',
 	noSquad: 'Zet eerst je selectie erin, dan kun je afvinken wie er was.',
-	none: 'Nog geen trainingen. Maak er een aan; iedereen staat dan op aanwezig en je tikt alleen wie er niet is.',
-	hint: 'Tik een training aan om hem bij te werken. De datum kun je daar aanpassen, dus een gemiste week vul je later gewoon in.',
+	none: 'Iedereen staat op aanwezig. Je tikt alleen wie er niet is.',
+	hint: 'Een gemiste week vul je later in: de datum pas je aan in de training.',
 	/* Alleen noemen wat er is: nul afgemeld hoeft niet in de regel te staan. */
 	summary: (present: number, excused: number, absent: number) =>
 		`${present} aanwezig` + (excused ? `, ${excused} afgemeld` : '') + (absent ? `, ${absent} niet gekomen` : ''),
@@ -127,8 +127,8 @@ const trainings = {
 const program = {
 	title: 'Programma',
 	heading: 'Programma',
-	hint: 'De wedstrijden die eraan komen, en wie wat regelt. Ouders zien dit in de app, en krijgen de avond ervoor een herinnering voor hun taak.',
-	none: 'Nog niets in het programma. Zet de komende wedstrijden erin, dan zien ouders wat er komt.',
+	hint: 'De komende wedstrijden, en wie wat regelt. Ouders krijgen de avond ervoor een herinnering voor hun taak.',
+	none: 'Zet de komende wedstrijden erin, met wie wat regelt.',
 	addHeading: 'Wedstrijd erbij',
 	dateLabel: 'Datum',
 	timeLabel: 'Aanvang',
@@ -170,7 +170,7 @@ const team = {
 
 	squadHeading: 'Selectie',
 	emptyHint:
-		'Plak hier de namen, één per regel. Ze blijven op dit toestel en komen nergens anders terecht. Liever stap voor stap?',
+		'Plak de namen, één per regel. Liever stap voor stap?',
 	emptyHintLink: 'Loop het opzetten door.',
 	namesPlaceholder: 'Casper\nMaher\nDaan',
 	add: 'Toevoegen',
@@ -193,7 +193,7 @@ const team = {
 	coverageShort: 'Een linie is niet vol te krijgen met de spelers die je zo gemarkeerd hebt.',
 	coverageThinKeepers: 'Er kan er maar één keepen. Is hij er niet, dan moet je ter plekke iemand aanwijzen.',
 	coverageCrowded:
-		'Waar meer dan twee keer zoveel spelers als plekken staan, zit er elke wedstrijd iemand op de bank die zichzelf daar ziet. Een andere formatie kan schelen.',
+		'In deze linie zitten veel spelers voor weinig plekken. Een andere formatie kan helpen.',
 	coverageFine: 'De letters zijn een hint bij het wisselen, geen regel: je kunt altijd iedereen kiezen.',
 
 	nameHeading: 'Naam van je team',
@@ -264,7 +264,7 @@ const shell = {
 const errorPage = {
 	title: 'Er ging iets mis',
 	heading: 'Er ging iets mis',
-	hint: 'Dit scherm kwam er niet uit. Je gegevens staan gewoon nog op dit toestel — er is niets kwijt.',
+	hint: 'Er ging iets mis met dit scherm. Je gegevens zijn veilig.',
 	toMatches: 'Terug naar de wedstrijden',
 	toData: 'Gegevens en back-up',
 	forReporting: 'Voor als je het doorgeeft:',
@@ -348,7 +348,7 @@ const archivedMatch = {
 	timelineHeading: 'Verloop',
 	/* Alleen de score is hier te wijzigen; zie actions/archive.ts voor waarom. */
 	editHint:
-		'Een doelpunt dat er niet was kun je weghalen; de stand telt vanzelf opnieuw. Wissels blijven staan, want daar hangt de speeltijd aan.',
+		'Haal een doelpunt weg dat er niet was. De stand past zich aan.',
 	addGoalHeading: 'Doelpunt erbij',
 	minuteLabel: 'Minuut',
 	minutePlaceholder: '35',
@@ -405,7 +405,7 @@ const players = {
 	noSessions: 'geen training',
 	attendance: (pct: number, came: number, total: number) => `${pct}% · ${came}/${total}`,
 	footnote:
-		'Speeltijd telt alleen wedstrijden die je bewaard hebt. Een wedstrijd waarin iemand niet in het veld kwam telt bij hem niet mee, dus zijn gemiddelde blijft eerlijk.'
+		'Het gemiddelde telt alleen wedstrijden waarin iemand speelde.'
 } as const;
 
 /** Het opstelscherm: het veld met de bank ernaast, voor de wedstrijd of de standaard. */
@@ -432,8 +432,8 @@ const lineupScreen = {
 	toBenchOverview: 'Wie zat er op de bank? ↓',
 	benchHeading: 'Bank en training tot nu toe',
 	benchHint: (matches: number, sessions: number) =>
-		`Over ${matches} ${matches === 1 ? 'bewaarde wedstrijd' : 'bewaarde wedstrijden'} en ${sessions} ${sessions === 1 ? 'training' : 'trainingen'}. Wie het langst op de bank zat staat bovenaan. Alleen wedstrijden waarbij hij er was tellen mee.`,
-	benchNothingYet: 'Nog geen bewaarde wedstrijden, dus nog niets te zeggen over de bank.',
+		`Wie het langst op de bank zat, staat bovenaan. Over ${matches} ${matches === 1 ? 'bewaarde wedstrijd' : 'bewaarde wedstrijden'}.`,
+	benchNothingYet: 'Dit zie je na de eerste wedstrijd.',
 	benchMinutes: (minutes: number) => `${minutes} min bank`,
 	benchStarts: (onBench: number, known: number) =>
 		onBench ? `${onBench} van de ${known} keer begonnen op de bank` : `${known}× in de basis`,
@@ -460,7 +460,7 @@ const lineupScreen = {
 const plan = {
 	title: 'Wisselplan',
 	intro:
-		'Wat je vooraf al weet: wie rond welke minuut erin komt, en voor wie. Tijdens de wedstrijd staat de volgende stap onder het veld. Het moment kies jij, en doe je dezelfde wissel met de hand, dan telt hij ook.',
+		'Zet de wissels die je al weet erin. Tijdens de wedstrijd staat de volgende onder het veld.',
 	noMatch: 'Er is geen wedstrijd om een wisselplan voor te maken. Begin er een op het startscherm.',
 	empty: 'Nog niets gepland.',
 	minuteLabel: 'Minuut',
@@ -515,13 +515,13 @@ const setup = {
 
 	nameHeading: 'Hoe heet je team?',
 	nameHint:
-		'Die naam staat boven je wedstrijd en in het verslag dat je na afloop deelt. Iets als JO11-2, MO13-1 of gewoon de naam die iedereen gebruikt.',
+		'Bijvoorbeeld JO11-2, of de naam die iedereen gebruikt.',
 	nameLabel: 'Teamnaam',
 	namePlaceholder: 'bijv. JO11-2',
 
 	squadHeading: 'Wie zitten erin?',
 	squadHint:
-		'Plak of typ de namen, één per regel. Alleen voornamen is genoeg. Ze blijven op dit toestel staan en gaan nergens anders heen.',
+		'Plak of typ de namen, één per regel. Voornamen zijn genoeg.',
 	namesPlaceholder: 'Sem\nNoah\nLuuk',
 	already: (n: number) => `Je hebt er al ${n}.`,
 	adding: (n: number) => `Hier komen er ${n} bij.`,
@@ -530,7 +530,7 @@ const setup = {
 
 	playHeading: 'Hoe spelen jullie?',
 	playHint:
-		'Dit bepaalt hoeveel plekken er op het veld staan en hoe de klok loopt. Je kunt het later altijd omzetten; je opstelling verhuist dan mee.',
+		'Je kunt dit later nog aanpassen.',
 
 	doneHeading: 'Klaar',
 	summary: (players: number, formation: string, parts: number, minutes: number) =>
@@ -549,14 +549,14 @@ const data = {
 
 	syncHeading: 'Synchroniseren',
 	signInHint:
-		'Log in met je e-mailadres, dan staat je seizoen veilig en heb je het op al je toestellen. Je krijgt een code per mail; geen wachtwoord om te onthouden.',
+		'Log in, dan kunnen ouders meekijken en staat je team ook op je telefoon. Je krijgt een code per mail.',
 	otherUserHeading: 'Van wie zijn deze gegevens?',
 	otherUser: (vorige: string) =>
 		`Op dit toestel staat nog het team van ${vorige}. Er gaat niets heen en weer zolang dit niet duidelijk is.`,
 	otherUserKeep: 'Meenemen naar dit account',
 	otherUserFresh: 'Schoon beginnen',
 	otherUserFreshHint:
-		'Schoon beginnen wist het team op dit toestel en haalt op wat bij dit account hoort. Staat het team hier nergens anders, dan is het weg — maak dan eerst een back-up bij Overzetten.',
+		'Begin schoon met het team uit je account. Wat nu op dit toestel staat, gaat weg.',
 
 	installFirstLead: 'Zet Blaadje eerst op je beginscherm',
 	installFirst: 'en log daar in. Die app staat los van deze browser: log je hier in, dan ben je daar niet ingelogd.',
@@ -588,7 +588,7 @@ const data = {
 	signedInAs: 'Ingelogd als',
 	unknownEmail: 'onbekend',
 	signedInHint:
-		'Wat je hier doet staat ook in Blaadje op je iPhone, en andersom. Zonder bereik werkt de app gewoon door en stuurt hij op zodra er weer internet is. Een wedstrijd die je hier klaarzet pak je op het veld op je telefoon op.',
+		'Wat je hier doet, staat ook in Blaadje op je telefoon. Zet een wedstrijd hier klaar en pak hem langs de lijn op.',
 	statusOffline: 'Nog niet opgestuurd, geen verbinding.',
 	statusPending: 'Nog niet opgestuurd.',
 	statusUpdated: (when: string) => `Bijgewerkt ${when}.`,
@@ -600,7 +600,7 @@ const data = {
 	/* ---------- wie kan erbij ---------- */
 	teamHeading: 'Wie kan hierbij',
 	teamHint:
-		'Nodig een tweede trainer uit met het adres waarmee hij inlogt. Hij ziet dan alles wat jij ziet: spelers, trainingen en archief. Alleen jij kunt mensen toevoegen of eruit halen.',
+		'Nodig een trainer uit met zijn e-mailadres. Hij ziet en doet alles wat jij doet.',
 	teamOnlyOwner: 'Alleen de eigenaar kan hier iemand bij zetten.',
 	roleOwner: 'eigenaar',
 	roleTrainer: 'trainer',
@@ -612,7 +612,7 @@ const data = {
 	invitePending: (email: string) => `${email} · nog niet ingelogd`,
 	withdraw: 'Intrekken',
 	tellHim: 'Uitleg delen',
-	tellHimHint: 'Hij ziet de uitnodiging pas als hij inlogt, dus laat het hem even weten.',
+	tellHimHint: 'Laat het hem even weten: hij ziet het pas als hij inlogt.',
 	tellHimShared: 'Doorgestuurd.',
 	tellHimCopied: 'De uitleg staat op je klembord. Plak hem in een bericht aan',
 	tellHimSelf: 'Kopieer deze tekst en stuur hem naar',
@@ -638,7 +638,7 @@ const data = {
 
 	chooseTeamHeading: 'Welk team volgt dit toestel',
 	chooseTeamHint:
-		'Alles wat je hier bijhoudt gaat naar het team dat aanstaat. Wissel je, dan wordt wat er nu in de app staat vervangen door dat van het andere team — stuur dus eerst op wat er nog klaarstaat.',
+		'Je werkt in één team tegelijk. Kies het team waar je mee verder wilt.',
 	chooseTeam: (naam: string) => `Overstappen naar ${naam}`,
 	currentTeam: (naam: string) => `${naam} · staat aan`,
 	confirmChooseTeam: (naam: string) =>
@@ -652,9 +652,9 @@ const data = {
 	transferHeading: 'Overzetten en back-up',
 	onlyHereLead: 'Alles staat alleen op dit toestel.',
 	onlyHere:
-		'Raakt het kwijt of gaat het stuk, dan is je seizoen weg. Maak af en toe een back-up, of log hierboven in en het gaat vanzelf.',
+		'Log in, dan raak je je team nooit kwijt.',
 	transferHint:
-		'Alles wat de app onthoudt: selectie, standaardopstelling, trainingen en het hele archief. Als bestand om te bewaren, of als code om op je andere toestel in te voeren. Een wedstrijd die nu loopt gaat nooit mee.',
+		'Je gegevens als bestand of als code.',
 	saveFile: 'Bestand opslaan',
 	openFile: 'Bestand openen',
 	makeCode: 'Code maken',

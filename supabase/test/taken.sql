@@ -123,13 +123,13 @@ begin
 
   h := public.herinneringen(avond);
   if not exists (select 1 from jsonb_array_elements(h) m
-                  where m->>'titel' = 'Morgen tegen Ajax, 10:30' and m->>'tekst' = 'Jullie doen de limonade.'
+                  where m->>'titel' = 'Morgen tegen Ajax, 10:30' and m->>'tekst' = 'Jullie regelen: limonade.'
                     and m->'tokens' @> '[{"token":"telefoon-sem-0123456789abcdef0123456789"}]'
                     and jsonb_array_length(m->'tokens') = 1) then
     raise exception 'Sem krijgt de avond ervoor geen herinnering, of iemand anders ook: %', h;
   end if;
   if not exists (select 1 from jsonb_array_elements(h) m
-                  where m->>'tekst' = 'Jullie doen vlaggen.' and m->'tokens' @> '[{"token":"telefoon-noah-0123456789abcdef0123456789"}]') then
+                  where m->>'tekst' = 'Jullie regelen: vlaggen.' and m->'tokens' @> '[{"token":"telefoon-noah-0123456789abcdef0123456789"}]') then
     raise exception 'Noah krijgt geen herinnering: %', h;
   end if;
   if h::text like '%telefoon-opa%' then raise exception 'opa krijgt een herinnering voor een taak die niet van hem is'; end if;

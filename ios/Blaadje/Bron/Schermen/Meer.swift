@@ -56,7 +56,7 @@ struct Meer: View {
             if let melding = abonnement.melding {
                 Text(melding).font(.footnote).foregroundStyle(.secondary)
             } else if abonnement.prijs == nil, abonnement.status?.kopen() ?? true {
-                Text("Het seizoen is nu niet te koop: Apple gaf geen prijs. Probeer het later nog eens.")
+                Text("Kopen lukt nu niet. Probeer het later nog eens.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         } header: {

@@ -156,7 +156,7 @@ describe('wie zat er op de bank', () => {
 	it('zegt het als er nog niets te tellen is', () => {
 		metWedstrijd();
 		render(Opstelling);
-		expect(document.querySelector('.bankoverzicht')?.textContent).toContain('Nog geen bewaarde wedstrijden');
+		expect(document.querySelector('.bankoverzicht')?.textContent).toContain('Dit zie je na de eerste wedstrijd');
 	});
 
 	it('zegt het als iemand die vorige keer op de bank begon er nu weer op staat', () => {

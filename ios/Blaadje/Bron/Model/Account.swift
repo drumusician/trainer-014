@@ -100,7 +100,7 @@ final class Account {
         await doe {
             try await self.inlog.stuurCode(email: adres)
             self.fase = .code(email: adres)
-            self.melding = "Er is een mail met een code naar \(adres) gestuurd. Kijk ook in je spam."
+            self.melding = "De code staat in je mail. Niets gekregen? Kijk in je spam."
         }
     }
 
@@ -125,7 +125,7 @@ final class Account {
         do {
             try await wat()
         } catch InlogFout.afgewezen {
-            melding = "Deze code klopt niet of is verlopen."
+            melding = "Deze code klopt niet. Vraag een nieuwe aan."
         } catch InlogFout.storing {
             melding = "Dat lukte niet. Heb je bereik?"
         } catch {
@@ -176,7 +176,7 @@ final class Account {
         } catch {
             fase = .hapert(email: email)
             // De woorden van de dienst erbij: zonder die weet niemand wat er mis is.
-            melding = "Verbinden met je account lukte niet. Wat op dit toestel staat is veilig.\n\n\(String(describing: error).prefix(300))"
+            melding = "Je team ophalen lukte niet. Probeer het zo nog eens.\n\n\(String(describing: error).prefix(300))"
         }
     }
 
@@ -249,7 +249,7 @@ final class Account {
     private func neemTeamOver(_ team: Team, email: String) async throws {
         guard let spiegel else { return }
         guard let vanServer = SyncModel.toestand(uit: try await spiegel.lees(), team: team.id) else {
-            melding = "Dit team is nog niet binnen. Probeer het zo nog eens."
+            melding = "Je team is er nog niet helemaal. Probeer het zo nog eens."
             return
         }
         // Wat hier stond is niet weg: het staat apart, voor als dit een vergissing was.

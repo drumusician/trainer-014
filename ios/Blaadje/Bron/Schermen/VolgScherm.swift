@@ -37,7 +37,7 @@ struct VolgScherm: View {
         let gemist = p.trainingen.filter { $0.status == "afgemeld" || $0.status == "afwezig" }
         if !p.aan {
             Section {
-                Text("De trainer heeft het team nog niet aangezet. Zodra dat gebeurt, zie je hier het programma en de taken, en krijg je de meldingen.")
+                Text("Zodra de trainer het team aanzet, zie je hier de wedstrijden en wie wat regelt.")
                     .foregroundStyle(.secondary)
             } header: {
                 Text(p.team)
@@ -51,7 +51,7 @@ struct VolgScherm: View {
             } header: {
                 Text("Wie is je kind?")
             } footer: {
-                Text("Dan zie je welke taken van jullie zijn, en krijg je er een herinnering voor.")
+                Text("Dan zie je wat jullie regelen, en krijg je een herinnering.")
             }
         }
         Section {
@@ -74,7 +74,7 @@ struct VolgScherm: View {
                 .padding(.vertical, 2)
             }
             if nu.isEmpty, komt.isEmpty {
-                Text("Er staat nog geen wedstrijd klaar.").foregroundStyle(.secondary)
+                Text("Nog geen wedstrijden.").foregroundStyle(.secondary)
             }
         } header: {
             HStack {
@@ -91,7 +91,7 @@ struct VolgScherm: View {
                 }
             }
         } footer: {
-            Text(volgen.melding ?? "Je krijgt een melding bij de aftrap, een doelpunt, de rust en het eindsignaal, en de avond voor een wedstrijd als jullie iets regelen.")
+            Text(volgen.melding ?? "Je krijgt een melding bij de aftrap, elk doelpunt, de rust en het einde. En de avond ervoor als jullie iets regelen.")
         }
         if !gespeeld.isEmpty {
             Section("Gespeeld") {
@@ -106,7 +106,7 @@ struct VolgScherm: View {
             // De trainingen zijn per kind; met de link van het team staan ze er niet.
             if let kind = p.kind {
                 if p.trainingen.isEmpty {
-                    Text("De trainer heeft nog geen trainingen bijgehouden.").foregroundStyle(.secondary)
+                    Text("Nog geen trainingen.").foregroundStyle(.secondary)
                 } else if gemist.isEmpty {
                     Text("\(kind) was er elke keer.")
                 }
@@ -164,7 +164,7 @@ struct LinkPlakken: View {
                         Task { @MainActor in link = tekst.first ?? "" }
                     }
                 } footer: {
-                    Text(volgen.melding ?? "De trainer deelt een link van het team. Daarmee volg je de wedstrijden; een account heb je niet nodig.")
+                    Text(volgen.melding ?? "Plak de link die je van de trainer kreeg.")
                 }
             }
             .navigationTitle("Een team volgen")

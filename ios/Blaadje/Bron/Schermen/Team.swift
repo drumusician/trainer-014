@@ -48,7 +48,7 @@ struct Team: View {
                     Text("\(app.spelers.count) spelers")
                 } footer: {
                     if !app.spelers.isEmpty {
-                        Text("Met de linie stelt de app bij een wissel iemand voor die op die plek past.")
+                        Text("Met de linie stelt de app bij een wissel iemand voor die past.")
                     }
                 }
 
@@ -108,12 +108,12 @@ struct Team: View {
                 NavigationStack {
                     Form {
                         Section {
-                            ShareLink(item: l.url, message: Text(l.kind ? "Volg \(l.naam) bij \(app.toestand.teamName) in de Blaadje-app." : "Volg de wedstrijden van \(l.naam) in de Blaadje-app.")) {
+                            ShareLink(item: l.url, message: Text(l.kind ? "Volg \(l.naam) bij \(app.toestand.teamName) in de Blaadje-app." : "Volg \(l.naam) in Blaadje.")) {
                                 Label("Stuur de link", systemImage: "square.and.arrow.up")
                             }
                         } footer: {
                             Text(l.kind
-                                ? "Stuur deze link alleen naar de ouders van \(l.naam). Zij zien ook de trainingen van \(l.naam)."
+                                ? "Alleen voor de ouders van \(l.naam): zij zien ook de trainingen."
                                 : "Zet deze link in de groepsapp van het team.")
                         }
                     }
@@ -171,7 +171,7 @@ struct SpelerBewerken: View {
                         .pickerStyle(.segmented)
                         Toggle("Kan keepen", isOn: Binding(get: { p.keeper == true }, set: { _ in app.wisselKeeper(id) }))
                     } footer: {
-                        Text("Met de linie stelt de app bij een wissel iemand voor die op die plek past.")
+                        Text("Met de linie stelt de app bij een wissel iemand voor die past.")
                     }
                     if Account.beschikbaar {
                         Section {
@@ -220,7 +220,7 @@ extension Team {
             do {
                 link = Ouderlink(naam: p?.name ?? app.toestand.teamName, kind: p != nil, url: try await account.ouderlink(speler: p?.id))
             } catch Account.LinkFout.nietIngelogd {
-                linkMelding = "Log eerst in. De link verwijst naar je team online."
+                linkMelding = "Log eerst in, dan kun je de link delen."
             } catch {
                 linkMelding = "De link maken lukte niet. Heb je bereik?"
             }

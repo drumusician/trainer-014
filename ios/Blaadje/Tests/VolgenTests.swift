@@ -166,7 +166,7 @@ final class VolgenTests: XCTestCase {
         server.antwoord = "false"
         await volgen.doeIk("teamlink-jo14-0123456789", "t2")
         XCTAssertEqual(server.vragen.last { $0.0 == "taak_doe_ik" }?.1["p_taak"], "t2")
-        XCTAssertEqual(volgen.melding, "Dat kon niet meer. Misschien was iemand je voor.")
+        XCTAssertEqual(volgen.melding, "Iemand anders was je net voor.")
     }
 
     func testZonderAdresVoorMeldingenKanEenTaakNiet() async {
