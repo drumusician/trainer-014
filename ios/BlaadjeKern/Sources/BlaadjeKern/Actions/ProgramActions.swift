@@ -98,9 +98,12 @@ public enum ProgramActions {
 		t.tasks.filter { $0.matchId == wedstrijd }
 	}
 
+	/** In plaats van een speler: de vereniging regelt het, zoals een clubscheidsrechter. */
+	public static let vereniging = "vereniging"
+
 	/**
 	 * Eén familie voor een taak die er één keer is (limonade, fluiten, vlaggen,
-	 * teamtas). Niemand (`nil`) haalt de taak weg.
+	 * velddienst, teamtas), of `vereniging`. Niemand (`nil`) haalt de taak weg.
 	 */
 	public static func zet(
 		_ t: inout AppState, wedstrijd: String, _ soort: TaskKind, speler: String?,
@@ -111,11 +114,13 @@ public enum ProgramActions {
 			if let i { t.tasks.remove(at: i) }
 			return
 		}
+		let club = speler == vereniging
 		if let i {
-			t.tasks[i].player = speler
+			t.tasks[i].player = club ? nil : speler
+			t.tasks[i].club = club
 			t.tasks[i].declinedBy = nil
 		} else {
-			t.tasks.append(TeamTask(id: nieuwId(), matchId: wedstrijd, kind: soort, player: speler))
+			t.tasks.append(TeamTask(id: nieuwId(), matchId: wedstrijd, kind: soort, player: club ? nil : speler, club: club))
 		}
 	}
 
@@ -146,7 +151,46 @@ public enum ProgramActions {
 		case .rijden: "Rijden"
 		case .fluiten: "Fluiten"
 		case .vlaggen: "Vlaggen"
+		case .velddienst: "Velddienst"
 		case .teamtas: "Teamtas"
 		}
+	}
+
+	// MARK: - wie deed wat
+
+	/** Eén keer dat een familie een taak had of heeft. */
+	public struct Beurt: Equatable, Sendable {
+		public let wedstrijd: String
+		public let datum: String
+		public let tegenstander: String
+		public let speler: String?
+		public let club: Bool
+		/** Al gespeeld; anders staat hij nog in het programma of is hij bezig. */
+		public let geweest: Bool
+	}
+
+	/**
+	 * Per wedstrijd van dit seizoen wie deze taak had, oudste eerst: gespeeld,
+	 * bezig, en wat nog komt. Bij rijden kunnen het er meer per wedstrijd zijn.
+	 */
+	public static func beurten(_ t: AppState, _ soort: TaskKind) -> [Beurt] {
+		var wedstrijden: [(id: String, datum: String, tegen: String, geweest: Bool)] = []
+		for w in t.archive { if let id = w.id { wedstrijden.append((id, w.date, w.opponent, true)) } }
+		for k in komend(t) { wedstrijden.append((k.id, k.date, k.opponent, false)) }
+		var uit: [Beurt] = []
+		for w in wedstrijden.sorted(by: { $0.datum < $1.datum }) {
+			for taak in t.tasks where taak.matchId == w.id && taak.kind == soort && !taak.open {
+				uit.append(Beurt(wedstrijd: w.id, datum: w.datum, tegenstander: w.tegen, speler: taak.player, club: taak.club, geweest: w.geweest))
+			}
+		}
+		return uit
+	}
+
+	/** Hoe vaak elke speler deze taak had of heeft, minst vaak eerst; spelers die nog nooit aan de beurt waren ook. */
+	public static func telling(_ t: AppState, _ soort: TaskKind) -> [(speler: Player, keer: Int)] {
+		let beurten = beurten(t, soort)
+		return t.players
+			.map { p in (speler: p, keer: beurten.filter { $0.speler == p.id }.count) }
+			.sorted { $0.keer != $1.keer ? $0.keer < $1.keer : $0.speler.name.localizedCompare($1.speler.name) == .orderedAscending }
 	}
 }

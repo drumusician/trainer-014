@@ -110,7 +110,13 @@ export function taken(t: State, wedstrijd: string): TeamTask[] {
 	return (t.tasks ?? []).filter((x) => x.matchId === wedstrijd);
 }
 
-/** Eén familie voor een taak die er één keer is. Niemand haalt de taak weg. */
+/** In plaats van een speler: de vereniging regelt het, zoals een clubscheidsrechter. */
+export const VERENIGING = 'vereniging';
+
+/** Er moet nog iemand voor gevonden worden. */
+export const isOpen = (x: TeamTask) => !x.player && !x.club;
+
+/** Eén familie voor een taak die er één keer is, of VERENIGING. Niemand haalt de taak weg. */
 export function zet(t: State, wedstrijd: string, soort: TaskKind, speler: string | null, nieuwId = nieuwKenmerk) {
 	const lijst = t.tasks ?? [];
 	const i = lijst.findIndex((x) => x.matchId === wedstrijd && x.kind === soort);
@@ -118,13 +124,17 @@ export function zet(t: State, wedstrijd: string, soort: TaskKind, speler: string
 		if (i >= 0) t.tasks = lijst.filter((_, j) => j !== i);
 		return;
 	}
-	if (i >= 0) {
-		lijst[i].player = speler;
-		delete lijst[i].declinedBy;
-		t.tasks = [...lijst];
+	const club = speler === VERENIGING;
+	const taak: TeamTask = i >= 0 ? lijst[i] : { id: nieuwId(), matchId: wedstrijd, kind: soort };
+	if (club) {
+		delete taak.player;
+		taak.club = true;
 	} else {
-		t.tasks = [...lijst, { id: nieuwId(), matchId: wedstrijd, kind: soort, player: speler }];
+		taak.player = speler;
+		delete taak.club;
 	}
+	delete taak.declinedBy;
+	t.tasks = i >= 0 ? [...lijst] : [...lijst, taak];
 }
 
 /** Bij rijden kunnen het er meer zijn. Leeg is een plek waar nog iemand voor gezocht wordt. */
@@ -154,8 +164,15 @@ export function haalTaakWeg(t: State, taak: string) {
 	t.tasks = (t.tasks ?? []).filter((x) => x.id !== taak);
 }
 
-export const SOORTEN: TaskKind[] = ['limonade', 'rijden', 'fluiten', 'vlaggen', 'teamtas'];
+export const SOORTEN: TaskKind[] = ['limonade', 'rijden', 'fluiten', 'vlaggen', 'velddienst', 'teamtas'];
 
 export function woord(soort: TaskKind): string {
-	return { limonade: 'Limonade', rijden: 'Rijden', fluiten: 'Fluiten', vlaggen: 'Vlaggen', teamtas: 'Teamtas' }[soort];
+	return {
+		limonade: 'Limonade',
+		rijden: 'Rijden',
+		fluiten: 'Fluiten',
+		vlaggen: 'Vlaggen',
+		velddienst: 'Velddienst',
+		teamtas: 'Teamtas'
+	}[soort];
 }

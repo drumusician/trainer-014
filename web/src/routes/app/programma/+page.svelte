@@ -4,7 +4,7 @@
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
 	import { shortDate } from '$lib/domain/dates';
-	import { SOORTEN, taken } from '$lib/actions/program';
+	import { SOORTEN, VERENIGING, isOpen, taken } from '$lib/actions/program';
 	import type { TaskKind } from '$lib/domain/types';
 
 	$effect(() => zetKop(text.program.title));
@@ -92,10 +92,13 @@
 								<td>
 									<select
 										aria-label={text.program.kinds[soort] + ' ' + p.opponent}
-										value={taak?.player ?? ''}
+										value={taak?.club ? VERENIGING : (taak?.player ?? '')}
 										onchange={(e) => app.setTask(p.id, soort, e.currentTarget.value || null)}
 									>
-										<option value="">{taak && !taak.player ? text.program.open : text.program.nobody}</option>
+										<option value="">{taak && isOpen(taak) ? text.program.open : text.program.nobody}</option>
+										{#if soort === 'fluiten'}
+											<option value={VERENIGING}>{text.program.club}</option>
+										{/if}
 										{#each t.players as speler (speler.id)}
 											<option value={speler.id}>{speler.name}</option>
 										{/each}

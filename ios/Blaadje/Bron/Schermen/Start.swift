@@ -14,10 +14,20 @@ struct Start: View {
     /// twee dingen tegelijk tonen kan iOS niet, en dan gebeurt er niets.
     @State private var naNieuw = false
 
+    private var titel: String { app.toestand.teamName.isEmpty ? "Blaadje" : app.toestand.teamName }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    // Zelf, en niet als grote titel van de balk: die kapt een lange teamnaam af.
+                    Text(titel)
+                        .font(.largeTitle.bold())
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 8)
+                        .accessibilityAddTraits(.isHeader)
                     if app.spelers.isEmpty {
                         leegTeam
                         if volgen.kinderen.isEmpty { ouder }
@@ -47,11 +57,13 @@ struct Start: View {
                 }
                 .padding(16)
             }
-            .navigationTitle(app.toestand.teamName.isEmpty ? "Blaadje" : app.toestand.teamName)
+            .navigationTitle(titel)
+            .toolbar(.hidden, for: .navigationBar)
             .background(Color(.systemGroupedBackground))
             .navigationDestination(for: String.self) { id in
                 ProgrammaWedstrijd(id: id) { stroom = .aanwezig }
             }
+            .navigationDestination(for: WieDeedWat.self) { _ in WieDeedWatScherm() }
         }
         .sheet(isPresented: $nieuw, onDismiss: {
             if naNieuw { naNieuw = false; stroom = .aanwezig }

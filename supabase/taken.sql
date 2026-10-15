@@ -24,7 +24,7 @@ create table if not exists public.taken (
   id             uuid primary key,
   team_id        uuid not null,
   wedstrijd_id   uuid not null,
-  soort          text not null check (soort in ('limonade', 'rijden', 'fluiten', 'vlaggen', 'teamtas')),
+  soort          text not null,
   speler_id      uuid,
   afgemeld_door  uuid,
   gemaakt        timestamptz not null default now(),
@@ -33,6 +33,15 @@ create table if not exists public.taken (
   foreign key (speler_id, team_id) references public.spelers (id, team_id) deferrable initially deferred,
   foreign key (afgemeld_door, team_id) references public.spelers (id, team_id) deferrable initially deferred
 );
+
+-- Welke taken er zijn. Los van de tabel, zodat er een bij kan.
+alter table public.taken drop constraint if exists taken_soort_check;
+alter table public.taken add constraint taken_soort_check
+  check (soort in ('limonade', 'rijden', 'fluiten', 'vlaggen', 'velddienst', 'teamtas'));
+
+-- De vereniging regelt het, zoals een clubscheidsrechter: dan is er geen
+-- familie, en staat de taak toch niet open.
+alter table public.taken add column if not exists vereniging boolean not null default false;
 
 create index if not exists taken_team_idx on public.taken (team_id);
 create index if not exists taken_wedstrijd_idx on public.taken (wedstrijd_id);
@@ -186,7 +195,7 @@ begin
                  select jsonb_agg(jsonb_build_object(
                           'id', tk.id,
                           'soort', tk.soort,
-                          'wie', s.naam,
+                          'wie', case when tk.vereniging then 'Vereniging' else s.naam end,
                           'van_mij', coalesce(tk.speler_id = v_mijn, false)
                         ) order by tk.gemaakt, tk.id)
                    from public.taken tk
@@ -256,7 +265,7 @@ begin
   update public.taken tk
      set speler_id = v_kind, afgemeld_door = null
     from public.wedstrijden w
-   where tk.id = p_taak and tk.team_id = v_team and tk.speler_id is null
+   where tk.id = p_taak and tk.team_id = v_team and tk.speler_id is null and not tk.vereniging
      and w.id = tk.wedstrijd_id and w.status <> 'afgelopen';
   get diagnostics v_aantal = row_count;
   return v_aantal > 0;
@@ -357,7 +366,7 @@ begin
                and coalesce(d.speler_id, v.speler_id) is distinct from tk.afgemeld_door) as tokens
       from public.taken tk
       join public.wedstrijden w on w.id = tk.wedstrijd_id
-     where tk.speler_id is null and tk.afgemeld_door is not null
+     where tk.speler_id is null and tk.afgemeld_door is not null and not tk.vereniging
        and tk.bijgewerkt > p_nu - interval '1 day'
        and w.status <> 'afgelopen' and w.datum >= v_lokaal::date
        and public.team_aan(w.team_id, p_nu)
@@ -370,6 +379,7 @@ begin
       'titel', 'Kan iemand ' || case r.soort
                                   when 'limonade' then 'de limonade doen'
                                   when 'teamtas' then 'de teamtas meenemen'
+                                  when 'velddienst' then 'de velddienst doen'
                                   else r.soort end || '?',
       'tekst', 'Tegen ' || r.tegenstander || ', ' || v_dagen[extract(dow from r.datum)::int + 1] || ' '
                || extract(day from r.datum)::int || ' ' || v_maanden[extract(month from r.datum)::int]

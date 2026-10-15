@@ -238,10 +238,27 @@ final class WedstrijddagTests: XCTestCase {
         app.buttons["Noah"].tap()
         app.buttons["Rijder erbij"].tap()
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Rijden")).firstMatch.waitForExistence(timeout: 5))
+        // Thuis fluit een scheidsrechter van de club.
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Fluiten")).firstMatch.tap()
+        XCTAssertTrue(app.buttons["Vereniging"].waitForExistence(timeout: 5))
+        app.buttons["Vereniging"].tap()
         beeld("pr2-taken")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Limonade Noah")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Fluiten vereniging")).firstMatch.exists)
         beeld("pr3-begin")
+
+        // Wie deed wat: Noah heeft de limonade een keer.
+        app.buttons["Wie deed wat"].tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Taak")).firstMatch.waitForExistence(timeout: 5))
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Taak")).firstMatch.tap()
+        app.buttons["Limonade"].tap()
+        XCTAssertTrue(app.staticTexts["Bram"].waitForExistence(timeout: 5))
+        beeld("pr4-wie-deed-wat")
+        // Minst vaak bovenaan: Noah, die al een keer had, staat onderaan.
+        app.swipeUp()
+        XCTAssertTrue(app.staticTexts["Noah, 1×"].waitForExistence(timeout: 5))
+        app.navigationBars.buttons.element(boundBy: 0).tap()
 
         // Op de dag zelf: één tik, en het is de wedstrijd.
         app.buttons["Thuis tegen Ajax"].tap()

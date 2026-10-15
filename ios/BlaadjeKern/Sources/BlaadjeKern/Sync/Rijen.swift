@@ -322,7 +322,7 @@ public enum SyncModel {
 			guard wedstrijdIds.contains(wid), taakGehad.insert(id).inserted else { continue }
 			zet("taken", id, [
 				"team_id": .tekst(team), "wedstrijd_id": .tekst(wid), "soort": .tekst(taak.kind.rawValue),
-				"speler_id": ref(taak.player), "afgemeld_door": ref(taak.declinedBy),
+				"speler_id": ref(taak.player), "afgemeld_door": ref(taak.declinedBy), "vereniging": ja(taak.club),
 			])
 		}
 
@@ -566,7 +566,8 @@ public enum SyncModel {
 
 		t.tasks = rijen("taken").sorted(by: opVolgorde).compactMap { r in
 			guard let id = s(r, "id"), let wid = s(r, "wedstrijd_id"), let soort = TaskKind(rawValue: s(r, "soort") ?? "") else { return nil }
-			return TeamTask(id: id, matchId: wid, kind: soort, player: s(r, "speler_id"), declinedBy: s(r, "afgemeld_door"))
+			return TeamTask(
+				id: id, matchId: wid, kind: soort, player: s(r, "speler_id"), declinedBy: s(r, "afgemeld_door"), club: ja(r, "vereniging"))
 		}
 		return t
 	}

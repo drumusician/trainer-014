@@ -99,7 +99,7 @@ export interface ScheduledMatch {
 	home: boolean;
 }
 
-export type TaskKind = 'limonade' | 'rijden' | 'fluiten' | 'vlaggen' | 'teamtas';
+export type TaskKind = 'limonade' | 'rijden' | 'fluiten' | 'vlaggen' | 'velddienst' | 'teamtas';
 
 /** Een taak bij een wedstrijd, voor de familie van een speler. Zonder speler staat hij open. */
 export interface TeamTask {
@@ -109,6 +109,8 @@ export interface TeamTask {
 	player?: string;
 	/** die familie kon niet en gaf hem terug */
 	declinedBy?: string;
+	/** de vereniging regelt het (een clubscheidsrechter); dan hoeft geen familie */
+	club?: boolean;
 }
 
 /**

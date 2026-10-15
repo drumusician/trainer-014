@@ -28,7 +28,11 @@ insert into public.taken (id, team_id, wedstrijd_id, soort, speler_id) values
   ('d3000000-0000-0000-0000-000000000001', 'dddddddd-0000-0000-0000-00000000000d', 'd2000000-0000-0000-0000-000000000001', 'limonade', 'd1000000-0000-0000-0000-000000000001'),
   ('d3000000-0000-0000-0000-000000000002', 'dddddddd-0000-0000-0000-00000000000d', 'd2000000-0000-0000-0000-000000000001', 'vlaggen', 'd1000000-0000-0000-0000-000000000002'),
   ('d3000000-0000-0000-0000-000000000003', 'dddddddd-0000-0000-0000-00000000000d', 'd2000000-0000-0000-0000-000000000001', 'rijden', null),
-  ('d3000000-0000-0000-0000-000000000004', 'dddddddd-0000-0000-0000-00000000000d', 'd2000000-0000-0000-0000-000000000002', 'limonade', 'd1000000-0000-0000-0000-000000000003');
+  ('d3000000-0000-0000-0000-000000000004', 'dddddddd-0000-0000-0000-00000000000d', 'd2000000-0000-0000-0000-000000000002', 'limonade', 'd1000000-0000-0000-0000-000000000003'),
+  ('d3000000-0000-0000-0000-000000000006', 'dddddddd-0000-0000-0000-00000000000d', 'd2000000-0000-0000-0000-000000000001', 'velddienst', null);
+-- Thuis fluit een scheidsrechter van de club.
+insert into public.taken (id, team_id, wedstrijd_id, soort, vereniging) values
+  ('d3000000-0000-0000-0000-000000000005', 'dddddddd-0000-0000-0000-00000000000d', 'd2000000-0000-0000-0000-000000000001', 'fluiten', true);
 
 insert into public.deellinks (id, team_id, speler_id, code) values
   ('d4000000-0000-0000-0000-000000000001', 'dddddddd-0000-0000-0000-00000000000d', null, 'teamlink-jo12-0123456789');
@@ -228,6 +232,24 @@ begin
     raise exception 'na overnemen staat er nog dat iemand niet kon';
   end if;
 end $$;
+
+-- de vereniging fluit: dat ziet een ouder, en niemand kan het overnemen
+begin;
+set local role anon;
+do $$
+declare p jsonb := public.volgpagina('teamlink-jo12-0123456789', 'telefoon-luuk-0123456789abcdef0123456789');
+begin
+  if not exists (
+    select 1 from jsonb_array_elements(p->'wedstrijden') w, jsonb_array_elements(w->'taken') t
+     where t->>'soort' = 'fluiten' and t->>'wie' = 'Vereniging'
+  ) then
+    raise exception 'een ouder ziet niet dat de vereniging fluit: %', p;
+  end if;
+  if public.taak_doe_ik('teamlink-jo12-0123456789', 'telefoon-luuk-0123456789abcdef0123456789', 'd3000000-0000-0000-0000-000000000005') then
+    raise exception 'een ouder nam het fluiten van de vereniging over';
+  end if;
+end $$;
+commit;
 
 -- een afgelopen wedstrijd: daar verandert niemand meer iets aan
 update public.wedstrijden set status = 'afgelopen' where id = 'd2000000-0000-0000-0000-000000000002';

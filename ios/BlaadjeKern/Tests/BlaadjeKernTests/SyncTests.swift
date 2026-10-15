@@ -49,6 +49,8 @@ import Testing
 		ProgramActions.zet(&t, wedstrijd: thuis, .vlaggen, speler: "p7", nieuwId: { "taak-2" })
 		ProgramActions.voegToe(&t, wedstrijd: "prog-2", .rijden, speler: "p2", nieuwId: { "taak-3" })
 		ProgramActions.voegToe(&t, wedstrijd: "prog-2", .rijden, speler: nil, nieuwId: { "taak-4" })
+		ProgramActions.zet(&t, wedstrijd: thuis, .fluiten, speler: ProgramActions.vereniging, nieuwId: { "taak-5" })
+		ProgramActions.zet(&t, wedstrijd: thuis, .velddienst, speler: "p9", nieuwId: { "taak-6" })
 		t.tasks[1].player = nil
 		t.tasks[1].declinedBy = "p7"
 		return t

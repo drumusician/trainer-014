@@ -139,6 +139,7 @@ const program = {
 	add: 'Zet erin',
 	nobody: '—',
 	open: 'open',
+	club: 'Vereniging',
 	declined: (naam: string) => `${naam} kan niet`,
 	addDriver: 'Rijder erbij',
 	remove: 'Haal uit het programma',
@@ -149,7 +150,14 @@ const program = {
 	homeNone: 'Zet de komende wedstrijden erin, met wie de limonade doet en wie er rijdt.',
 	line: (thuis: boolean, tegen: string, tijd: string) =>
 		(thuis ? 'Thuis' : 'Uit') + ' tegen ' + tegen + (tijd ? ', ' + tijd : ''),
-	kinds: { limonade: 'Limonade', rijden: 'Rijden', fluiten: 'Fluiten', vlaggen: 'Vlaggen', teamtas: 'Teamtas' }
+	kinds: {
+			limonade: 'Limonade',
+			rijden: 'Rijden',
+			fluiten: 'Fluiten',
+			vlaggen: 'Vlaggen',
+			velddienst: 'Velddienst',
+			teamtas: 'Teamtas'
+		}
 } as const;
 
 /** Team: de selectie, de verdeling over de linies, en de teamnaam. */

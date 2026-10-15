@@ -86,4 +86,34 @@ import Testing
 		let rijen = SyncModel.rijen(van: t, team: team).filter { $0.tabel == "taken" }
 		#expect(rijen.count == 3)
 	}
+
+	@Test func deVerenigingFluitEnDanStaatHetNietOpen() {
+		var (t, id) = metProgramma()
+		ProgramActions.zet(&t, wedstrijd: id, .fluiten, speler: ProgramActions.vereniging, nieuwId: { "t4" })
+		let fluiten = ProgramActions.taken(t, wedstrijd: id).first { $0.kind == .fluiten }
+		#expect(fluiten?.club == true)
+		#expect(fluiten?.player == nil)
+		#expect(fluiten?.open == false)
+		ProgramActions.zet(&t, wedstrijd: id, .fluiten, speler: "p3")
+		let daarna = ProgramActions.taken(t, wedstrijd: id).first { $0.kind == .fluiten }
+		#expect(daarna?.club == false, "een ouder in plaats van de vereniging")
+		#expect(daarna?.player == "p3")
+	}
+
+	@Test func wieDeedWatVanOudNaarNieuw() throws {
+		var (t, id) = metProgramma()
+		ProgramActions.zet(&t, wedstrijd: id, .fluiten, speler: "p1")
+		ProgramActions.zet(&t, wedstrijd: "w-18", .fluiten, speler: ProgramActions.vereniging)
+		ProgramActions.zet(&t, wedstrijd: "w-18", .vlaggen, speler: "p2")
+		#expect(ProgramActions.uitProgramma(&t, "w-18"))
+		_ = MatchActions.archiveMatch(&t, nu: 1_000_000)
+
+		let beurten = ProgramActions.beurten(t, .fluiten)
+		#expect(beurten.map(\.wedstrijd) == ["w-18", id], "oudste eerst")
+		#expect(beurten[0].club && beurten[0].geweest)
+		#expect(beurten[1].speler == "p1" && !beurten[1].geweest)
+		#expect(ProgramActions.telling(t, .fluiten).map { "\($0.speler.name) \($0.keer)" } == ["Luuk 0", "Noah 0", "Sem 1"])
+		// Een rijplek waar nog niemand voor is, telt niet.
+		#expect(ProgramActions.beurten(t, .rijden).map(\.speler) == ["p1"])
+	}
 }

@@ -69,7 +69,7 @@ enum Tabellen {
 		]),
 		("taken", [
 			("team_id", .tekst), ("wedstrijd_id", .tekst), ("soort", .tekst), ("speler_id", .tekst),
-			("afgemeld_door", .tekst), ("gemaakt", .tekst),
+			("afgemeld_door", .tekst), ("vereniging", .getal), ("gemaakt", .tekst),
 		]),
 	]
 
@@ -78,7 +78,7 @@ enum Tabellen {
 	/// lijst of object. Dus onderweg uitpakken.
 	static let json: Set<String> = ["standaardopstelling", "klok", "opstelling", "bank", "wisselplan", "posities"]
 	/// Ja/nee op de server, 0 of 1 op het toestel.
-	static let jaNee: Set<String> = ["keept", "thuis", "aanwezig", "verslag_met_wissels"]
+	static let jaNee: Set<String> = ["keept", "thuis", "aanwezig", "verslag_met_wissels", "vereniging"]
 
 	static var schema: Schema {
 		Schema(tables: alle.map { tabel in

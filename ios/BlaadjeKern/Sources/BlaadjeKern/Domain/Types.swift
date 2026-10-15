@@ -753,12 +753,13 @@ public struct ScheduledMatch: JSONModel, Equatable, Identifiable, Sendable {
 
 /** Wat ouders bij een wedstrijd regelen. */
 public enum TaskKind: String, CaseIterable, Codable, Sendable {
-	case limonade, rijden, fluiten, vlaggen, teamtas
+	case limonade, rijden, fluiten, vlaggen, velddienst, teamtas
 }
 
 /**
  * Een taak bij een wedstrijd, voor de familie van een speler. Zonder speler staat
- * hij open. `declinedBy`: die familie kon niet, en gaf hem terug.
+ * hij open. `declinedBy`: die familie kon niet, en gaf hem terug. `club`: de
+ * vereniging regelt het (een clubscheidsrechter); dan hoeft geen familie.
  */
 public struct TeamTask: JSONModel, Equatable, Identifiable, Sendable {
 	public var id: String
@@ -766,14 +767,19 @@ public struct TeamTask: JSONModel, Equatable, Identifiable, Sendable {
 	public var kind: TaskKind
 	public var player: String?
 	public var declinedBy: String?
+	public var club: Bool
 
-	public init(id: String, matchId: String, kind: TaskKind, player: String? = nil, declinedBy: String? = nil) {
+	public init(id: String, matchId: String, kind: TaskKind, player: String? = nil, declinedBy: String? = nil, club: Bool = false) {
 		self.id = id
 		self.matchId = matchId
 		self.kind = kind
 		self.player = player
 		self.declinedBy = declinedBy
+		self.club = club
 	}
+
+	/** Er moet nog iemand voor gevonden worden. */
+	public var open: Bool { player == nil && !club }
 
 	public init(json: JSONValue) throws {
 		let o = try alsObject(json, "taak")
@@ -782,6 +788,7 @@ public struct TeamTask: JSONModel, Equatable, Identifiable, Sendable {
 		kind = o.str("kind").flatMap(TaskKind.init(rawValue:)) ?? .limonade
 		player = o.str("player")
 		declinedBy = o.str("declinedBy")
+		club = o.bool("club") ?? false
 	}
 
 	public var json: JSONValue {
@@ -791,6 +798,7 @@ public struct TeamTask: JSONModel, Equatable, Identifiable, Sendable {
 		o["kind"] = .string(kind.rawValue)
 		o.zet("player", player)
 		o.zet("declinedBy", declinedBy)
+		if club { o["club"] = .bool(true) }
 		return .object(o)
 	}
 }

@@ -37,6 +37,12 @@ struct ProgrammaBlok: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("programma")
             }
+            if !app.toestand.tasks.isEmpty {
+                NavigationLink(value: WieDeedWat()) {
+                    Label("Wie deed wat", systemImage: "list.bullet.clipboard").font(.subheadline)
+                }
+                .padding(.top, 2)
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -53,14 +59,14 @@ enum TakenTekst {
         for soort in TaskKind.allCases {
             let hier = taken.filter { $0.kind == soort }
             guard !hier.isEmpty else { continue }
-            let wie = hier.compactMap { $0.player.flatMap(naam) }
-            let open = hier.filter { $0.player == nil }.count
+            let wie = hier.compactMap { $0.club ? "vereniging" : $0.player.flatMap(naam) }
+            let open = hier.filter(\.open).count
             var regel = ProgramActions.woord(soort)
             if !wie.isEmpty { regel += " " + wie.joined(separator: ", ") }
             if open > 0 { regel += wie.isEmpty ? " open" : ", nog \(open) open" }
             delen.append(regel)
         }
-        let kanNiet = taken.compactMap { $0.player == nil ? $0.declinedBy.flatMap(naam) : nil }
+        let kanNiet = taken.compactMap { $0.open ? $0.declinedBy.flatMap(naam) : nil }
         if !kanNiet.isEmpty { delen.append(kanNiet.joined(separator: ", ") + " kan niet") }
         return delen.joined(separator: " · ")
     }
@@ -156,10 +162,14 @@ struct ProgrammaWedstrijd: View {
                 Section {
                     ForEach(TaskKind.allCases.filter { $0 != .rijden }, id: \.self) { soort in
                         Picker(ProgramActions.woord(soort), selection: Binding(
-                            get: { ProgramActions.taken(app.toestand, wedstrijd: id).first { $0.kind == soort }?.player ?? "" },
+                            get: {
+                                let taak = ProgramActions.taken(app.toestand, wedstrijd: id).first { $0.kind == soort }
+                                return taak?.club == true ? ProgramActions.vereniging : taak?.player ?? ""
+                            },
                             set: { app.zetTaak(id, soort, speler: $0.isEmpty ? nil : $0) }
                         )) {
                             Text(open(soort) ? "Open" : "Niemand").tag("")
+                            if soort == .fluiten { Text("Vereniging").tag(ProgramActions.vereniging) }
                             ForEach(app.spelers) { Text($0.name).tag($0.id) }
                         }
                     }
@@ -206,13 +216,60 @@ struct ProgrammaWedstrijd: View {
 
     /// Open: een familie kon niet, en er is nog niemand anders.
     private func open(_ soort: TaskKind) -> Bool {
-        ProgramActions.taken(app.toestand, wedstrijd: id).contains { $0.kind == soort && $0.player == nil }
+        ProgramActions.taken(app.toestand, wedstrijd: id).contains { $0.kind == soort && $0.open }
     }
 
     private var voetnoot: String {
         let kanNiet = ProgramActions.taken(app.toestand, wedstrijd: id)
-            .compactMap { t in t.player == nil ? t.declinedBy.flatMap { app.speler($0)?.name }.map { "\($0) kan niet (\(ProgramActions.woord(t.kind).lowercased()))" } : nil }
+            .compactMap { t in t.open ? t.declinedBy.flatMap { app.speler($0)?.name }.map { "\($0) kan niet (\(ProgramActions.woord(t.kind).lowercased()))" } : nil }
         let basis = "Ouders zien dit in de app en krijgen de avond ervoor een herinnering. Wie de limonade doet, krijgt er vlak voor de rust nog een."
         return kanNiet.isEmpty ? basis : kanNiet.joined(separator: ", ") + ". " + basis
+    }
+}
+
+/// Naar het overzicht van wie welke taak had.
+struct WieDeedWat: Hashable {}
+
+/// Per taak: wie hem had en wie hij nog heeft, en hoe vaak elke familie aan de
+/// beurt was. Minst vaak bovenaan: die is de volgende.
+struct WieDeedWatScherm: View {
+    @Environment(AppModel.self) private var app
+    @State private var soort: TaskKind = .fluiten
+
+    var body: some View {
+        let beurten = ProgramActions.beurten(app.toestand, soort)
+        List {
+            Section {
+                Picker("Taak", selection: $soort) {
+                    ForEach(TaskKind.allCases, id: \.self) { Text(ProgramActions.woord($0)).tag($0) }
+                }
+            }
+            Section {
+                ForEach(ProgramActions.telling(app.toestand, soort), id: \.speler.id) { regel in
+                    LabeledContent(regel.speler.name) {
+                        Text(regel.keer == 0 ? "nog niet" : "\(regel.keer)×").monospacedDigit()
+                    }
+                }
+            } header: {
+                Text("Hoe vaak")
+            } footer: {
+                Text("Wat al gespeeld is en wat nog in het programma staat, samen.")
+            }
+            if !beurten.isEmpty {
+                Section("Wanneer") {
+                    ForEach(Array(beurten.enumerated()), id: \.offset) { _, b in
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(shortDate(b.datum)).monospacedDigit().frame(minWidth: 52, alignment: .leading)
+                            Text(b.tegenstander).foregroundStyle(b.geweest ? .secondary : .primary)
+                            Spacer()
+                            Text(b.club ? "Vereniging" : b.speler.flatMap { app.speler($0)?.name } ?? "?")
+                        }
+                        .font(.subheadline)
+                    }
+                }
+            }
+        }
+        .navigationTitle("Wie deed wat")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

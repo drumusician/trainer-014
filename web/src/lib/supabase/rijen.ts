@@ -64,7 +64,7 @@ export const MET_VOLGORDE = new Set(['spelers', 'wedstrijden', 'trainingen', 'ge
 
 /** Kolommen die op de server JSON zijn, en die met ja of nee. */
 export const JSON_KOLOMMEN = new Set(['standaardopstelling', 'klok', 'opstelling', 'bank', 'wisselplan', 'posities']);
-export const JA_NEE = new Set(['keept', 'thuis', 'aanwezig', 'verslag_met_wissels']);
+export const JA_NEE = new Set(['keept', 'thuis', 'aanwezig', 'verslag_met_wissels', 'vereniging']);
 
 /** Staat voor 'nu' in `spelers.weg`: wie het wegschrijft vult het tijdstip in. */
 export const NU = 'NU';
@@ -378,7 +378,8 @@ export function rijen(t: State, team: string): Rij[] {
 			wedstrijd_id: wid,
 			soort: taak.kind,
 			speler_id: ref(taak.player),
-			afgemeld_door: ref(taak.declinedBy)
+			afgemeld_door: ref(taak.declinedBy),
+			vereniging: taak.club === true
 		});
 	}
 
@@ -722,13 +723,14 @@ export function toestand(tabellen: Record<string, Tabelrij[]>, team: string): St
 		if (speler) taak.player = speler;
 		const weg = s(r, 'afgemeld_door');
 		if (weg) taak.declinedBy = weg;
+		if (ja(r, 'vereniging')) taak.club = true;
 		return [taak];
 	});
 	if (taken.length) t.tasks = taken;
 	return t;
 }
 
-const SOORTEN: TaskKind[] = ['limonade', 'rijden', 'fluiten', 'vlaggen', 'teamtas'];
+const SOORTEN: TaskKind[] = ['limonade', 'rijden', 'fluiten', 'vlaggen', 'velddienst', 'teamtas'];
 
 /** Een aftrap als "10:30", of niets. */
 function aanvang(s: string | null | undefined): string | null {
