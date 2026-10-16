@@ -64,4 +64,22 @@ describe('het programma op het web', () => {
 		await tick();
 		expect(app.toestand.program).toHaveLength(0);
 	});
+
+	it('zegt dat ouders het nog niet zien, en laat zien wie wat deed', async () => {
+		const id = app.addToProgram('2099-01-10', '10:30', 'PSV', false);
+		const sem = app.toestand.players[0];
+		app.setTask(id, 'fluiten', sem.id);
+		render(Programma);
+		await tick();
+		expect(document.body.textContent).toContain('Ouders zien dit nog niet');
+		expect(screen.getByRole('heading', { name: 'Wie deed wat' })).toBeTruthy();
+		expect(document.body.textContent).toContain(sem.name + '1×');
+	});
+
+	it('de vereniging kan fluiten', async () => {
+		const id = app.addToProgram('2099-01-10', '10:30', 'PSV', true);
+		render(Programma);
+		await fireEvent.change(screen.getByRole('combobox', { name: 'Fluiten PSV' }), { target: { value: 'vereniging' } });
+		expect(app.toestand.tasks).toEqual([expect.objectContaining({ matchId: id, kind: 'fluiten', club: true })]);
+	});
 });

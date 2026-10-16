@@ -244,6 +244,8 @@ class Sync {
 	openstaand = $state<{ id: string; email: string }[]>([]);
 	/** teams waarvoor er een uitnodiging op jouw adres klaarstaat */
 	uitgenodigdVoor = $state<{ id: string; naam: string }[]>([]);
+	/** staat het team aan (het teamseizoen is gekocht in de iPhone-app)? null: weet ik niet */
+	teamAan = $state<boolean | null>(null);
 	/**
 	 * Er logt iemand anders in dan de vorige keer, en er staat hier nog een team.
 	 *
@@ -790,6 +792,23 @@ class Sync {
 			   alleen maar onrust zaaien over iets wat niet van hem is. */
 			this.leden = [];
 			this.openstaand = [];
+		}
+	}
+
+	/** Staat het team aan? Dan zien ouders het programma (team_status in supabase/abonnement.sql). */
+	async haalTeamStatus() {
+		const token = await this.token();
+		if (!token || !this.sessie?.teamId) return;
+		try {
+			const s = (await sb(
+				'/rest/v1/rpc/team_status',
+				{ method: 'POST', body: JSON.stringify({ p_team: this.sessie.teamId }) },
+				token
+			)) as { aan?: boolean } | null;
+			this.teamAan = s?.aan === true;
+		} catch {
+			/* geen bereik: dan zeggen we er niets over */
+			this.teamAan = null;
 		}
 	}
 

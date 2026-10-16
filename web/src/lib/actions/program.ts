@@ -1,4 +1,4 @@
-import type { ScheduledMatch, State, TaskKind, TeamTask } from '$lib/domain/types';
+import type { Player, ScheduledMatch, State, TaskKind, TeamTask } from '$lib/domain/types';
 import { nieuwe } from './match';
 
 /**
@@ -175,4 +175,54 @@ export function woord(soort: TaskKind): string {
 		velddienst: 'Velddienst',
 		teamtas: 'Teamtas'
 	}[soort];
+}
+
+/* ---------- wie deed wat ---------- */
+
+/** Eén keer dat een familie een taak had of heeft. */
+export interface Beurt {
+	wedstrijd: string;
+	datum: string;
+	tegenstander: string;
+	speler?: string;
+	club: boolean;
+	/** al gespeeld; anders staat hij nog in het programma of is hij bezig */
+	geweest: boolean;
+}
+
+/**
+ * Per wedstrijd wie deze taak had, oudste eerst: gespeeld, bezig, en wat nog
+ * komt. Bij rijden kunnen het er meer per wedstrijd zijn. Net als
+ * ProgramActions.beurten in de iPhone-app.
+ */
+export function beurten(t: State, soort: TaskKind): Beurt[] {
+	const wedstrijden: { id: string; datum: string; tegen: string; geweest: boolean }[] = [];
+	for (const w of t.archive) if (w.id) wedstrijden.push({ id: w.id, datum: w.date, tegen: w.opponent, geweest: true });
+	const lopend = t.match && !t.match.archived && t.match.id ? t.match : undefined;
+	if (lopend) wedstrijden.push({ id: lopend.id!, datum: lopend.date, tegen: lopend.opponent, geweest: false });
+	for (const p of t.program ?? []) wedstrijden.push({ id: p.id, datum: p.date, tegen: p.opponent, geweest: false });
+	wedstrijden.sort((a, b) => (a.datum < b.datum ? -1 : a.datum > b.datum ? 1 : 0));
+	const uit: Beurt[] = [];
+	for (const w of wedstrijden) {
+		for (const taak of t.tasks ?? []) {
+			if (taak.matchId !== w.id || taak.kind !== soort || isOpen(taak)) continue;
+			uit.push({
+				wedstrijd: w.id,
+				datum: w.datum,
+				tegenstander: w.tegen,
+				speler: taak.player,
+				club: taak.club === true,
+				geweest: w.geweest
+			});
+		}
+	}
+	return uit;
+}
+
+/** Hoe vaak elke speler deze taak had of heeft, minst vaak eerst; spelers die nog nooit aan de beurt waren ook. */
+export function telling(t: State, soort: TaskKind): { speler: Player; keer: number }[] {
+	const lijst = beurten(t, soort);
+	return t.players
+		.map((p) => ({ speler: p, keer: lijst.filter((b) => b.speler === p.id).length }))
+		.sort((a, b) => a.keer - b.keer || a.speler.name.localeCompare(b.speler.name, 'nl'));
 }

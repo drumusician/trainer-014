@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptyState } from '$lib/domain/types';
 import * as p from './program';
+import { archiveMatch } from './match';
 
 /* Dezelfde regels als ProgramTests.swift in de iPhone-app. */
 function metProgramma() {
@@ -82,5 +83,36 @@ describe('de taken', () => {
 		expect(p.tijd('24:00')).toBeUndefined();
 		expect(p.tijd('9:30')).toBeUndefined();
 		expect(p.woord('teamtas')).toBe('Teamtas');
+	});
+});
+
+describe('wie deed wat', () => {
+	it('de vereniging die fluit staat niet open, en een ouder in de plaats ervan wel gewoon', () => {
+		const { t, id } = metProgramma();
+		p.zet(t, id, 'fluiten', p.VERENIGING, () => 't4');
+		const fluiten = p.taken(t, id).find((x) => x.kind === 'fluiten')!;
+		expect(fluiten).toMatchObject({ club: true });
+		expect(fluiten.player).toBeUndefined();
+		expect(p.isOpen(fluiten)).toBe(false);
+		p.zet(t, id, 'fluiten', 'p1');
+		expect(p.taken(t, id).find((x) => x.kind === 'fluiten')).toMatchObject({ player: 'p1' });
+		expect(p.taken(t, id).find((x) => x.kind === 'fluiten')!.club).toBeUndefined();
+	});
+
+	it('van oud naar nieuw, met hoe vaak elke familie aan de beurt was', () => {
+		const { t, id } = metProgramma();
+		t.players.push({ id: 'p3', name: 'Luuk', line: '' });
+		p.zet(t, id, 'fluiten', 'p1');
+		p.zet(t, 'w-18', 'fluiten', p.VERENIGING);
+		expect(p.uitProgramma(t, 'w-18')).toBe(true);
+		archiveMatch(t, 1_000_000);
+
+		const lijst = p.beurten(t, 'fluiten');
+		expect(lijst.map((b) => b.wedstrijd)).toEqual(['w-18', id]);
+		expect(lijst[0]).toMatchObject({ club: true, geweest: true });
+		expect(lijst[1]).toMatchObject({ speler: 'p1', geweest: false });
+		expect(p.telling(t, 'fluiten').map((r) => r.speler.name + ' ' + r.keer)).toEqual(['Luuk 0', 'Noah 0', 'Sem 1']);
+		/* een rijplek waar nog niemand voor is, telt niet */
+		expect(p.beurten(t, 'rijden').map((b) => b.speler)).toEqual(['p1']);
 	});
 });

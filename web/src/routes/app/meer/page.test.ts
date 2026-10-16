@@ -4,7 +4,6 @@ import { tick } from 'svelte';
 import Meer from './+page.svelte';
 import { app } from '$lib/store.svelte';
 import { emptyState } from '$lib/domain/types';
-import { makeTransferCode } from '$lib/domain/transfer';
 import { issues, reportIssue } from '$lib/issues.svelte';
 import { metSelectie } from '../../../test/wedstrijd';
 import { sync } from '$lib/supabase/sync.svelte';
@@ -82,51 +81,10 @@ describe('het gegevensscherm', () => {
 		expect(document.querySelector('.mager')).toBeTruthy();
 	});
 
-	it('maakt een overzetcode van wat er nu is', async () => {
+	it('je gegevens downloaden kan altijd', () => {
 		metSelectie();
 		render(Meer);
-		screen.getByRole('button', { name: 'Code maken' }).click();
-		await tick();
-		const vak = document.querySelector('textarea') as HTMLTextAreaElement;
-		expect(vak.value.length).toBeGreaterThan(20);
-	});
-
-	/*
-	 * Een code van een ander toestel overnemen vervangt alles. Dat is de meest
-	 * ingrijpende knop van de app, en hij hoort te doen wat hij zegt.
-	 */
-	it('neemt een code van een ander toestel over', async () => {
-		const ander = emptyState();
-		ander.teamName = 'JO12-1';
-		ander.players = [{ id: 'x', name: 'Zoe', line: 'M' }];
-		const code = makeTransferCode(ander);
-
-		render(Meer);
-		screen.getByRole('button', { name: 'Invoeren' }).click();
-		await tick();
-		const vak = document.querySelector('textarea') as HTMLTextAreaElement;
-		vak.value = code;
-		vak.dispatchEvent(new Event('input', { bubbles: true }));
-		await tick();
-		screen.getByRole('button', { name: 'Overnemen' }).click();
-		await tick();
-		expect(app.toestand.teamName).toBe('JO12-1');
-		expect(app.toestand.players.map((p) => p.name)).toEqual(['Zoe']);
-	});
-
-	it('laat een onleesbare code de bestaande gegevens niet aantasten', async () => {
-		metSelectie();
-		render(Meer);
-		screen.getByRole('button', { name: 'Invoeren' }).click();
-		await tick();
-		const vak = document.querySelector('textarea') as HTMLTextAreaElement;
-		vak.value = 'dit is geen code';
-		vak.dispatchEvent(new Event('input', { bubbles: true }));
-		await tick();
-		screen.getByRole('button', { name: 'Overnemen' }).click();
-		await tick();
-		expect(app.toestand.teamName).toBe('O14-3');
-		expect(app.toestand.players).toHaveLength(6);
+		expect(screen.getByRole('button', { name: 'Je gegevens downloaden' })).toBeTruthy();
 	});
 
 	/*
@@ -467,7 +425,7 @@ describe('het gegevensscherm als je ingelogd bent', () => {
 		sync.andereGebruiker = 'tjaco@voorbeeld.nl';
 		render(Meer);
 		await tick();
-		expect(document.body.textContent).toContain('back-up');
+		expect(document.body.textContent).toContain('gaat weg');
 	});
 
 	it('vraagt dat niet als er niets aan de hand is', async () => {

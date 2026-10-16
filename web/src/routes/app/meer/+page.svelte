@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { backupName, readBackup, makeBackup } from '$lib/domain/backup';
-	import { describePackage, readTransferCode, makeTransferCode } from '$lib/domain/transfer';
+	import { backupName, makeBackup } from '$lib/domain/backup';
 	import { app } from '$lib/store.svelte';
 	import { sync } from '$lib/supabase/sync.svelte';
 	import { zetKop } from '$lib/header.svelte';
@@ -16,9 +15,6 @@
 
 	const t = $derived(app.toestand);
 	let inlogcode = $state('');
-	let overzet = $state<'geen' | 'maken' | 'invoeren'>('geen');
-	let code = $state('');
-	let backup = $state<'geen' | 'maken'>('geen');
 	/* The link from the mail returns to wherever you requested it. On your own
 	   machine that is localhost, which is a different store from the real site. */
 	/*
@@ -35,7 +31,6 @@
 	});
 
 	const opLokaal = $derived(typeof location !== 'undefined' && /^(localhost|127\.|\[::1\])/.test(location.hostname));
-	let backuptekst = $state('');
 	/* Het logboekje doorsturen: pas nadat je het gezien hebt. */
 	let melden = $state('');
 	let uitnodigen = $state('');
@@ -65,57 +60,15 @@
 		}
 	});
 
-	async function codeMaken() {
-		code = makeTransferCode(t);
-		overzet = 'maken';
-		try {
-			await navigator.clipboard.writeText(code);
-		} catch {
-			/* then by hand */
-		}
-	}
-
-	async function backupMaken() {
+	/** Je gegevens als bestand: wat de app onthoudt, om zelf te bewaren. */
+	function downloaden() {
 		const gemaakt = new Date().toISOString();
-		backuptekst = makeBackup(t, gemaakt);
-		backup = 'maken';
-		try {
-			await navigator.clipboard.writeText(backuptekst);
-		} catch {
-			/* then via the file */
-		}
-		const blob = new Blob([backuptekst], { type: 'application/json' });
+		const blob = new Blob([makeBackup(t, gemaakt)], { type: 'application/json' });
 		const a = document.createElement('a');
 		a.href = URL.createObjectURL(blob);
 		a.download = backupName(gemaakt);
 		a.click();
 		URL.revokeObjectURL(a.href);
-	}
-
-	/**
-	 * Restore a saved file.
-	 *
-	 * This was missing while 'Bestand opslaan' was not. So the only way to restore
-	 * a backup was to open it, select everything and paste — not something you do
-	 * on a phone with a hundred-kilobyte file.
-	 */
-	async function bestandInlezen(e: Event) {
-		const invoer = e.currentTarget as HTMLInputElement;
-		const bestand = invoer.files?.[0];
-		if (!bestand) return;
-		try {
-			const pakket = readBackup(await bestand.text());
-			if (confirm(text.data.confirmRestore(describePackage(pakket)))) {
-				app.adoptPackage(pakket);
-				backup = 'geen';
-				overzet = 'geen';
-				alert(text.data.restored);
-			}
-		} catch (fout) {
-			alert(text.data.unreadableFile((fout as Error).message));
-		}
-		/* Clear it, otherwise you cannot pick the same file twice. */
-		invoer.value = '';
 	}
 
 	/**
@@ -135,20 +88,6 @@
 			await navigator.clipboard.writeText(melden);
 		} catch {
 			/* dan leest hij hem hieronder */
-		}
-	}
-
-	/** One button for both: a code and a backup hold the same thing. */
-	function overnemen() {
-		try {
-			const pakket = readTransferCode(code);
-			if (!confirm(text.data.confirmAdopt(describePackage(pakket)))) return;
-			app.adoptPackage(pakket);
-			overzet = 'geen';
-			code = '';
-			alert(text.data.adopted);
-		} catch (e) {
-			alert(text.data.unreadable((e as Error).message));
 		}
 	}
 </script>
@@ -386,45 +325,11 @@
 			{/if}
 		{/if}
 
-		<h2>{text.data.transferHeading}</h2>
 		{#if !sync.sessie}
-			<p class="uitleg">
+			<p class="uitleg" style="margin-top: 16px">
 				<b class="mager">{text.data.onlyHereLead}</b>
 				{text.data.onlyHere}
 			</p>
-		{/if}
-		<p class="uitleg">
-			{text.data.transferHint}
-		</p>
-		<div class="knoprij" style="padding-left: 0">
-			<button onclick={backupMaken}>{text.data.saveFile}</button>
-			<label class="knop">
-				{text.data.openFile}
-				<input type="file" accept="application/json,.json" onchange={bestandInlezen} />
-			</label>
-			<button onclick={codeMaken}>{text.data.makeCode}</button>
-			<button
-				onclick={() => {
-					overzet = 'invoeren';
-					backup = 'geen';
-					code = '';
-				}}>{text.data.enter}</button
-			>
-		</div>
-		{#if backup === 'maken'}
-			<p class="uitleg" style="margin-top: 12px">{text.data.savedAndCopied}</p>
-			<textarea readonly value={backuptekst} style="min-height: 120px"></textarea>
-		{:else if overzet === 'maken'}
-			<p class="uitleg" style="margin-top: 12px">
-				{text.data.copiedBefore} <b>{text.data.enter}</b>{text.data.copiedAfter}
-			</p>
-			<textarea readonly value={code}></textarea>
-		{:else if overzet === 'invoeren'}
-			<p class="uitleg" style="margin-top: 12px">{text.data.pasteHint}</p>
-			<textarea bind:value={code} placeholder={text.data.pastePlaceholder} style="min-height: 120px"></textarea>
-			<div class="knoprij" style="padding-left: 0; margin-top: 10px">
-				<button class="prim" onclick={overnemen}>{text.data.adopt}</button>
-			</div>
 		{/if}
 
 		{#if opslagstand.ondersteund && opslagstand.blijvend === false}
@@ -470,6 +375,10 @@
 				</p>
 			{/if}
 		{/if}
+
+		<div class="knoprij" style="padding-left: 0; margin-top: 24px">
+			<button class="klein" onclick={downloaden}>{text.data.download}</button>
+		</div>
 
 		<p class="uitleg" style="margin-top: 24px; font-size: 11px; opacity: 0.75">
 			{text.data.footer(__VERSIE__)}

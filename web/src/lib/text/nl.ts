@@ -138,6 +138,13 @@ const program = {
 	nobody: '—',
 	open: 'open',
 	club: 'Vereniging',
+	parentsNotYet: 'Ouders zien dit nog niet. Haal ze erbij in de Blaadje-app op je telefoon, bij Team.',
+	whoHeading: 'Wie deed wat',
+	whoHint: 'Gespeelde en komende wedstrijden samen. Minst vaak bovenaan: die is de volgende.',
+	whoTask: 'Taak',
+	howOften: 'Hoe vaak',
+	when: 'Wanneer',
+	notYet: 'nog niet',
 	declined: (naam: string) => `${naam} kan niet`,
 	addDriver: 'Rijder erbij',
 	remove: 'Haal uit het programma',
@@ -635,31 +642,12 @@ const data = {
 	confirmNewTeam: (huidig: string) =>
 		`Een nieuw team beginnen?\n\nWat er nu in de app staat hoort bij ${huidig} en blijft daar. Dit toestel begint leeg voor het nieuwe team.`,
 
-	transferHeading: 'Overzetten en back-up',
 	onlyHereLead: 'Alles staat alleen op dit toestel.',
 	onlyHere: 'Log in, dan raak je je team nooit kwijt.',
-	transferHint: 'Je gegevens als bestand of als code.',
-	saveFile: 'Bestand opslaan',
-	openFile: 'Bestand openen',
-	makeCode: 'Code maken',
-	enter: 'Invoeren',
-	savedAndCopied: 'Opgeslagen als bestand, en gekopieerd.',
-	copiedBefore: 'Gekopieerd. Stuur hem naar je andere toestel en tik daar op',
-	copiedAfter: '.',
-	pasteHint: 'Plak hier een code of de inhoud van een bestand; allebei werkt.',
-	pastePlaceholder: 'Plak de code of de back-up',
-	adopt: 'Overnemen',
-	confirmAdopt: (what: string) =>
-		`Dit overnemen op dit toestel?\n\n${what}.\n\nWat hierin zit vervangt wat je nu hebt. Een wedstrijd die nu loopt blijft staan.`,
-	confirmRestore: (what: string) =>
-		`Dit terugzetten op dit toestel?\n\n${what}.\n\nWat hierin zit vervangt wat je nu hebt. Een wedstrijd die nu loopt blijft staan.`,
-	adopted: 'Overgenomen.',
-	restored: 'Teruggezet.',
-	unreadable: (why: string) => `Dit kon ik niet lezen: ${why}`,
-	unreadableFile: (why: string) => `Dit bestand kon ik niet lezen: ${why}`,
+	download: 'Je gegevens downloaden',
 
 	mayCleanLead: 'Deze browser mag je gegevens opruimen',
-	mayClean: 'als hij plaats nodig heeft. Zet de app op je beginscherm en log in, of maak af en toe een back-up.',
+	mayClean: 'als hij plaats nodig heeft. Log in, dan staat je team veilig.',
 
 	issuesHeading: 'Wat er misging',
 	issuesHint:
