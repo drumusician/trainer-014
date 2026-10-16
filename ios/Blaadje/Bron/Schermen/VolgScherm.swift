@@ -60,8 +60,7 @@ struct VolgScherm: View {
                     Text("NU BEZIG").font(.caption.bold()).kerning(1).foregroundStyle(Kleur.oranje)
                     Text(w.tegenstander).font(.headline).lineLimit(1)
                     Text(w.thuis ? "Thuis" : "Uit").font(.caption).foregroundStyle(.secondary)
-                    Text("\(w.voor ?? 0) – \(w.tegen ?? 0)")
-                        .font(.system(size: 40, weight: .bold)).monospacedDigit()
+                    Text(stand(w)).font(.system(size: 40, weight: .bold)).monospacedDigit()
                 }
                 .padding(.vertical, 4)
                 .accessibilityElement(children: .combine)
@@ -98,9 +97,9 @@ struct VolgScherm: View {
             Section("Gespeeld") {
                 ForEach(Array(gespeeld)) { w in
                     regel(w, wanneer: shortDate(w.datum)) {
-                        // Eigen team eerst: dat leest een ouder het snelst.
+                        // De thuisploeg eerst, zoals op het scorebord en in de meldingen. Gewonnen is groen.
                         let voor = w.voor ?? 0, tegen = w.tegen ?? 0
-                        Text("\(voor) – \(tegen)").bold().monospacedDigit()
+                        Text(stand(w)).bold().monospacedDigit()
                             .foregroundStyle(voor > tegen ? Kleur.accent : voor < tegen ? .secondary : .primary)
                     }
                 }
@@ -143,6 +142,12 @@ struct VolgScherm: View {
             }
         }
         .accessibilityElement(children: .contain)
+    }
+
+    /// "3 – 1", de thuisploeg eerst.
+    private func stand(_ w: Volgen.Wedstrijd) -> String {
+        let voor = w.voor ?? 0, tegen = w.tegen ?? 0
+        return w.thuis ? "\(voor) – \(tegen)" : "\(tegen) – \(voor)"
     }
 
     /// De tegenstander, met daaronder thuis of uit en wanneer; rechts wat erbij hoort.
