@@ -451,7 +451,16 @@ final class Account {
 
     /// Wat op dit toestel staat blijft staan; het gaat alleen niet meer naar je account.
     /// Log je daarna met een ander adres in, dan gaat het opzij (zie `koppel`).
+    /// Staat alles van deze telefoon in het account? Dan kan de telefoon na uitloggen leeg.
+    var allesOnline: Bool {
+        if case .aan = fase { return wachtend == 0 && geweigerd == 0 }
+        return false
+    }
+
     func logUit() async {
+        // Nog één keer echt kijken, niet op de teller van twee seconden geleden.
+        let nogOpen = (try? await spiegel?.wachtrij()) ?? 1
+        let leeg = allesOnline && nogOpen == 0
         teller?.cancel()
         motor?.stop()
         motor = nil
@@ -463,5 +472,11 @@ final class Account {
         wachtend = 0
         fase = .uit
         melding = nil
+        // Alles staat in het account: dan is de telefoon daarna leeg, zodat een
+        // ander er niet het team van de trainer op ziet. Een kopie gaat opzij.
+        if leeg, !model.toestand.players.isEmpty || !model.toestand.archive.isEmpty {
+            model.zetOpzij("blaadje-na-uitloggen")
+            model.neemOver(emptyState())
+        }
     }
 }

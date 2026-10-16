@@ -160,3 +160,78 @@ public func topscorers(_ rijen: [SeizoenRegel]) -> [SeizoenRegel] {
 		.filter { $0.doelpunten > 0 }
 		.jsSorted { a, b in eersteVerschil(Double(b.doelpunten - a.doelpunten), b.seconds - a.seconds) }
 }
+
+// MARK: - één speler over het seizoen
+
+/** Alles wat het seizoen over één speler zegt: speeltijd, waar, doelpunten, trainingen. */
+public struct SpelerSeizoen: Equatable, Sendable {
+	public struct Wedstrijd: Equatable, Sendable {
+		/** plek in het archief, om de wedstrijd te openen */
+		public var index: Int
+		public var date: String
+		public var opponent: String
+		public var home: Bool
+		public var score: Score
+		public var seconds: Double
+		public var doelpunten: Int
+		public var assists: Int
+		/** afgemeld of er niet: dan telt de wedstrijd niet mee */
+		public var erNiet: Bool
+	}
+
+	public struct Plek: Equatable, Sendable {
+		/** het label op het veld, zoals "SP" of "CV" */
+		public var label: String
+		public var seconds: Double
+	}
+
+	public var wedstrijden: [Wedstrijd] = []
+	public var seconds: Double = 0
+	public var keeper: Double = 0
+	/** wedstrijden waarin hij speelde */
+	public var gespeeld = 0
+	public var doelpunten = 0
+	public var assists = 0
+	/** meeste minuten eerst */
+	public var plekken: [Plek] = []
+	public var training = AttendanceSummary(er: 0, totaal: 0)
+
+	/** gemiddelde speeltijd in seconden, over de wedstrijden waarin hij speelde */
+	public var gemiddeld: Double { gespeeld == 0 ? 0 : seconds / Double(gespeeld) }
+}
+
+/**
+ * Het seizoen van één speler, in de volgorde van het archief. Een wedstrijd van
+ * voordat hij in het team kwam staat er niet in: daar was hij niet afgemeld en
+ * had hij geen speeltijd.
+ */
+public func spelerSeizoen(_ t: AppState, _ id: String) -> SpelerSeizoen {
+	var uit = SpelerSeizoen()
+	var plekken = OrderedDict<Double>()
+	for (i, a) in t.archive.enumerated() {
+		let rij = a.playingTime.first { $0.id == id }
+		let erNiet = a.absent?.contains(id) == true
+		guard rij != nil || erNiet else { continue }
+		let seconden = rij?.seconds ?? 0
+		let goals = a.events.filter { $0.type == .goal && $0.player == id }.count
+		let assists = a.events.filter { $0.type == .goal && $0.assist == id }.count
+		uit.wedstrijden.append(.init(
+			index: i, date: a.date, opponent: a.opponent, home: a.home, score: a.score,
+			seconds: seconden, doelpunten: goals, assists: assists, erNiet: erNiet))
+		uit.seconds += seconden
+		uit.keeper += rij?.keeper ?? 0
+		if seconden > 0 { uit.gespeeld += 1 }
+		uit.doelpunten += goals
+		uit.assists += assists
+		let slots = positionsOf(a.formation)
+		for (plek, s) in (rij?.positions ?? OrderedDict()).entries {
+			let label = slots.first { $0.id == plek }?.label ?? plek
+			plekken[label] = (plekken[label] ?? 0) + s
+		}
+	}
+	uit.plekken = plekken.entries.map { SpelerSeizoen.Plek(label: $0.key, seconds: $0.value) }
+		.filter { $0.seconds > 0 }
+		.sorted { $0.seconds > $1.seconds }
+	uit.training = attendanceOf(t.trainings, id)
+	return uit
+}

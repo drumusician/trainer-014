@@ -134,7 +134,9 @@ struct AccountKaart: View {
             Button("Log uit", role: .destructive) { Task { await account.logUit() } }
             Button("Terug", role: .cancel) {}
         } message: {
-            Text("Je team blijft op deze telefoon staan.")
+            Text(account.allesOnline
+                ? "Je team staat in je account. Op deze telefoon wordt het leeg."
+                : "Nog niet alles staat in je account. Je team blijft op deze telefoon staan.")
         }
     }
 }

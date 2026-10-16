@@ -25,16 +25,11 @@ struct Seizoen: View {
                 if !app.toestand.archive.isEmpty, toon == .spelers {
                     Section("Speeltijd dit seizoen") {
                         ForEach(seasonTotals(app.toestand.archive, app.spelers), id: \.name) { r in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(r.name)
-                                    Text("\(r.wedstrijden) \(r.wedstrijden == 1 ? "wedstrijd" : "wedstrijden")"
-                                        + (r.doelpunten > 0 ? " · \(r.doelpunten) \(r.doelpunten == 1 ? "doelpunt" : "doelpunten")" : "")
-                                        + (r.keeper > 0 ? " · \(Int((r.keeper / 60).rounded()))′ keeper" : ""))
-                                        .font(.caption).foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Text("\(Int((r.seconds / 60).rounded()))′").bold().monospacedDigit()
+                            // Wie niet meer in het team zit, heeft geen eigen pagina.
+                            if let p = app.spelers.first(where: { $0.name == r.name }) {
+                                NavigationLink { SpelerPagina(id: p.id) } label: { spelerRegel(r) }
+                            } else {
+                                spelerRegel(r)
                             }
                         }
                     }
@@ -70,6 +65,87 @@ struct Seizoen: View {
                 }
             }
         }
+    }
+
+    private func spelerRegel(_ r: SeizoenRegel) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(r.name)
+                Text("\(r.wedstrijden) \(r.wedstrijden == 1 ? "wedstrijd" : "wedstrijden")"
+                    + (r.doelpunten > 0 ? " · \(r.doelpunten) \(r.doelpunten == 1 ? "doelpunt" : "doelpunten")" : "")
+                    + (r.keeper > 0 ? " · \(Int((r.keeper / 60).rounded()))′ keeper" : ""))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Text("\(Int((r.seconds / 60).rounded()))′").bold().monospacedDigit()
+        }
+    }
+}
+
+/// Eén speler over het seizoen: hoeveel en waar hij speelde, zijn doelpunten,
+/// de trainingen, en elke wedstrijd.
+private struct SpelerPagina: View {
+    @Environment(AppModel.self) private var app
+    let id: String
+
+    var body: some View {
+        let s = spelerSeizoen(app.toestand, id)
+        let minuten = { (sec: Double) in Int((sec / 60).rounded()) }
+        List {
+            Section {
+                HStack {
+                    getal("\(minuten(s.seconds))′", "speeltijd")
+                    getal("\(s.gespeeld)", s.gespeeld == 1 ? "wedstrijd" : "wedstrijden")
+                    getal("\(s.doelpunten)", s.doelpunten == 1 ? "doelpunt" : "doelpunten")
+                    getal("\(s.assists)", s.assists == 1 ? "assist" : "assists")
+                }
+                .padding(.vertical, 4)
+                if s.gespeeld > 0 {
+                    LabeledContent("Gemiddeld per wedstrijd", value: "\(minuten(s.gemiddeld))′")
+                }
+                if s.training.totaal > 0 {
+                    LabeledContent("Trainingen", value: "\(s.training.er) van de \(s.training.totaal)")
+                }
+            }
+            if !s.plekken.isEmpty {
+                Section("Waar") {
+                    ForEach(s.plekken, id: \.label) { p in
+                        LabeledContent(Veld.voluit(p.label), value: "\(minuten(p.seconds))′")
+                    }
+                }
+            }
+            Section("Wedstrijden") {
+                ForEach(s.wedstrijden.reversed(), id: \.index) { w in
+                    let u = homeFirst(w.score, w.home)
+                    let ons = app.toestand.archive[w.index].teamName ?? app.toestand.teamName
+                    NavigationLink { Bewaard(index: w.index) } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(w.home ? "\(ons) – \(w.opponent)" : "\(w.opponent) – \(ons)").lineLimit(1)
+                                Text(shortDate(w.date) + " · \(u.voor)–\(u.tegen)"
+                                    + (w.doelpunten > 0 ? " · \(w.doelpunten) \(w.doelpunten == 1 ? "doelpunt" : "doelpunten")" : "")
+                                    + (w.assists > 0 ? " · \(w.assists) \(w.assists == 1 ? "assist" : "assists")" : ""))
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(w.erNiet ? "er niet" : w.seconds == 0 ? "bank" : "\(minuten(w.seconds))′")
+                                .monospacedDigit()
+                                .foregroundStyle(w.erNiet || w.seconds == 0 ? .secondary : .primary)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle(app.speler(id)?.name ?? "Speler")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func getal(_ waarde: String, _ wat: String) -> some View {
+        VStack(spacing: 2) {
+            Text(waarde).font(.title3.bold()).monospacedDigit()
+            Text(wat).font(.caption).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 

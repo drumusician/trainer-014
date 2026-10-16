@@ -100,7 +100,21 @@ final class WedstrijddagTests: XCTestCase {
         XCTAssertTrue(bewaard.label.contains("1 – 0"))
         beeld("8-seizoen")
 
+        // Eén speler: Ruben scoorde, dat staat op zijn eigen pagina.
+        app.buttons["Spelers"].tap()
+        let ruben = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Ruben")).firstMatch
+        XCTAssertTrue(ruben.waitForExistence(timeout: 5))
+        ruben.tap()
+        XCTAssertTrue(app.staticTexts["doelpunt"].waitForExistence(timeout: 5), "Ruben scoorde één keer")
+        XCTAssertTrue(app.staticTexts["Wedstrijden"].exists)
+        beeld("8b-speler")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let wedstrijden = app.segmentedControls.buttons["Wedstrijden"]
+        XCTAssertTrue(wedstrijden.waitForExistence(timeout: 5), app.debugDescription)
+        wedstrijden.tap()
+
         // Terugkijken, en een doelpunt bijwerken dat je langs de lijn miste.
+        XCTAssertTrue(bewaard.waitForExistence(timeout: 5))
         bewaard.tap()
         XCTAssertTrue(app.buttons["Bijwerken"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["SP: Thijs"].exists, "de opstelling bij de aftrap hoort terug te rekenen te zijn")

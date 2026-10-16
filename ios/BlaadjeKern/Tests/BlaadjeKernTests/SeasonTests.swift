@@ -88,4 +88,43 @@ struct SeizoenTests {
 		#expect(t.map(\.name) == ["Bram", "Aad"])
 		#expect(t.reduce(0) { $0 + $1.doelpunten } == 2) /* van de 3 doelpunten */
 	}
+
+	@Test("het seizoen van één speler: speeltijd, waar, doelpunten, assists, afgemeld en trainingen")
+	func eenSpeler() {
+		var t = emptyState()
+		t.players = players
+		var eerste = archive[0]
+		eerste.events.append(MatchEvent(type: .goal, t: 2400, player: "p2", assist: "p1"))
+		eerste.playingTime[0].positions = ["SP": 2100, "K": 2100]
+		var tweede = archive[1]
+		tweede.playingTime[0].positions = [:]
+		let derde = ArchivedMatch(
+			date: "2026-09-12", opponent: "PSV", home: true, score: [0, 0], formation: "4-3-3", duration: 4200,
+			absent: ["p1"], playingTime: [PlayingTimeRow(id: "p2", name: "Bram", seconds: 4200, keeper: 0)])
+		t.archive = [eerste, tweede, derde]
+		t.trainings = [
+			Training(id: "t1", date: "2026-09-01", status: ["p1": .present]),
+			Training(id: "t2", date: "2026-09-03", status: ["p1": .absent]),
+		]
+
+		let aad = spelerSeizoen(t, "p1")
+		#expect(aad.wedstrijden.map(\.opponent) == ["Ajax", "Sparta", "PSV"])
+		#expect(aad.wedstrijden.map(\.erNiet) == [false, false, true])
+		#expect(aad.wedstrijden[2].index == 2)
+		#expect(aad.seconds == 4200)
+		#expect(aad.gespeeld == 1, "op de bank en afgemeld tellen niet als gespeeld")
+		#expect(aad.gemiddeld == 4200)
+		#expect(aad.keeper == 2100)
+		#expect(aad.doelpunten == 1)
+		#expect(aad.assists == 1)
+		#expect(aad.plekken.map(\.label).sorted() == ["K", "SP"])
+		#expect(aad.training == AttendanceSummary(er: 1, totaal: 2))
+
+		let bram = spelerSeizoen(t, "p2")
+		#expect(bram.doelpunten == 2)
+		#expect(bram.assists == 0)
+		#expect(bram.gespeeld == 3)
+		#expect(spelerSeizoen(t, "onbekend").wedstrijden.isEmpty)
+	}
 }
+
