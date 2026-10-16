@@ -211,8 +211,10 @@ final class WedstrijddagTests: XCTestCase {
         app.buttons["Volg"].tap()
 
         // Het scherm voor wie volgt: de wedstrijd van nu, wat er komt, en de trainingen.
-        XCTAssertTrue(app.staticTexts["Sparta – JO14-1"].waitForExistence(timeout: 5), "uit: de thuisploeg staat eerst")
-        XCTAssertTrue(app.staticTexts["JO14-1 – Feyenoord"].exists)
+        // Per wedstrijd de tegenstander, met thuis of uit eronder; de eigen teamnaam niet steeds opnieuw.
+        XCTAssertTrue(app.staticTexts["Sparta"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Uit"].exists)
+        XCTAssertTrue(app.descendants(matching: .any).containing(NSPredicate(format: "label BEGINSWITH %@", "Feyenoord")).firstMatch.exists)
         beeld("v2-volgen")
         let gemist = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "afgemeld")).firstMatch
         XCTAssertTrue(gemist.waitForExistence(timeout: 5), "een gemiste training van het eigen kind hoort erop te staan")

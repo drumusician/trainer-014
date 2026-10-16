@@ -58,8 +58,9 @@ struct VolgScherm: View {
             ForEach(nu) { w in
                 VStack(alignment: .leading, spacing: 4) {
                     Text("NU BEZIG").font(.caption.bold()).kerning(1).foregroundStyle(Kleur.oranje)
-                    Text(wie(w, p.team)).font(.headline)
-                    Text("\(w.thuis ? w.voor ?? 0 : w.tegen ?? 0) – \(w.thuis ? w.tegen ?? 0 : w.voor ?? 0)")
+                    Text(w.tegenstander).font(.headline).lineLimit(1)
+                    Text(w.thuis ? "Thuis" : "Uit").font(.caption).foregroundStyle(.secondary)
+                    Text("\(w.voor ?? 0) – \(w.tegen ?? 0)")
                         .font(.system(size: 40, weight: .bold)).monospacedDigit()
                 }
                 .padding(.vertical, 4)
@@ -67,7 +68,7 @@ struct VolgScherm: View {
             }
             ForEach(komt) { w in
                 VStack(alignment: .leading, spacing: 6) {
-                    LabeledContent(wie(w, p.team), value: shortDate(w.datum) + (w.aanvang.map { ", \($0)" } ?? ""))
+                    regel(w, wanneer: shortDate(w.datum) + (w.aanvang.map { ", \($0)" } ?? "")) { EmptyView() }
                     ForEach(w.taken) { taak in taakRegel(taak, kind: kind, p)
                     }
                 }
@@ -96,8 +97,11 @@ struct VolgScherm: View {
         if !gespeeld.isEmpty {
             Section("Gespeeld") {
                 ForEach(Array(gespeeld)) { w in
-                    LabeledContent(wie(w, p.team)) {
-                        Text("\(w.thuis ? w.voor ?? 0 : w.tegen ?? 0) – \(w.thuis ? w.tegen ?? 0 : w.voor ?? 0)").bold().monospacedDigit()
+                    regel(w, wanneer: shortDate(w.datum)) {
+                        // Eigen team eerst: dat leest een ouder het snelst.
+                        let voor = w.voor ?? 0, tegen = w.tegen ?? 0
+                        Text("\(voor) – \(tegen)").bold().monospacedDigit()
+                            .foregroundStyle(voor > tegen ? Kleur.accent : voor < tegen ? .secondary : .primary)
                     }
                 }
             }
@@ -141,8 +145,17 @@ struct VolgScherm: View {
         .accessibilityElement(children: .contain)
     }
 
-    private func wie(_ w: Volgen.Wedstrijd, _ team: String) -> String {
-        w.thuis ? "\(team) – \(w.tegenstander)" : "\(w.tegenstander) – \(team)"
+    /// De tegenstander, met daaronder thuis of uit en wanneer; rechts wat erbij hoort.
+    private func regel(_ w: Volgen.Wedstrijd, wanneer: String, @ViewBuilder rechts: () -> some View) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(w.tegenstander).lineLimit(1)
+                Text((w.thuis ? "Thuis" : "Uit") + " · " + wanneer).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 8)
+            rechts()
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 
