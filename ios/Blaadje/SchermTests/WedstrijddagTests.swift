@@ -109,8 +109,11 @@ final class WedstrijddagTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Wedstrijden"].exists)
         beeld("8b-speler")
         app.navigationBars.buttons.element(boundBy: 0).tap()
+        // Om bij Ruben te komen is de lijst gescrold; de keuze staat bovenaan.
+        app.swipeDown()
+        app.swipeDown()
         let wedstrijden = app.segmentedControls.buttons["Wedstrijden"]
-        XCTAssertTrue(wedstrijden.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(wedstrijden.waitForExistence(timeout: 5))
         wedstrijden.tap()
 
         // Terugkijken, en een doelpunt bijwerken dat je langs de lijn miste.
