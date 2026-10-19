@@ -282,10 +282,15 @@ final class WedstrijddagTests: XCTestCase {
         app.launchArguments = ["-proef-leeg", "-proef-teamlink"]
         app.launch()
         if app.tabBars.buttons["Volgen"].waitForExistence(timeout: 5) { app.tabBars.buttons["Volgen"].tap() }
-        XCTAssertTrue(app.buttons["Kan niet"].waitForExistence(timeout: 5), "de limonade is van Noah, dus van deze ouder")
-        XCTAssertTrue(app.buttons["Ik doe het"].exists, "bij rijden staat nog een plek open")
-        XCTAssertTrue(app.staticTexts["Noah · JO14-1"].exists)
+        XCTAssertTrue(app.staticTexts["Noah · JO14-1"].waitForExistence(timeout: 5))
+        // In de lijst alleen wat jullie doen en wat nog open is; tik erop voor de rest.
+        let wedstrijd = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Jullie: limonade")).firstMatch
+        XCTAssertTrue(wedstrijd.waitForExistence(timeout: 5), "de limonade is van Noah, dus van deze ouder")
         beeld("o1-taken")
+        wedstrijd.tap()
+        XCTAssertTrue(app.buttons["Kan niet"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Ik doe het"].exists, "bij rijden staat nog een plek open")
+        beeld("o2-wedstrijd")
     }
 
     func testHetTeamabonnementStaatBijMeer() {

@@ -66,12 +66,21 @@ struct VolgScherm: View {
                 .accessibilityElement(children: .combine)
             }
             ForEach(komt) { w in
-                VStack(alignment: .leading, spacing: 6) {
-                    regel(w, wanneer: shortDate(w.datum) + (w.aanvang.map { ", \($0)" } ?? "")) { EmptyView() }
-                    ForEach(w.taken) { taak in taakRegel(taak, kind: kind, p)
+                // Tik erop voor wie wat regelt; hier alleen wat jullie doen, en wat nog open is.
+                NavigationLink { VolgWedstrijd(code: kind.code, id: w.id) } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        regel(w, wanneer: shortDate(w.datum) + (w.aanvang.map { ", \($0)" } ?? "")) { EmptyView() }
+                        let mijn = w.taken.filter(\.vanMij).map { $0.woord.lowercased() }
+                        let open = w.taken.filter { $0.wie == nil }.count
+                        if !mijn.isEmpty {
+                            Text("Jullie: " + mijn.joined(separator: ", ")).font(.caption.bold()).foregroundStyle(Kleur.accent)
+                        }
+                        if open > 0 {
+                            Text(open == 1 ? "1 taak open" : "\(open) taken open").font(.caption).foregroundStyle(Kleur.oranje)
+                        }
                     }
+                    .padding(.vertical, 2)
                 }
-                .padding(.vertical, 2)
             }
             if nu.isEmpty, komt.isEmpty {
                 Text("Nog geen wedstrijden.").foregroundStyle(.secondary)
@@ -121,27 +130,6 @@ struct VolgScherm: View {
         } header: {
             if p.kind != nil { Text("Trainingen: \(p.trainingen.count - gemist.count) van de \(p.trainingen.count) geweest") }
         }
-    }
-
-    /// "Limonade · Noah", met de knoppen die erbij horen.
-    private func taakRegel(_ taak: Volgen.Taak, kind: Volgen.Kind, _ p: Volgen.Pagina) -> some View {
-        HStack(spacing: 8) {
-            Text(taak.woord).font(.subheadline).foregroundStyle(.secondary).frame(minWidth: 72, alignment: .leading)
-            if taak.vanMij {
-                Text("Jullie").font(.subheadline.bold()).foregroundStyle(Kleur.accent)
-            } else {
-                Text(taak.wie ?? "open").font(.subheadline).foregroundStyle(taak.wie == nil ? Kleur.oranje : .primary)
-            }
-            Spacer(minLength: 4)
-            if taak.vanMij {
-                Button("Kan niet") { Task { await volgen.kanNiet(kind.code, taak.id) } }
-                    .buttonStyle(.bordered).controlSize(.small)
-            } else if taak.wie == nil, p.mijnKind != nil {
-                Button("Ik doe het") { Task { await volgen.doeIk(kind.code, taak.id) } }
-                    .buttonStyle(.borderedProminent).controlSize(.small).tint(Kleur.groen)
-            }
-        }
-        .accessibilityElement(children: .contain)
     }
 
     /// "3 – 1", de thuisploeg eerst.
@@ -201,3 +189,75 @@ struct LinkPlakken: View {
         .presentationDetents([.medium])
     }
 }
+
+/// "Limonade · Noah", met de knoppen die erbij horen.
+struct TaakRegel: View {
+    @Environment(Volgen.self) private var volgen
+    let taak: Volgen.Taak
+    let code: String
+    /// Een kind gekozen? Alleen dan kun je een taak overnemen.
+    let metKind: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(taak.woord).foregroundStyle(.secondary).frame(minWidth: 88, alignment: .leading)
+            if taak.vanMij {
+                Text("Jullie").bold().foregroundStyle(Kleur.accent)
+            } else {
+                Text(taak.wie ?? "open").foregroundStyle(taak.wie == nil ? Kleur.oranje : .primary)
+            }
+            Spacer(minLength: 4)
+            if taak.vanMij {
+                Button("Kan niet") { Task { await volgen.kanNiet(code, taak.id) } }
+                    .buttonStyle(.bordered).controlSize(.small)
+            } else if taak.wie == nil, metKind {
+                Button("Ik doe het") { Task { await volgen.doeIk(code, taak.id) } }
+                    .buttonStyle(.borderedProminent).controlSize(.small).tint(Kleur.groen)
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
+/// Eén wedstrijd die komt, voor een ouder: wanneer, en wie wat regelt.
+struct VolgWedstrijd: View {
+    @Environment(Volgen.self) private var volgen
+    let code: String
+    let id: String
+
+    var body: some View {
+        let p = volgen.kinderen.first { $0.code == code }?.pagina
+        if let p, let w = p.wedstrijden.first(where: { $0.id == id }) {
+            List {
+                Section {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(w.tegenstander).font(.title3.bold())
+                        Text((w.thuis ? "Thuis" : "Uit") + " · " + dateText(w.datum) + (w.aanvang.map { ", \($0)" } ?? ""))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+                Section {
+                    if w.taken.isEmpty {
+                        Text("De trainer heeft nog niets verdeeld.").foregroundStyle(.secondary)
+                    }
+                    ForEach(w.taken) { TaakRegel(taak: $0, code: code, metKind: p.mijnKind != nil || p.kind != nil) }
+                } header: {
+                    Text("Wie regelt wat")
+                } footer: {
+                    if let melding = volgen.melding {
+                        Text(melding)
+                    } else if w.taken.contains(where: \.vanMij) {
+                        Text("Kun je niet? Tik op Kan niet, dan vraagt de app het aan de andere ouders.")
+                    }
+                }
+            }
+            .navigationTitle(shortDate(w.datum))
+            .navigationBarTitleDisplayMode(.inline)
+            .refreshable { await volgen.ververs() }
+        } else {
+            ContentUnavailableView("Deze wedstrijd staat er niet meer", systemImage: "calendar")
+        }
+    }
+}
+
