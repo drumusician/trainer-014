@@ -30,7 +30,8 @@ export function fillFromDefaultLineup(t: State) {
 	const w = t.match;
 	if (!w) return;
 	const st = t.defaultLineup;
-	const ids = new Set(t.players.map((p) => p.id));
+	const weg = new Set(w.absent ?? []);
+	const ids = new Set(t.players.map((p) => p.id).filter((id) => !weg.has(id)));
 	if (st && st.formation === w.formation) {
 		for (const [position, id] of Object.entries(st.lineup)) {
 			if (id && ids.has(id)) w.lineup[position] = id;
@@ -46,6 +47,21 @@ export function rebuildBench(t: State) {
 	const inVeld = Object.values(w.lineup).filter(Boolean) as string[];
 	const absent = w.absent ?? [];
 	w.bench = t.players.map((p) => p.id).filter((id) => !inVeld.includes(id) && !absent.includes(id));
+}
+
+/**
+ * Wie er niet is, staat niet in de opstelling en niet op de bank. Alleen vóór
+ * de aftrap: een ouder kan zijn kind afmelden nadat je de opstelling al maakte,
+ * en dan valt die plek leeg.
+ */
+export function zonderAfwezigen(w: Match) {
+	const weg = new Set(w.absent ?? []);
+	if (!weg.size || klok.kickedOff(w)) return;
+	for (const position of Object.keys(w.lineup)) {
+		const id = w.lineup[position];
+		if (id && weg.has(id)) w.lineup[position] = null;
+	}
+	w.bench = w.bench.filter((id) => !weg.has(id));
 }
 
 export function isOnPitch(w: Match | null, spelerId: string): boolean {

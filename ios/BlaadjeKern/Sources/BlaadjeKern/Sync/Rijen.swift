@@ -283,20 +283,33 @@ public enum SyncModel {
 			gebeurtenissen(a.events, wid)
 		}
 
-		/* Het programma: wat er nog komt. Geen klok, en daaraan is hij te herkennen. */
+		/* Het programma: wat er nog komt. Geen klok, en daaraan is hij te herkennen.
+		   Een opstelling heeft hij alleen als je die al maakte. */
 		var wedstrijdIds = Set((perTabel["wedstrijden"] ?? []).map(\.id))
 		for p in t.program {
-			let wid = m(p.id)
+			guard let pid = p.id.gevuld else { continue }
+			let wid = m(pid)
 			guard wedstrijdIds.insert(wid).inserted else { continue }
+			let metOpstelling = !p.lineup.opHetVeld.isEmpty
 			zet("wedstrijden", wid, [
 				"team_id": .tekst(team), "datum": .tekst(datum(p.date)),
 				"tegenstander": .tekst(knip(p.opponent, 80)), "thuis": ja(p.home),
 				"status": .tekst("gepland"),
-				"formatie": .tekst(knip(t.formation, 20)), "delen": .getal(t.parts == 4 ? 4 : 2),
+				"formatie": .tekst(knip(p.formation.isEmpty ? t.formation : p.formation, 20)), "delen": .getal(p.parts == 4 ? 4 : 2),
 				"minuten_per_deel": .getal(minuten(t.minutesPerPart)),
 				"doelpunten_voor": .getal(0), "doelpunten_tegen": .getal(0), "duur": .getal(0),
-				"teamnaam": .leeg, "notitie": .leeg, "klok": .leeg, "opstelling": .leeg, "bank": .leeg,
-				"wisselplan": .leeg, "aanvang": tekst(ProgramActions.tijd(p.time)),
+				"teamnaam": .leeg, "notitie": tekst(p.note.map { knip($0, 4000) }), "klok": .leeg,
+				"opstelling": metOpstelling ? json(opstelling(p.lineup)) : .leeg,
+				"bank": metOpstelling ? json(lijst(p.bench)) : .leeg,
+				"wisselplan": json(p.plan.map { plan in
+					.array(plan.map { s in
+						var kopie = s
+						kopie.on = m(s.on)
+						kopie.off = m(s.off)
+						return kopie.json
+					})
+				}),
+				"aanvang": tekst(ProgramActions.tijd(p.time)),
 			])
 			/* Wie zich afmeldde. Hetzelfde kenmerk als op de server (kind_kan_niet). */
 			for id in p.absent ?? [] {
@@ -508,10 +521,17 @@ public enum SyncModel {
 				time: s(r, "aanvang"),
 				fromProgram: klok.bool("uitProgramma") == true ? true : nil
 			)
+			if var w = t.match {
+				MatchActions.zonderAfwezigen(&w)
+				t.match = w
+			}
 		}
 
+		/* De rest die nog komt. Ook een tweede die klaarstond (op een ander toestel
+		   geopend): die gaat terug in het programma, en niet verloren. */
+		let geopend = open.first.flatMap { s($0, "id") }
 		t.program = wedstrijden
-			.filter { s($0, "status") == "gepland" && s($0, "klok").gevuld == nil }
+			.filter { s($0, "status") == "gepland" && s($0, "id") != geopend }
 			.sorted { a, b in
 				let da = s(a, "datum") ?? "", db = s(b, "datum") ?? ""
 				if da != db { return da < db }
@@ -519,15 +539,22 @@ public enum SyncModel {
 				return ta != tb ? ta < tb : opVolgorde(a, b)
 			}
 			.map { r in
-				ScheduledMatch(
-					id: s(r, "id") ?? "", date: s(r, "datum") ?? "", time: s(r, "aanvang"),
-					opponent: s(r, "tegenstander") ?? "", home: ja(r, "thuis"),
-					absent: {
-						let weg = (perWedstrijd[s(r, "id") ?? ""] ?? []).sorted(by: opSelectie)
-							.filter { !ja($0, "aanwezig") }.compactMap { s($0, "speler_id") }
-						return weg.isEmpty ? nil : weg
-					}()
+				let weg = (perWedstrijd[s(r, "id") ?? ""] ?? []).sorted(by: opSelectie)
+					.filter { !ja($0, "aanwezig") }.compactMap { s($0, "speler_id") }
+				var p = Match(
+					date: s(r, "datum") ?? "", opponent: s(r, "tegenstander") ?? "", home: ja(r, "thuis"),
+					formation: s(r, "formatie") ?? "",
+					lineup: opstelling(json(r, "opstelling")) ?? Lineup(),
+					bench: json(r, "bank")?.arrayValue?.compactMap(\.stringValue) ?? [],
+					parts: n(r, "delen") == 4 ? 4 : 2,
+					note: s(r, "notitie"),
+					absent: weg.isEmpty ? nil : weg,
+					plan: try? json(r, "wisselplan")?.arrayValue?.map(PlannedSub.init(json:)),
+					id: s(r, "id") ?? "",
+					time: s(r, "aanvang")
 				)
+				MatchActions.zonderAfwezigen(&p)
+				return p
 			}
 
 		t.archive = wedstrijden.filter { s($0, "status") == "afgelopen" }

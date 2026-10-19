@@ -36,7 +36,7 @@ struct Start: View {
                     } else if let p = vanVandaag {
                         // De wedstrijd van vandaag staat in het programma: die is het.
                         Button {
-                            if app.beginUitProgramma(p.id) { stroom = .aanwezig }
+                            if let id = p.id, app.openWedstrijd(id) { stroom = p.lineup.opHetVeld.isEmpty ? .aanwezig : .wedstrijd }
                         } label: {
                             Label((p.home ? "Thuis" : "Uit") + " tegen \(p.opponent)", systemImage: "sportscourt")
                         }
@@ -61,7 +61,7 @@ struct Start: View {
             .toolbar(.hidden, for: .navigationBar)
             .background(Color(.systemGroupedBackground))
             .navigationDestination(for: String.self) { id in
-                ProgrammaWedstrijd(id: id) { stroom = .aanwezig }
+                ProgrammaWedstrijd(id: id) { stroom = $0 }
             }
             .navigationDestination(for: WieDeedWat.self) { _ in WieDeedWatScherm() }
         }
@@ -79,7 +79,7 @@ struct Start: View {
     }
 
     /// Een wedstrijd uit het programma van vandaag, of van eerder die nog niet gespeeld is.
-    private var vanVandaag: ScheduledMatch? {
+    private var vanVandaag: Match? {
         app.toestand.program.first { $0.date <= app.vandaag }
     }
 
@@ -113,6 +113,9 @@ struct Start: View {
             Text(w.finished ? "Afgelopen" : app.afgetrapt ? "Bezig" : "Klaar voor de aftrap")
                 .font(.caption.bold()).kerning(1).textCase(.uppercase).foregroundStyle(Kleur.accent)
             Text(w.home ? "\(ons) – \(w.opponent)" : "\(w.opponent) – \(ons)").font(.title3.bold())
+            if w.date > app.vandaag {
+                Text(dateText(w.date) + (w.time.map { ", \($0)" } ?? "")).font(.subheadline).foregroundStyle(.secondary)
+            }
             if app.afgetrapt {
                 HStack(spacing: 14) {
                     Text("\(uitslag.voor) – \(uitslag.tegen)").font(.title.bold()).monospacedDigit()
@@ -127,7 +130,9 @@ struct Start: View {
             }
             .buttonStyle(HoofdKnop())
             if !app.afgetrapt {
-                Button("Gooi weg", role: .destructive) { app.gooiWedstrijdWeg() }
+                Button(w.fromProgram == true ? "Terug naar het programma" : "Gooi weg", role: w.fromProgram == true ? nil : .destructive) {
+                    app.gooiWedstrijdWeg()
+                }
                     .font(.subheadline)
                     .frame(maxWidth: .infinity)
             }

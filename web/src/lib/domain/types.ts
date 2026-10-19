@@ -86,21 +86,6 @@ export interface Match {
 	fromProgram?: boolean;
 }
 
-/**
- * Een wedstrijd die nog komt. Op de dag zelf wordt hij de wedstrijd, met hetzelfde
- * kenmerk, zodat de taken eraan vast blijven zitten. Zie actions/program.ts.
- */
-export interface ScheduledMatch {
-	id: string;
-	date: string;
-	/** "10:30"; leeg als het nog niet bekend is */
-	time?: string;
-	opponent: string;
-	home: boolean;
-	/** wie er niet bij kan; dat zegt een ouder in de app */
-	absent?: string[];
-}
-
 export type TaskKind = 'limonade' | 'rijden' | 'fluiten' | 'vlaggen' | 'velddienst' | 'teamtas';
 
 /** Een taak bij een wedstrijd, voor de familie van een speler. Zonder speler staat hij open. */
@@ -212,8 +197,8 @@ export interface State {
 	archive: ArchivedMatch[];
 	trainings: Training[];
 	reportSubs: boolean;
-	/** de wedstrijden die nog komen, vroegste eerst */
-	program?: ScheduledMatch[];
+	/** de wedstrijden die nog komen, vroegste eerst; zonder de wedstrijd die open staat */
+	program?: Match[];
 	/** wie wat regelt bij een wedstrijd */
 	tasks?: TeamTask[];
 }

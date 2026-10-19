@@ -5,12 +5,16 @@
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
 	import { shortDate } from '$lib/domain/dates';
-	import { OPEN, VERENIGING, kanNiet, soorten, taken } from '$lib/actions/program';
+	import { OPEN, VERENIGING, kanNiet, soorten, taken, wedstrijd } from '$lib/actions/program';
+	import { kickedOff } from '$lib/actions/clock';
 	import type { TaskKind } from '$lib/domain/types';
 
 	/* Eén wedstrijd uit het programma: bijwerken, wie wat regelt, en op de dag zelf beginnen. */
 	const t = $derived(app.toestand);
-	const p = $derived((t.program ?? []).find((x) => x.id === page.params.id));
+	const id = $derived(page.params.id ?? '');
+	const p = $derived(wedstrijd(t, id));
+	/* Er is een wedstrijd afgetrapt die nog niet bewaard is: die gaat voor. */
+	const bezig = $derived(!!t.match && !t.match.archived && kickedOff(t.match));
 	const vandaag = new Date().toISOString().slice(0, 10);
 
 	$effect(() => zetKop(p ? shortDate(p.date) + ' · ' + p.opponent : text.program.title));
@@ -23,8 +27,11 @@
 		return taken(t, wedstrijd).find((x) => x.kind === soort);
 	}
 
-	function begin(id: string) {
-		if (app.startFromProgram(id)) goto('/app/aanwezig');
+	/* Met een opstelling die al klaarstaat naar de wedstrijd, anders eerst wie er is. */
+	function begin() {
+		const klaar = Object.values(p?.lineup ?? {}).some(Boolean);
+		if (!app.startFromProgram(id)) return;
+		goto(klaar ? '/app/wedstrijd' : '/app/aanwezig');
 	}
 </script>
 
@@ -32,38 +39,31 @@
 	<div class="pad">
 		<a class="terug" href="/app/programma">{text.program.backToList}</a>
 		{#if p}
-			{@const declined = taken(t, p.id).filter((x) => !x.player && x.declinedBy)}
+			{@const declined = taken(t, id).filter((x) => !x.player && x.declinedBy)}
 			<div class="tweekolom">
 				<label class="vak">
 					{text.program.dateLabel}
-					<input
-						type="date"
-						value={p.date}
-						onchange={(e) => app.updateProgram(p.id, { datum: e.currentTarget.value })}
-					/>
+					<input type="date" value={p.date} onchange={(e) => app.updateProgram(id, { datum: e.currentTarget.value })} />
 				</label>
 				<label class="vak">
 					{text.program.timeLabel}
 					<input
 						type="time"
 						value={p.time ?? ''}
-						onchange={(e) => app.updateProgram(p.id, { aanvang: e.currentTarget.value || null })}
+						onchange={(e) => app.updateProgram(id, { aanvang: e.currentTarget.value || null })}
 					/>
 				</label>
 			</div>
 			<div class="tweekolom">
 				<label class="vak">
 					{text.program.opponentLabel}
-					<input
-						value={p.opponent}
-						onchange={(e) => app.updateProgram(p.id, { tegenstander: e.currentTarget.value })}
-					/>
+					<input value={p.opponent} onchange={(e) => app.updateProgram(id, { tegenstander: e.currentTarget.value })} />
 				</label>
 				<label class="vak">
 					{text.program.homeLabel}
 					<select
 						value={p.home ? 'thuis' : 'uit'}
-						onchange={(e) => app.updateProgram(p.id, { thuis: e.currentTarget.value === 'thuis' })}
+						onchange={(e) => app.updateProgram(id, { thuis: e.currentTarget.value === 'thuis' })}
 					>
 						<option value="thuis">{text.program.home}</option>
 						<option value="uit">{text.program.away}</option>
@@ -74,13 +74,13 @@
 			<h2>{text.program.whoDoesWhat}</h2>
 			<div class="taken">
 				{#each eenmalig as soort (soort)}
-					{@const taak = taakVan(p.id, soort)}
+					{@const taak = taakVan(id, soort)}
 					<label class="taak">
 						<span>{text.program.kinds[soort]}</span>
 						<select
 							aria-label={text.program.kinds[soort] + ' ' + p.opponent}
 							value={!taak ? '' : taak.club ? VERENIGING : (taak.player ?? OPEN)}
-							onchange={(e) => app.setTask(p.id, soort, e.currentTarget.value || null)}
+							onchange={(e) => app.setTask(id, soort, e.currentTarget.value || null)}
 						>
 							<option value="">{text.program.nobodyOption}</option>
 							<option value={OPEN}>{text.program.openOption}</option>
@@ -93,7 +93,7 @@
 						</select>
 					</label>
 				{/each}
-				{#each p.home ? [] : taken(t, p.id).filter((x) => x.kind === 'rijden') as taak (taak.id)}
+				{#each p.home ? [] : taken(t, id).filter((x) => x.kind === 'rijden') as taak (taak.id)}
 					<div class="taak">
 						<span>{text.program.kinds.rijden}</span>
 						<select
@@ -123,10 +123,10 @@
 			{#if !p.home}
 				<p class="uitleg mager">{text.program.driversThemselves}</p>
 			{/if}
-			{#if kanNiet(t, p.id).length}
+			{#if kanNiet(t, id).length}
 				<h2>{text.program.absentHeading}</h2>
 				<p>
-					{kanNiet(t, p.id)
+					{kanNiet(t, id)
 						.map((x) => x.name)
 						.join(', ')}
 				</p>
@@ -135,16 +135,20 @@
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
 				{#if !p.home}
-					<button onclick={() => app.addTask(p.id, 'rijden', null)}>{text.program.addDriver}</button>
+					<button onclick={() => app.addTask(id, 'rijden', null)}>{text.program.addDriver}</button>
 				{/if}
-				{#if p.date <= vandaag && !(t.match && !t.match.archived)}
-					<button class="prim" onclick={() => begin(p.id)}>{text.program.startToday}</button>
+				{#if t.match?.id === id}
+					<a class="knop prim" href="/app/wedstrijd">{text.program.continueLineup}</a>
+				{:else if !bezig}
+					<button class="prim" onclick={begin}
+						>{p.date <= vandaag ? text.program.startToday : text.program.makeLineup}</button
+					>
 				{/if}
 				<button
 					class="uit"
 					onclick={() => {
 						if (confirm(text.program.confirmRemove(p.opponent))) {
-							app.removeFromProgram(p.id);
+							app.removeFromProgram(id);
 							goto('/app/programma');
 						}
 					}}>{text.program.remove}</button

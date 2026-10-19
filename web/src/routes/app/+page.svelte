@@ -8,6 +8,7 @@
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
 	import { text } from '$lib/text/nl';
+	import { nogTeSpelen } from '$lib/actions/program';
 
 	$effect(() => zetKop(text.home.title));
 
@@ -87,12 +88,16 @@
 				<div class="knoprij" style="padding-left: 0">
 					<a class="knop" href="/app/aanwezig">{text.home.whoIsThere}</a>
 					<a class="knop" href="/app/opstelling/wedstrijd">{text.home.lineup}</a>
-					<button
-						class="uit"
-						onclick={() => {
-							if (confirm(text.home.confirmDiscard(w!.opponent))) app.discardMatch();
-						}}>{text.home.discard}</button
-					>
+					{#if w!.fromProgram}
+						<button onclick={() => app.discardMatch()}>{text.home.backToProgram}</button>
+					{:else}
+						<button
+							class="uit"
+							onclick={() => {
+								if (confirm(text.home.confirmDiscard(w!.opponent))) app.discardMatch();
+							}}>{text.home.discard}</button
+						>
+					{/if}
 				</div>
 			{:else}
 				<h2>{text.home.howYouPlayHeading}</h2>
@@ -135,11 +140,11 @@
 			{/if}
 
 			<h2>{text.program.homeHeading}</h2>
-			{#if !(t.program ?? []).length}
+			{#if !nogTeSpelen(t).length}
 				<p class="uitleg">{text.program.homeNone}</p>
 			{:else}
 				<ul class="log">
-					{#each (t.program ?? []).slice(0, 3) as p (p.id)}
+					{#each nogTeSpelen(t).slice(0, 3) as p (p.id)}
 						<li class="klikbaar">
 							<a href="/app/programma/{p.id}">
 								<b>{shortDate(p.date)}</b>

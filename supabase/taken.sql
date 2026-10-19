@@ -327,9 +327,8 @@ $$;
 
 -- ---------- afmelden ----------
 -- Een kind dat niet kan, staat als afwezig bij de wedstrijd. De trainer ziet
--- het in het programma, en op de dag zelf staat het kind bij "Wie is er?" al
--- op afwezig. Alleen zolang de trainer de wedstrijd nog niet opzette (geen
--- klok): daarna hoort hij het liever even zelf.
+-- het in het programma en bij "Wie is er?", en de app haalt het kind uit de
+-- opstelling. Tot de aftrap: daarna hoort de trainer het liever even zelf.
 --
 -- Het kenmerk van de rij is hetzelfde als de app hem geeft (SyncModel.uuid in
 -- BlaadjeKern, kenmerk in rijen.ts): anders zet de app er een tweede naast.
@@ -354,7 +353,7 @@ begin
   select k.team, k.speler into v_team, v_kind from public.kind_van(p_code, p_token) k;
   if v_kind is null or not exists (
     select 1 from public.wedstrijden w
-     where w.id = p_wedstrijd and w.team_id = v_team and w.status = 'gepland' and w.klok is null
+     where w.id = p_wedstrijd and w.team_id = v_team and w.status = 'gepland'
   ) then
     return false;
   end if;
@@ -363,8 +362,12 @@ begin
     select public.rij_kenmerk(v_team, 'ws|' || p_wedstrijd || '|' || v_kind), v_team, p_wedstrijd, v_kind, s.naam, false
       from public.spelers s where s.id = v_kind
     on conflict (wedstrijd_id, speler_id) do update set aanwezig = false;
-  else
+  elsif exists (select 1 from public.wedstrijden w where w.id = p_wedstrijd and w.klok is null) then
+    -- in het programma staat alleen wie er niet is
     delete from public.wedstrijd_spelers where wedstrijd_id = p_wedstrijd and speler_id = v_kind;
+  else
+    -- de trainer zette hem klaar: daar staat iedereen
+    update public.wedstrijd_spelers set aanwezig = true where wedstrijd_id = p_wedstrijd and speler_id = v_kind;
   end if;
   return true;
 end;

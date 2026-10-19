@@ -381,14 +381,47 @@ begin
   end if;
 end $$;
 
--- Heeft de trainer de wedstrijd al opgezet, dan meldt een ouder niet meer af.
+-- Staat de wedstrijd al klaar, dan kan het nog tot de aftrap.
 update public.wedstrijden set klok = '{}'::jsonb where id = 'd2000000-0000-0000-0000-000000000003';
+insert into public.wedstrijd_spelers (id, team_id, wedstrijd_id, speler_id, naam, aanwezig) values
+  (gen_random_uuid(), 'dddddddd-0000-0000-0000-00000000000d', 'd2000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000003', 'Luuk', true);
+begin;
+set local role anon;
+do $$
+begin
+  if not public.kind_kan_niet('teamlink-jo12-0123456789', 'telefoon-luuk-0123456789abcdef0123456789', 'd2000000-0000-0000-0000-000000000003', true) then
+    raise exception 'afmelden bij een wedstrijd die klaarstaat lukte niet';
+  end if;
+end $$;
+commit;
+do $$
+begin
+  if (select aanwezig from public.wedstrijd_spelers where wedstrijd_id = 'd2000000-0000-0000-0000-000000000003') then
+    raise exception 'Luuk staat nog op aanwezig';
+  end if;
+end $$;
+begin;
+set local role anon;
+do $$
+begin
+  perform public.kind_kan_niet('teamlink-jo12-0123456789', 'telefoon-luuk-0123456789abcdef0123456789', 'd2000000-0000-0000-0000-000000000003', false);
+end $$;
+commit;
+do $$
+begin
+  if not (select aanwezig from public.wedstrijd_spelers where wedstrijd_id = 'd2000000-0000-0000-0000-000000000003') then
+    raise exception 'toch wel: de trainer moet Luuk weer als aanwezig zien, niet zonder rij';
+  end if;
+end $$;
+
+-- Na de aftrap niet meer.
+update public.wedstrijden set status = 'bezig' where id = 'd2000000-0000-0000-0000-000000000003';
 begin;
 set local role anon;
 do $$
 begin
   if public.kind_kan_niet('teamlink-jo12-0123456789', 'telefoon-luuk-0123456789abcdef0123456789', 'd2000000-0000-0000-0000-000000000003', true) then
-    raise exception 'afgemeld bij een wedstrijd die al klaarstaat';
+    raise exception 'afgemeld bij een wedstrijd die al bezig is';
   end if;
 end $$;
 commit;

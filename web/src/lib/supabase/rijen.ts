@@ -7,7 +7,6 @@ import type {
 	MatchEventType,
 	PlannedSub,
 	Player,
-	ScheduledMatch,
 	State,
 	TaskKind,
 	TeamTask,
@@ -15,6 +14,7 @@ import type {
 } from '$lib/domain/types';
 import { emptyState } from '$lib/domain/types';
 import { kickedOff } from '$lib/actions/clock';
+import { zonderAfwezigen } from '$lib/actions/match';
 import { score } from '$lib/domain/time';
 import { sha256 } from './sha256';
 
@@ -321,10 +321,13 @@ export function rijen(t: State, team: string): Rij[] {
 		gebeurtenissen(a.events, wid);
 	});
 
-	/* Het programma: wat er nog komt. Geen klok, en daaraan is hij te herkennen. */
+	/* Het programma: wat er nog komt. Geen klok, en daaraan is hij te herkennen.
+	   Een opstelling heeft hij alleen als je die al maakte. */
 	const wedstrijdIds = new Set((perTabel.get('wedstrijden') ?? []).map((r) => r.id));
 	for (const p of t.program ?? []) {
+		if (!p.id) continue;
 		const wid = m(p.id);
+		const metOpstelling = Object.values(p.lineup ?? {}).some(Boolean);
 		if (wedstrijdIds.has(wid)) continue;
 		wedstrijdIds.add(wid);
 		zet('wedstrijden', wid, {
@@ -333,18 +336,18 @@ export function rijen(t: State, team: string): Rij[] {
 			tegenstander: knip(p.opponent, 80),
 			thuis: !!p.home,
 			status: 'gepland',
-			formatie: knip(t.formation, 20),
-			delen: t.parts === 4 ? 4 : 2,
+			formatie: knip(p.formation || t.formation, 20),
+			delen: p.parts === 4 ? 4 : 2,
 			minuten_per_deel: minuten(t.minutesPerPart),
 			doelpunten_voor: 0,
 			doelpunten_tegen: 0,
 			duur: 0,
 			teamnaam: null,
-			notitie: null,
+			notitie: p.note !== undefined && p.note !== null ? knip(p.note, 4000) : null,
 			klok: null,
-			opstelling: null,
-			bank: null,
-			wisselplan: null,
+			opstelling: metOpstelling ? opstelling(p.lineup) : null,
+			bank: metOpstelling ? lijst(p.bench ?? []) : null,
+			wisselplan: p.plan ? p.plan.map((s) => planAlsJson({ ...s, on: m(s.on), off: m(s.off) })) : null,
 			aanvang: aanvang(p.time)
 		});
 		/* Wie zich afmeldde. Hetzelfde kenmerk als op de server (kind_kan_niet). */
@@ -636,11 +639,15 @@ export function toestand(tabellen: Record<string, Tabelrij[]>, team: string): St
 		const tijd = s(r, 'aanvang');
 		if (tijd !== null) w.time = tijd;
 		if (k.uitProgramma === true) w.fromProgram = true;
+		zonderAfwezigen(w);
 		t.match = w;
 	}
 
+	/* De rest die nog komt. Ook een tweede die klaarstond (op een ander toestel
+	   geopend): die gaat terug in het programma, en niet verloren. */
+	const geopend = wid;
 	const programma = wedstrijden
-		.filter((r) => s(r, 'status') === 'gepland' && !metKlok(r))
+		.filter((r) => s(r, 'status') === 'gepland' && s(r, 'id') !== geopend)
 		.sort((a, b) => {
 			const da = s(a, 'datum') ?? '',
 				db = s(b, 'datum') ?? '';
@@ -650,19 +657,36 @@ export function toestand(tabellen: Record<string, Tabelrij[]>, team: string): St
 			return ta !== tb ? vergelijk(ta, tb) : opVolgorde(a, b);
 		})
 		.map((r) => {
-			const p: ScheduledMatch = {
-				id: s(r, 'id') ?? '',
+			const id = s(r, 'id') ?? '';
+			const p: Match = {
 				date: s(r, 'datum') ?? '',
 				opponent: s(r, 'tegenstander') ?? '',
-				home: ja(r, 'thuis')
+				home: ja(r, 'thuis'),
+				formation: s(r, 'formatie') ?? '',
+				lineup: leesOpstelling(json(r, 'opstelling')) ?? {},
+				bench: lijstVan(json(r, 'bank')) ?? [],
+				events: [],
+				elapsed: 0,
+				since: null,
+				running: false,
+				parts: n(r, 'delen') === 4 ? 4 : 2,
+				part: 1,
+				inBreak: false,
+				finished: false
 			};
-			const tijd = s(r, 'aanvang');
-			if (tijd !== null) p.time = tijd;
-			const weg = [...(perWedstrijd.get(p.id) ?? [])]
+			const notitie = s(r, 'notitie');
+			if (notitie !== null) p.note = notitie;
+			const weg = [...(perWedstrijd.get(id) ?? [])]
 				.sort(opSelectie)
 				.filter((x) => !ja(x, 'aanwezig'))
 				.flatMap((x) => s(x, 'speler_id') ?? []);
 			if (weg.length) p.absent = weg;
+			const plan = json(r, 'wisselplan');
+			if (Array.isArray(plan) && plan.every(isObject)) p.plan = plan.map(leesPlan);
+			p.id = id;
+			const tijd = s(r, 'aanvang');
+			if (tijd !== null) p.time = tijd;
+			zonderAfwezigen(p);
 			return p;
 		});
 	if (programma.length) t.program = programma;

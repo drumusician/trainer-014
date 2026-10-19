@@ -188,8 +188,8 @@ final class AppModel {
     }
 
     func gooiWedstrijdWeg() {
-        // Kwam hij uit het programma, dan gaat hij daar terug, met zijn taken.
-        ProgramActions.terugInProgramma(&toestand)
+        // Kwam hij uit het programma, dan gaat hij daar terug, met zijn opstelling en zijn taken.
+        if toestand.match?.fromProgram == true { ProgramActions.terugInProgramma(&toestand) }
         toestand.match = nil
         gekozenPlek = nil
         bewaar()
@@ -352,10 +352,10 @@ final class AppModel {
         if ProgramActions.haalWeg(&toestand, id) { bewaar() }
     }
 
-    /// De wedstrijd van vandaag uit het programma opzetten.
+    /// Een wedstrijd uit het programma openen: Wie is er, de opstelling, en op de dag zelf de aftrap.
     @discardableResult
-    func beginUitProgramma(_ id: String) -> Bool {
-        guard ProgramActions.uitProgramma(&toestand, id) else { return false }
+    func openWedstrijd(_ id: String) -> Bool {
+        guard ProgramActions.open(&toestand, id) else { return false }
         gekozenPlek = nil
         bewaar()
         return true

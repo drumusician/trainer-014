@@ -43,7 +43,7 @@ import Testing
 		PlanActions.voegToe(&t.match, minuut: 35, on: "p12", off: "p10", naDeel: 1, nieuwId: { "w1" })
 		SyncModel.vulKenmerkenAan(&t)
 		/* Het programma, met taken: twee wedstrijden die nog komen. */
-		let thuis = ProgramActions.voegToe(&t, datum: "2026-09-19", tijd: "10:30", tegenstander: "Ajax", thuis: true, nieuwId: { "prog-1" })
+		let thuis = ProgramActions.voegToe(&t, datum: "2026-09-19", tijd: "10:30", tegenstander: "Ajax", thuis: true, nieuwId: { "prog-1" }, taakId: { "taak-0" })
 		ProgramActions.voegToe(&t, datum: "2026-09-26", tijd: nil, tegenstander: "PSV", thuis: false, nieuwId: { "prog-2" })
 		ProgramActions.zet(&t, wedstrijd: thuis, .limonade, speler: "p4", nieuwId: { "taak-1" })
 		ProgramActions.zet(&t, wedstrijd: thuis, .vlaggen, speler: "p7", nieuwId: { "taak-2" })
@@ -55,6 +55,10 @@ import Testing
 		t.tasks[1].declinedBy = "p7"
 		/* Een ouder meldde zijn kind af voor de uitwedstrijd. */
 		t.program[1].absent = ["p5"]
+		/* En voor de thuiswedstrijd staat de opstelling al klaar. */
+		t.program[0].lineup["K"] = "p1"
+		t.program[0].bench = ["p2"]
+		t.program[0].plan = [PlannedSub(id: "plan-1", minuut: 30, on: "p2", off: "p1", naDeel: 1)]
 		return t
 	}
 

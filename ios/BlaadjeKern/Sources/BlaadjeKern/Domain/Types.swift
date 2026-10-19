@@ -218,7 +218,12 @@ public struct Lineup: JSONModel, Equatable, Sendable, ExpressibleByDictionaryLit
 	}
 }
 
-public struct Match: JSONModel, Equatable, Sendable {
+/**
+ * Een wedstrijd: een die nog komt (in het programma), de wedstrijd die je nu
+ * voorbereidt of speelt (`AppState.match`), allemaal dezelfde soort. Wat nog
+ * komt heeft al een opstelling als je die maakte, en wie er niet bij kan.
+ */
+public struct Match: JSONModel, Equatable, Identifiable, Sendable {
 	/** Vast kenmerk, voor het synchroniseren. Oudere opslag heeft het niet. */
 	public var id: String?
 	public var date: String
@@ -710,52 +715,6 @@ public struct Training: JSONModel, Equatable, Identifiable, Sendable {
 	}
 }
 
-/**
- * Een wedstrijd die nog komt: alleen wanneer en tegen wie. Op de dag zelf wordt
- * hij de wedstrijd (`MatchActions.uitProgramma`), met hetzelfde kenmerk, zodat
- * de taken eraan vast blijven zitten.
- */
-public struct ScheduledMatch: JSONModel, Equatable, Identifiable, Sendable {
-	public var id: String
-	public var date: String
-	/** "10:30"; leeg als het nog niet bekend is */
-	public var time: String?
-	public var opponent: String
-	public var home: Bool
-	/** wie er niet bij kan; dat zegt een ouder in de app */
-	public var absent: [String]?
-
-	public init(id: String, date: String, time: String? = nil, opponent: String, home: Bool, absent: [String]? = nil) {
-		self.id = id
-		self.date = date
-		self.time = time
-		self.opponent = opponent
-		self.home = home
-		self.absent = absent
-	}
-
-	public init(json: JSONValue) throws {
-		let o = try alsObject(json, "programma")
-		id = o.str("id") ?? ""
-		date = o.str("date") ?? ""
-		time = o.str("time")
-		opponent = o.str("opponent") ?? ""
-		home = o.bool("home") ?? true
-		absent = o.strings("absent")
-	}
-
-	public var json: JSONValue {
-		var o = OrderedDict<JSONValue>()
-		o["id"] = .string(id)
-		o["date"] = .string(date)
-		o.zet("time", time)
-		o["opponent"] = .string(opponent)
-		o["home"] = .bool(home)
-		if let absent, !absent.isEmpty { o["absent"] = .array(absent.map(JSONValue.string)) }
-		return .object(o)
-	}
-}
-
 /** Wat ouders bij een wedstrijd regelen. */
 public enum TaskKind: String, CaseIterable, Codable, Sendable {
 	case limonade, rijden, fluiten, vlaggen, velddienst, teamtas
@@ -825,8 +784,8 @@ public struct AppState: JSONModel, Equatable, Sendable {
 	public var archive: [ArchivedMatch]
 	public var trainings: [Training]
 	public var reportSubs: Bool
-	/** de wedstrijden die nog komen, vroegste eerst */
-	public var program: [ScheduledMatch]
+	/** de wedstrijden die nog komen, vroegste eerst; zonder de wedstrijd die open staat */
+	public var program: [Match]
 	/** de taken bij wedstrijden: limonade, rijden, fluiten */
 	public var tasks: [TeamTask]
 
@@ -841,7 +800,7 @@ public struct AppState: JSONModel, Equatable, Sendable {
 		archive: [ArchivedMatch] = [],
 		trainings: [Training] = [],
 		reportSubs: Bool = false,
-		program: [ScheduledMatch] = [],
+		program: [Match] = [],
 		tasks: [TeamTask] = []
 	) {
 		self.program = program
@@ -873,7 +832,7 @@ public struct AppState: JSONModel, Equatable, Sendable {
 		archive = try (o.arr("archive") ?? []).map(ArchivedMatch.init(json:))
 		trainings = try (o.arr("trainings") ?? []).map(Training.init(json:))
 		reportSubs = o.bool("reportSubs") ?? leeg.reportSubs
-		program = try (o.arr("program") ?? []).map(ScheduledMatch.init(json:))
+		program = try (o.arr("program") ?? []).map(Match.init(json:))
 		tasks = try (o.arr("tasks") ?? []).map(TeamTask.init(json:))
 	}
 

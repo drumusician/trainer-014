@@ -24,7 +24,7 @@ public enum MatchActions {
 	/** The match starts from the default lineup, as far as it still applies. */
 	public static func fillFromDefaultLineup(_ t: inout AppState) {
 		guard var w = t.match else { return }
-		let ids = Set(t.players.map(\.id))
+		let ids = Set(t.players.map(\.id)).subtracting(w.absent ?? [])
 		if let st = t.defaultLineup, st.formation == w.formation {
 			for (position, id) in st.lineup.entries {
 				if let id = id.gevuld, ids.contains(id) { w.lineup[position] = id }
@@ -41,6 +41,20 @@ public enum MatchActions {
 		let absent = w.absent ?? []
 		w.bench = t.players.map(\.id).filter { !inVeld.contains($0) && !absent.contains($0) }
 		t.match = w
+	}
+
+	/**
+	 * Wie er niet is, staat niet in de opstelling en niet op de bank. Alleen vóór
+	 * de aftrap: een ouder kan zijn kind afmelden nadat je de opstelling al maakte,
+	 * en dan valt die plek leeg.
+	 */
+	public static func zonderAfwezigen(_ w: inout Match) {
+		let weg = Set(w.absent ?? [])
+		guard !weg.isEmpty, !ClockActions.kickedOff(w) else { return }
+		for position in w.lineup.positions where weg.contains(w.lineup[position] ?? "") {
+			w.lineup[position] = nil
+		}
+		w.bench.removeAll { weg.contains($0) }
 	}
 
 	public static func isOnPitch(_ w: Match?, _ spelerId: String) -> Bool {

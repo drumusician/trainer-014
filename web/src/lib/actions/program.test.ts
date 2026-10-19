@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { emptyState } from '$lib/domain/types';
 import * as p from './program';
 import { archiveMatch } from './match';
+import { toggleRunning } from './clock';
 
 /* Dezelfde regels als ProgramTests.swift in de iPhone-app. */
 function metProgramma() {
@@ -30,18 +31,45 @@ describe('het programma', () => {
 		expect(t.program![0].time).toBeUndefined();
 	});
 
-	it('wordt op de dag zelf de wedstrijd, met dezelfde taken', () => {
+	it('opent als de wedstrijd, met dezelfde taken', () => {
 		const { t, id } = metProgramma();
-		expect(p.uitProgramma(t, id)).toBe(true);
+		expect(p.open(t, id)).toBe(true);
 		expect(t.match).toMatchObject({ id, opponent: 'Sparta', time: '10:30', date: '2026-10-25', fromProgram: true });
 		expect(t.program!.map((x) => x.id)).toEqual(['w-18']);
 		expect(p.taken(t, id)).toHaveLength(3);
-		expect(p.uitProgramma(t, 'w-18')).toBe(false);
+		expect(t.match?.formation).toBe(t.formation);
+	});
+
+	it('een andere openen zet de eerste terug, met zijn opstelling', () => {
+		const { t, id } = metProgramma();
+		expect(p.open(t, id)).toBe(true);
+		t.match!.lineup.K = 'p2';
+		expect(p.open(t, 'w-18')).toBe(true);
+		expect(t.match?.id).toBe('w-18');
+		const terug = p.wedstrijd(t, id)!;
+		expect(terug.lineup.K).toBe('p2');
+		expect(terug.fromProgram).toBeUndefined();
+		expect(p.nogTeSpelen(t).map((x) => x.id)).toEqual(['w-18', id]);
+		expect(p.open(t, id)).toBe(true);
+		expect(t.match?.lineup.K).toBe('p2');
+		toggleRunning(t.match, 1000, '2026-10-25');
+		expect(p.open(t, 'w-18')).toBe(false);
+	});
+
+	it('een afgemeld kind gaat uit de opstelling', () => {
+		const { t, id } = metProgramma();
+		p.open(t, id);
+		t.match!.lineup.K = 'p2';
+		p.terugInProgramma(t);
+		p.wedstrijd(t, id)!.absent = ['p2'];
+		expect(p.open(t, id)).toBe(true);
+		expect(t.match?.lineup.K).toBeNull();
+		expect(t.match?.bench).not.toContain('p2');
 	});
 
 	it('gaat terug in het programma als je hem weggooit', () => {
 		const { t, id } = metProgramma();
-		p.uitProgramma(t, id);
+		p.open(t, id);
 		p.terugInProgramma(t);
 		t.match = null;
 		expect(t.program!.map((x) => x.id)).toEqual(['w-18', 'w-25']);
@@ -50,7 +78,8 @@ describe('het programma', () => {
 	it('wijzigt en haalt weg, met de taken', () => {
 		const { t, id } = metProgramma();
 		p.wijzig(t, id, { datum: '2026-10-01', aanvang: null, tegenstander: 'Ajax', thuis: false });
-		expect(t.program![0]).toEqual({ id, date: '2026-10-01', opponent: 'Ajax', home: false });
+		expect(t.program![0]).toMatchObject({ id, date: '2026-10-01', opponent: 'Ajax', home: false });
+		expect(t.program![0].time).toBeUndefined();
 		expect(p.wijzig(t, 'bestaat-niet', {})).toBe(false);
 		p.haalWeg(t, id);
 		expect(t.tasks).toHaveLength(0);
@@ -106,7 +135,7 @@ describe('wie deed wat', () => {
 		t.players.push({ id: 'p3', name: 'Luuk', line: '' });
 		p.zet(t, id, 'fluiten', 'p1');
 		p.zet(t, 'w-18', 'fluiten', p.VERENIGING);
-		expect(p.uitProgramma(t, 'w-18')).toBe(true);
+		expect(p.open(t, 'w-18')).toBe(true);
 		archiveMatch(t, 1_000_000);
 
 		const lijst = p.beurten(t, 'fluiten');
@@ -178,7 +207,7 @@ describe('wie deed wat', () => {
 		const id = p.voegToe(t, '2026-11-01', undefined, 'TABA', true, () => 'w');
 		t.program![0].absent = ['p2', 'weg-uit-het-team'];
 		expect(p.kanNiet(t, id).map((x) => x.id)).toEqual(['p2']);
-		expect(p.uitProgramma(t, id)).toBe(true);
+		expect(p.open(t, id)).toBe(true);
 		expect(t.match?.absent).toEqual(['p2']);
 		t.match!.absent = ['p2', 'p1'];
 		p.terugInProgramma(t);

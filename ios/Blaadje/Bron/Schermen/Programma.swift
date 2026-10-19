@@ -16,17 +16,18 @@ struct ProgrammaBlok: View {
                 Button { erbij = true } label: { Label("Wedstrijd in het programma", systemImage: "plus") }
                     .labelStyle(.iconOnly)
             }
-            if app.toestand.program.isEmpty {
+            let komt = ProgramActions.nogTeSpelen(app.toestand)
+            if komt.isEmpty {
                 Text("Zet de komende wedstrijden erin, met wie de limonade doet en wie er rijdt.")
                     .font(.subheadline).foregroundStyle(.secondary)
             }
-            ForEach(app.toestand.program) { p in
-                NavigationLink(value: p.id) {
+            ForEach(komt) { p in
+                NavigationLink(value: p.id ?? "") {
                     HStack(alignment: .firstTextBaseline) {
                         Text(shortDate(p.date)).font(.subheadline.bold()).monospacedDigit().frame(minWidth: 52, alignment: .leading)
                         VStack(alignment: .leading, spacing: 2) {
                             Text((p.home ? "Thuis" : "Uit") + " tegen \(p.opponent)" + (p.time.map { ", \($0)" } ?? ""))
-                            let tekst = TakenTekst.samenvatting(app.toestand, p.id, naam: { app.speler($0)?.name })
+                            let tekst = TakenTekst.samenvatting(app.toestand, p.id ?? "", naam: { app.speler($0)?.name }, opstelling: !p.lineup.opHetVeld.isEmpty)
                             if !tekst.isEmpty {
                                 Text(tekst).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                             }
@@ -45,7 +46,7 @@ struct ProgrammaBlok: View {
                 }
                 .padding(.top, 2)
             }
-            if !app.toestand.program.isEmpty, !ouderZien {
+            if !komt.isEmpty, !ouderZien {
                 Button { naarTab(.team) } label: {
                     Label("Haal de ouders erbij", systemImage: "person.2")
                         .font(.subheadline)
@@ -62,9 +63,9 @@ struct ProgrammaBlok: View {
 
 enum TakenTekst {
     /// "Limonade Noah · Rijden Sem, nog 1 open · Bram kan niet · Afgemeld: Luuk"
-    static func samenvatting(_ t: AppState, _ wedstrijd: String, naam: (String) -> String?) -> String {
+    static func samenvatting(_ t: AppState, _ wedstrijd: String, naam: (String) -> String?, opstelling: Bool = false) -> String {
         let taken = ProgramActions.taken(t, wedstrijd: wedstrijd)
-        var delen: [String] = []
+        var delen: [String] = opstelling ? ["Opstelling klaar"] : []
         for soort in TaskKind.allCases {
             let hier = taken.filter { $0.kind == soort }
             guard !hier.isEmpty else { continue }
@@ -137,11 +138,11 @@ struct ProgrammaWedstrijd: View {
     @Environment(\.ouderZien) private var ouderZien
     @Environment(\.dismiss) private var dismiss
     let id: String
-    /// Na "Begin deze wedstrijd": het beginscherm opent de wedstrijd.
-    var begin: () -> Void = {}
+    /// Na "Begin deze wedstrijd": het beginscherm opent de wedstrijd, bij deze stap.
+    var begin: (WedstrijdStroom.Stap) -> Void = { _ in }
 
     var body: some View {
-        if let p = app.toestand.program.first(where: { $0.id == id }) {
+        if let p = ProgramActions.wedstrijd(app.toestand, id) {
             Form {
                 Section {
                     TextField(
@@ -219,14 +220,25 @@ struct ProgrammaWedstrijd: View {
                 }
 
                 Section {
-                    if p.date <= app.vandaag, app.match == nil {
+                    if app.match?.id == id {
                         Button {
-                            if app.beginUitProgramma(id) {
+                            dismiss()
+                            begin(WedstrijdStroom.stap(voor: app.match))
+                        } label: {
+                            Label("Verder met de opstelling", systemImage: "sportscourt")
+                        }
+                    } else if bezig {
+                        Text("Er is een wedstrijd bezig. Daarna kun je deze klaarzetten.").foregroundStyle(.secondary)
+                    } else {
+                        Button {
+                            // Stond de opstelling al klaar, dan meteen naar de wedstrijd; anders eerst wie er is.
+                            let klaar = !p.lineup.opHetVeld.isEmpty
+                            if app.openWedstrijd(id) {
                                 dismiss()
-                                begin()
+                                begin(klaar ? .wedstrijd : .aanwezig)
                             }
                         } label: {
-                            Label("Begin deze wedstrijd", systemImage: "sportscourt")
+                            Label(p.date <= app.vandaag ? "Begin deze wedstrijd" : "Opstelling maken", systemImage: "sportscourt")
                         }
                     }
                     Button("Haal uit het programma", role: .destructive) {
@@ -242,10 +254,16 @@ struct ProgrammaWedstrijd: View {
         }
     }
 
+    /// Er is een wedstrijd afgetrapt die nog niet bewaard is: die gaat voor.
+    private var bezig: Bool {
+        guard let w = app.match, w.archived != true else { return false }
+        return ClockActions.kickedOff(w)
+    }
+
     private var voetnoot: String {
         let kanNiet = ProgramActions.taken(app.toestand, wedstrijd: id)
             .compactMap { t in t.open ? t.declinedBy.flatMap { app.speler($0)?.name }.map { "\($0) kan niet (\(ProgramActions.woord(t.kind).lowercased()))" } : nil }
-        let p = app.toestand.program.first { $0.id == id }
+        let p = ProgramActions.wedstrijd(app.toestand, id)
         let rijden = p?.home == false ? " Wie rijdt, zeggen ouders zelf." : ""
         let basis = ouderZien
             ? "Een open taak kan een ouder zelf pakken in de app.\(rijden) Ouders krijgen de avond ervoor een herinnering; wie de limonade doet, ook vlak voor de rust."

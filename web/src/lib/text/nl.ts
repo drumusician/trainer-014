@@ -152,6 +152,8 @@ const program = {
 	notYet: 'nog niet',
 	declined: (naam: string) => `${naam} kan niet`,
 	addDriver: 'Rijder erbij',
+	makeLineup: 'Opstelling maken',
+	continueLineup: 'Verder met de opstelling',
 	driversThemselves: 'Wie rijdt, zeggen ouders zelf in de app.',
 	absentHeading: 'Afgemeld',
 	absentHint: 'Op de dag zelf staan ze bij Wie is er? al op afwezig.',
@@ -311,6 +313,7 @@ const home = {
 	whoIsThere: 'Tegenstander en wie er is',
 	lineup: 'Opstelling',
 	discard: 'Weggooien',
+	backToProgram: 'Terug naar het programma',
 	confirmDiscard: (opponent: string) =>
 		`Deze wedstrijd tegen ${opponent} weggooien?\n\nWat je in het archief bewaarde blijft staan.`,
 

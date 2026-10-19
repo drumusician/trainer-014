@@ -28,21 +28,51 @@ import Testing
 		#expect(t.program[1].time == "10:30")
 	}
 
-	@Test func opDeDagZelfWordtHetDeWedstrijdMetDezelfdeTaken() {
+	@Test func eenWedstrijdOpenenMetDezelfdeTaken() {
 		var (t, id) = metProgramma()
-		#expect(ProgramActions.uitProgramma(&t, id))
+		#expect(ProgramActions.open(&t, id))
 		#expect(t.match?.id == id)
 		#expect(t.match?.opponent == "Sparta")
 		#expect(t.match?.time == "10:30")
 		#expect(t.match?.date == "2026-10-25")
 		#expect(t.program.map(\.id) == ["w-18"])
 		#expect(ProgramActions.taken(t, wedstrijd: id).count == 3)
-		#expect(!ProgramActions.uitProgramma(&t, "w-18"), "er staat al een wedstrijd open")
+		#expect(t.match?.formation == t.formation)
+	}
+
+	@Test func eenAndereOpenenZetDeEersteTerugMetZijnOpstelling() throws {
+		var (t, id) = metProgramma()
+		#expect(ProgramActions.open(&t, id))
+		t.match?.lineup["K"] = "p3"
+		#expect(ProgramActions.open(&t, "w-18"))
+		#expect(t.match?.id == "w-18")
+		let terug = try #require(ProgramActions.wedstrijd(t, id))
+		#expect(terug.lineup["K"] == "p3", "de opstelling blijft bij de wedstrijd")
+		#expect(terug.fromProgram == nil)
+		#expect(ProgramActions.nogTeSpelen(t).map(\.id) == ["w-18", id])
+		// Weer terug: de opstelling staat er nog.
+		#expect(ProgramActions.open(&t, id))
+		#expect(t.match?.lineup["K"] == "p3")
+		// Na de aftrap gaat de wedstrijd van nu voor.
+		_ = ClockActions.toggleRunning(&t.match, nu: 1000, vandaag: "2026-10-25")
+		#expect(!ProgramActions.open(&t, "w-18"), "er is een wedstrijd bezig")
+	}
+
+	@Test func eenAfgemeldKindGaatUitDeOpstelling() throws {
+		var (t, id) = metProgramma()
+		#expect(ProgramActions.open(&t, id))
+		t.match?.lineup["K"] = "p2"
+		ProgramActions.terugInProgramma(&t)
+		let i = try #require(t.program.firstIndex { $0.id == id })
+		t.program[i].absent = ["p2"]
+		#expect(ProgramActions.open(&t, id))
+		#expect(t.match?.lineup["K"] == nil)
+		#expect(!(t.match?.bench.contains("p2") ?? true))
 	}
 
 	@Test func weggooienZetHemTerugInHetProgramma() {
 		var (t, id) = metProgramma()
-		ProgramActions.uitProgramma(&t, id)
+		ProgramActions.open(&t, id)
 		ProgramActions.terugInProgramma(&t)
 		t.match = nil
 		#expect(t.program.map(\.id) == ["w-18", "w-25"])
@@ -73,7 +103,18 @@ import Testing
 		#expect(terug.tasks[0].player == nil)
 		#expect(terug.tasks[0].declinedBy == SyncModel.uuid("p2", team: team))
 
-		ProgramActions.uitProgramma(&t, id)
+		// Een opstelling bij een wedstrijd die nog komt, gaat mee.
+		let j = try #require(t.program.firstIndex { $0.id == "w-18" })
+		t.program[j].lineup["K"] = "p1"
+		t.program[j].bench = ["p2", "p3"]
+		t.program[j].absent = ["p3"]
+		let metOpstelling = try #require(SyncModel.toestand(uit: SyncModel.alsTabellen(SyncModel.rijen(van: t, team: team)), team: team))
+		let w18 = try #require(metOpstelling.program.first { $0.opponent == "Tegenstander" })
+		#expect(w18.lineup["K"] == SyncModel.uuid("p1", team: team))
+		#expect(w18.bench == [SyncModel.uuid("p2", team: team)], "wie afgemeld is, staat niet op de bank")
+		#expect(w18.absent == [SyncModel.uuid("p3", team: team)])
+
+		ProgramActions.open(&t, id)
 		let bezig = try #require(SyncModel.toestand(uit: SyncModel.alsTabellen(SyncModel.rijen(van: t, team: team)), team: team))
 		#expect(bezig.match?.opponent == "Sparta")
 		#expect(bezig.match?.time == "10:30")
@@ -107,7 +148,7 @@ import Testing
 		ProgramActions.zet(&t, wedstrijd: id, .fluiten, speler: "p1")
 		ProgramActions.zet(&t, wedstrijd: "w-18", .fluiten, speler: ProgramActions.vereniging)
 		ProgramActions.zet(&t, wedstrijd: "w-18", .vlaggen, speler: "p2")
-		#expect(ProgramActions.uitProgramma(&t, "w-18"))
+		#expect(ProgramActions.open(&t, "w-18"))
 		_ = MatchActions.archiveMatch(&t, nu: 1_000_000)
 
 		let beurten = ProgramActions.beurten(t, .fluiten)
@@ -156,7 +197,7 @@ import Testing
 		let i = t.program.firstIndex { $0.id == id }!
 		t.program[i].absent = ["p2", "weg-uit-het-team"]
 		#expect(ProgramActions.kanNiet(t, wedstrijd: id).map(\.id) == ["p2"])
-		#expect(ProgramActions.uitProgramma(&t, id))
+		#expect(ProgramActions.open(&t, id))
 		#expect(t.match?.absent == ["p2"], "wie niet meer in het team zit, valt eraf")
 		// Toch niet vandaag: terug in het programma, met wie niet kan.
 		_ = MatchActions.setAbsent(&t, spelerId: "p1", absent: true)

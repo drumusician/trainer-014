@@ -3,7 +3,7 @@
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
 	import { shortDate } from '$lib/domain/dates';
-	import { SOORTEN, beurten, samenvatting, telling } from '$lib/actions/program';
+	import { SOORTEN, beurten, nogTeSpelen, samenvatting, telling } from '$lib/actions/program';
 	import { sync } from '$lib/supabase/sync.svelte';
 	import type { TaskKind } from '$lib/domain/types';
 
@@ -20,7 +20,7 @@
 	});
 
 	const t = $derived(app.toestand);
-	const programma = $derived(t.program ?? []);
+	const programma = $derived(nogTeSpelen(t));
 	const vandaag = new Date().toISOString().slice(0, 10);
 
 	let datum = $state(vandaag);
@@ -51,7 +51,7 @@
 		{#if programma.length}
 			<ul class="log">
 				{#each programma as p (p.id)}
-					{@const wie = samenvatting(t, p.id, (id) => t.players.find((s) => s.id === id)?.name)}
+					{@const wie = samenvatting(t, p.id ?? '', (id) => t.players.find((s) => s.id === id)?.name)}
 					<li class="klikbaar">
 						<a href="/app/programma/{p.id}">
 							<b>{shortDate(p.date)}</b>

@@ -1,12 +1,17 @@
-import type { Player, ScheduledMatch, State, TaskKind, TeamTask } from '$lib/domain/types';
-import { nieuwe } from './match';
+import type { Match, Player, State, TaskKind, TeamTask } from '$lib/domain/types';
+import { fillFromDefaultLineup, rebuildBench, zonderAfwezigen } from './match';
+import { kickedOff } from './clock';
+import { knowsFormation } from '$lib/domain/formations';
 
 /**
  * Het programma en de taken: wat er aan wedstrijden komt, en wie wat regelt.
  * Dezelfde regels als in de iPhone-app (`ProgramActions.swift`).
  *
- * Een wedstrijd uit het programma wordt op de dag zelf de wedstrijd, met
- * hetzelfde kenmerk. Zo blijven de taken eraan vast zitten.
+ * Een wedstrijd in het programma is een gewone wedstrijd. Open je hem
+ * (`open`), dan wordt hij `t.match`: daar maak je de opstelling, en daar speel
+ * je hem. Open je een andere voordat de aftrap was, dan gaat deze terug in het
+ * programma, met zijn opstelling. Het kenmerk blijft hetzelfde, zodat de taken
+ * eraan vast blijven zitten.
  */
 
 const nieuwKenmerk = (): string => crypto.randomUUID();
@@ -34,6 +39,27 @@ export function tijd(s: string | null | undefined): string | undefined {
 }
 
 /**
+ * Een wedstrijd uit oudere opslag, met alleen wanneer en tegen wie: maak er een
+ * hele wedstrijd van, met de opstelling nog leeg.
+ */
+export function alsWedstrijd(t: State, p: Partial<Match> & { date: string; opponent: string; home: boolean }): Match {
+	return {
+		...p,
+		formation: p.formation || t.formation,
+		lineup: p.lineup ?? {},
+		bench: p.bench ?? [],
+		events: p.events ?? [],
+		elapsed: p.elapsed ?? 0,
+		since: p.since ?? null,
+		running: p.running ?? false,
+		parts: p.parts ?? t.parts,
+		part: p.part ?? 1,
+		inBreak: p.inBreak ?? false,
+		finished: p.finished ?? false
+	};
+}
+
+/**
  * Een wedstrijd erbij. Thuis staat de limonade al open, zodat een ouder hem
  * pakt; uit zegt een ouder zelf dat hij rijdt.
  */
@@ -47,7 +73,7 @@ export function voegToe(
 	taakId = nieuwKenmerk
 ): string {
 	const id = nieuwId();
-	const p: ScheduledMatch = { id, date: datum, opponent: tegenstander.trim() || 'Tegenstander', home: thuis };
+	const p = alsWedstrijd(t, { id, date: datum, opponent: tegenstander.trim() || 'Tegenstander', home: thuis });
 	const tt = tijd(aanvang);
 	if (tt) p.time = tt;
 	t.program = [...(t.program ?? []), p];
@@ -70,12 +96,29 @@ function zetStandaardTaken(t: State, wedstrijd: string, thuis: boolean, taakId: 
 	t.tasks = [...(t.tasks ?? []), { id: taakId(), matchId: wedstrijd, kind: 'limonade' }];
 }
 
+/** De wedstrijd die open staat, als die nog niet begonnen is. */
+function openNogNiet(t: State): Match | null {
+	const w = t.match;
+	return w && !w.archived && !kickedOff(w) ? w : null;
+}
+
+/** Een wedstrijd die nog komt: uit het programma, of de wedstrijd die open staat en nog niet begon. */
+export function wedstrijd(t: State, id: string): Match | undefined {
+	return t.program?.find((x) => x.id === id) ?? (openNogNiet(t)?.id === id ? t.match! : undefined);
+}
+
+/** Wat nog komt en nog niet begon, vroegste eerst: het programma, met de wedstrijd die open staat. */
+export function nogTeSpelen(t: State): Match[] {
+	const open = openNogNiet(t);
+	return [...(open ? [open] : []), ...(t.program ?? [])];
+}
+
 export function wijzig(
 	t: State,
 	id: string,
 	velden: { datum?: string; aanvang?: string | null; tegenstander?: string; thuis?: boolean }
 ): boolean {
-	const p = t.program?.find((x) => x.id === id);
+	const p = wedstrijd(t, id);
 	if (!p) return false;
 	if (velden.datum !== undefined) p.date = velden.datum;
 	if (velden.aanvang !== undefined) {
@@ -97,47 +140,60 @@ export function wijzig(
 
 /** Een wedstrijd die toch niet doorgaat, met zijn taken. */
 export function haalWeg(t: State, id: string): boolean {
-	if (!t.program?.some((p) => p.id === id)) return false;
-	t.program = t.program.filter((p) => p.id !== id);
+	if (openNogNiet(t)?.id === id) {
+		t.match = null;
+	} else {
+		if (!t.program?.some((p) => p.id === id)) return false;
+		t.program = t.program.filter((p) => p.id !== id);
+	}
 	t.tasks = (t.tasks ?? []).filter((x) => x.matchId !== id);
 	return true;
 }
 
-/** De wedstrijd van vandaag uit het programma halen en opzetten. Kan alleen als er geen andere openstaat. */
-export function uitProgramma(t: State, id: string): boolean {
-	const p = t.program?.find((x) => x.id === id);
-	if (!p) return false;
-	if (t.match && !t.match.archived) return false;
-	nieuwe(t, p.opponent, p.home, p.date);
-	t.match!.id = p.id;
-	if (p.time) t.match!.time = p.time;
-	t.match!.fromProgram = true;
-	// wie zich afmeldde staat bij "Wie is er?" al op afwezig
-	t.match!.absent = (p.absent ?? []).filter((a) => t.players.some((s) => s.id === a));
-	t.program = t.program!.filter((x) => x.id !== id);
+/**
+ * Een wedstrijd uit het programma openen: Wie is er, de opstelling, het
+ * wisselplan, en op de dag zelf de aftrap. Staat er een andere open die nog
+ * niet begon, dan gaat die terug in het programma; een wedstrijd die bezig is
+ * gaat voor.
+ */
+export function open(t: State, id: string): boolean {
+	const gevonden = t.program?.find((x) => x.id === id);
+	if (!gevonden) return false;
+	if (t.match && !t.match.archived) {
+		if (kickedOff(t.match)) return false;
+		terugInProgramma(t);
+	}
+	const p = alsWedstrijd(t, gevonden);
+	if (!p.formation || !knowsFormation(p.formation)) {
+		p.formation = t.formation;
+		p.parts = t.parts;
+	}
+	p.absent = (p.absent ?? []).filter((a) => t.players.some((s) => s.id === a));
+	delete p.archived;
+	p.fromProgram = true;
+	zonderAfwezigen(p);
+	t.program = (t.program ?? []).filter((x) => x.id !== id);
+	t.match = p;
+	if (Object.values(p.lineup).some(Boolean)) rebuildBench(t);
+	else fillFromDefaultLineup(t);
 	return true;
 }
 
-/** Een wedstrijd uit het programma weggooien zet hem terug, met zijn taken. */
+/** Een wedstrijd die open staat en nog niet begon, terug in het programma: met zijn opstelling, en zijn taken. */
 export function terugInProgramma(t: State) {
 	const w = t.match;
-	if (!w || !w.fromProgram || w.archived || !w.id) return;
-	if (t.program?.some((p) => p.id === w.id)) return;
-	const p: ScheduledMatch = {
-		id: w.id,
-		date: w.date,
-		opponent: w.opponent,
-		home: w.home
-	};
-	if (w.time) p.time = w.time;
-	if (w.absent?.length) p.absent = [...w.absent];
-	t.program = [...(t.program ?? []), p];
+	if (!w || w.archived || kickedOff(w)) return;
+	const p: Match = { ...w, id: w.id || nieuwKenmerk() };
+	delete p.fromProgram;
+	delete p.keptBy;
+	t.match = null;
+	t.program = [...(t.program ?? []).filter((x) => x.id !== p.id), p];
 	sorteer(t);
 }
 
 /** Wie zich voor deze wedstrijd afmeldde, op volgorde van de selectie. */
-export function kanNiet(t: State, wedstrijd: string): Player[] {
-	const weg = new Set(t.program?.find((p) => p.id === wedstrijd)?.absent ?? []);
+export function kanNiet(t: State, id: string): Player[] {
+	const weg = new Set(wedstrijd(t, id)?.absent ?? []);
 	return t.players.filter((p) => weg.has(p.id));
 }
 
@@ -241,7 +297,8 @@ export function beurten(t: State, soort: TaskKind): Beurt[] {
 	for (const w of t.archive) if (w.id) wedstrijden.push({ id: w.id, datum: w.date, tegen: w.opponent, geweest: true });
 	const lopend = t.match && !t.match.archived && t.match.id ? t.match : undefined;
 	if (lopend) wedstrijden.push({ id: lopend.id!, datum: lopend.date, tegen: lopend.opponent, geweest: false });
-	for (const p of t.program ?? []) wedstrijden.push({ id: p.id, datum: p.date, tegen: p.opponent, geweest: false });
+	for (const p of t.program ?? [])
+		if (p.id) wedstrijden.push({ id: p.id, datum: p.date, tegen: p.opponent, geweest: false });
 	wedstrijden.sort((a, b) => (a.datum < b.datum ? -1 : a.datum > b.datum ? 1 : 0));
 	const uit: Beurt[] = [];
 	for (const w of wedstrijden) {
@@ -272,9 +329,12 @@ export function telling(t: State, soort: TaskKind): { speler: Player; keer: numb
  * "Limonade Noah · Rijden Sem, nog 1 open · Bram kan niet": wie wat regelt, in
  * één regel. Net als TakenTekst.samenvatting in de iPhone-app.
  */
+const wedstrijdVan = wedstrijd;
+
 export function samenvatting(t: State, wedstrijd: string, naam: (id: string) => string | undefined): string {
 	const lijst = taken(t, wedstrijd);
-	const delen: string[] = [];
+	const w = wedstrijdVan(t, wedstrijd);
+	const delen: string[] = w && Object.values(w.lineup).some(Boolean) ? ['Opstelling klaar'] : [];
 	for (const soort of SOORTEN) {
 		const hier = lijst.filter((x) => x.kind === soort);
 		if (!hier.length) continue;
@@ -285,9 +345,9 @@ export function samenvatting(t: State, wedstrijd: string, naam: (id: string) => 
 		if (open) regel += wie.length ? `, nog ${open} open` : ' open';
 		delen.push(regel);
 	}
-	const kanNiet = lijst.flatMap((x) => (isOpen(x) && x.declinedBy ? [naam(x.declinedBy) ?? '?'] : []));
-	if (kanNiet.length) delen.push(kanNiet.join(', ') + ' kan niet');
-	const afgemeld = (t.program?.find((p) => p.id === wedstrijd)?.absent ?? []).flatMap((id) => naam(id) ?? []);
+	const terug = lijst.flatMap((x) => (isOpen(x) && x.declinedBy ? [naam(x.declinedBy) ?? '?'] : []));
+	if (terug.length) delen.push(terug.join(', ') + ' kan niet');
+	const afgemeld = kanNiet(t, wedstrijd).flatMap((p) => naam(p.id) ?? []);
 	if (afgemeld.length) delen.push('Afgemeld: ' + afgemeld.join(', '));
 	return delen.join(' · ');
 }

@@ -40,6 +40,8 @@ function migrate(t: State): State {
 	if (!Array.isArray(t.trainings)) t.trainings = [];
 	if (t.parts !== 4) t.parts = 2;
 	if (!t.teamName?.trim()) t.teamName = 'Ons team';
+	/* Een wedstrijd in het programma had eerst alleen wanneer en tegen wie. */
+	if (t.program) t.program = t.program.map((p) => programma.alsWedstrijd(t, p));
 	const w = t.match as (Match & { helft?: number }) | null;
 	if (w && w.part === undefined) {
 		/* from the old days: back then it was always two halves */
@@ -206,8 +208,8 @@ class App {
 
 	/** Discard a practice match or a mistake. */
 	discardMatch() {
-		/* Kwam hij uit het programma, dan gaat hij daar terug, met zijn taken. */
-		programma.terugInProgramma(this.toestand);
+		/* Kwam hij uit het programma, dan gaat hij daar terug, met zijn opstelling en zijn taken. */
+		if (this.toestand.match?.fromProgram) programma.terugInProgramma(this.toestand);
 		this.toestand.match = null;
 		this.chosenPosition = null;
 		this.save();
@@ -440,9 +442,9 @@ class App {
 		if (programma.haalWeg(this.toestand, id)) this.save();
 	}
 
-	/** De wedstrijd van vandaag uit het programma opzetten. */
+	/** Een wedstrijd uit het programma openen: Wie is er, de opstelling, en op de dag zelf de aftrap. */
 	startFromProgram(id: string): boolean {
-		if (!programma.uitProgramma(this.toestand, id)) return false;
+		if (!programma.open(this.toestand, id)) return false;
 		this.chosenPosition = null;
 		this.save();
 		return true;
