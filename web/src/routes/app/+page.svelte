@@ -141,7 +141,7 @@
 				<ul class="log">
 					{#each (t.program ?? []).slice(0, 3) as p (p.id)}
 						<li class="klikbaar">
-							<a href="/app/programma#{p.id}">
+							<a href="/app/programma/{p.id}">
 								<b>{shortDate(p.date)}</b>
 								<span>{text.program.line(p.home, p.opponent, p.time ?? '')}</span>
 								<em>›</em>
@@ -150,7 +150,7 @@
 					{/each}
 				</ul>
 			{/if}
-			<div class="knoprij" style="padding-left: 0">
+			<div class="knoprij" style="padding-left: 0; margin-top: 12px">
 				<a class="knop" href="/app/programma">{text.program.homeMore}</a>
 			</div>
 

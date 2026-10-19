@@ -115,4 +115,12 @@ describe('wie deed wat', () => {
 		/* een rijplek waar nog niemand voor is, telt niet */
 		expect(p.beurten(t, 'rijden').map((b) => b.speler)).toEqual(['p1']);
 	});
+
+	it('vat per wedstrijd samen wie wat regelt', () => {
+		const { t, id } = metProgramma();
+		p.zet(t, id, 'fluiten', p.VERENIGING);
+		const naam = (x: string) => t.players.find((s) => s.id === x)?.name;
+		expect(p.samenvatting(t, id, naam)).toBe('Limonade Noah · Rijden Sem, nog 1 open · Fluiten vereniging');
+		expect(p.samenvatting(t, 'w-18', naam)).toBe('');
+	});
 });

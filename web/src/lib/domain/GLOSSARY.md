@@ -70,19 +70,19 @@ het is het enige deel dat bij gebruikers kan breken.
 
 ## Om de app heen
 
-| Nederlands | Engels                                                                    |
-| ---------- | ------------------------------------------------------------------------- |
-| acties     | `actions` — verandert de toestand                                         |
-| domein     | `domain` — rekent, verandert niets                                        |
-| kop        | `header`                                                                  |
-| verslag    | `report`                                                                  |
-| notitie    | `note`                                                                    |
-| overzetten | `transfer` — de code waarmee je naar een ander toestel gaat               |
-| back-up    | `backup`                                                                  |
-| opslag     | `storage`                                                                 |
-| toestel    | `device`                                                                  |
-| problemen  | `issues`                                                                  |
-| meten      | `analytics`                                                               |
+| Nederlands | Engels                                                      |
+| ---------- | ----------------------------------------------------------- |
+| acties     | `actions` — verandert de toestand                           |
+| domein     | `domain` — rekent, verandert niets                          |
+| kop        | `header`                                                    |
+| verslag    | `report`                                                    |
+| notitie    | `note`                                                      |
+| overzetten | `transfer` — de code waarmee je naar een ander toestel gaat |
+| back-up    | `backup`                                                    |
+| opslag     | `storage`                                                   |
+| toestel    | `device`                                                    |
+| problemen  | `issues`                                                    |
+| meten      | `analytics`                                                 |
 
 ## Wat er níet verandert
 

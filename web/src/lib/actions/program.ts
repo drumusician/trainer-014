@@ -226,3 +226,25 @@ export function telling(t: State, soort: TaskKind): { speler: Player; keer: numb
 		.map((p) => ({ speler: p, keer: lijst.filter((b) => b.speler === p.id).length }))
 		.sort((a, b) => a.keer - b.keer || a.speler.name.localeCompare(b.speler.name, 'nl'));
 }
+
+/**
+ * "Limonade Noah · Rijden Sem, nog 1 open · Bram kan niet": wie wat regelt, in
+ * één regel. Net als TakenTekst.samenvatting in de iPhone-app.
+ */
+export function samenvatting(t: State, wedstrijd: string, naam: (id: string) => string | undefined): string {
+	const lijst = taken(t, wedstrijd);
+	const delen: string[] = [];
+	for (const soort of SOORTEN) {
+		const hier = lijst.filter((x) => x.kind === soort);
+		if (!hier.length) continue;
+		const wie = hier.flatMap((x) => (x.club ? ['vereniging'] : x.player ? [naam(x.player) ?? '?'] : []));
+		const open = hier.filter(isOpen).length;
+		let regel = woord(soort);
+		if (wie.length) regel += ' ' + wie.join(', ');
+		if (open) regel += wie.length ? `, nog ${open} open` : ' open';
+		delen.push(regel);
+	}
+	const kanNiet = lijst.flatMap((x) => (isOpen(x) && x.declinedBy ? [naam(x.declinedBy) ?? '?'] : []));
+	if (kanNiet.length) delen.push(kanNiet.join(', ') + ' kan niet');
+	return delen.join(' · ');
+}

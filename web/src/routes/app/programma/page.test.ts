@@ -27,44 +27,6 @@ describe('het programma op het web', () => {
 		expect(document.body.textContent).toContain('Thuis tegen Ajax');
 	});
 
-	it('wijst taken toe en zet een rijder erbij', async () => {
-		const id = app.addToProgram('2099-01-10', '10:30', 'PSV', false);
-		render(Programma);
-		const sem = app.toestand.players[0];
-		await fireEvent.change(screen.getByRole('combobox', { name: 'Limonade PSV' }), { target: { value: sem.id } });
-		expect(app.toestand.tasks).toEqual([expect.objectContaining({ matchId: id, kind: 'limonade', player: sem.id })]);
-		screen.getByRole('button', { name: 'Rijder erbij' }).click();
-		await tick();
-		expect(app.toestand.tasks!.filter((x) => x.kind === 'rijden')).toHaveLength(1);
-		screen.getByRole('button', { name: 'Haal weg' }).click();
-		await tick();
-		expect(app.toestand.tasks!.filter((x) => x.kind === 'rijden')).toHaveLength(0);
-	});
-
-	it('laat zien wie niet kon', () => {
-		const id = app.addToProgram('2099-01-10', undefined, 'PSV', false);
-		app.toestand.tasks = [{ id: 'x', matchId: id, kind: 'vlaggen', declinedBy: app.toestand.players[1].id }];
-		render(Programma);
-		expect(document.body.textContent).toContain(app.toestand.players[1].name + ' kan niet (vlaggen)');
-	});
-
-	it('begint de wedstrijd van vandaag', async () => {
-		const id = app.addToProgram(new Date().toISOString().slice(0, 10), '10:30', 'Feyenoord', true);
-		render(Programma);
-		screen.getByRole('button', { name: 'Begin deze wedstrijd' }).click();
-		await tick();
-		expect(app.toestand.match?.id).toBe(id);
-		expect(gegaanNaar).toContain('/app/aanwezig');
-	});
-
-	it('haalt een wedstrijd uit het programma', async () => {
-		app.addToProgram('2099-01-10', undefined, 'PSV', false);
-		render(Programma);
-		screen.getByRole('button', { name: 'Haal uit het programma' }).click();
-		await tick();
-		expect(app.toestand.program).toHaveLength(0);
-	});
-
 	it('zegt dat ouders het nog niet zien, en laat zien wie wat deed', async () => {
 		const id = app.addToProgram('2099-01-10', '10:30', 'PSV', false);
 		const sem = app.toestand.players[0];
@@ -76,10 +38,14 @@ describe('het programma op het web', () => {
 		expect(document.body.textContent).toContain(sem.name + '1×');
 	});
 
-	it('de vereniging kan fluiten', async () => {
-		const id = app.addToProgram('2099-01-10', '10:30', 'PSV', true);
+	it('is een lijst, met per wedstrijd wie wat regelt en een link naar de wedstrijd', async () => {
+		const id = app.addToProgram('2099-01-10', '10:30', 'PSV', false);
+		app.setTask(id, 'limonade', app.toestand.players[0].id);
 		render(Programma);
-		await fireEvent.change(screen.getByRole('combobox', { name: 'Fluiten PSV' }), { target: { value: 'vereniging' } });
-		expect(app.toestand.tasks).toEqual([expect.objectContaining({ matchId: id, kind: 'fluiten', club: true })]);
+		await tick();
+		const link = screen.getByRole('link', { name: /Uit tegen PSV/ });
+		expect(link.getAttribute('href')).toBe('/app/programma/' + id);
+		expect(link.textContent).toContain('Limonade ' + app.toestand.players[0].name);
+		expect(screen.queryByRole('combobox', { name: 'Limonade PSV' })).toBeNull();
 	});
 });
