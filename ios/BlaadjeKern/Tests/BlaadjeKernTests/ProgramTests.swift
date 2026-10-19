@@ -11,6 +11,8 @@ import Testing
 		t.players = [Player(id: "p1", name: "Sem"), Player(id: "p2", name: "Noah"), Player(id: "p3", name: "Luuk")]
 		let id = ProgramActions.voegToe(&t, datum: "2026-10-25", tijd: "10:30", tegenstander: " Sparta ", thuis: true, nieuwId: { "w-25" })
 		ProgramActions.voegToe(&t, datum: "2026-10-18", tijd: "9:00", tegenstander: "", thuis: false, nieuwId: { "w-18" })
+		// Zonder de open taken waarmee een wedstrijd begint: die hebben hun eigen test.
+		t.tasks = []
 		ProgramActions.zet(&t, wedstrijd: id, .limonade, speler: "p2", nieuwId: { "t1" })
 		ProgramActions.voegToe(&t, wedstrijd: id, .rijden, speler: "p1", nieuwId: { "t2" })
 		ProgramActions.voegToe(&t, wedstrijd: id, .rijden, speler: nil, nieuwId: { "t3" })
@@ -116,4 +118,37 @@ import Testing
 		// Een rijplek waar nog niemand voor is, telt niet.
 		#expect(ProgramActions.beurten(t, .rijden).map(\.speler) == ["p1"])
 	}
+
+	@Test func thuisBegintMetOpenLimonadeEnUitMetTweeRijplekken() {
+		var t = emptyState()
+		var n = 0
+		let thuis = ProgramActions.voegToe(&t, datum: "2026-11-01", tijd: nil, tegenstander: "TABA", thuis: true, nieuwId: { "thuis" }, taakId: { n += 1; return "t\(n)" })
+		let uit = ProgramActions.voegToe(&t, datum: "2026-11-08", tijd: nil, tegenstander: "Waterwijk", thuis: false, nieuwId: { "uit" }, taakId: { n += 1; return "t\(n)" })
+		#expect(ProgramActions.taken(t, wedstrijd: thuis).map(\.kind) == [.limonade])
+		#expect(ProgramActions.taken(t, wedstrijd: uit).map(\.kind) == [.rijden, .rijden])
+		#expect(t.tasks.filter { !$0.open }.isEmpty, "ouders kunnen ze pakken")
+		#expect(ProgramActions.soorten(thuis: false) == [.rijden, .vlaggen, .teamtas], "uit: geen limonade, fluiten of velddienst")
+		#expect(ProgramActions.soorten(thuis: true).contains(.fluiten))
+		#expect(!ProgramActions.soorten(thuis: true).contains(.rijden))
+	}
+
+	@Test func vanThuisNaarUitGaatWatNietPastWeg() {
+		var t = emptyState()
+		let id = ProgramActions.voegToe(&t, datum: "2026-11-01", tijd: nil, tegenstander: "TABA", thuis: true, nieuwId: { "w" })
+		ProgramActions.zet(&t, wedstrijd: id, .fluiten, speler: "p1")
+		ProgramActions.zet(&t, wedstrijd: id, .vlaggen, speler: "p2")
+		ProgramActions.wijzig(&t, id, thuis: false)
+		let soorten = ProgramActions.taken(t, wedstrijd: id).map(\.kind.rawValue).sorted()
+		#expect(soorten == ["rijden", "rijden", "vlaggen"])
+		#expect(ProgramActions.taken(t, wedstrijd: id).first { $0.kind == .vlaggen }?.player == "p2", "vlaggen blijft, met wie het deed")
+	}
+
+	@Test func eenTaakOpenZettenZodatEenOuderHemPakt() {
+		var (t, id) = metProgramma()
+		ProgramActions.zet(&t, wedstrijd: id, .limonade, speler: ProgramActions.open)
+		let limonade = ProgramActions.taken(t, wedstrijd: id).first { $0.kind == .limonade }
+		#expect(limonade?.open == true)
+		#expect(limonade?.player == nil)
+	}
 }
+

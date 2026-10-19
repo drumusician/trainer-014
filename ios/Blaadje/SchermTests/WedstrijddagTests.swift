@@ -249,8 +249,8 @@ final class WedstrijddagTests: XCTestCase {
         limonade.tap()
         XCTAssertTrue(app.buttons["Noah"].waitForExistence(timeout: 5))
         app.buttons["Noah"].tap()
-        app.buttons["Rijder erbij"].tap()
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Rijden")).firstMatch.waitForExistence(timeout: 5))
+        // Thuis: geen rijders, en de limonade begon open.
+        XCTAssertFalse(app.buttons["Rijder erbij"].exists)
         // Thuis fluit een scheidsrechter van de club.
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Fluiten")).firstMatch.tap()
         XCTAssertTrue(app.buttons["Vereniging"].waitForExistence(timeout: 5))

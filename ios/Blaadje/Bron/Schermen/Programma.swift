@@ -170,20 +170,23 @@ struct ProgrammaWedstrijd: View {
                 }
 
                 Section {
-                    ForEach(TaskKind.allCases.filter { $0 != .rijden }, id: \.self) { soort in
+                    // Uit regelt de thuisclub de limonade en het fluiten; thuis rijdt niemand.
+                    ForEach(ProgramActions.soorten(thuis: p.home).filter { $0 != .rijden }, id: \.self) { soort in
                         Picker(ProgramActions.woord(soort), selection: Binding(
                             get: {
-                                let taak = ProgramActions.taken(app.toestand, wedstrijd: id).first { $0.kind == soort }
-                                return taak?.club == true ? ProgramActions.vereniging : taak?.player ?? ""
+                                guard let taak = ProgramActions.taken(app.toestand, wedstrijd: id).first(where: { $0.kind == soort }) else { return "" }
+                                if taak.club { return ProgramActions.vereniging }
+                                return taak.player ?? ProgramActions.open
                             },
                             set: { app.zetTaak(id, soort, speler: $0.isEmpty ? nil : $0) }
                         )) {
-                            Text(open(soort) ? "Open" : "Niemand").tag("")
+                            Text("Niemand").tag("")
+                            Text("Open").tag(ProgramActions.open)
                             if soort == .fluiten { Text("Vereniging").tag(ProgramActions.vereniging) }
                             ForEach(app.spelers) { Text($0.name).tag($0.id) }
                         }
                     }
-                    ForEach(ProgramActions.taken(app.toestand, wedstrijd: id).filter { $0.kind == .rijden }) { taak in
+                    ForEach(p.home ? [] : ProgramActions.taken(app.toestand, wedstrijd: id).filter { $0.kind == .rijden }) { taak in
                         Picker("Rijden", selection: Binding(
                             get: { taak.player ?? "" },
                             set: { app.wijsTaak(taak.id, speler: $0.isEmpty ? nil : $0) }
@@ -193,7 +196,9 @@ struct ProgrammaWedstrijd: View {
                         }
                         .swipeActions { Button("Haal weg", role: .destructive) { app.haalTaakWeg(taak.id) } }
                     }
-                    Button { app.rijderErbij(id) } label: { Label("Rijder erbij", systemImage: "car") }
+                    if !p.home {
+                        Button { app.rijderErbij(id) } label: { Label("Rijder erbij", systemImage: "car") }
+                    }
                 } header: {
                     Text("Wie regelt wat")
                 } footer: {
@@ -224,17 +229,12 @@ struct ProgrammaWedstrijd: View {
         }
     }
 
-    /// Open: een familie kon niet, en er is nog niemand anders.
-    private func open(_ soort: TaskKind) -> Bool {
-        ProgramActions.taken(app.toestand, wedstrijd: id).contains { $0.kind == soort && $0.open }
-    }
-
     private var voetnoot: String {
         let kanNiet = ProgramActions.taken(app.toestand, wedstrijd: id)
             .compactMap { t in t.open ? t.declinedBy.flatMap { app.speler($0)?.name }.map { "\($0) kan niet (\(ProgramActions.woord(t.kind).lowercased()))" } : nil }
         let basis = ouderZien
-            ? "Ouders krijgen de avond ervoor een herinnering. Wie de limonade doet, ook vlak voor de rust."
-            : "Ouders zien dit zodra je ze erbij haalt, bij Team."
+            ? "Een open taak kan een ouder zelf pakken in de app. Ouders krijgen de avond ervoor een herinnering; wie de limonade doet, ook vlak voor de rust."
+            : "Ouders zien dit zodra je ze erbij haalt, bij Team. Een open taak kunnen ze dan zelf pakken."
         return kanNiet.isEmpty ? basis : kanNiet.joined(separator: ", ") + ". " + basis
     }
 }

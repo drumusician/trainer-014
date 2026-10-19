@@ -23,16 +23,39 @@ public enum ProgramActions {
 		return s
 	}
 
+	/**
+	 * Een wedstrijd erbij, met de taken die ouders zelf kunnen pakken al open:
+	 * thuis de limonade, uit twee plekken om te rijden.
+	 */
 	@discardableResult
 	public static func voegToe(
 		_ t: inout AppState, datum: String, tijd: String?, tegenstander: String, thuis: Bool,
-		nieuwId: () -> String = { UUID().uuidString.lowercased() }
+		nieuwId: () -> String = { UUID().uuidString.lowercased() },
+		taakId: () -> String = { UUID().uuidString.lowercased() }
 	) -> String {
 		let id = nieuwId()
 		let naam = tegenstander.jsTrim()
 		t.program.append(ScheduledMatch(id: id, date: datum, time: Self.tijd(tijd), opponent: naam.isEmpty ? "Tegenstander" : naam, home: thuis))
+		zetStandaardTaken(&t, id, thuis: thuis, taakId: taakId)
 		sorteer(&t)
 		return id
+	}
+
+	/**
+	 * Welke taken er bij een wedstrijd horen. Uit regelt de thuisclub de
+	 * limonade en het fluiten, en is er geen velddienst; thuis rijdt niemand.
+	 */
+	public static func soorten(thuis: Bool) -> [TaskKind] {
+		thuis ? [.limonade, .fluiten, .vlaggen, .velddienst, .teamtas] : [.rijden, .vlaggen, .teamtas]
+	}
+
+	private static func zetStandaardTaken(_ t: inout AppState, _ wedstrijd: String, thuis: Bool, taakId: () -> String) {
+		let er = t.tasks.filter { $0.matchId == wedstrijd }
+		if thuis {
+			if !er.contains(where: { $0.kind == .limonade }) { t.tasks.append(TeamTask(id: taakId(), matchId: wedstrijd, kind: .limonade)) }
+		} else if !er.contains(where: { $0.kind == .rijden }) {
+			for _ in 0..<2 { t.tasks.append(TeamTask(id: taakId(), matchId: wedstrijd, kind: .rijden)) }
+		}
 	}
 
 	@discardableResult
@@ -43,7 +66,13 @@ public enum ProgramActions {
 		if let datum { t.program[i].date = datum }
 		if let tijd { t.program[i].time = Self.tijd(tijd) }
 		if let tegenstander { t.program[i].opponent = tegenstander.jsTrim().isEmpty ? "Tegenstander" : tegenstander }
-		if let thuis { t.program[i].home = thuis }
+		if let thuis, thuis != t.program[i].home {
+			// Van thuis naar uit of andersom: wat niet meer past gaat weg, wat open hoort komt erbij.
+			t.program[i].home = thuis
+			let passend = soorten(thuis: thuis)
+			t.tasks.removeAll { $0.matchId == id && !passend.contains($0.kind) }
+			zetStandaardTaken(&t, id, thuis: thuis, taakId: { UUID().uuidString.lowercased() })
+		}
 		sorteer(&t)
 		return true
 	}
@@ -101,9 +130,13 @@ public enum ProgramActions {
 	/** In plaats van een speler: de vereniging regelt het, zoals een clubscheidsrechter. */
 	public static let vereniging = "vereniging"
 
+	/** In plaats van een speler: de taak staat open, een ouder kan hem pakken. */
+	public static let open = "open"
+
 	/**
 	 * Eén familie voor een taak die er één keer is (limonade, fluiten, vlaggen,
-	 * velddienst, teamtas), of `vereniging`. Niemand (`nil`) haalt de taak weg.
+	 * velddienst, teamtas), `vereniging`, of `open` zodat een ouder hem pakt.
+	 * Niemand (`nil`) haalt de taak weg.
 	 */
 	public static func zet(
 		_ t: inout AppState, wedstrijd: String, _ soort: TaskKind, speler: String?,
@@ -115,12 +148,13 @@ public enum ProgramActions {
 			return
 		}
 		let club = speler == vereniging
+		let openTaak = speler == open
 		if let i {
-			t.tasks[i].player = club ? nil : speler
+			t.tasks[i].player = club || openTaak ? nil : speler
 			t.tasks[i].club = club
 			t.tasks[i].declinedBy = nil
 		} else {
-			t.tasks.append(TeamTask(id: nieuwId(), matchId: wedstrijd, kind: soort, player: club ? nil : speler, club: club))
+			t.tasks.append(TeamTask(id: nieuwId(), matchId: wedstrijd, kind: soort, player: club || openTaak ? nil : speler, club: club))
 		}
 	}
 
