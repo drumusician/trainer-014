@@ -13,6 +13,8 @@ function metProgramma() {
 	let n = 0;
 	const id = p.voegToe(t, '2026-10-25', '10:30', ' Sparta ', true, () => 'w-25');
 	p.voegToe(t, '2026-10-18', '9:00', '', false, () => 'w-18');
+	/* zonder de open taken waarmee een wedstrijd begint: die hebben hun eigen test */
+	t.tasks = [];
 	p.zet(t, id, 'limonade', 'p2', () => 't' + ++n);
 	p.voegTaakToe(t, id, 'rijden', 'p1', () => 't' + ++n);
 	p.voegTaakToe(t, id, 'rijden', null, () => 't' + ++n);
@@ -122,5 +124,48 @@ describe('wie deed wat', () => {
 		const naam = (x: string) => t.players.find((s) => s.id === x)?.name;
 		expect(p.samenvatting(t, id, naam)).toBe('Limonade Noah · Rijden Sem, nog 1 open · Fluiten vereniging');
 		expect(p.samenvatting(t, 'w-18', naam)).toBe('');
+	});
+
+	it('thuis begint met de limonade open, uit met twee open rijplekken', () => {
+		const t = emptyState();
+		let n = 0;
+		const thuis = p.voegToe(
+			t,
+			'2026-11-01',
+			undefined,
+			'TABA',
+			true,
+			() => 'thuis',
+			() => 't' + ++n
+		);
+		const uit = p.voegToe(
+			t,
+			'2026-11-08',
+			undefined,
+			'Waterwijk',
+			false,
+			() => 'uit',
+			() => 't' + ++n
+		);
+		expect(p.taken(t, thuis).map((x) => x.kind)).toEqual(['limonade']);
+		expect(p.taken(t, uit).map((x) => x.kind)).toEqual(['rijden', 'rijden']);
+		expect(t.tasks!.every(p.isOpen)).toBe(true);
+		expect(p.soorten(false)).toEqual(['rijden', 'vlaggen', 'teamtas']);
+	});
+
+	it('van thuis naar uit gaat weg wat niet past, en een taak kan open', () => {
+		const t = emptyState();
+		const id = p.voegToe(t, '2026-11-01', undefined, 'TABA', true, () => 'w');
+		p.zet(t, id, 'fluiten', 'p1');
+		p.zet(t, id, 'vlaggen', 'p2');
+		p.zet(t, id, 'teamtas', p.OPEN);
+		expect(p.isOpen(p.taken(t, id).find((x) => x.kind === 'teamtas')!)).toBe(true);
+		p.wijzig(t, id, { thuis: false });
+		expect(
+			p
+				.taken(t, id)
+				.map((x) => x.kind)
+				.sort()
+		).toEqual(['rijden', 'rijden', 'teamtas', 'vlaggen']);
 	});
 });

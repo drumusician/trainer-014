@@ -125,7 +125,7 @@ const trainings = {
 const program = {
 	title: 'Programma',
 	heading: 'Programma',
-	hint: 'De komende wedstrijden, en wie wat regelt. Ouders krijgen de avond ervoor een herinnering voor hun taak.',
+	hint: 'De komende wedstrijden, en wie wat regelt. Een open taak kan een ouder zelf pakken in de app.',
 	none: 'Zet de komende wedstrijden erin, met wie wat regelt.',
 	addHeading: 'Wedstrijd erbij',
 	dateLabel: 'Datum',
@@ -137,6 +137,7 @@ const program = {
 	add: 'Zet erin',
 	nobody: '—',
 	open: 'open',
+	openOption: 'Open: een ouder pakt hem',
 	club: 'Vereniging',
 	whoDoesWhat: 'Wie regelt wat',
 	gone: 'Deze wedstrijd staat niet meer in het programma.',

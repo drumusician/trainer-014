@@ -33,21 +33,46 @@ export function tijd(s: string | null | undefined): string | undefined {
 	return Number(m[1]) <= 23 && Number(m[2]) <= 59 ? t : undefined;
 }
 
+/**
+ * Een wedstrijd erbij, met de taken die ouders zelf kunnen pakken al open:
+ * thuis de limonade, uit twee plekken om te rijden.
+ */
 export function voegToe(
 	t: State,
 	datum: string,
 	aanvang: string | undefined,
 	tegenstander: string,
 	thuis: boolean,
-	nieuwId = nieuwKenmerk
+	nieuwId = nieuwKenmerk,
+	taakId = nieuwKenmerk
 ): string {
 	const id = nieuwId();
 	const p: ScheduledMatch = { id, date: datum, opponent: tegenstander.trim() || 'Tegenstander', home: thuis };
 	const tt = tijd(aanvang);
 	if (tt) p.time = tt;
 	t.program = [...(t.program ?? []), p];
+	zetStandaardTaken(t, id, thuis, taakId);
 	sorteer(t);
 	return id;
+}
+
+/**
+ * Welke taken er bij een wedstrijd horen. Uit regelt de thuisclub de limonade
+ * en het fluiten, en is er geen velddienst; thuis rijdt niemand.
+ */
+export function soorten(thuis: boolean): TaskKind[] {
+	return thuis ? ['limonade', 'fluiten', 'vlaggen', 'velddienst', 'teamtas'] : ['rijden', 'vlaggen', 'teamtas'];
+}
+
+function zetStandaardTaken(t: State, wedstrijd: string, thuis: boolean, taakId: () => string) {
+	const er = (t.tasks ?? []).filter((x) => x.matchId === wedstrijd);
+	const erbij: TeamTask[] = [];
+	if (thuis) {
+		if (!er.some((x) => x.kind === 'limonade')) erbij.push({ id: taakId(), matchId: wedstrijd, kind: 'limonade' });
+	} else if (!er.some((x) => x.kind === 'rijden')) {
+		for (let i = 0; i < 2; i++) erbij.push({ id: taakId(), matchId: wedstrijd, kind: 'rijden' });
+	}
+	if (erbij.length) t.tasks = [...(t.tasks ?? []), ...erbij];
 }
 
 export function wijzig(
@@ -64,7 +89,13 @@ export function wijzig(
 		else delete p.time;
 	}
 	if (velden.tegenstander !== undefined) p.opponent = velden.tegenstander.trim() || 'Tegenstander';
-	if (velden.thuis !== undefined) p.home = velden.thuis;
+	if (velden.thuis !== undefined && velden.thuis !== p.home) {
+		/* Van thuis naar uit of andersom: wat niet meer past gaat weg, wat open hoort komt erbij. */
+		p.home = velden.thuis;
+		const passend = soorten(velden.thuis);
+		t.tasks = (t.tasks ?? []).filter((x) => x.matchId !== id || passend.includes(x.kind));
+		zetStandaardTaken(t, id, velden.thuis, nieuwKenmerk);
+	}
 	sorteer(t);
 	return true;
 }
@@ -113,6 +144,9 @@ export function taken(t: State, wedstrijd: string): TeamTask[] {
 /** In plaats van een speler: de vereniging regelt het, zoals een clubscheidsrechter. */
 export const VERENIGING = 'vereniging';
 
+/** In plaats van een speler: de taak staat open, een ouder kan hem pakken. */
+export const OPEN = 'open';
+
 /** Er moet nog iemand voor gevonden worden. */
 export const isOpen = (x: TeamTask) => !x.player && !x.club;
 
@@ -129,6 +163,9 @@ export function zet(t: State, wedstrijd: string, soort: TaskKind, speler: string
 	if (club) {
 		delete taak.player;
 		taak.club = true;
+	} else if (speler === OPEN) {
+		delete taak.player;
+		delete taak.club;
 	} else {
 		taak.player = speler;
 		delete taak.club;

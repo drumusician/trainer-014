@@ -18,19 +18,29 @@ beforeEach(() => {
 });
 
 describe('één wedstrijd uit het programma', () => {
-	it('wijst taken toe en zet een rijder erbij', async () => {
-		const id = app.addToProgram('2099-01-10', '10:30', 'PSV', false);
+	it('thuis: limonade, fluiten en geen rijders', async () => {
+		const id = app.addToProgram('2099-01-10', '10:30', 'PSV', true);
 		page.params = { id };
 		render(Wedstrijd);
 		const sem = app.toestand.players[0];
 		await fireEvent.change(screen.getByRole('combobox', { name: 'Limonade PSV' }), { target: { value: sem.id } });
 		expect(app.toestand.tasks).toEqual([expect.objectContaining({ matchId: id, kind: 'limonade', player: sem.id })]);
+		expect(screen.queryByRole('button', { name: 'Rijder erbij' })).toBeNull();
+	});
+
+	it('uit: open rijplekken, een rijder erbij, en geen limonade of fluiten', async () => {
+		const id = app.addToProgram('2099-01-10', '10:30', 'PSV', false);
+		page.params = { id };
+		render(Wedstrijd);
+		expect(screen.queryByRole('combobox', { name: 'Limonade PSV' })).toBeNull();
+		expect(screen.queryByRole('combobox', { name: 'Fluiten PSV' })).toBeNull();
+		expect(app.toestand.tasks!.filter((x) => x.kind === 'rijden')).toHaveLength(2);
 		screen.getByRole('button', { name: 'Rijder erbij' }).click();
 		await tick();
-		expect(app.toestand.tasks!.filter((x) => x.kind === 'rijden')).toHaveLength(1);
-		screen.getByRole('button', { name: 'Haal weg' }).click();
+		expect(app.toestand.tasks!.filter((x) => x.kind === 'rijden')).toHaveLength(3);
+		screen.getAllByRole('button', { name: 'Haal weg' })[0].click();
 		await tick();
-		expect(app.toestand.tasks!.filter((x) => x.kind === 'rijden')).toHaveLength(0);
+		expect(app.toestand.tasks!.filter((x) => x.kind === 'rijden')).toHaveLength(2);
 	});
 
 	it('laat zien wie niet kon', () => {
@@ -65,6 +75,6 @@ describe('één wedstrijd uit het programma', () => {
 		page.params = { id };
 		render(Wedstrijd);
 		await fireEvent.change(screen.getByRole('combobox', { name: 'Fluiten PSV' }), { target: { value: 'vereniging' } });
-		expect(app.toestand.tasks).toEqual([expect.objectContaining({ matchId: id, kind: 'fluiten', club: true })]);
+		expect(app.toestand.tasks).toContainEqual(expect.objectContaining({ matchId: id, kind: 'fluiten', club: true }));
 	});
 });

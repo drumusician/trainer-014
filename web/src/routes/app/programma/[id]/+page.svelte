@@ -5,7 +5,7 @@
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
 	import { shortDate } from '$lib/domain/dates';
-	import { SOORTEN, VERENIGING, isOpen, taken } from '$lib/actions/program';
+	import { OPEN, VERENIGING, soorten, taken } from '$lib/actions/program';
 	import type { TaskKind } from '$lib/domain/types';
 
 	/* Eén wedstrijd uit het programma: bijwerken, wie wat regelt, en op de dag zelf beginnen. */
@@ -16,7 +16,8 @@
 	$effect(() => zetKop(p ? shortDate(p.date) + ' · ' + p.opponent : text.program.title));
 
 	const naam = (id: string | undefined) => t.players.find((s) => s.id === id)?.name ?? '?';
-	const eenmalig = SOORTEN.filter((s) => s !== 'rijden');
+	/* Uit regelt de thuisclub de limonade en het fluiten; thuis rijdt niemand. */
+	const eenmalig = $derived(p ? soorten(p.home).filter((s) => s !== 'rijden') : []);
 
 	function taakVan(wedstrijd: string, soort: TaskKind) {
 		return taken(t, wedstrijd).find((x) => x.kind === soort);
@@ -80,10 +81,11 @@
 							<td>
 								<select
 									aria-label={text.program.kinds[soort] + ' ' + p.opponent}
-									value={taak?.club ? VERENIGING : (taak?.player ?? '')}
+									value={!taak ? '' : taak.club ? VERENIGING : (taak.player ?? OPEN)}
 									onchange={(e) => app.setTask(p.id, soort, e.currentTarget.value || null)}
 								>
-									<option value="">{taak && isOpen(taak) ? text.program.open : text.program.nobody}</option>
+									<option value="">{text.program.nobody}</option>
+									<option value={OPEN}>{text.program.openOption}</option>
 									{#if soort === 'fluiten'}
 										<option value={VERENIGING}>{text.program.club}</option>
 									{/if}
@@ -94,7 +96,7 @@
 							</td>
 						</tr>
 					{/each}
-					{#each taken(t, p.id).filter((x) => x.kind === 'rijden') as taak (taak.id)}
+					{#each p.home ? [] : taken(t, p.id).filter((x) => x.kind === 'rijden') as taak (taak.id)}
 						<tr>
 							<td>{text.program.kinds.rijden}</td>
 							<td>
@@ -125,7 +127,9 @@
 			{/if}
 
 			<div class="knoprij" style="padding-left: 0">
-				<button onclick={() => app.addTask(p.id, 'rijden', null)}>{text.program.addDriver}</button>
+				{#if !p.home}
+					<button onclick={() => app.addTask(p.id, 'rijden', null)}>{text.program.addDriver}</button>
+				{/if}
 				{#if p.date <= vandaag && !(t.match && !t.match.archived)}
 					<button class="prim" onclick={() => begin(p.id)}>{text.program.startToday}</button>
 				{/if}
