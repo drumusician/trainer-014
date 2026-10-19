@@ -722,13 +722,16 @@ public struct ScheduledMatch: JSONModel, Equatable, Identifiable, Sendable {
 	public var time: String?
 	public var opponent: String
 	public var home: Bool
+	/** wie er niet bij kan; dat zegt een ouder in de app */
+	public var absent: [String]?
 
-	public init(id: String, date: String, time: String? = nil, opponent: String, home: Bool) {
+	public init(id: String, date: String, time: String? = nil, opponent: String, home: Bool, absent: [String]? = nil) {
 		self.id = id
 		self.date = date
 		self.time = time
 		self.opponent = opponent
 		self.home = home
+		self.absent = absent
 	}
 
 	public init(json: JSONValue) throws {
@@ -738,6 +741,7 @@ public struct ScheduledMatch: JSONModel, Equatable, Identifiable, Sendable {
 		time = o.str("time")
 		opponent = o.str("opponent") ?? ""
 		home = o.bool("home") ?? true
+		absent = o.strings("absent")
 	}
 
 	public var json: JSONValue {
@@ -747,6 +751,7 @@ public struct ScheduledMatch: JSONModel, Equatable, Identifiable, Sendable {
 		o.zet("time", time)
 		o["opponent"] = .string(opponent)
 		o["home"] = .bool(home)
+		if let absent, !absent.isEmpty { o["absent"] = .array(absent.map(JSONValue.string)) }
 		return .object(o)
 	}
 }

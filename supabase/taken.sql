@@ -4,7 +4,8 @@
 -- wedstrijden die komen er alvast in, en bij elke wedstrijd wie wat regelt:
 -- limonade, rijden, fluiten, vlaggen, de teamtas. Een ouder kiest in de app één
 -- keer zijn kind, ziet het programma met de taken, en kan zeggen "kan niet" of
--- een open taak overnemen.
+-- een open taak overnemen. Bij een uitwedstrijd zegt hij zelf dat hij rijdt, en
+-- bij elke wedstrijd die nog komt kan hij zijn kind afmelden.
 --
 -- Een wedstrijd in het programma is een gewone rij in `wedstrijden`, met status
 -- 'gepland' en nog zonder klok. Op de dag zelf wordt diezelfde rij de wedstrijd;
@@ -191,6 +192,9 @@ begin
                'status', w.status,
                'voor', case when w.status <> 'gepland' then w.doelpunten_voor end,
                'tegen', case when w.status <> 'gepland' then w.doelpunten_tegen end,
+               -- jouw kind is afgemeld
+               'kan_niet', exists (select 1 from public.wedstrijd_spelers ws
+                                    where ws.wedstrijd_id = w.id and ws.speler_id = v_mijn and not ws.aanwezig),
                'taken', case when w.status <> 'afgelopen' then coalesce((
                  select jsonb_agg(jsonb_build_object(
                           'id', tk.id,
@@ -276,6 +280,101 @@ revoke all on function public.taak_kan_niet(text, text, uuid) from public;
 revoke all on function public.taak_doe_ik(text, text, uuid) from public;
 grant execute on function public.taak_kan_niet(text, text, uuid) to anon, authenticated;
 grant execute on function public.taak_doe_ik(text, text, uuid) to anon, authenticated;
+
+-- ---------- rijden ----------
+-- Rijden is aanbieden, geen beurt die je krijgt: een ouder zegt zelf dat hij
+-- rijdt, en dat is een taak rijden bij zijn kind. Zette de trainer een open plek
+-- neer, dan vult hij die. Toch niet: de taak gaat weg, zonder vraag aan de rest.
+create or replace function public.ik_rijd(p_code text, p_token text, p_wedstrijd uuid, p_rijd boolean) returns boolean
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  v_team  uuid;
+  v_kind  uuid;
+  v_open  uuid;
+begin
+  select k.team, k.speler into v_team, v_kind from public.kind_van(p_code, p_token) k;
+  if v_kind is null or not exists (
+    select 1 from public.wedstrijden w
+     where w.id = p_wedstrijd and w.team_id = v_team and not w.thuis and w.status <> 'afgelopen'
+  ) then
+    return false;
+  end if;
+  if not p_rijd then
+    delete from public.taken
+     where wedstrijd_id = p_wedstrijd and team_id = v_team and soort = 'rijden' and speler_id = v_kind;
+    return true;
+  end if;
+  if exists (select 1 from public.taken
+              where wedstrijd_id = p_wedstrijd and team_id = v_team and soort = 'rijden' and speler_id = v_kind) then
+    return true;
+  end if;
+  select tk.id into v_open from public.taken tk
+   where tk.wedstrijd_id = p_wedstrijd and tk.team_id = v_team and tk.soort = 'rijden'
+     and tk.speler_id is null and not tk.vereniging
+   order by tk.gemaakt, tk.id limit 1
+   for update skip locked;
+  if v_open is not null then
+    update public.taken set speler_id = v_kind, afgemeld_door = null where id = v_open;
+  else
+    insert into public.taken (id, team_id, wedstrijd_id, soort, speler_id)
+    values (gen_random_uuid(), v_team, p_wedstrijd, 'rijden', v_kind);
+  end if;
+  return true;
+end;
+$$;
+
+-- ---------- afmelden ----------
+-- Een kind dat niet kan, staat als afwezig bij de wedstrijd. De trainer ziet
+-- het in het programma, en op de dag zelf staat het kind bij "Wie is er?" al
+-- op afwezig. Alleen zolang de trainer de wedstrijd nog niet opzette (geen
+-- klok): daarna hoort hij het liever even zelf.
+--
+-- Het kenmerk van de rij is hetzelfde als de app hem geeft (SyncModel.uuid in
+-- BlaadjeKern, kenmerk in rijen.ts): anders zet de app er een tweede naast.
+create or replace function public.rij_kenmerk(p_team uuid, p_kenmerk text) returns uuid
+language sql immutable
+set search_path = public
+as $$
+  select (substr(h, 1, 8) || '-' || substr(h, 9, 4) || '-' || substr(h, 13, 4) || '-'
+          || substr(h, 17, 4) || '-' || substr(h, 21, 12))::uuid
+    from (select encode(set_byte(set_byte(b, 6, (get_byte(b, 6) & 15) | 80), 8, (get_byte(b, 8) & 63) | 128), 'hex') as h
+            from (select substring(sha256(convert_to(p_team::text || '|' || p_kenmerk, 'UTF8')) from 1 for 16) as b) x) y;
+$$;
+
+create or replace function public.kind_kan_niet(p_code text, p_token text, p_wedstrijd uuid, p_kan_niet boolean) returns boolean
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  v_team  uuid;
+  v_kind  uuid;
+begin
+  select k.team, k.speler into v_team, v_kind from public.kind_van(p_code, p_token) k;
+  if v_kind is null or not exists (
+    select 1 from public.wedstrijden w
+     where w.id = p_wedstrijd and w.team_id = v_team and w.status = 'gepland' and w.klok is null
+  ) then
+    return false;
+  end if;
+  if p_kan_niet then
+    insert into public.wedstrijd_spelers (id, team_id, wedstrijd_id, speler_id, naam, aanwezig)
+    select public.rij_kenmerk(v_team, 'ws|' || p_wedstrijd || '|' || v_kind), v_team, p_wedstrijd, v_kind, s.naam, false
+      from public.spelers s where s.id = v_kind
+    on conflict (wedstrijd_id, speler_id) do update set aanwezig = false;
+  else
+    delete from public.wedstrijd_spelers where wedstrijd_id = p_wedstrijd and speler_id = v_kind;
+  end if;
+  return true;
+end;
+$$;
+
+revoke all on function public.ik_rijd(text, text, uuid, boolean) from public;
+revoke all on function public.kind_kan_niet(text, text, uuid, boolean) from public;
+revoke all on function public.rij_kenmerk(uuid, text) from public, anon, authenticated;
+grant execute on function public.ik_rijd(text, text, uuid, boolean) to anon, authenticated;
+grant execute on function public.kind_kan_niet(text, text, uuid, boolean) to anon, authenticated;
 
 -- ---------- herinneringen ----------
 -- Elke minuut vraagt de serverfunctie `meld` wat er nu de deur uit moet. Drie

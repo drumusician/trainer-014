@@ -49,9 +49,11 @@ final class Volgen {
         let voor: Int?
         let tegen: Int?
         let taken: [Taak]
+        /// Jouw kind is afgemeld.
+        let kanNiet: Bool
         var id: String { kenmerk ?? datum + tegenstander + status }
 
-        enum CodingKeys: String, CodingKey { case kenmerk = "id", datum, aanvang, tegenstander, thuis, status, voor, tegen, taken }
+        enum CodingKeys: String, CodingKey { case kenmerk = "id", datum, aanvang, tegenstander, thuis, status, voor, tegen, taken, kanNiet = "kan_niet" }
 
         init(from decoder: Decoder) throws {
             let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -64,6 +66,13 @@ final class Volgen {
             voor = try c.decodeIfPresent(Int.self, forKey: .voor)
             tegen = try c.decodeIfPresent(Int.self, forKey: .tegen)
             taken = try c.decodeIfPresent([Taak].self, forKey: .taken) ?? []
+            kanNiet = try c.decodeIfPresent(Bool.self, forKey: .kanNiet) ?? false
+        }
+
+        /// Wie er rijden; die van jou eerst.
+        var rijders: [Taak] {
+            let wel = taken.filter { $0.soort == "rijden" && $0.wie != nil }
+            return wel.filter(\.vanMij) + wel.filter { !$0.vanMij }
         }
     }
 
@@ -264,14 +273,31 @@ final class Volgen {
     /// Een open taak overnemen.
     func doeIk(_ code: String, _ taak: String) async { await taakActie("taak_doe_ik", code, taak) }
 
+    /// Bij een uitwedstrijd zeggen dat je rijdt, of toch niet.
+    func rijd(_ code: String, _ wedstrijd: String, _ ja: Bool) async {
+        await actie("ik_rijd", code, ["p_wedstrijd": wedstrijd, "p_rijd": ja ? "true" : "false"], anders: "Dat lukte niet meer.")
+    }
+
+    /// Je kind afmelden voor een wedstrijd, of toch weer aanmelden.
+    func meldAf(_ code: String, _ wedstrijd: String, _ kanNiet: Bool) async {
+        await actie(
+            "kind_kan_niet", code, ["p_wedstrijd": wedstrijd, "p_kan_niet": kanNiet ? "true" : "false"],
+            anders: "De trainer zet de wedstrijd al klaar. Laat het hem zelf even weten.")
+    }
+
     private func taakActie(_ functie: String, _ code: String, _ taak: String) async {
+        await actie(functie, code, ["p_taak": taak], anders: "Iemand anders was je net voor.")
+    }
+
+    /// Een functie op de server die `true` geeft als het lukte; anders staat `anders` in de melding.
+    private func actie(_ functie: String, _ code: String, _ extra: [String: String], anders: String) async {
         guard let token else {
             melding = "Zet meldingen aan voor Blaadje, dan kun je taken overnemen."
             return
         }
         do {
-            let data = try await verkeer(functie, ["p_code": code, "p_token": token, "p_taak": taak])
-            melding = String(decoding: data, as: UTF8.self).contains("true") ? nil : "Iemand anders was je net voor."
+            let data = try await verkeer(functie, ["p_code": code, "p_token": token].merging(extra) { a, _ in a })
+            melding = String(decoding: data, as: UTF8.self).contains("true") ? nil : anders
         } catch {
             melding = "Dat lukte niet. Heb je bereik?"
         }

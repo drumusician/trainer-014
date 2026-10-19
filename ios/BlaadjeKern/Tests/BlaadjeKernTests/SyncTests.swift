@@ -53,6 +53,8 @@ import Testing
 		ProgramActions.zet(&t, wedstrijd: thuis, .velddienst, speler: "p9", nieuwId: { "taak-6" })
 		t.tasks[1].player = nil
 		t.tasks[1].declinedBy = "p7"
+		/* Een ouder meldde zijn kind af voor de uitwedstrijd. */
+		t.program[1].absent = ["p5"]
 		return t
 	}
 

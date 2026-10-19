@@ -34,8 +34,8 @@ export function tijd(s: string | null | undefined): string | undefined {
 }
 
 /**
- * Een wedstrijd erbij, met de taken die ouders zelf kunnen pakken al open:
- * thuis de limonade, uit twee plekken om te rijden.
+ * Een wedstrijd erbij. Thuis staat de limonade al open, zodat een ouder hem
+ * pakt; uit zegt een ouder zelf dat hij rijdt.
  */
 export function voegToe(
 	t: State,
@@ -64,15 +64,10 @@ export function soorten(thuis: boolean): TaskKind[] {
 	return thuis ? ['limonade', 'fluiten', 'vlaggen', 'velddienst', 'teamtas'] : ['rijden', 'vlaggen', 'teamtas'];
 }
 
+/** Thuis staat de limonade al open, zodat een ouder hem pakt; uit zegt een ouder zelf dat hij rijdt. */
 function zetStandaardTaken(t: State, wedstrijd: string, thuis: boolean, taakId: () => string) {
-	const er = (t.tasks ?? []).filter((x) => x.matchId === wedstrijd);
-	const erbij: TeamTask[] = [];
-	if (thuis) {
-		if (!er.some((x) => x.kind === 'limonade')) erbij.push({ id: taakId(), matchId: wedstrijd, kind: 'limonade' });
-	} else if (!er.some((x) => x.kind === 'rijden')) {
-		for (let i = 0; i < 2; i++) erbij.push({ id: taakId(), matchId: wedstrijd, kind: 'rijden' });
-	}
-	if (erbij.length) t.tasks = [...(t.tasks ?? []), ...erbij];
+	if (!thuis || (t.tasks ?? []).some((x) => x.matchId === wedstrijd && x.kind === 'limonade')) return;
+	t.tasks = [...(t.tasks ?? []), { id: taakId(), matchId: wedstrijd, kind: 'limonade' }];
 }
 
 export function wijzig(
@@ -117,6 +112,8 @@ export function uitProgramma(t: State, id: string): boolean {
 	t.match!.id = p.id;
 	if (p.time) t.match!.time = p.time;
 	t.match!.fromProgram = true;
+	// wie zich afmeldde staat bij "Wie is er?" al op afwezig
+	t.match!.absent = (p.absent ?? []).filter((a) => t.players.some((s) => s.id === a));
 	t.program = t.program!.filter((x) => x.id !== id);
 	return true;
 }
@@ -133,8 +130,15 @@ export function terugInProgramma(t: State) {
 		home: w.home
 	};
 	if (w.time) p.time = w.time;
+	if (w.absent?.length) p.absent = [...w.absent];
 	t.program = [...(t.program ?? []), p];
 	sorteer(t);
+}
+
+/** Wie zich voor deze wedstrijd afmeldde, op volgorde van de selectie. */
+export function kanNiet(t: State, wedstrijd: string): Player[] {
+	const weg = new Set(t.program?.find((p) => p.id === wedstrijd)?.absent ?? []);
+	return t.players.filter((p) => weg.has(p.id));
 }
 
 export function taken(t: State, wedstrijd: string): TeamTask[] {
@@ -283,5 +287,7 @@ export function samenvatting(t: State, wedstrijd: string, naam: (id: string) => 
 	}
 	const kanNiet = lijst.flatMap((x) => (isOpen(x) && x.declinedBy ? [naam(x.declinedBy) ?? '?'] : []));
 	if (kanNiet.length) delen.push(kanNiet.join(', ') + ' kan niet');
+	const afgemeld = (t.program?.find((p) => p.id === wedstrijd)?.absent ?? []).flatMap((id) => naam(id) ?? []);
+	if (afgemeld.length) delen.push('Afgemeld: ' + afgemeld.join(', '));
 	return delen.join(' · ');
 }

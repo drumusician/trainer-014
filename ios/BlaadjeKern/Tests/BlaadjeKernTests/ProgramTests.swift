@@ -119,13 +119,13 @@ import Testing
 		#expect(ProgramActions.beurten(t, .rijden).map(\.speler) == ["p1"])
 	}
 
-	@Test func thuisBegintMetOpenLimonadeEnUitMetTweeRijplekken() {
+	@Test func thuisBegintMetOpenLimonadeEnUitZonderTaken() {
 		var t = emptyState()
 		var n = 0
 		let thuis = ProgramActions.voegToe(&t, datum: "2026-11-01", tijd: nil, tegenstander: "TABA", thuis: true, nieuwId: { "thuis" }, taakId: { n += 1; return "t\(n)" })
 		let uit = ProgramActions.voegToe(&t, datum: "2026-11-08", tijd: nil, tegenstander: "Waterwijk", thuis: false, nieuwId: { "uit" }, taakId: { n += 1; return "t\(n)" })
 		#expect(ProgramActions.taken(t, wedstrijd: thuis).map(\.kind) == [.limonade])
-		#expect(ProgramActions.taken(t, wedstrijd: uit).map(\.kind) == [.rijden, .rijden])
+		#expect(ProgramActions.taken(t, wedstrijd: uit).isEmpty, "wie rijdt, zegt een ouder zelf")
 		#expect(t.tasks.filter { !$0.open }.isEmpty, "ouders kunnen ze pakken")
 		#expect(ProgramActions.soorten(thuis: false) == [.rijden, .vlaggen, .teamtas], "uit: geen limonade, fluiten of velddienst")
 		#expect(ProgramActions.soorten(thuis: true).contains(.fluiten))
@@ -139,7 +139,7 @@ import Testing
 		ProgramActions.zet(&t, wedstrijd: id, .vlaggen, speler: "p2")
 		ProgramActions.wijzig(&t, id, thuis: false)
 		let soorten = ProgramActions.taken(t, wedstrijd: id).map(\.kind.rawValue).sorted()
-		#expect(soorten == ["rijden", "rijden", "vlaggen"])
+		#expect(soorten == ["vlaggen"])
 		#expect(ProgramActions.taken(t, wedstrijd: id).first { $0.kind == .vlaggen }?.player == "p2", "vlaggen blijft, met wie het deed")
 	}
 
@@ -150,5 +150,17 @@ import Testing
 		#expect(limonade?.open == true)
 		#expect(limonade?.player == nil)
 	}
-}
 
+	@Test func wieZichAfmeldtStaatOpDeDagZelfOpAfwezig() {
+		var (t, id) = metProgramma()
+		let i = t.program.firstIndex { $0.id == id }!
+		t.program[i].absent = ["p2", "weg-uit-het-team"]
+		#expect(ProgramActions.kanNiet(t, wedstrijd: id).map(\.id) == ["p2"])
+		#expect(ProgramActions.uitProgramma(&t, id))
+		#expect(t.match?.absent == ["p2"], "wie niet meer in het team zit, valt eraf")
+		// Toch niet vandaag: terug in het programma, met wie niet kan.
+		_ = MatchActions.setAbsent(&t, spelerId: "p1", absent: true)
+		ProgramActions.terugInProgramma(&t)
+		#expect(t.program.first { $0.id == id }?.absent == ["p2", "p1"])
+	}
+}

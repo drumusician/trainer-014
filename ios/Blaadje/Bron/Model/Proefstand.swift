@@ -34,9 +34,9 @@ enum Proefstand {
                  "spelers":[{"id":"p1","naam":"Sem"},{"id":"p2","naam":"Noah"},{"id":"p3","naam":"Luuk"}],
                  "wedstrijden":[{"id":"w1","datum":"2026-10-25","aanvang":"10:30","tegenstander":"Ajax","thuis":true,"status":"gepland","voor":null,"tegen":null,
                    "taken":[{"id":"t1","soort":"limonade","wie":"Noah","van_mij":true},{"id":"t2","soort":"vlaggen","wie":"Sem","van_mij":false},
-                            {"id":"t3","soort":"rijden","wie":null,"van_mij":false}]},
+                            {"id":"t3","soort":"velddienst","wie":null,"van_mij":false}]},
                   {"id":"w2","datum":"2026-11-01","aanvang":null,"tegenstander":"PSV","thuis":false,"status":"gepland","voor":null,"tegen":null,
-                   "taken":[{"id":"t4","soort":"rijden","wie":"Luuk","van_mij":false}]}]}
+                   "kan_niet":true,"taken":[{"id":"t4","soort":"rijden","wie":"Luuk","van_mij":false}]}]}
                 """.utf8)
             }
             guard functie == "volgpagina", inhoud["p_code"]?.hasPrefix("code-van-") == true else { return Data("null".utf8) }

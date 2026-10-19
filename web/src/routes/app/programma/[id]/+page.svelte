@@ -5,7 +5,7 @@
 	import { app } from '$lib/store.svelte';
 	import { zetKop } from '$lib/header.svelte';
 	import { shortDate } from '$lib/domain/dates';
-	import { OPEN, VERENIGING, soorten, taken } from '$lib/actions/program';
+	import { OPEN, VERENIGING, kanNiet, soorten, taken } from '$lib/actions/program';
 	import type { TaskKind } from '$lib/domain/types';
 
 	/* Eén wedstrijd uit het programma: bijwerken, wie wat regelt, en op de dag zelf beginnen. */
@@ -118,6 +118,19 @@
 						)
 						.join(', ')}
 				</p>
+			{/if}
+
+			{#if !p.home}
+				<p class="uitleg mager">{text.program.driversThemselves}</p>
+			{/if}
+			{#if kanNiet(t, p.id).length}
+				<h2>{text.program.absentHeading}</h2>
+				<p>
+					{kanNiet(t, p.id)
+						.map((x) => x.name)
+						.join(', ')}
+				</p>
+				<p class="uitleg mager">{text.program.absentHint}</p>
 			{/if}
 
 			<div class="knoprij" style="padding-left: 0; margin-top: 16px">

@@ -169,6 +169,34 @@ final class VolgenTests: XCTestCase {
         XCTAssertEqual(volgen.melding, "Iemand anders was je net voor.")
     }
 
+    func testRijdenEnAfmeldenGaanNaarDeServer() async throws {
+        let server = TeamServer()
+        let volgen = maakTeam(server)
+        _ = await volgen.voegToe("teamlink-jo14-0123456789")
+        await volgen.zetToken(Data([0xab, 0x01]))
+
+        await volgen.rijd("teamlink-jo14-0123456789", "w1", true)
+        XCTAssertEqual(server.vragen.last { $0.0 == "ik_rijd" }?.1, ["p_code": "teamlink-jo14-0123456789", "p_token": "ab01", "p_wedstrijd": "w1", "p_rijd": "true"])
+        await volgen.meldAf("teamlink-jo14-0123456789", "w1", true)
+        XCTAssertEqual(server.vragen.last { $0.0 == "kind_kan_niet" }?.1["p_kan_niet"], "true")
+        XCTAssertNil(volgen.melding)
+
+        // De trainer zette de wedstrijd al klaar.
+        server.antwoord = "false"
+        await volgen.meldAf("teamlink-jo14-0123456789", "w1", true)
+        XCTAssertEqual(volgen.melding, "De trainer zet de wedstrijd al klaar. Laat het hem zelf even weten.")
+    }
+
+    func testWieRijdenEnOfJeKindAfgemeldIs() throws {
+        let w = try JSONDecoder().decode(Volgen.Wedstrijd.self, from: Data(#"""
+            {"id":"w1","datum":"2026-11-08","tegenstander":"Waterwijk","thuis":false,"status":"gepland","kan_niet":true,
+             "taken":[{"id":"t1","soort":"rijden","wie":"Noah","van_mij":false},{"id":"t2","soort":"rijden","wie":null,"van_mij":false},
+                      {"id":"t3","soort":"rijden","wie":"Sem","van_mij":true},{"id":"t4","soort":"vlaggen","wie":"Bram","van_mij":false}]}
+            """#.utf8))
+        XCTAssertTrue(w.kanNiet)
+        XCTAssertEqual(w.rijders.map(\.id), ["t3", "t1"], "jullie eerst, een open plek telt niet")
+    }
+
     func testZonderAdresVoorMeldingenKanEenTaakNiet() async {
         let server = TeamServer()
         let volgen = maakTeam(server)

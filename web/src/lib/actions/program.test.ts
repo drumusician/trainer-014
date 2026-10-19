@@ -126,7 +126,7 @@ describe('wie deed wat', () => {
 		expect(p.samenvatting(t, 'w-18', naam)).toBe('');
 	});
 
-	it('thuis begint met de limonade open, uit met twee open rijplekken', () => {
+	it('thuis begint met de limonade open, uit zonder taken', () => {
 		const t = emptyState();
 		let n = 0;
 		const thuis = p.voegToe(
@@ -148,7 +148,7 @@ describe('wie deed wat', () => {
 			() => 't' + ++n
 		);
 		expect(p.taken(t, thuis).map((x) => x.kind)).toEqual(['limonade']);
-		expect(p.taken(t, uit).map((x) => x.kind)).toEqual(['rijden', 'rijden']);
+		expect(p.taken(t, uit)).toEqual([]); // wie rijdt, zegt een ouder zelf
 		expect(t.tasks!.every(p.isOpen)).toBe(true);
 		expect(p.soorten(false)).toEqual(['rijden', 'vlaggen', 'teamtas']);
 	});
@@ -166,6 +166,22 @@ describe('wie deed wat', () => {
 				.taken(t, id)
 				.map((x) => x.kind)
 				.sort()
-		).toEqual(['rijden', 'rijden', 'teamtas', 'vlaggen']);
+		).toEqual(['teamtas', 'vlaggen']);
+	});
+
+	it('wie zich afmeldt, staat op de dag zelf op afwezig', () => {
+		const t = emptyState();
+		t.players = [
+			{ id: 'p1', name: 'Sem', line: '' },
+			{ id: 'p2', name: 'Noah', line: '' }
+		];
+		const id = p.voegToe(t, '2026-11-01', undefined, 'TABA', true, () => 'w');
+		t.program![0].absent = ['p2', 'weg-uit-het-team'];
+		expect(p.kanNiet(t, id).map((x) => x.id)).toEqual(['p2']);
+		expect(p.uitProgramma(t, id)).toBe(true);
+		expect(t.match?.absent).toEqual(['p2']);
+		t.match!.absent = ['p2', 'p1'];
+		p.terugInProgramma(t);
+		expect(t.program?.find((x) => x.id === id)?.absent).toEqual(['p2', 'p1']);
 	});
 });

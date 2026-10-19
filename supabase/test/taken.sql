@@ -263,4 +263,134 @@ begin
 end $$;
 commit;
 
-\echo 'Taken: kind kiezen, alleen je eigen taak terug, open taken overnemen, herinneringen één keer'
+-- ---------- rijden ----------
+-- Volgende week uit bij Waterwijk; de trainer zette één open plek neer.
+insert into public.wedstrijden (id, team_id, datum, tegenstander, thuis, status, delen, minuten_per_deel, klok) values
+  ('d2000000-0000-0000-0000-000000000003', 'dddddddd-0000-0000-0000-00000000000d', current_date + 7, 'Waterwijk', false, 'gepland', 2, 35, null);
+insert into public.taken (id, team_id, wedstrijd_id, soort) values
+  ('d3000000-0000-0000-0000-000000000007', 'dddddddd-0000-0000-0000-00000000000d', 'd2000000-0000-0000-0000-000000000003', 'rijden');
+
+begin;
+set local role anon;
+do $$
+declare
+  sem  text := 'telefoon-sem-0123456789abcdef0123456789';
+  noah text := 'telefoon-noah-0123456789abcdef0123456789';
+  link text := 'teamlink-jo12-0123456789';
+  uit  uuid := 'd2000000-0000-0000-0000-000000000003';
+begin
+  if not public.ik_rijd(link, sem, uit, true) then raise exception 'Sem kon niet zeggen dat hij rijdt'; end if;
+  if not public.ik_rijd(link, noah, uit, true) then raise exception 'Noah kon niet zeggen dat hij rijdt'; end if;
+  if not public.ik_rijd(link, sem, uit, true) then raise exception 'twee keer zeggen dat je rijdt gaf een fout'; end if;
+  if public.ik_rijd(link, 'telefoon-opa-00123456789abcdef0123456789', uit, true) then raise exception 'zonder kind gereden'; end if;
+  if public.ik_rijd(link, sem, 'd2000000-0000-0000-0000-000000000001', true) then raise exception 'thuis gereden'; end if;
+end $$;
+commit;
+
+do $$
+begin
+  if (select speler_id from public.taken where id = 'd3000000-0000-0000-0000-000000000007') <> 'd1000000-0000-0000-0000-000000000001' then
+    raise exception 'Sem vulde de open plek niet';
+  end if;
+  if (select count(*) from public.taken where wedstrijd_id = 'd2000000-0000-0000-0000-000000000003' and soort = 'rijden') <> 2 then
+    raise exception 'er rijden er niet precies twee: Sem en Noah';
+  end if;
+end $$;
+
+begin;
+set local role anon;
+do $$
+begin
+  if not public.ik_rijd('teamlink-jo12-0123456789', 'telefoon-noah-0123456789abcdef0123456789', 'd2000000-0000-0000-0000-000000000003', false) then
+    raise exception 'Noah kon niet zeggen dat hij toch niet rijdt';
+  end if;
+end $$;
+commit;
+
+do $$
+begin
+  if exists (select 1 from public.taken where wedstrijd_id = 'd2000000-0000-0000-0000-000000000003'
+              and speler_id = 'd1000000-0000-0000-0000-000000000002') then
+    raise exception 'Noah rijdt nog';
+  end if;
+  if exists (select 1 from public.taken where wedstrijd_id = 'd2000000-0000-0000-0000-000000000003' and speler_id is null) then
+    raise exception 'toch niet rijden laat een open plek achter';
+  end if;
+end $$;
+
+-- ---------- afmelden ----------
+-- Hetzelfde kenmerk als de app maakt (zie rijen-gedeeld.json).
+do $$
+begin
+  if public.rij_kenmerk('11111111-1111-4111-8111-111111111111',
+       'ws|3362df0f-342c-5a60-a249-c48efcefdb99|2c2484cb-c600-5600-ac98-9caf29f57107')
+     <> '456e7e39-dfd1-573e-a08e-98db9b0524bb' then
+    raise exception 'het kenmerk van een afmelding is anders dan in de app';
+  end if;
+end $$;
+
+begin;
+set local role anon;
+do $$
+declare
+  luuk text := 'telefoon-luuk-0123456789abcdef0123456789';
+  p    jsonb;
+begin
+  if not public.kind_kan_niet('teamlink-jo12-0123456789', luuk, 'd2000000-0000-0000-0000-000000000003', true) then
+    raise exception 'Luuk afmelden lukte niet';
+  end if;
+  p := public.volgpagina('teamlink-jo12-0123456789', luuk);
+  if not exists (select 1 from jsonb_array_elements(p->'wedstrijden') w where w->>'tegenstander' = 'Waterwijk' and (w->>'kan_niet')::boolean) then
+    raise exception 'de ouder van Luuk ziet niet dat hij is afgemeld: %', p;
+  end if;
+  if exists (select 1 from jsonb_array_elements(p->'wedstrijden') w where w->>'tegenstander' = 'Ajax' and (w->>'kan_niet')::boolean) then
+    raise exception 'Luuk staat ook bij een andere wedstrijd afgemeld';
+  end if;
+  p := public.volgpagina('teamlink-jo12-0123456789', 'telefoon-sem-0123456789abcdef0123456789');
+  if exists (select 1 from jsonb_array_elements(p->'wedstrijden') w where (w->>'kan_niet')::boolean) then
+    raise exception 'de ouder van Sem ziet de afmelding van Luuk als de zijne';
+  end if;
+end $$;
+commit;
+
+do $$
+declare ws public.wedstrijd_spelers%rowtype;
+begin
+  select * into ws from public.wedstrijd_spelers
+   where wedstrijd_id = 'd2000000-0000-0000-0000-000000000003' and speler_id = 'd1000000-0000-0000-0000-000000000003';
+  if ws.aanwezig is distinct from false or ws.naam <> 'Luuk'
+     or ws.id <> public.rij_kenmerk('dddddddd-0000-0000-0000-00000000000d', 'ws|d2000000-0000-0000-0000-000000000003|d1000000-0000-0000-0000-000000000003') then
+    raise exception 'de afmelding staat er niet goed: %', ws;
+  end if;
+end $$;
+
+begin;
+set local role anon;
+do $$
+begin
+  if not public.kind_kan_niet('teamlink-jo12-0123456789', 'telefoon-luuk-0123456789abcdef0123456789', 'd2000000-0000-0000-0000-000000000003', false) then
+    raise exception 'Luuk toch weer aanmelden lukte niet';
+  end if;
+end $$;
+commit;
+
+do $$
+begin
+  if exists (select 1 from public.wedstrijd_spelers where wedstrijd_id = 'd2000000-0000-0000-0000-000000000003') then
+    raise exception 'na toch wel staat Luuk nog afgemeld';
+  end if;
+end $$;
+
+-- Heeft de trainer de wedstrijd al opgezet, dan meldt een ouder niet meer af.
+update public.wedstrijden set klok = '{}'::jsonb where id = 'd2000000-0000-0000-0000-000000000003';
+begin;
+set local role anon;
+do $$
+begin
+  if public.kind_kan_niet('teamlink-jo12-0123456789', 'telefoon-luuk-0123456789abcdef0123456789', 'd2000000-0000-0000-0000-000000000003', true) then
+    raise exception 'afgemeld bij een wedstrijd die al klaarstaat';
+  end if;
+end $$;
+commit;
+
+\echo 'Taken: kind kiezen, alleen je eigen taak terug, open taken overnemen, zelf rijden, afmelden, herinneringen één keer'

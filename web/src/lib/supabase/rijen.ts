@@ -347,6 +347,22 @@ export function rijen(t: State, team: string): Rij[] {
 			wisselplan: null,
 			aanvang: aanvang(p.time)
 		});
+		/* Wie zich afmeldde. Hetzelfde kenmerk als op de server (kind_kan_niet). */
+		for (const id of p.absent ?? []) {
+			const speler = t.players.find((x) => x.id === id);
+			if (!speler) continue;
+			const pid = m(id);
+			zet('wedstrijd_spelers', uuid('ws|' + wid + '|' + pid, team), {
+				team_id: team,
+				wedstrijd_id: wid,
+				speler_id: pid,
+				naam: knip(speler.name, 60, '?'),
+				aanwezig: false,
+				seconden: 0,
+				keeper_seconden: 0,
+				posities: null
+			});
+		}
 	}
 
 	const trainingGehad = new Set<string>();
@@ -642,6 +658,11 @@ export function toestand(tabellen: Record<string, Tabelrij[]>, team: string): St
 			};
 			const tijd = s(r, 'aanvang');
 			if (tijd !== null) p.time = tijd;
+			const weg = [...(perWedstrijd.get(p.id) ?? [])]
+				.sort(opSelectie)
+				.filter((x) => !ja(x, 'aanwezig'))
+				.flatMap((x) => s(x, 'speler_id') ?? []);
+			if (weg.length) p.absent = weg;
 			return p;
 		});
 	if (programma.length) t.program = programma;

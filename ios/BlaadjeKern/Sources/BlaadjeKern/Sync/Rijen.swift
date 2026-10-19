@@ -298,6 +298,16 @@ public enum SyncModel {
 				"teamnaam": .leeg, "notitie": .leeg, "klok": .leeg, "opstelling": .leeg, "bank": .leeg,
 				"wisselplan": .leeg, "aanvang": tekst(ProgramActions.tijd(p.time)),
 			])
+			/* Wie zich afmeldde. Hetzelfde kenmerk als op de server (kind_kan_niet). */
+			for id in p.absent ?? [] {
+				guard let speler = t.players.first(where: { $0.id == id }) else { continue }
+				let pid = m(id)
+				zet("wedstrijd_spelers", uuid("ws|\(wid)|\(pid)", team: team), [
+					"team_id": .tekst(team), "wedstrijd_id": .tekst(wid), "speler_id": .tekst(pid),
+					"naam": .tekst(knip(speler.name, 60, anders: "?")), "aanwezig": ja(false),
+					"seconden": .getal(0), "keeper_seconden": .getal(0), "posities": .leeg,
+				])
+			}
 		}
 
 		var trainingGehad = Set<String>()
@@ -511,7 +521,12 @@ public enum SyncModel {
 			.map { r in
 				ScheduledMatch(
 					id: s(r, "id") ?? "", date: s(r, "datum") ?? "", time: s(r, "aanvang"),
-					opponent: s(r, "tegenstander") ?? "", home: ja(r, "thuis")
+					opponent: s(r, "tegenstander") ?? "", home: ja(r, "thuis"),
+					absent: {
+						let weg = (perWedstrijd[s(r, "id") ?? ""] ?? []).sorted(by: opSelectie)
+							.filter { !ja($0, "aanwezig") }.compactMap { s($0, "speler_id") }
+						return weg.isEmpty ? nil : weg
+					}()
 				)
 			}
 

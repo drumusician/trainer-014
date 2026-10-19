@@ -289,8 +289,20 @@ final class WedstrijddagTests: XCTestCase {
         beeld("o1-taken")
         wedstrijd.tap()
         XCTAssertTrue(app.buttons["Kan niet"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Ik doe het"].exists, "bij rijden staat nog een plek open")
+        XCTAssertTrue(app.buttons["Ik doe het"].exists, "de velddienst staat nog open")
+        XCTAssertTrue(app.switches["Noah doet mee"].exists)
+        XCTAssertFalse(app.buttons["Ik rijd"].exists, "thuis rijdt niemand")
         beeld("o2-wedstrijd")
+
+        // Uit: Luuk rijdt al, en Noah is afgemeld.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let uit = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Noah kan niet")).firstMatch
+        XCTAssertTrue(uit.waitForExistence(timeout: 5))
+        uit.tap()
+        XCTAssertTrue(app.buttons["Ik rijd"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Luuk"].exists)
+        XCTAssertEqual(app.switches["Noah doet mee"].value as? String, "0")
+        beeld("o3-uit")
     }
 
     func testHetTeamabonnementStaatBijMeer() {

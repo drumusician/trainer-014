@@ -28,19 +28,29 @@ describe('één wedstrijd uit het programma', () => {
 		expect(screen.queryByRole('button', { name: 'Rijder erbij' })).toBeNull();
 	});
 
-	it('uit: open rijplekken, een rijder erbij, en geen limonade of fluiten', async () => {
+	it('uit: ouders zeggen zelf dat ze rijden, een rijder erbij kan, en geen limonade of fluiten', async () => {
 		const id = app.addToProgram('2099-01-10', '10:30', 'PSV', false);
 		page.params = { id };
 		render(Wedstrijd);
 		expect(screen.queryByRole('combobox', { name: 'Limonade PSV' })).toBeNull();
 		expect(screen.queryByRole('combobox', { name: 'Fluiten PSV' })).toBeNull();
-		expect(app.toestand.tasks!.filter((x) => x.kind === 'rijden')).toHaveLength(2);
+		expect((app.toestand.tasks ?? []).filter((x) => x.kind === 'rijden')).toHaveLength(0);
+		expect(document.body.textContent).toContain('Wie rijdt, zeggen ouders zelf');
 		screen.getByRole('button', { name: 'Rijder erbij' }).click();
 		await tick();
-		expect(app.toestand.tasks!.filter((x) => x.kind === 'rijden')).toHaveLength(3);
+		expect(app.toestand.tasks!.filter((x) => x.kind === 'rijden')).toHaveLength(1);
 		screen.getAllByRole('button', { name: 'Haal weg' })[0].click();
 		await tick();
-		expect(app.toestand.tasks!.filter((x) => x.kind === 'rijden')).toHaveLength(2);
+		expect((app.toestand.tasks ?? []).filter((x) => x.kind === 'rijden')).toHaveLength(0);
+	});
+
+	it('laat zien wie zich afmeldde', () => {
+		const id = app.addToProgram('2099-01-10', undefined, 'PSV', false);
+		page.params = { id };
+		app.toestand.program!.find((x) => x.id === id)!.absent = [app.toestand.players[1].id];
+		render(Wedstrijd);
+		expect(document.body.textContent).toContain('Afgemeld');
+		expect(document.body.textContent).toContain(app.toestand.players[1].name);
 	});
 
 	it('laat zien wie niet kon', () => {

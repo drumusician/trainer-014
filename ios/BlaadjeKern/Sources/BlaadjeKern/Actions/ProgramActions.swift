@@ -24,8 +24,8 @@ public enum ProgramActions {
 	}
 
 	/**
-	 * Een wedstrijd erbij, met de taken die ouders zelf kunnen pakken al open:
-	 * thuis de limonade, uit twee plekken om te rijden.
+	 * Een wedstrijd erbij. Thuis staat de limonade al open, zodat een ouder hem
+	 * pakt; uit zegt een ouder zelf dat hij rijdt.
 	 */
 	@discardableResult
 	public static func voegToe(
@@ -50,12 +50,8 @@ public enum ProgramActions {
 	}
 
 	private static func zetStandaardTaken(_ t: inout AppState, _ wedstrijd: String, thuis: Bool, taakId: () -> String) {
-		let er = t.tasks.filter { $0.matchId == wedstrijd }
-		if thuis {
-			if !er.contains(where: { $0.kind == .limonade }) { t.tasks.append(TeamTask(id: taakId(), matchId: wedstrijd, kind: .limonade)) }
-		} else if !er.contains(where: { $0.kind == .rijden }) {
-			for _ in 0..<2 { t.tasks.append(TeamTask(id: taakId(), matchId: wedstrijd, kind: .rijden)) }
-		}
+		guard thuis, !t.tasks.contains(where: { $0.matchId == wedstrijd && $0.kind == .limonade }) else { return }
+		t.tasks.append(TeamTask(id: taakId(), matchId: wedstrijd, kind: .limonade))
 	}
 
 	@discardableResult
@@ -98,6 +94,8 @@ public enum ProgramActions {
 		t.match?.id = p.id
 		t.match?.time = p.time
 		t.match?.fromProgram = true
+		// wie zich afmeldde staat bij "Wie is er?" al op afwezig
+		t.match?.absent = p.absent?.filter { id in t.players.contains { $0.id == id } } ?? []
 		t.program.removeAll { $0.id == id }
 		return true
 	}
@@ -106,7 +104,7 @@ public enum ProgramActions {
 	public static func terugInProgramma(_ t: inout AppState) {
 		guard let w = t.match, w.fromProgram == true, w.archived != true, let id = w.id else { return }
 		if !t.program.contains(where: { $0.id == id }) {
-			t.program.append(ScheduledMatch(id: id, date: w.date, time: w.time, opponent: w.opponent, home: w.home))
+			t.program.append(ScheduledMatch(id: id, date: w.date, time: w.time, opponent: w.opponent, home: w.home, absent: w.absent.flatMap { $0.isEmpty ? nil : $0 }))
 			sorteer(&t)
 		}
 	}
@@ -122,6 +120,12 @@ public enum ProgramActions {
 	}
 
 	// MARK: - taken
+
+	/** Wie zich voor deze wedstrijd afmeldde, op volgorde van de selectie. */
+	public static func kanNiet(_ t: AppState, wedstrijd: String) -> [Player] {
+		let weg = Set(t.program.first { $0.id == wedstrijd }?.absent ?? [])
+		return t.players.filter { weg.contains($0.id) }
+	}
 
 	public static func taken(_ t: AppState, wedstrijd: String) -> [TeamTask] {
 		t.tasks.filter { $0.matchId == wedstrijd }

@@ -97,6 +97,8 @@ export interface ScheduledMatch {
 	time?: string;
 	opponent: string;
 	home: boolean;
+	/** wie er niet bij kan; dat zegt een ouder in de app */
+	absent?: string[];
 }
 
 export type TaskKind = 'limonade' | 'rijden' | 'fluiten' | 'vlaggen' | 'velddienst' | 'teamtas';

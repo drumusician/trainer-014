@@ -72,6 +72,9 @@ struct VolgScherm: View {
                         regel(w, wanneer: shortDate(w.datum) + (w.aanvang.map { ", \($0)" } ?? "")) { EmptyView() }
                         let mijn = w.taken.filter(\.vanMij).map { $0.woord.lowercased() }
                         let open = w.taken.filter { $0.wie == nil }.count
+                        if w.kanNiet, let naam = p.kind ?? p.mijnKind?.naam {
+                            Text("\(naam) kan niet").font(.caption.bold()).foregroundStyle(.secondary)
+                        }
                         if !mijn.isEmpty {
                             Text("Jullie: " + mijn.joined(separator: ", ")).font(.caption.bold()).foregroundStyle(Kleur.accent)
                         }
@@ -219,6 +222,38 @@ struct TaakRegel: View {
     }
 }
 
+/// "Rijden · Jullie, Noah", met "Ik rijd" of "Toch niet". Rijden is aanbieden: wie wil, zegt het.
+struct RijRegel: View {
+    @Environment(Volgen.self) private var volgen
+    let wedstrijd: Volgen.Wedstrijd
+    let code: String
+    let metKind: Bool
+
+    var body: some View {
+        let rijders = wedstrijd.rijders
+        let ik = rijders.contains(where: \.vanMij)
+        HStack(spacing: 8) {
+            Text("Rijden").foregroundStyle(.secondary).frame(minWidth: 88, alignment: .leading)
+            if rijders.isEmpty {
+                Text("Nog niemand").foregroundStyle(Kleur.oranje)
+            } else {
+                Text(rijders.map { $0.vanMij ? "Jullie" : $0.wie ?? "" }.joined(separator: ", "))
+                    .foregroundStyle(ik ? Kleur.accent : .primary)
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 4)
+            if ik {
+                Button("Toch niet") { Task { await volgen.rijd(code, wedstrijd.id, false) } }
+                    .buttonStyle(.bordered).controlSize(.small)
+            } else if metKind {
+                Button("Ik rijd") { Task { await volgen.rijd(code, wedstrijd.id, true) } }
+                    .buttonStyle(.borderedProminent).controlSize(.small).tint(Kleur.groen)
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
 /// Eén wedstrijd die komt, voor een ouder: wanneer, en wie wat regelt.
 struct VolgWedstrijd: View {
     @Environment(Volgen.self) private var volgen
@@ -237,11 +272,26 @@ struct VolgWedstrijd: View {
                     }
                     .padding(.vertical, 4)
                 }
+                if let naam = p.kind ?? p.mijnKind?.naam, w.status == "gepland" {
+                    Section {
+                        Toggle("\(naam) doet mee", isOn: Binding(
+                            get: { !w.kanNiet },
+                            set: { mee in Task { await volgen.meldAf(code, w.id, !mee) } }
+                        ))
+                        .tint(Kleur.groen)
+                    } footer: {
+                        Text(w.kanNiet ? "De trainer ziet dat \(naam) er niet bij is." : "Kan \(naam) niet? Zet het uit, dan ziet de trainer het.")
+                    }
+                }
                 Section {
-                    if w.taken.isEmpty {
+                    let taken = w.taken.filter { $0.soort != "rijden" }
+                    if taken.isEmpty, w.thuis {
                         Text("De trainer heeft nog niets verdeeld.").foregroundStyle(.secondary)
                     }
-                    ForEach(w.taken) { TaakRegel(taak: $0, code: code, metKind: p.mijnKind != nil || p.kind != nil) }
+                    ForEach(taken) { TaakRegel(taak: $0, code: code, metKind: p.mijnKind != nil || p.kind != nil) }
+                    if !w.thuis {
+                        RijRegel(wedstrijd: w, code: code, metKind: p.mijnKind != nil || p.kind != nil)
+                    }
                 } header: {
                     Text("Wie regelt wat")
                 } footer: {

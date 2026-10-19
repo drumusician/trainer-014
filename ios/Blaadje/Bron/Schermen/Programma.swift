@@ -61,7 +61,7 @@ struct ProgrammaBlok: View {
 }
 
 enum TakenTekst {
-    /// "Limonade Noah · Rijden Sem, nog 1 open · Bram kan niet"
+    /// "Limonade Noah · Rijden Sem, nog 1 open · Bram kan niet · Afgemeld: Luuk"
     static func samenvatting(_ t: AppState, _ wedstrijd: String, naam: (String) -> String?) -> String {
         let taken = ProgramActions.taken(t, wedstrijd: wedstrijd)
         var delen: [String] = []
@@ -77,6 +77,8 @@ enum TakenTekst {
         }
         let kanNiet = taken.compactMap { $0.open ? $0.declinedBy.flatMap(naam) : nil }
         if !kanNiet.isEmpty { delen.append(kanNiet.joined(separator: ", ") + " kan niet") }
+        let afgemeld = ProgramActions.kanNiet(t, wedstrijd: wedstrijd).map(\.name)
+        if !afgemeld.isEmpty { delen.append("Afgemeld: " + afgemeld.joined(separator: ", ")) }
         return delen.joined(separator: " · ")
     }
 }
@@ -205,6 +207,17 @@ struct ProgrammaWedstrijd: View {
                     Text(voetnoot)
                 }
 
+                let afgemeld = ProgramActions.kanNiet(app.toestand, wedstrijd: id)
+                if !afgemeld.isEmpty {
+                    Section {
+                        Text(afgemeld.map(\.name).joined(separator: ", "))
+                    } header: {
+                        Text("Afgemeld")
+                    } footer: {
+                        Text("Op de dag zelf staan ze bij Wie is er? al op afwezig.")
+                    }
+                }
+
                 Section {
                     if p.date <= app.vandaag, app.match == nil {
                         Button {
@@ -232,9 +245,11 @@ struct ProgrammaWedstrijd: View {
     private var voetnoot: String {
         let kanNiet = ProgramActions.taken(app.toestand, wedstrijd: id)
             .compactMap { t in t.open ? t.declinedBy.flatMap { app.speler($0)?.name }.map { "\($0) kan niet (\(ProgramActions.woord(t.kind).lowercased()))" } : nil }
+        let p = app.toestand.program.first { $0.id == id }
+        let rijden = p?.home == false ? " Wie rijdt, zeggen ouders zelf." : ""
         let basis = ouderZien
-            ? "Een open taak kan een ouder zelf pakken in de app. Ouders krijgen de avond ervoor een herinnering; wie de limonade doet, ook vlak voor de rust."
-            : "Ouders zien dit zodra je ze erbij haalt, bij Team. Een open taak kunnen ze dan zelf pakken."
+            ? "Een open taak kan een ouder zelf pakken in de app.\(rijden) Ouders krijgen de avond ervoor een herinnering; wie de limonade doet, ook vlak voor de rust."
+            : "Ouders zien dit zodra je ze erbij haalt, bij Team. Een open taak kunnen ze dan zelf pakken.\(rijden)"
         return kanNiet.isEmpty ? basis : kanNiet.joined(separator: ", ") + ". " + basis
     }
 }
