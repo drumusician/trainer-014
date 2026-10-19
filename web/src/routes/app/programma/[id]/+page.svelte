@@ -30,9 +30,9 @@
 
 <main>
 	<div class="pad">
+		<a class="terug" href="/app/programma">{text.program.backToList}</a>
 		{#if p}
 			{@const declined = taken(t, p.id).filter((x) => !x.player && x.declinedBy)}
-			<h2>{text.program.line(p.home, p.opponent, p.time ?? '')}</h2>
 			<div class="tweekolom">
 				<label class="vak">
 					{text.program.dateLabel}
@@ -72,50 +72,44 @@
 			</div>
 
 			<h2>{text.program.whoDoesWhat}</h2>
-			<table class="uitslag taken">
-				<tbody>
-					{#each eenmalig as soort (soort)}
-						{@const taak = taakVan(p.id, soort)}
-						<tr>
-							<td>{text.program.kinds[soort]}</td>
-							<td>
-								<select
-									aria-label={text.program.kinds[soort] + ' ' + p.opponent}
-									value={!taak ? '' : taak.club ? VERENIGING : (taak.player ?? OPEN)}
-									onchange={(e) => app.setTask(p.id, soort, e.currentTarget.value || null)}
-								>
-									<option value="">{text.program.nobody}</option>
-									<option value={OPEN}>{text.program.openOption}</option>
-									{#if soort === 'fluiten'}
-										<option value={VERENIGING}>{text.program.club}</option>
-									{/if}
-									{#each t.players as speler (speler.id)}
-										<option value={speler.id}>{speler.name}</option>
-									{/each}
-								</select>
-							</td>
-						</tr>
-					{/each}
-					{#each p.home ? [] : taken(t, p.id).filter((x) => x.kind === 'rijden') as taak (taak.id)}
-						<tr>
-							<td>{text.program.kinds.rijden}</td>
-							<td>
-								<select
-									aria-label={text.program.kinds.rijden + ' ' + p.opponent}
-									value={taak.player ?? ''}
-									onchange={(e) => app.assignTask(taak.id, e.currentTarget.value || null)}
-								>
-									<option value="">{text.program.open}</option>
-									{#each t.players as speler (speler.id)}
-										<option value={speler.id}>{speler.name}</option>
-									{/each}
-								</select>
-								<button class="klein" aria-label="Haal weg" onclick={() => app.removeTask(taak.id)}>×</button>
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
+			<div class="taken">
+				{#each eenmalig as soort (soort)}
+					{@const taak = taakVan(p.id, soort)}
+					<label class="taak">
+						<span>{text.program.kinds[soort]}</span>
+						<select
+							aria-label={text.program.kinds[soort] + ' ' + p.opponent}
+							value={!taak ? '' : taak.club ? VERENIGING : (taak.player ?? OPEN)}
+							onchange={(e) => app.setTask(p.id, soort, e.currentTarget.value || null)}
+						>
+							<option value="">{text.program.nobodyOption}</option>
+							<option value={OPEN}>{text.program.openOption}</option>
+							{#if soort === 'fluiten'}
+								<option value={VERENIGING}>{text.program.club}</option>
+							{/if}
+							{#each t.players as speler (speler.id)}
+								<option value={speler.id}>{speler.name}</option>
+							{/each}
+						</select>
+					</label>
+				{/each}
+				{#each p.home ? [] : taken(t, p.id).filter((x) => x.kind === 'rijden') as taak (taak.id)}
+					<div class="taak">
+						<span>{text.program.kinds.rijden}</span>
+						<select
+							aria-label={text.program.kinds.rijden + ' ' + p.opponent}
+							value={taak.player ?? ''}
+							onchange={(e) => app.assignTask(taak.id, e.currentTarget.value || null)}
+						>
+							<option value="">{text.program.openOption}</option>
+							{#each t.players as speler (speler.id)}
+								<option value={speler.id}>{speler.name}</option>
+							{/each}
+						</select>
+						<button class="klein weg" aria-label="Haal weg" onclick={() => app.removeTask(taak.id)}>×</button>
+					</div>
+				{/each}
+			</div>
 			{#if declined.length}
 				<p class="uitleg mager">
 					{declined
@@ -126,7 +120,7 @@
 				</p>
 			{/if}
 
-			<div class="knoprij" style="padding-left: 0">
+			<div class="knoprij" style="padding-left: 0; margin-top: 16px">
 				{#if !p.home}
 					<button onclick={() => app.addTask(p.id, 'rijden', null)}>{text.program.addDriver}</button>
 				{/if}
@@ -146,16 +140,41 @@
 		{:else}
 			<p class="uitleg">{text.program.gone}</p>
 		{/if}
-		<p><a href="/app/programma">{text.program.backToList}</a></p>
 	</div>
 </main>
 
 <style>
-	.taken td:first-child {
-		width: 30%;
+	.terug {
+		display: inline-block;
+		margin-bottom: 14px;
+		color: var(--groen);
+		text-decoration: none;
+		font-size: 14px;
 	}
-	.taken select {
-		width: auto;
-		min-width: 9em;
+	.taken {
+		border-top: 1px solid var(--lijn);
+	}
+	.taak {
+		display: grid;
+		grid-template-columns: 110px 1fr auto;
+		align-items: center;
+		gap: 10px;
+		padding: 8px 0;
+		border-bottom: 1px solid var(--lijn);
+		font-size: 15px;
+	}
+	.taak select {
+		width: 100%;
+		min-width: 0;
+		font: inherit;
+		font-size: 16px;
+		padding: 8px 10px;
+		border: 1px solid var(--lijn);
+		border-radius: 9px;
+		background: #fff;
+		color: var(--inkt);
+	}
+	.taak .weg {
+		padding: 6px 12px;
 	}
 </style>

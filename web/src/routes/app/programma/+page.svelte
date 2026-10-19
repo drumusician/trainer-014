@@ -147,6 +147,13 @@
 		align-items: start;
 		margin-top: 10px;
 	}
+	.wiedeedwat th {
+		text-align: left;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--grijs);
+		padding: 0 4px 6px;
+	}
 	.wiedeedwat .getal {
 		text-align: right;
 		color: var(--zacht, #666);

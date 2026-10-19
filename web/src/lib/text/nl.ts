@@ -137,11 +137,12 @@ const program = {
 	add: 'Zet erin',
 	nobody: '—',
 	open: 'open',
-	openOption: 'Open: een ouder pakt hem',
+	nobodyOption: 'Niemand',
+	openOption: 'Open',
 	club: 'Vereniging',
 	whoDoesWhat: 'Wie regelt wat',
 	gone: 'Deze wedstrijd staat niet meer in het programma.',
-	backToList: '← Terug naar het programma',
+	backToList: '‹ Programma',
 	parentsNotYet: 'Ouders zien dit nog niet. Haal ze erbij in de Blaadje-app op je telefoon, bij Team.',
 	whoHeading: 'Wie deed wat',
 	whoHint: 'Gespeelde en komende wedstrijden samen. Minst vaak bovenaan: die is de volgende.',
@@ -184,10 +185,9 @@ const team = {
 	add: 'Toevoegen',
 	/* In stukken omdat de K vet staat: dat is de letter waar de uitleg over gaat. */
 	lineHint: {
-		before: 'Zet per speler de linie: V verdediging, M middenveld, A aanval.',
+		before: 'V, M of A is de linie waar iemand meestal speelt.',
 		bold: 'K',
-		after:
-			'staat los: dat is iedereen die kan keepen, ook als hij verder in het veld speelt. Alleen K aan en de rest uit betekent: keept en verder niets. Tik een naam aan om te wijzigen of te verwijderen.'
+		after: 'betekent: kan keepen. Tik op een naam om hem te wijzigen of te verwijderen.'
 	},
 	addPlayer: 'Speler toevoegen',
 	askName: 'Naam van de speler',
