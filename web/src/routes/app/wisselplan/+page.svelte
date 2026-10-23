@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { kanNietOpMoment, planStappen, standOp, wanneer } from '$lib/domain/plan';
+	import { rooster, type Blok } from '$lib/domain/rooster';
 	import { momentName } from '$lib/domain/parts';
 	import { redenTekst, stapTekst } from '$lib/plan-tekst';
 	import type { PlannedSub } from '$lib/domain/types';
@@ -14,6 +15,23 @@
 	$effect(() => zetKop(text.plan.title, terug, text.common.back));
 
 	const stappen = $derived(planStappen(w, app.nu));
+	const r = $derived(w ? rooster(w, app.toestand.players, app.toestand.minutesPerPart, app.nu) : null);
+
+	/* In het rooster aangetikt: in welk blok, en wie. Een tweede tik in dezelfde kolom wisselt. */
+	let gekozen = $state<{ blok: number; id: string } | null>(null);
+	function tik(i: number, blok: Blok, id: string) {
+		const eerst = gekozen;
+		if (!eerst || eerst.blok !== i || eerst.id === id) {
+			gekozen = eerst?.blok === i && eerst.id === id ? null : { blok: i, id };
+			return;
+		}
+		gekozen = app.planRooster(blok, eerst.id, id) ? null : { blok: i, id };
+	}
+	function kop(b: Blok) {
+		if (b.start === 0) return text.plan.gridStart;
+		if (b.naDeel && w?.parts === 2) return text.plan.gridBreak;
+		return b.start + '′';
+	}
 	const naam = (id: string) => app.playerById(id)?.name ?? '?';
 
 	/* Een pauze ('na-1' is de pauze na het eerste deel) of een eigen minuut. */
@@ -90,6 +108,42 @@
 		{:else}
 			<p class="uitleg">{text.plan.intro}</p>
 
+			{#if r}
+				<table class="rooster">
+					<thead>
+						<tr>
+							<th></th>
+							{#each r.blokken as b (b.start)}<th>{kop(b)}</th>{/each}
+							<th class="min">{text.plan.gridMinutes}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each r.regels as regel (regel.id)}
+							<tr>
+								<td class="naam">{naam(regel.id)}</td>
+								{#each r.blokken as b, i (b.start)}
+									{@const plek = regel.plekken[i]}
+									<td>
+										<button
+											class="vakje"
+											class:speelt={!!plek}
+											class:gekozen={gekozen?.blok === i && gekozen.id === regel.id}
+											class:vaag={!b.teVeranderen && app.kickedOff}
+											disabled={!b.teVeranderen}
+											aria-label={text.plan.gridCell(naam(regel.id), kop(b), !!plek)}
+											onclick={() => tik(i, b, regel.id)}>{plek ? positionLabel(plek, w.formation) : ''}</button
+										>
+									</td>
+								{/each}
+								<td class="min" class:weinig={regel.weinig}>{regel.minuten}′</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+				<p class="uitleg">{text.plan.gridHint(r.eerlijk)}</p>
+			{/if}
+
+			<h2>{text.plan.stepsHeading}</h2>
 			{#if !stappen.length}
 				<p class="uitleg">{text.plan.empty}</p>
 			{:else}
@@ -119,6 +173,7 @@
 				</ul>
 			{/if}
 
+			<h2>{text.plan.otherHeading}</h2>
 			<!-- Een pauze is aan de beurt zodra je hem aantikt, niet op de klok: de
 			     rust valt zelden op 35:00 precies. -->
 			<div class="wanneer">
@@ -184,6 +239,59 @@
 </main>
 
 <style>
+	.rooster {
+		width: 100%;
+		border-collapse: separate;
+		border-spacing: 4px;
+		margin: 8px -4px 0;
+	}
+	.rooster th {
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--grijs);
+		text-align: center;
+	}
+	.rooster .naam {
+		width: 100%;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 0;
+	}
+	.rooster .min {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+	.rooster .weinig {
+		color: var(--oranje);
+		font-weight: 700;
+	}
+	.vakje {
+		width: 44px;
+		height: 30px;
+		padding: 0;
+		border: 0;
+		border-radius: 6px;
+		background: var(--vlak, rgba(127, 127, 127, 0.15));
+		color: #fff;
+		font-size: 12px;
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.vakje.speelt {
+		background: var(--gras);
+	}
+	.vakje.gekozen {
+		outline: 3px solid var(--oranje);
+		outline-offset: 0;
+	}
+	.vakje:disabled {
+		cursor: default;
+	}
+	.vakje.vaag {
+		opacity: 0.6;
+	}
 	.wanneer {
 		display: grid;
 		grid-template-columns: 1fr 90px;

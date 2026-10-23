@@ -2,6 +2,8 @@ import { kickedOff } from './clock';
 import { putOnPosition, ruil } from './match-events';
 import { planStappen } from '$lib/domain/plan';
 import type { Match } from '$lib/domain/types';
+import { standOp } from '$lib/domain/plan';
+import type { Blok } from '$lib/domain/rooster';
 
 /** Het wisselplan bijhouden, en een stap doorvoeren als de trainer het moment kiest. */
 
@@ -42,6 +44,26 @@ export function haalWeg(w: Match | null, id: string): boolean {
 	const voor = w.plan.length;
 	w.plan = w.plan.filter((s) => s.id !== id);
 	return w.plan.length < voor;
+}
+
+/**
+ * In het rooster op de grens van een blok twee spelers aangetikt: wie dan in
+ * het veld staat gaat eruit, wie op de bank zit komt erin. Stond precies die
+ * wissel er andersom al, dan gaat die weg: zo maak je een tik ongedaan.
+ */
+export function wisselInRooster(w: Match | null, blok: Blok, a: string, b: string): boolean {
+	if (!w || !blok.teVeranderen || a === b) return false;
+	const stand = standOp(w, blok.start);
+	const inVeld = new Set(stand.veld.map((r) => r.id));
+	if (inVeld.has(a) === inVeld.has(b)) return false;
+	const eruit = inVeld.has(a) ? a : b;
+	const erin = eruit === a ? b : a;
+	if (!stand.bank.includes(erin)) return false;
+	const terug = w.plan?.find(
+		(s) => s.minuut === blok.start && s.soort !== 'ruil' && !s.skipped && s.on === eruit && s.off === erin
+	);
+	if (terug) return haalWeg(w, terug.id);
+	return voegToe(w, blok.start, erin, eruit, blok.naDeel);
 }
 
 export function slaOver(w: Match | null, id: string, overslaan = true): boolean {

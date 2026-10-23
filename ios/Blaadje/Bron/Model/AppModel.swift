@@ -321,6 +321,14 @@ final class AppModel {
         bewaar()
     }
 
+    /// In het rooster twee spelers in dezelfde kolom: de een eruit, de ander erin.
+    @discardableResult
+    func planRooster(_ blok: Blok, _ a: String, _ b: String) -> Bool {
+        guard PlanActions.wisselInRooster(&toestand.match, blok, a, b) else { return false }
+        bewaar()
+        return true
+    }
+
     func planHaalWeg(_ id: String) {
         if PlanActions.haalWeg(&toestand.match, id: id) { bewaar() }
     }

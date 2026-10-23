@@ -380,12 +380,13 @@ final class WedstrijddagTests: XCTestCase {
 
         app.buttons["Wisselplan"].tap()
         XCTAssertTrue(app.staticTexts["Nog niets gepland."].waitForExistence(timeout: 5))
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Eruit")).firstMatch.tap()
-        app.buttons["Thijs (SP)"].tap()
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Erin")).firstMatch.tap()
-        app.buttons["Stijn"].tap()
-        app.buttons["Zet in het plan"].tap()
-        XCTAssertTrue(app.staticTexts["Stijn voor Thijs (SP)"].waitForExistence(timeout: 5))
+        // In het rooster: in de kolom van de rust Thijs eruit, Stijn erin.
+        beeld("p3-rooster")
+        app.buttons["Thijs, Rust: speelt"].tap()
+        app.buttons["Stijn, Rust: bank"].tap()
+        XCTAssertTrue(app.buttons["Stijn, Rust: speelt"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Thijs, Rust: bank"].exists)
+        XCTAssertTrue(app.buttons["Stijn, 53′: speelt"].exists, "hij blijft erin tot een volgende wissel")
         beeld("p3-plan")
         app.buttons["Klaar"].tap()
 

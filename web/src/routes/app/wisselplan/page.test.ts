@@ -32,6 +32,21 @@ describe('het wisselplan maken', () => {
 		expect(screen.queryByLabelText('Minuut')).toBeNull();
 	});
 
+	it('zet een wissel met twee tikken in het rooster, en laat de minuten zien', async () => {
+		metWedstrijd();
+		app.toestand.minutesPerPart = 15;
+		render(Plan);
+		const k1 = app.playerById('k1')!.name;
+		const b1 = app.playerById('b1')!.name;
+		screen.getByRole('button', { name: `${k1}, 30′: speelt` }).click();
+		await tick();
+		screen.getByRole('button', { name: `${b1}, 30′: bank` }).click();
+		await tick();
+		expect(app.match!.plan).toMatchObject([{ minuut: 30, naDeel: 2, on: 'b1', off: 'k1' }]);
+		expect(screen.getByRole('button', { name: `${b1}, 45′: speelt` })).toBeTruthy();
+		expect(document.querySelector('table.rooster')!.textContent).toContain('30′');
+	});
+
 	it('zet een wissel in de rust', async () => {
 		metWedstrijd();
 		app.toestand.minutesPerPart = 15;

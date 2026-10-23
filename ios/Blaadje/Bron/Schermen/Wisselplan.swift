@@ -13,6 +13,8 @@ struct Wisselplan: View {
     @State private var ruil = false
     @State private var eruit = ""
     @State private var erin = ""
+    /// In het rooster aangetikt: in welk blok, en wie.
+    @State private var gekozen: (blok: Int, id: String)?
 
     var body: some View {
         NavigationStack {
@@ -60,17 +62,22 @@ struct Wisselplan: View {
         let kan = !eruit.isEmpty && !erin.isEmpty && eruit != erin
         return Form {
             Section {
+                roosterView(w)
+            } footer: {
+                let r = rooster(w, app.spelers, minutesPerPart: app.toestand.minutesPerPart, nu: app.nu)
+                Text("Tik in een kolom op wie eruit gaat en wie erin komt. Eerlijk verdeeld is ongeveer \(r.eerlijk)′ per speler.")
+            }
+
+            Section("De wissels") {
                 if stappen.isEmpty {
                     Text("Nog niets gepland.").foregroundStyle(.secondary)
                 }
                 ForEach(stappen, id: \.stap.id) { s in
                     stapRegel(s, w)
                 }
-            } footer: {
-                Text("De volgende wissel staat tijdens de wedstrijd onder het veld.")
             }
 
-            Section("Stap erbij") {
+            Section {
                 Picker("Wanneer", selection: $naDeel) {
                     ForEach(1..<max(w.parts, 2), id: \.self) { Text(momentName($0, w.parts)).tag($0) }
                     Text("Op een minuut").tag(0)
@@ -104,6 +111,10 @@ struct Wisselplan: View {
                     Tik.licht()
                 }
                 .disabled(!kan)
+            } header: {
+                Text("Op een eigen minuut, of van plek ruilen")
+            } footer: {
+                Text("De volgende wissel staat tijdens de wedstrijd onder het veld.")
             }
         }
         // Ander moment, andere stand: een keuze die dan niet meer kan, valt weg.
@@ -112,6 +123,73 @@ struct Wisselplan: View {
             if !eruit.isEmpty, !veld.contains(where: { $0.id == eruit }) { eruit = "" }
             let keuzes = ruil ? veld.map(\.id).filter { $0 != eruit } : opDeBank(w)
             if !erin.isEmpty, !keuzes.contains(erin) { erin = "" }
+        }
+    }
+
+    /// Per speler een regel, per blok een kolom: wie wanneer speelt, en hoeveel.
+    private func roosterView(_ w: Match) -> some View {
+        let r = rooster(w, app.spelers, minutesPerPart: app.toestand.minutesPerPart, nu: app.nu)
+        return Grid(horizontalSpacing: 4, verticalSpacing: 4) {
+            GridRow {
+                Text("")
+                ForEach(r.blokken.indices, id: \.self) { i in
+                    Text(kop(r.blokken[i], w)).font(.caption2.bold()).foregroundStyle(.secondary).lineLimit(1)
+                }
+                Text("min").font(.caption2.bold()).foregroundStyle(.secondary)
+            }
+            ForEach(r.regels) { regel in
+                GridRow {
+                    Text(naam(regel.id)).font(.subheadline).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                    ForEach(r.blokken.indices, id: \.self) { i in
+                        vakje(regel, i, r.blokken[i], w)
+                    }
+                    Text("\(regel.minuten)′")
+                        .font(.subheadline.weight(regel.weinig ? .bold : .regular)).monospacedDigit()
+                        .foregroundStyle(regel.weinig ? Kleur.oranje : .primary)
+                        .frame(minWidth: 34, alignment: .trailing)
+                        .accessibilityLabel("\(naam(regel.id)) \(regel.minuten) minuten" + (regel.weinig ? ", weinig" : ""))
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func kop(_ b: Blok, _ w: Match) -> String {
+        if b.start == 0 { return "Begin" }
+        if b.naDeel != nil, w.parts == 2 { return "Rust" }
+        return "\(b.start)′"
+    }
+
+    private func vakje(_ regel: RoosterRegel, _ i: Int, _ blok: Blok, _ w: Match) -> some View {
+        let plek = regel.plekken[i]
+        let aan = gekozen?.blok == i && gekozen?.id == regel.id
+        return Button {
+            tikInRooster(i, blok, regel.id)
+        } label: {
+            Text(plek.map { positionLabel($0, w.formation) } ?? "")
+                .font(.caption.bold())
+                .foregroundStyle(.white)
+                .frame(width: 40, height: 28)
+                .background(plek == nil ? Color(.tertiarySystemFill) : Kleur.gras, in: RoundedRectangle(cornerRadius: 6))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Kleur.accent, lineWidth: aan ? 3 : 0))
+                // Het begin is de opstelling; vaag is alleen wat al gespeeld wordt.
+                .opacity(blok.teVeranderen || !ClockActions.kickedOff(w) ? 1 : 0.6)
+        }
+        .buttonStyle(.plain)
+        .disabled(!blok.teVeranderen)
+        .accessibilityLabel("\(naam(regel.id)), \(kop(blok, w)): " + (plek == nil ? "bank" : "speelt"))
+    }
+
+    private func tikInRooster(_ i: Int, _ blok: Blok, _ id: String) {
+        guard let eerst = gekozen, eerst.blok == i, eerst.id != id else {
+            gekozen = gekozen?.blok == i && gekozen?.id == id ? nil : (i, id)
+            return
+        }
+        if app.planRooster(blok, eerst.id, id) {
+            gekozen = nil
+            Tik.licht()
+        } else {
+            gekozen = (i, id)
         }
     }
 

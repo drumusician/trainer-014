@@ -13,6 +13,7 @@ import type {
 } from './domain/types';
 import { emptyState } from './domain/types';
 import { migreerToestand as migrateStorage } from './domain/migrate-storage';
+import type { Blok } from './domain/rooster';
 import { reportIssue, issues } from './issues.svelte';
 import * as archive from './actions/archive';
 import * as events from './actions/match-events';
@@ -331,6 +332,13 @@ class App {
 	/** With `naDeel`: in the break after that part, whenever the coach calls it. */
 	planAdd(minuut: number, on: string, off: string, naDeel?: number, soort?: 'ruil') {
 		if (plan.voegToe(this.toestand.match, minuut, on, off, naDeel, soort)) this.save();
+	}
+
+	/** In het rooster twee spelers in dezelfde kolom: de een eruit, de ander erin. */
+	planRooster(blok: Blok, a: string, b: string): boolean {
+		if (!plan.wisselInRooster(this.toestand.match, blok, a, b)) return false;
+		this.save();
+		return true;
 	}
 
 	planRemove(id: string) {
