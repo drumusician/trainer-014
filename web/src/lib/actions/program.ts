@@ -16,18 +16,15 @@ import { knowsFormation } from '$lib/domain/formations';
 
 const nieuwKenmerk = (): string => crypto.randomUUID();
 
+function eerder(a: Match, b: Match): number {
+	if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+	const x = a.time ?? '';
+	const y = b.time ?? '';
+	return x < y ? -1 : x > y ? 1 : 0;
+}
+
 function sorteer(t: State) {
-	t.program = [...(t.program ?? [])].sort((a, b) =>
-		a.date !== b.date
-			? a.date < b.date
-				? -1
-				: 1
-			: (a.time ?? '') < (b.time ?? '')
-				? -1
-				: (a.time ?? '') > (b.time ?? '')
-					? 1
-					: 0
-	);
+	t.program = [...(t.program ?? [])].sort(eerder);
 }
 
 /** Een aftrap als "10:30", of niets als het geen tijd is. */
@@ -110,7 +107,7 @@ export function wedstrijd(t: State, id: string): Match | undefined {
 /** Wat nog komt en nog niet begon, vroegste eerst: het programma, met de wedstrijd die open staat. */
 export function nogTeSpelen(t: State): Match[] {
 	const open = openNogNiet(t);
-	return [...(open ? [open] : []), ...(t.program ?? [])];
+	return [...(open ? [open] : []), ...(t.program ?? [])].sort(eerder);
 }
 
 export function wijzig(

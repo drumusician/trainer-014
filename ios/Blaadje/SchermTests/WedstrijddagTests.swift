@@ -276,6 +276,18 @@ final class WedstrijddagTests: XCTestCase {
         // Op de dag zelf: één tik, en het is de wedstrijd.
         app.buttons["Thuis tegen Ajax"].tap()
         XCTAssertTrue(app.buttons["Sem, aanwezig"].waitForExistence(timeout: 5))
+        app.buttons["Naar de opstelling"].tap()
+        XCTAssertTrue(app.buttons["Wie zat op de bank"].waitForExistence(timeout: 5))
+
+        // Dicht vóór de aftrap: hij staat weer gewoon in het programma.
+        app.navigationBars.buttons["Terug"].tap()
+        app.navigationBars.buttons["Sluit"].tap()
+        XCTAssertTrue(app.buttons["Thuis tegen Ajax"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Klaar voor de aftrap"].exists)
+
+        // Weer open: meteen de opstelling, om nog te veranderen.
+        app.buttons["Thuis tegen Ajax"].tap()
+        XCTAssertTrue(app.buttons["Wie zat op de bank"].waitForExistence(timeout: 5))
     }
 
     func testEenOuderZietZijnTaken() {

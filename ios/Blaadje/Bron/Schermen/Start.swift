@@ -36,7 +36,7 @@ struct Start: View {
                     } else if let p = vanVandaag {
                         // De wedstrijd van vandaag staat in het programma: die is het.
                         Button {
-                            if let id = p.id, app.openWedstrijd(id) { stroom = p.lineup.opHetVeld.isEmpty ? .aanwezig : .wedstrijd }
+                            if let id = p.id, app.openWedstrijd(id) { stroom = p.lineup.opHetVeld.isEmpty ? .aanwezig : .opstelling }
                         } label: {
                             Label((p.home ? "Thuis" : "Uit") + " tegen \(p.opponent)", systemImage: "sportscourt")
                         }
@@ -73,7 +73,8 @@ struct Start: View {
         .sheet(isPresented: $opzetten) { Opzetten() }
         .sheet(isPresented: $linkPlakken) { LinkPlakken() }
         .sheet(isPresented: $volgTonen) { VolgScherm() }
-        .fullScreenCover(item: $stroom) { begin in
+        // Dicht en nog niet afgetrapt: een wedstrijd uit het programma gaat daar terug.
+        .fullScreenCover(item: $stroom, onDismiss: { app.terugAlsNietBegonnen() }) { begin in
             WedstrijdStroom(begin: begin)
         }
     }

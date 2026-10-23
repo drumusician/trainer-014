@@ -12,9 +12,11 @@ import Foundation
 public enum ProgramActions {
 	/** Vroegste eerst; zonder tijd vóór met tijd op dezelfde dag. */
 	static func sorteer(_ t: inout AppState) {
-		t.program.sort { a, b in
-			a.date != b.date ? a.date < b.date : (a.time ?? "") < (b.time ?? "")
-		}
+		t.program.sort(by: eerder)
+	}
+
+	static func eerder(_ a: Match, _ b: Match) -> Bool {
+		a.date != b.date ? a.date < b.date : (a.time ?? "") < (b.time ?? "")
 	}
 
 	/** Een aftrap als "10:30", of niets als het geen tijd is. */
@@ -173,7 +175,7 @@ public enum ProgramActions {
 
 	/** Wat nog komt en nog niet begon, vroegste eerst: het programma, met de wedstrijd die open staat. */
 	public static func nogTeSpelen(_ t: AppState) -> [Match] {
-		(openNogNiet(t).map { [$0] } ?? []) + t.program
+		((openNogNiet(t).map { [$0] } ?? []) + t.program).sorted(by: eerder)
 	}
 
 	/** Wie zich voor deze wedstrijd afmeldde, op volgorde van de selectie. */

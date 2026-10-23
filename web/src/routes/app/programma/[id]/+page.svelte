@@ -27,11 +27,11 @@
 		return taken(t, wedstrijd).find((x) => x.kind === soort);
 	}
 
-	/* Met een opstelling die al klaarstaat naar de wedstrijd, anders eerst wie er is. */
+	/* Met een opstelling die al klaarstaat daarheen, anders eerst wie er is. */
 	function begin() {
 		const klaar = Object.values(p?.lineup ?? {}).some(Boolean);
 		if (!app.startFromProgram(id)) return;
-		goto(klaar ? '/app/wedstrijd' : '/app/aanwezig');
+		goto(klaar ? '/app/opstelling/wedstrijd' : '/app/aanwezig');
 	}
 </script>
 
@@ -138,10 +138,14 @@
 					<button onclick={() => app.addTask(id, 'rijden', null)}>{text.program.addDriver}</button>
 				{/if}
 				{#if t.match?.id === id}
-					<a class="knop prim" href="/app/wedstrijd">{text.program.continueLineup}</a>
+					<a class="knop prim" href="/app/opstelling/wedstrijd">{text.program.continueLineup}</a>
 				{:else if !bezig}
 					<button class="prim" onclick={begin}
-						>{p.date <= vandaag ? text.program.startToday : text.program.makeLineup}</button
+						>{p.date <= vandaag
+							? text.program.startToday
+							: Object.values(p.lineup ?? {}).some(Boolean)
+								? text.program.continueLineup
+								: text.program.makeLineup}</button
 					>
 				{/if}
 				<button

@@ -231,14 +231,17 @@ struct ProgrammaWedstrijd: View {
                         Text("Er is een wedstrijd bezig. Daarna kun je deze klaarzetten.").foregroundStyle(.secondary)
                     } else {
                         Button {
-                            // Stond de opstelling al klaar, dan meteen naar de wedstrijd; anders eerst wie er is.
+                            // Stond de opstelling al klaar, dan meteen daarheen; anders eerst wie er is.
                             let klaar = !p.lineup.opHetVeld.isEmpty
                             if app.openWedstrijd(id) {
                                 dismiss()
-                                begin(klaar ? .wedstrijd : .aanwezig)
+                                begin(klaar ? .opstelling : .aanwezig)
                             }
                         } label: {
-                            Label(p.date <= app.vandaag ? "Begin deze wedstrijd" : "Opstelling maken", systemImage: "sportscourt")
+                            Label(
+                                p.date <= app.vandaag ? "Begin deze wedstrijd"
+                                    : p.lineup.opHetVeld.isEmpty ? "Opstelling maken" : "Verder met de opstelling",
+                                systemImage: "sportscourt")
                         }
                     }
                     Button("Haal uit het programma", role: .destructive) {

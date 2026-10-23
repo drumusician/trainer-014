@@ -83,7 +83,18 @@
 	const nuOpDeBank = $derived(new Set(doel?.bench ?? []));
 	let bankOverzicht = $state<HTMLElement>();
 
+	/* Een wedstrijd van later uit het programma: klaar is terug naar het programma. */
+	const later = $derived(
+		bron === 'wedstrijd' && !!app.match?.fromProgram && app.match.date > new Date().toISOString().slice(0, 10)
+	);
+
 	function klaar() {
+		if (later) {
+			const id = app.match?.id;
+			app.discardMatch();
+			goto(id ? `/app/programma/${id}` : '/app/programma');
+			return;
+		}
 		if (bron === 'standaard') {
 			app.save();
 			goto('/app');
@@ -194,7 +205,11 @@
 					</label>
 				{/if}
 				<button class="prim" onclick={klaar}>
-					{bron === 'standaard' ? text.lineupScreen.saveDefault : text.lineupScreen.doneToMatch}
+					{bron === 'standaard'
+						? text.lineupScreen.saveDefault
+						: later
+							? text.lineupScreen.doneLater
+							: text.lineupScreen.doneToMatch}
 				</button>
 				{#if bron === 'wedstrijd'}
 					<a class="knop" href="/app/aanwezig">{text.lineupScreen.whoIsThere}</a>

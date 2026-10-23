@@ -40,6 +40,12 @@ import Testing
 		#expect(t.match?.formation == t.formation)
 	}
 
+	@Test func eenLatereWedstrijdOpenBlijftOpZijnPlekInDeLijst() {
+		var (t, id) = metProgramma()
+		#expect(ProgramActions.open(&t, id))
+		#expect(ProgramActions.nogTeSpelen(t).map(\.id) == ["w-18", id], "op datum, ook als de latere open staat")
+	}
+
 	@Test func eenAndereOpenenZetDeEersteTerugMetZijnOpstelling() throws {
 		var (t, id) = metProgramma()
 		#expect(ProgramActions.open(&t, id))

@@ -187,6 +187,12 @@ final class AppModel {
         bewaar()
     }
 
+    func terugAlsNietBegonnen() {
+        guard toestand.match?.fromProgram == true else { return }
+        ProgramActions.terugInProgramma(&toestand)
+        if toestand.match == nil { gekozenPlek = nil; bewaar() }
+    }
+
     func gooiWedstrijdWeg() {
         // Kwam hij uit het programma, dan gaat hij daar terug, met zijn opstelling en zijn taken.
         if toestand.match?.fromProgram == true { ProgramActions.terugInProgramma(&toestand) }

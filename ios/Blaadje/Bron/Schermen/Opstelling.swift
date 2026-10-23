@@ -6,6 +6,8 @@ struct Opstelling: View {
     @Environment(AppModel.self) private var app
     let bron: LineupActions.Bron
     var klaarTitel: String
+    /// Op de dag zelf: niet verder met een halve opstelling zonder het te vragen.
+    var nuOfNooit = true
     var klaar: () -> Void
 
     @State private var onvolledigVragen = false
@@ -65,11 +67,11 @@ struct Opstelling: View {
                     .font(.subheadline)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     Button(klaarTitel) {
-                        if bron == .wedstrijd, bezet < nodig { onvolledigVragen = true } else { klaar() }
+                        if bron == .wedstrijd, nuOfNooit, bezet < nodig { onvolledigVragen = true } else { klaar() }
                     }
                     .buttonStyle(HoofdKnop())
-                    .disabled(bron == .wedstrijd && bezet == 0)
-                    .opacity(bron == .wedstrijd && bezet == 0 ? 0.4 : 1)
+                    .disabled(bron == .wedstrijd && nuOfNooit && bezet == 0)
+                    .opacity(bron == .wedstrijd && nuOfNooit && bezet == 0 ? 0.4 : 1)
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)

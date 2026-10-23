@@ -15,8 +15,9 @@ struct WedstrijdStroom: View {
     static func stap(voor w: Match?) -> Stap {
         guard let w else { return .aanwezig }
         if w.finished { return .afloop }
-        if ClockActions.kickedOff(w) || !w.lineup.opHetVeld.isEmpty { return .wedstrijd }
-        return .aanwezig
+        if ClockActions.kickedOff(w) { return .wedstrijd }
+        // Vóór de aftrap kun je de opstelling altijd nog veranderen.
+        return w.lineup.opHetVeld.isEmpty ? .aanwezig : .opstelling
     }
 
     var body: some View {
@@ -26,7 +27,11 @@ struct WedstrijdStroom: View {
                 metKop("Wie is er?") { Aanwezig { stap = .opstelling } }
             case .opstelling:
                 metKop("Opstelling", terug: { stap = .aanwezig }) {
-                    Opstelling(bron: .wedstrijd, klaarTitel: "Naar de wedstrijd") { stap = .wedstrijd }
+                    // Een wedstrijd van later: klaar is terug naar het programma.
+                    let later = (app.match?.date ?? "") > app.vandaag
+                    Opstelling(bron: .wedstrijd, klaarTitel: later ? "Klaar" : "Naar de wedstrijd", nuOfNooit: !later) {
+                        if later { dismiss() } else { stap = .wedstrijd }
+                    }
                 }
             case .wedstrijd:
                 Wedstrijd(

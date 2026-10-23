@@ -31,6 +31,12 @@ describe('het programma', () => {
 		expect(t.program![0].time).toBeUndefined();
 	});
 
+	it('houdt een latere wedstrijd die open staat op zijn plek in de lijst', () => {
+		const { t, id } = metProgramma();
+		expect(p.open(t, id)).toBe(true);
+		expect(p.nogTeSpelen(t).map((x) => x.id)).toEqual(['w-18', id]);
+	});
+
 	it('opent als de wedstrijd, met dezelfde taken', () => {
 		const { t, id } = metProgramma();
 		expect(p.open(t, id)).toBe(true);

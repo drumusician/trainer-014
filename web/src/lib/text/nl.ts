@@ -457,6 +457,7 @@ const lineupScreen = {
 	formationLabel: 'Formatie',
 	saveDefault: 'Bewaren',
 	doneToMatch: 'Klaar — naar de wedstrijd',
+	doneLater: 'Klaar',
 	whoIsThere: 'Wie is er?',
 	clear: 'Wissen',
 	confirmClear: 'De standaardopstelling weggooien?',
