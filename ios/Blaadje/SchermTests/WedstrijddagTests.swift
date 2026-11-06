@@ -279,8 +279,14 @@ final class WedstrijddagTests: XCTestCase {
         app.buttons["Naar de opstelling"].tap()
         XCTAssertTrue(app.buttons["Wie zat op de bank"].waitForExistence(timeout: 5))
 
+        // Toch iemand afgemeld: vanaf de opstelling terug naar Wie is er?.
+        app.navigationBars.buttons["Wie is er?"].tap()
+        XCTAssertTrue(app.buttons["Noah, aanwezig"].waitForExistence(timeout: 5))
+        app.buttons["Noah, aanwezig"].tap()
+        XCTAssertTrue(app.buttons["Noah, afwezig"].waitForExistence(timeout: 5))
+        app.buttons["Naar de opstelling"].tap()
+
         // Dicht vóór de aftrap: hij staat weer gewoon in het programma.
-        app.navigationBars.buttons["Terug"].tap()
         app.navigationBars.buttons["Sluit"].tap()
         XCTAssertTrue(app.buttons["Thuis tegen Ajax"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["Klaar voor de aftrap"].exists)

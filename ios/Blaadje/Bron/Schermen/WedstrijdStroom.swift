@@ -26,7 +26,8 @@ struct WedstrijdStroom: View {
             case .aanwezig:
                 metKop("Wie is er?") { Aanwezig { stap = .opstelling } }
             case .opstelling:
-                metKop("Opstelling", terug: { stap = .aanwezig }) {
+                // Zich afgemeld nadat je de opstelling al maakte: Wie is er? blijft binnen bereik.
+                metKop("Opstelling", erbij: ("Wie is er?", { stap = .aanwezig })) {
                     // Een wedstrijd van later: klaar is terug naar het programma.
                     let later = (app.match?.date ?? "") > app.vandaag
                     Opstelling(bron: .wedstrijd, klaarTitel: later ? "Klaar" : "Naar de wedstrijd", nuOfNooit: !later) {
@@ -46,17 +47,20 @@ struct WedstrijdStroom: View {
         .animation(.default, value: stap)
     }
 
-    private func metKop(_ titel: String, terug: (() -> Void)? = nil, @ViewBuilder inhoud: () -> some View) -> some View {
+    private func metKop(
+        _ titel: String, erbij: (titel: String, doe: () -> Void)? = nil, @ViewBuilder inhoud: () -> some View
+    ) -> some View {
         NavigationStack {
             inhoud()
                 .navigationTitle(titel)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        if let terug {
-                            Button(action: terug) { Label("Terug", systemImage: "chevron.left") }
-                        } else {
-                            Button("Sluit") { dismiss() }
+                        Button("Sluit") { dismiss() }
+                    }
+                    if let erbij {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(erbij.titel, action: erbij.doe)
                         }
                     }
                 }
