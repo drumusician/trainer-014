@@ -15,7 +15,7 @@ struct Meer: View {
         NavigationStack {
             Form {
                 if Account.beschikbaar { AccountKaart() }
-                if account.huidigTeam != nil || ProcessInfo.processInfo.arguments.contains("-proef-abonnement") { abonnementDeel }
+                if TeamAbonnement.teKoop { abonnementDeel }
                 Section {
                     Button { linkPlakken = true } label: { Label("Een team volgen", systemImage: "bell") }
                 } footer: {
@@ -26,6 +26,10 @@ struct Meer: View {
                 Section {
                     ShareLink(item: app.maakBackup(), preview: SharePreview("Gegevens van Blaadje")) {
                         Label("Je gegevens downloaden", systemImage: "arrow.down.doc")
+                    }
+                    .font(.subheadline)
+                    Link(destination: URL(string: "https://blaadje.app/privacy")!) {
+                        Label("Privacyverklaring", systemImage: "hand.raised")
                     }
                     .font(.subheadline)
                 }

@@ -93,6 +93,8 @@ struct AccountKaart: View {
     @Environment(Account.self) private var account
     @State private var inloggen = false
     @State private var uitloggenVragen = false
+    @State private var verwijderenVragen = false
+    @State private var verwijderFout: String?
 
     var body: some View {
         Section {
@@ -112,6 +114,7 @@ struct AccountKaart: View {
                     .foregroundStyle(Kleur.oranje)
                 }
                 Button("Log uit", role: .destructive) { uitloggenVragen = true }
+                Button("Verwijder je account", role: .destructive) { verwijderenVragen = true }
             } else if case .hapert(let adres) = account.fase {
                 LabeledContent("Ingelogd", value: adres)
                 Text(account.melding ?? "Je account is even niet bereikbaar.").font(.footnote).foregroundStyle(.secondary)
@@ -130,6 +133,17 @@ struct AccountKaart: View {
             Text("Account")
         }
         .sheet(isPresented: $inloggen) { Inloggen() }
+        .confirmationDialog("Je account verwijderen?", isPresented: $verwijderenVragen, titleVisibility: .visible) {
+            Button("Verwijder", role: .destructive) { Task { verwijderFout = await account.verwijderAccount() } }
+            Button("Terug", role: .cancel) {}
+        } message: {
+            Text("Je e-mailadres gaat weg, en elk team waar jij de enige trainer bent, met de spelers en wedstrijden. Een team met nog een andere trainer blijft voor hen staan. Wat op deze telefoon staat, blijft staan.")
+        }
+        .alert("Niet gelukt", isPresented: Binding(get: { verwijderFout != nil }, set: { if !$0 { verwijderFout = nil } })) {
+            Button("Oké", role: .cancel) {}
+        } message: {
+            Text(verwijderFout ?? "")
+        }
         .confirmationDialog("Uitloggen?", isPresented: $uitloggenVragen, titleVisibility: .visible) {
             Button("Log uit", role: .destructive) { Task { await account.logUit() } }
             Button("Terug", role: .cancel) {}

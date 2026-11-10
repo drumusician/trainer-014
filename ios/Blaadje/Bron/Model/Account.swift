@@ -457,6 +457,32 @@ final class Account {
         return false
     }
 
+    /// Je account weg, met de teams waar jij de enige trainer bent (supabase/account.sql).
+    /// Wat op deze telefoon staat blijft staan: dat is van jou, niet van het account.
+    /// Geeft een zin terug als het niet lukte.
+    func verwijderAccount() async -> String? {
+        do {
+            _ = try await rest("POST", "rpc/verwijder_account")
+        } catch {
+            return "Je account is niet verwijderd. Probeer het opnieuw als je bereik hebt."
+        }
+        teller?.cancel()
+        motor?.stop()
+        motor = nil
+        model.naBewaren = nil
+        try? await spiegel?.wis()
+        await inlog.logUit()
+        teamId = nil
+        try? FileManager.default.removeItem(at: onthouden)
+        wachtend = 0
+        geweigerd = 0
+        leden = []
+        uitgenodigd = []
+        fase = .uit
+        melding = nil
+        return nil
+    }
+
     func logUit() async {
         // Nog één keer echt kijken, niet op de teller van twee seconden geleden.
         let nogOpen = (try? await spiegel?.wachtrij()) ?? 1

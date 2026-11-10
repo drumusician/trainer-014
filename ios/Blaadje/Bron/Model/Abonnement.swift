@@ -14,6 +14,11 @@ import StoreKit
 final class TeamAbonnement {
     static let product = "app.blaadje.ios.seizoen"
 
+    /// Kopen in de app komt pas in de update van december: tot januari is alles
+    /// gratis (`gratis_tot` in supabase/abonnement.sql). Tot dan staat het deel bij
+    /// Meer er alleen in de schermtests.
+    static var teKoop: Bool { ProcessInfo.processInfo.arguments.contains("-proef-abonnement") }
+
     struct Status: Equatable {
         var aan: Bool
         var abonnementTot: Date?

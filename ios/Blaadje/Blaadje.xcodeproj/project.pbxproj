@@ -21,6 +21,7 @@
 		5218275FD998F690663926B9 /* KlokGegevens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B29291860A0B45F69A6DC48 /* KlokGegevens.swift */; };
 		5A7BAE8BB78A2DFA3885CC2A /* Seizoen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C382E273EA78C31F751D1A4 /* Seizoen.swift */; };
 		5ADE009AA8E21B2509CE3157 /* Trainingen.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0CC566E3568FDF8629AAC1A /* Trainingen.swift */; };
+		6A3C3B195C682E96C7313FC6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7935FB9D040371F663C3897E /* PrivacyInfo.xcprivacy */; };
 		7012DBEB654D8F94AE96C626 /* Inloggen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EDE5BC99061AA124717746F /* Inloggen.swift */; };
 		7482A4333954D9DE92A6FAFA /* VolgScherm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F7F92DBCAFD47E4D0027449 /* VolgScherm.swift */; };
 		7DF8D3B7044ACBE88D7823BC /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D04AB54B3CB0A1CD75448E /* AppModel.swift */; };
@@ -100,6 +101,7 @@
 		52ACE74F8A5A38F14B05AE5D /* Account.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account.swift; sourceTree = "<group>"; };
 		6F2CE664A43B40A7C5A6FE0B /* Afloop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Afloop.swift; sourceTree = "<group>"; };
 		75649EB9F7354A660683E621 /* BlaadjeSchermTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BlaadjeSchermTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7935FB9D040371F663C3897E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		8304AF1BD3F4F5E097480466 /* BlaadjeTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BlaadjeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C382E273EA78C31F751D1A4 /* Seizoen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Seizoen.swift; sourceTree = "<group>"; };
 		8EDE5BC99061AA124717746F /* Inloggen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Inloggen.swift; sourceTree = "<group>"; };
@@ -144,6 +146,7 @@
 			isa = PBXGroup;
 			children = (
 				14F1966BD75A5410756B4CD9 /* BlaadjeApp.swift */,
+				7935FB9D040371F663C3897E /* PrivacyInfo.xcprivacy */,
 				53F70DE5B549AE87FCA514EF /* Gedeeld */,
 				0FE704C067706F078899E49B /* Model */,
 				DB09D82D242D25506F5FEFE1 /* Onderdelen */,
@@ -400,6 +403,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				89D4AFC883231A9DB6C15303 /* Assets.xcassets in Resources */,
+				6A3C3B195C682E96C7313FC6 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -518,7 +522,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.blaadje.ios;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
@@ -538,7 +542,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.blaadje.ios.klok;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -662,7 +666,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.blaadje.ios;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
@@ -700,7 +704,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.blaadje.ios.klok;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;

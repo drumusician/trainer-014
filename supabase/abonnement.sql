@@ -31,16 +31,19 @@ drop policy if exists "leden lezen" on public.team_abonnementen;
 create policy "leden lezen" on public.team_abonnementen for select using (public.is_lid(team_id));
 grant select on public.team_abonnementen to authenticated;
 
--- Er was een gratis periode; die is er niet meer. Een team staat aan zodra
--- iemand het seizoen koopt.
-drop function if exists public.gratis_tot();
+-- Tot januari 2027 is alles gratis: dan staat elk team aan. Daarna staat een
+-- team aan zodra iemand het seizoen koopt.
+create or replace function public.gratis_tot() returns timestamptz
+language sql stable
+as $$ select timestamptz '2027-01-01 00:00 Europe/Amsterdam' $$;
 
 -- De ene vraag waar alles langs gaat: de pagina voor ouders, de meldingen, de herinneringen.
 create or replace function public.team_aan(p_team uuid, p_nu timestamptz default now()) returns boolean
 language sql security definer stable
 set search_path = public
 as $$
-  select exists (select 1 from public.team_abonnementen a
+  select p_nu < public.gratis_tot()
+      or exists (select 1 from public.team_abonnementen a
                   where a.team_id = p_team and not a.ingetrokken and a.verloopt > p_nu);
 $$;
 

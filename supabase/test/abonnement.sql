@@ -12,7 +12,9 @@ do $$
 declare
   team uuid := 'dddddddd-0000-0000-0000-00000000000d';
 begin
-  if public.team_aan(team) then raise exception 'zonder seizoen staat een team aan'; end if;
+  -- tot januari 2027 is alles gratis
+  if not public.team_aan(team, timestamptz '2026-12-31 23:59 Europe/Amsterdam') then raise exception 'in de gratis periode staat een team uit'; end if;
+  if public.team_aan(team, timestamptz '2027-01-01 00:00 Europe/Amsterdam') then raise exception 'na de gratis periode staat een team zonder seizoen aan'; end if;
 
   perform public.abonnement_bij('1000000123', team, 'app.blaadje.ios.seizoen', timestamptz '2027-08-01 00:00+02', 'Sandbox', false);
   if not public.team_aan(team, timestamptz '2027-03-01') then raise exception 'met een seizoen staat het team uit'; end if;
@@ -28,6 +30,12 @@ begin
   perform public.abonnement_bij('1000000123', team, 'app.blaadje.ios.seizoen', timestamptz '2027-08-01 00:00+02', 'Sandbox', false);
 end $$;
 reset role;
+
+-- Wat hierna komt gaat over de tijd na de gratis periode, en sommige vragen
+-- gebruiken de klok van nu. Dus zet de gratis periode voor de rest van de proef
+-- in het verleden.
+create or replace function public.gratis_tot() returns timestamptz
+language sql stable as $$ select timestamptz '2000-01-01' $$;
 
 -- Niemand anders dan de serverfunctie schrijft een seizoen, en een ouder ziet het niet.
 begin;

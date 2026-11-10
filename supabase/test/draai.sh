@@ -46,3 +46,6 @@ done
 "$psql" -q -t -A -v ON_ERROR_STOP=1 -d "$db" -f "$hier/taken.sql"
 # Het abonnement: na de gratis periode alleen nog met een abonnement.
 "$psql" -q -t -A -v ON_ERROR_STOP=1 -d "$db" -f "$hier/abonnement.sql"
+# Je account verwijderen: weg is weg, behalve een team met nog een trainer.
+"$psql" -q -v ON_ERROR_STOP=1 -c "set client_min_messages = warning" -d "$db" -f "${ACCOUNT:-$hier/../account.sql}"
+"$psql" -q -t -A -v ON_ERROR_STOP=1 -d "$db" -f "$hier/account.sql"
