@@ -788,18 +788,37 @@ const landing = {
 			'Staat je seizoen alleen op je telefoon, dan is het weg zodra die telefoon weg is: gestolen, in het water, of een browser die opruimt omdat je een tijd niet hebt gekeken. Maak dus af en toe een back-up — dat is één knop en één bestand — of neem een account, dan gebeurt het vanzelf.'
 	},
 
-	priceHeading: 'Wat het kost',
-	price1:
-		'Zonder account is Blaadje gratis, en dat blijft zo. Alles werkt: opstellen, wisselen, speeltijd, presentie, het archief. Het enige wat je mist is een vangnet, want alles staat alleen op dat ene toestel. Zo kun je een paar wedstrijden uitproberen zonder ergens aan vast te zitten.',
-	price2:
-		"Wordt het je vaste gereedschap, dan wil je een account. Je seizoen staat dan veilig als je telefoon kwijtraakt, en je werkt op meer dan één toestel: thuis de opstelling maken, langs de lijn wisselen. Dat kost € 30 per seizoen, zo'n zeventig cent per speelweek.",
-	price3:
-		'Zolang Blaadje in ontwikkeling is hoeft dat nog helemaal niet. Wie er nu bij komt, gebruikt dit seizoen alles gratis.',
-	price4: {
-		before:
-			'Clubs kunnen het in één keer voor al hun jeugdtrainers regelen. Eén factuur, en de trainers hoeven zelf niets te doen. Neem contact op via',
+	priceHeading: 'Wat kost het?',
+	price: [
+		{
+			bold: 'Tot januari: gratis.',
+			after:
+				'Blaadje is nieuw, en ik wil dat zoveel mogelijk trainers het dit najaar langs de lijn uitproberen. Alles werkt, zonder account.'
+		},
+		{
+			bold: 'Vanaf januari: € 9,99 voor de rest van het seizoen.',
+			after:
+				'Per team, eenmalig. Daarmee krijg je een account, een backup in de cloud en toegang voor meerdere trainers van hetzelfde team. Je betaalt gewoon in de app.'
+		},
+		{
+			bold: 'Daarna: € 30 per seizoen',
+			after:
+				"(zo'n € 0,70 per wedstrijdweek). Het verlengt niet automatisch. Je team verandert elk seizoen, dus je beslist elk jaar opnieuw."
+		}
+	],
+	priceClub: {
+		bold: 'Club met meerdere teams?',
+		before: 'Dan regelen we het met één factuur voor alle jeugdtrainers. Mail me:',
 		after: '.'
 	},
+
+	privacyLink: 'Lees de privacyverklaring',
+	footerPrivacy: 'privacy',
+
+	/* Vul hier het adres in zodra Blaadje in de App Store staat; dan verschijnt de
+	   knop vanzelf bovenaan en onderaan de pagina. */
+	appStoreUrl: null as string | null,
+	appStore: 'Download in de App Store',
 
 	originHeading: 'Waar het vandaan komt',
 	origin1:

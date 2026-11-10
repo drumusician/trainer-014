@@ -41,7 +41,7 @@ describe('de landingspagina', () => {
 		expect(naarDeApp.length).toBeGreaterThan(2);
 		for (const l of screen.getAllByRole('link')) {
 			const href = l.getAttribute('href') ?? '';
-			expect(href === '/app' || href.startsWith('mailto:')).toBe(true);
+			expect(href === '/app' || href === '/privacy' || href.startsWith('mailto:')).toBe(true);
 		}
 	});
 

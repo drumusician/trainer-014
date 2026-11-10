@@ -15,6 +15,6 @@ export default {
 		adapter: adapter({ fallback: '200.html' }),
 		/* Alleen de landingspagina wordt uitgetekend. Niet verder kruipen: de
 		   app-routes moeten juist leeg blijven, die tekent de browser zelf. */
-		prerender: { entries: ['/'], crawl: false, handleUnseenRoutes: 'ignore' }
+		prerender: { entries: ['/', '/privacy'], crawl: false, handleUnseenRoutes: 'ignore' }
 	}
 };

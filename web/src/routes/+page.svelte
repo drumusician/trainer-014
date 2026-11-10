@@ -40,6 +40,11 @@
 			<a class="knop prim groot" href="/app" data-sveltekit-reload onclick={() => meld('App geopend')}
 				>{text.landing.openLong}</a
 			>
+			{#if text.landing.appStoreUrl}
+				<a class="knop groot" href={text.landing.appStoreUrl} onclick={() => meld('App Store')}
+					>{text.landing.appStore}</a
+				>
+			{/if}
 			<span class="klein">{text.landing.heroSmall}</span>
 		</div>
 	</section>
@@ -113,22 +118,18 @@
 			<b>{text.landing.privacy3.bold}</b>
 			{text.landing.privacy3.after}
 		</p>
+		<p><a href="/privacy">{text.landing.privacyLink}</a></p>
 	</section>
 
 	<section class="rustig">
 		<h2>{text.landing.priceHeading}</h2>
+		{#each text.landing.price as regel (regel.bold)}
+			<p><b>{regel.bold}</b> {regel.after}</p>
+		{/each}
 		<p>
-			{text.landing.price1}
-		</p>
-		<p>
-			{text.landing.price2}
-		</p>
-		<p>
-			{text.landing.price3}
-		</p>
-		<p>
-			{text.landing.price4.before}
-			<a href="mailto:{text.landing.email}">{text.landing.email}</a>{text.landing.price4.after}
+			<b>{text.landing.priceClub.bold}</b>
+			{text.landing.priceClub.before}
+			<a href="mailto:{text.landing.email}">{text.landing.email}</a>{text.landing.priceClub.after}
 		</p>
 	</section>
 
@@ -152,6 +153,12 @@
 		<p>
 			{text.landing.footerBefore}
 			<a href="/app" data-sveltekit-reload onclick={() => meld('App geopend')}>{text.landing.footerLink}</a>
+			{text.landing.footerDot}
+			{#if text.landing.appStoreUrl}
+				<a href={text.landing.appStoreUrl}>App Store</a>
+				{text.landing.footerDot}
+			{/if}
+			<a href="/privacy">{text.landing.footerPrivacy}</a>
 			{text.landing.footerDot}
 			<a href="mailto:{text.landing.email}">{text.landing.email}</a>
 		</p>
